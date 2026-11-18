@@ -67,7 +67,7 @@ type TownMapPlace = {
 export type TownMapData = {
   places: readonly TownMapPlace[];
   /** Landmarks the player cannot visit yet; drawn as locked pins. */
-  lockedPlaces?: readonly LockedSourcePlace[];
+  lockedPlaces?: readonly LockedSourcePlace[] | undefined;
   properties: readonly import("@/components/map/MapCanvas").MapProperty[] | undefined;
   playerLocation: import("@/components/map/MapCanvas").MapPlayerLocation | null | undefined;
   billboardMarkers: readonly import("@/components/map/MapCanvas").MapBillboardMarker[];
@@ -81,18 +81,18 @@ export type TownMapCallbacks = {
 
 type Props = TownMapData &
   TownMapCallbacks & {
-    onSelectProperty?: (property: import("@/components/map/MapCanvas").MapProperty) => void;
+    onSelectProperty?: (property: import("@/components/map/MapCanvas").MapProperty) => void | undefined;
     eventChips: readonly { id: string; label: string; x: number; y: number }[];
-    onSelectEvent?: (landmarkId: string) => void;
+    onSelectEvent?: (landmarkId: string) => void | undefined;
     onReady: () => void;
     onUnavailable: () => void;
-    searchTarget?: import("@/components/map/MapCanvas").MapSearchTarget | null;
+    searchTarget?: import("@/components/map/MapCanvas").MapSearchTarget | null | undefined;
     /** Frame the search target close up instead of the whole town (landing preview). */
-    focusCloseUp?: boolean;
-    selectedLandmarkId?: string | null;
-    travelMode?: import("@/lib/transport-service").TravelMode | null;
-    travelPending?: boolean;
-    focusInsets?: import("./map-focus").MapFocusInsets;
+    focusCloseUp?: boolean | undefined;
+    selectedLandmarkId?: string | null | undefined;
+    travelMode?: import("@/lib/transport-service").TravelMode | null | undefined;
+    travelPending?: boolean | undefined;
+    focusInsets?: import("./map-focus").MapFocusInsets | undefined;
   };
 
 /** Close-up framing sits well inside the whole-town distance. */

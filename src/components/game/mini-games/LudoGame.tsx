@@ -68,12 +68,16 @@ function randomFace() {
  */
 export function seatsFor(players: number, humanColour: Colour): Seat[] {
   if (players === 2) {
-    return [
-      { colour: "RED", playerId: HUMAN },
-      { colour: "GREEN", playerId: "cpu-1" },
-      { colour: "YELLOW", playerId: HUMAN },
-      { colour: "BLUE", playerId: "cpu-2" },
-    ];
+    // Turn order starts at the human's colour, so the human gets that arm and the opposite one.
+    const start = COLOURS.indexOf(humanColour);
+    let computer = 0;
+    return COLOURS.map((_, step) => COLOURS[(start + step) % COLOURS.length] as Colour).map(
+      (colour, index) => {
+        if (index % 2 === 0) return { colour, playerId: HUMAN };
+        computer += 1;
+        return { colour, playerId: `cpu-${computer}` };
+      },
+    );
   }
   const others = COLOURS.filter((colour) => colour !== humanColour);
   return [humanColour, ...others.slice(0, players - 1)].map((colour, index) => ({
@@ -185,7 +189,9 @@ export function LudoGame() {
 function LudoSetup({ onStart }: { onStart: (config: LocalGame) => void }) {
   const [choice, setChoice] = useState(2);
   const [humanColour, setHumanColour] = useState<Colour>("RED");
-  const others = COLOURS.filter((colour) => colour !== humanColour);
+  const seats = seatsFor(choice, humanColour);
+  const yourColours = seats.filter((seat) => seat.playerId === HUMAN).map((seat) => COLOUR_NAMES[seat.colour]);
+  const computerColours = seats.filter((seat) => seat.playerId !== HUMAN).map((seat) => COLOUR_NAMES[seat.colour]);
   return (
     <section className="mg-game mg-setup" aria-label="Ludo lobby">
       <div className="mg-setup-block">
@@ -219,8 +225,7 @@ function LudoSetup({ onStart }: { onStart: (config: LocalGame) => void }) {
             );
           })}
         </div>
-        {choice > 2 && (
-          <div className="lb-colour-pick" role="radiogroup" aria-label="Your colour">
+        <div className="lb-colour-pick" role="radiogroup" aria-label="Your colour">
             <span className="lb-colour-label">Your colour</span>
             <div className="lb-colour-row">
               {COLOURS.map((colour) => {
@@ -242,16 +247,13 @@ function LudoSetup({ onStart }: { onStart: (config: LocalGame) => void }) {
               })}
             </div>
             <p className="lb-colour-note">
-              The computers play {others.slice(0, choice - 1).map((colour) => COLOUR_NAMES[colour]).join(" and ")}.
+              You play {yourColours.join(" and ")}. The {computerColours.length > 1 ? "computers play" : "computer plays"}{" "}
+              {computerColours.join(" and ")}.
             </p>
           </div>
-        )}
-        {choice === 2 && (
-          <p className="lb-colour-note">You play Red and Yellow. The computer plays Green and Blue.</p>
-        )}
         <Button
           className="mg-setup-start"
-          onClick={() => onStart({ players: choice, humanColour: choice === 2 ? "RED" : humanColour })}
+          onClick={() => onStart({ players: choice, humanColour })}
         >
           Start game
         </Button>

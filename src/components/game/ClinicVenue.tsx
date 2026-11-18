@@ -33,8 +33,8 @@ export function ClinicVenue({ slug, locationName }: { slug: string; locationName
   const staff = visit?.status === "examination" ? visit.assignedStaff : visit?.staff?.onDuty ? visit.staff : null;
   const onStage = (stage: ClinicVisitStatus) => {
     if (exterior) return;
-    const target = stage === "waiting" ? CLINIC_ROOM_APPROACH.waiting :
-      stage === "examination" ? CLINIC_ROOM_APPROACH.exam :
+    const target = stage === "waiting" ? CLINIC_ROOM_APPROACH["waiting"] :
+      stage === "examination" ? CLINIC_ROOM_APPROACH["exam"] :
       ["discharged", "cancelled"].includes(stage) ? CLINIC_SPAWN : null;
     if (target) walk.walkTo(target);
   };

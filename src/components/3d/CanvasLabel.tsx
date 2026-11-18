@@ -19,7 +19,7 @@ export function CanvasLabel({
   position: [number, number, number];
   /** Height of the label in world units. */
   fontSize: number;
-  color?: string;
+  color?: string | undefined;
 }) {
   const texture = useMemo(() => {
     const canvas = document.createElement("canvas");

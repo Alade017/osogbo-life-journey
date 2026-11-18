@@ -28,7 +28,8 @@ it("round-trips projection across the entire playable bounds without changing pe
 
 it("uses the same building ground rectangle for rendering and authoritative collision", () => {
   const area = neighborhoodAreaForSlug("city-centre");
-  for (const object of area.objects.filter((o) => o.kind !== "npc")) {
+  // Walk-in doorways are passable by design, so only solid buildings carry a footprint.
+  for (const object of area.objects.filter((o) => o.kind !== "npc" && !o.walkIn)) {
     const r = neighborhoodBuildingFootprint(object);
     expect(r).toEqual({ left: object.x - 57, top: object.y - 62, width: 114, height: 58 });
     expect(

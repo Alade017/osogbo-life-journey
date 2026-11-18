@@ -126,7 +126,7 @@ export function HouseBlocks3D({
       ...town.grid.treeCells,
       ...town.grid.carCells,
       ...town.grid.waterCells,
-    ])
+    ] as [number, number][])
       block(x, z);
     for (const building of town.grid.buildings) {
       for (let dz = 0; dz < 2; dz++)

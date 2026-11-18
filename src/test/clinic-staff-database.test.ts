@@ -20,7 +20,7 @@ async function actor(id: string) {
 }
 async function command(cmd: string) {
   return (await db.query<{ visit: Visit }>("select clinic_visit_command($1) as visit", [cmd]))
-    .rows[0].visit;
+    .rows[0]!.visit;
 }
 beforeAll(async () => {
   db = new PGlite();

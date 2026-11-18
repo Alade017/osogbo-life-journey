@@ -230,7 +230,8 @@ describe("phone message interactions", () => {
     it("announces loading and exposes determinate progress when available", () => {
       const { rerender } = render(<WorldLoadingIndicator title="Opening the map" />);
       expect(screen.getByRole("status")).toHaveTextContent("Opening the map");
-      expect(screen.getByRole("progressbar")).not.toHaveAttribute("aria-valuenow");
+      // Inline loaders without a known value show the spinner only; the bar needs a progress value.
+      expect(screen.queryByRole("progressbar")).toBeNull();
 
       rerender(<WorldLoadingIndicator title="Travelling" progress={63} />);
       expect(screen.getByRole("progressbar")).toHaveAttribute("aria-valuenow", "63");

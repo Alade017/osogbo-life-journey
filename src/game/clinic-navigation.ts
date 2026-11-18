@@ -74,7 +74,7 @@ export function clinicPath(from: ClinicPoint, to: ClinicPoint): ClinicPoint[] | 
   const queue: ClinicPoint[] = [start],
     parents = new Map<string, ClinicPoint | null>([[key(start), null]]);
   for (let i = 0; i < queue.length; i++) {
-    const p = queue[i];
+    const p = queue[i]!;
     if (key(p) === key(end)) {
       const route: ClinicPoint[] = [];
       for (let at: ClinicPoint | null = p; at; at = parents.get(key(at)) ?? null) route.push(at);
@@ -85,7 +85,7 @@ export function clinicPath(from: ClinicPoint, to: ClinicPoint): ClinicPoint[] | 
       [-0.5, 0],
       [0, 0.5],
       [0, -0.5],
-    ]) {
+    ] as const) {
       const next: ClinicPoint = [p[0] + dx, p[1] + dz];
       if (
         parents.has(key(next)) ||

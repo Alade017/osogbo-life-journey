@@ -8,13 +8,13 @@ export function ClinicVisitControls({
   onRefresh,
   onNewVisit,
 }: {
-  visit?: ClinicVisit;
+  visit?: ClinicVisit | undefined;
   pending: boolean;
   error: boolean;
   onCheckIn: () => void;
   onCancel: () => void;
   onRefresh: () => void;
-  onNewVisit?: () => void;
+  onNewVisit?: () => void | undefined;
 }) {
   const labels = {
     not_checked_in: "Check in at reception",

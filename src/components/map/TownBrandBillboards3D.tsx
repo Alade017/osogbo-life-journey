@@ -69,14 +69,17 @@ export function TownBrandBillboards3D({
   ];
   return (
     <group>
-      {positions.slice(0, 2).map((sign, index) => (
-        <BrandBoard
-          key={brands[index].name}
-          {...brands[index]}
-          position={sign.position}
-          cell={cell}
-        />
-      ))}
+      {positions.slice(0, 2).map((sign, index) => {
+        const brand = brands[index]!;
+        return (
+          <BrandBoard
+            key={brand.name}
+            {...brand}
+            position={sign.position}
+            cell={cell}
+          />
+        );
+      })}
     </group>
   );
 }

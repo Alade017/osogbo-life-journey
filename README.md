@@ -1,447 +1,111 @@
-# Osun Life: Origins
-
-Build Phase 1 of a production-quality browser game called OSUN LIFE.
-
-OSUN LIFE is an original Nigerian browser-based life simulation game set in fictionalized, game-inspired towns across Osun State, Nigeria.
-
-The core concept is:
-
-Create your character → enter Osun State → choose a town → get a job → earn virtual money → complete missions → improve your life → save your progress.
-
-Do NOT attempt to build the entire game yet. Build only the foundation and MVP.
-
-TECHNICAL DIRECTION
-
-Use:
-
-React + TypeScript
-
-Modern responsive UI
-
-Tailwind CSS
-
-Supabase for authentication and PostgreSQL
-
-Clean reusable components
-
-GitHub-compatible source structure
-
-Do not lock important game logic into the frontend.
-
-All player money, progression, character data and other important game state must eventually be validated server-side.
-
-VISUAL STYLE
-
-Create a distinctive miniature Nigerian city aesthetic.
-
-The visual direction should feel like:
-
-miniature diorama
-
-construction-toy-inspired
-
-colorful
-
-playful
-
-polished
-
-modern
-
-Nigerian
-
-game-like
-
-Do NOT use LEGO branding, LEGO assets, copyrighted characters or proprietary game assets.
-
-Use original shapes, illustrations and UI components.
-
-The city should feel inspired by Osogbo without claiming to be an exact geographic simulation.
-
-PHASE 1 SCREENS
-
-Build these screens:
-
-Landing Page
-
-Sign Up
-
-Login
-
-Character Creation
-
-City Dashboard
-
-City Map
-
-Jobs
-
-Wallet
-
-Inventory
-
-Missions
-
-Player Profile
-
-Notifications
-
-Settings
-
-CHARACTER CREATION
-
-Allow the player to create:
-
-character name
-
-gender/presentation
-
-avatar appearance
-
-age
-
-personality
-
-starting occupation preference
-
-Store the character in Supabase.
-
-PLAYER PROFILE
-
-Create initial player statistics:
-
-Level
-
-XP
-
-Money
-
-Energy
-
-Health
-
-Happiness
-
-Reputation
-
-Intelligence
-
-Social
-
-Career
-
-Wealth
-
-Use sensible starting values.
-
-Do not allow the client to arbitrarily modify important statistics.
-
-CITY
-
-Create an interactive Osogbo-inspired city dashboard.
-
-Initial fictional districts/locations:
-
-City Centre
-
-Oja Oba
-
-Oke-Fia
-
-Old Garage
-
-Student District
-
-Residential District
-
-Business District
-
-Cultural District
-
-Rural Outskirts
-
-Each location should have a card and basic description.
-
-For now, locations can lead to placeholder/coming-soon sections where functionality has not yet been implemented.
-
-Do NOT create fake functionality that appears completed.
-
-JOB SYSTEM
-
-Create an initial job system.
-
-Example jobs:
-
-Shop Assistant
-
-Delivery Rider
-
-Graphic Designer
-
-Web Developer
-
-Teacher
-
-Mechanic
-
-Photographer
-
-Food Vendor
-
-Each job should contain:
-
-name
-
-description
-
-salary/reward
-
-energy cost
-
-required level
-
-cooldown
-
-The player should be able to select an available job and perform a job action.
-
-Rewards must be validated through backend/server logic rather than simply modifying the wallet from the browser.
-
-WALLET
-
-Create a wallet showing:
-
-current balance
-
-recent transactions
-
-income
-
-expenses
-
-Use virtual Nigerian Naira values.
-
-Clearly label the money as in-game currency.
-
-Never imply that players can withdraw the virtual money as real Nigerian currency.
-
-MISSIONS
-
-Create an initial mission system.
-
-Example missions:
-
-Get your first job
-
-Earn your first ₦10,000
-
-Visit 3 locations
-
-Complete 3 jobs
-
-Reach Level 2
-
-Show:
-
-mission title
-
-description
-
-progress
-
-reward
-
-completion status
-
-INVENTORY
-
-Create an inventory interface for future items.
-
-Initially include a few simple starter items such as:
-
-Phone
-
-Backpack
-
-Basic Outfit
-
-Water Bottle
-
-The inventory must be stored in the database.
-
-DATABASE
-
-Create the necessary Supabase database structure.
-
-Start with tables such as:
-
-profiles
-
-characters
-
-jobs
-
-character_jobs
-
-wallets
-
-transactions
-
-inventory_items
-
-player_inventory
-
-missions
-
-player_missions
-
-locations
-
-notifications
-
-Use proper relationships.
-
-Add timestamps.
-
-Use UUIDs where appropriate.
-
-SECURITY
-
-Use Supabase Row Level Security.
-
-A player must only be able to access their own private character, wallet, inventory and progression data.
-
-Never trust client-side wallet updates.
-
-Never expose service-role credentials in the frontend.
-
-Validate important game actions server-side.
-
-RESPONSIVE DESIGN
-
-The game must work well on:
-
-Android phones
-
-tablets
-
-laptops
-
-desktop browsers
-
-Prioritize mobile because many Nigerian players will access the game from mobile devices.
-
-NAVIGATION
-
-Create a clear game navigation system:
-
-Home
-Map
-Jobs
-Wallet
-Inventory
-Missions
-Profile
-
-On mobile, use a bottom navigation bar where appropriate.
-
-IMPORTANT DEVELOPMENT RULE
-
-Do NOT build:
-
-multiplayer
-
-3D world
-
-vehicles
-
-businesses
-
-elections
-
-advanced NPC AI
-
-marketplace
-
-social media
-
-advanced relationships
-
-real-time chat
-
-cryptocurrency
-
-real-money gambling
-
-real-money withdrawals
-
-yet.
-
-Those belong to later development phases.
-
-QUALITY REQUIREMENTS
-
-Do not create:
-
-fake buttons
-
-fake balances
-
-fake database functionality
-
-hardcoded player progression
-
-fake authentication
-
-placeholder features presented as finished
-
-Every Phase 1 feature should either work or clearly say "Coming Soon."
-
-Create a clean architecture that can be extended later.
-
-At the end, provide:
-
-Files created
-
-Supabase tables created
-
-Database relationships
-
-Authentication configuration
-
-RLS policies
-
-Server-side functions
-
-Environment variables required
-
-How to run the project
-
-What remains for Phase 2
-
-Build Phase 1 only.
-
-## Local development in VS Code
-
-This repository builds independently with React, TanStack Start, Vite, Tailwind, and a Node server. Supabase provides authentication and the authoritative game database.
-
-Use Node.js 22.12 or newer. Open this folder in VS Code, configure .env using .env.example, and run:
-
-```powershell
-npm.cmd install
-npm.cmd run dev
+# Osun Life
+
+Osun Life is an original browser-based life simulation set in fictionalized, game-inspired towns across Osun State, Nigeria. Create a character, move into town, find work, earn fictional naira, rent a home or market stall, build relationships, play mini-games, and live the life you choose. Other players share the same world in real time.
+
+The game is inspired by Osogbo but is not an exact geographic simulation. Every place, character, brand and asset is original. No copyrighted characters, branding or proprietary assets are used.
+
+## What's in the game
+
+- **Character creation:** name, presentation, appearance, age, personality and starting occupation preference.
+- **City:** an interactive map of districts, with a city dashboard and travel between locations.
+- **Lifestyles:** hustle, career, school, party and social routes. Jobs, schooling, clinics and businesses sit alongside them.
+- **Housing:** rent a home, one active rental at a time. Overdue rent has a grace period, then loan, job or repossession options.
+- **Market:** earn, rent a stall, customise it, and see other players' stalls.
+- **Party life:** clubs, drinks, dancing and hosted events across three event centres.
+- **Mini-games:** Ludo (offline, 2–4 players against computers, with your colour choice) and Whot.
+- **Economy and progress:** wallet, inventory, missions, daily tasks, login streaks, notifications and a player profile with core stats.
+- **Messaging:** in-game chat with voice notes, quote replies, pinning and muting.
+
+Important game state (money, progression, character data) is decided on the server. The client sends intents; server functions validate them.
+
+## Tech stack
+
+- **Frontend:** React, TypeScript, TanStack Start and Router, Vite, Tailwind CSS, Radix UI.
+- **3D:** Three.js through React Three Fiber and drei.
+- **Backend:** Supabase (Auth, PostgreSQL, Realtime, Storage, Edge Functions) with server-side RPCs and migrations in `supabase/`.
+- **Multiplayer:** Colyseus rooms in `multiplayer/` (neighbourhood, party and Ludo rooms), backed by Redis for presence.
+- **Hosting:** Vercel for the web app and scheduled jobs; the multiplayer server runs separately (for example on Railway).
+- **Tests:** Vitest and Testing Library.
+
+## Project layout
+
+```
+src/
+  routes/          TanStack file routes (auth, character creation, game screens, API)
+  components/      UI, map, 3D scenes and mini-games
+  game/            Game logic: navigation, layouts, geometry and world models
+  lib/             Shared client utilities, mini-game engines (e.g. Ludo) and services
+  shared/          Code shared between client and server
+  test/            Vitest suites
+multiplayer/       Colyseus server and room definitions
+supabase/          Migrations, config and edge functions
+scripts/           Database, release and verification tooling
+docs/              Design, architecture and implementation notes
+public/            Static assets
 ```
 
-Open http://127.0.0.1:3000. To test a production build locally:
+## Getting started
 
-```powershell
-npm.cmd run build
-npm.cmd run preview
-```
+Requirements: Node.js and npm (the repo pins `npm@11`). A Supabase project is needed for auth and data.
 
-The production preview uses the Node server in .output/server/index.mjs. Stop the development server before starting preview if both use port 3000. Run npm.cmd run typecheck, npm.cmd run lint, and npm.cmd test for checks.
+1. Install dependencies:
 
-Configure both VITE_SUPABASE_URL and VITE_SUPABASE_PUBLISHABLE_KEY. For server features, configure SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY as well. Username account creation also requires the server-only SUPABASE_SECRET_KEY (or the legacy SUPABASE_SERVICE_ROLE_KEY); never prefix either secret with VITE_. Apply migration 0047_username_accounts before enabling username login. Enable Google authentication in your own Supabase project if using it. Add http://127.0.0.1:3000/login and http://localhost:3000/login to Supabase Auth's redirect allowlist; also allow the character-creation and password-recovery redirects used by the interface.
+   ```bash
+   npm install
+   ```
 
-DATABASE_URL is a server-only PostgreSQL migration connection, separate from the public Supabase API URL/key. Apply the pending HUD migration with npm.cmd run db:migrate:hud once it is configured. See docs/shared-hud-simulation.md. Keep credentials out of version control.
+2. Copy the environment template and fill in your values:
 
-The playable city now uses Phaser 3 with React menus and the existing 3D home. Run `npm.cmd run dev:public` for the separate public website, or `npm.cmd run build:public` to build it into `dist-public`. Configure `VITE_GAME_URL` to point that site at your game deployment. See [neighborhood architecture and acceptance criteria](docs/neighborhood-architecture.md) for state ownership, art rules and the separate Vercel build setup.
+   ```bash
+   cp .env.example .env
+   ```
+
+   Only `VITE_*` values reach the browser, and they must be publishable keys. Server secrets (service role key, database URL, cron secret) belong in your deployment secret manager, never in `VITE_*` variables.
+
+3. Start the game:
+
+   ```bash
+   npm run dev
+   ```
+
+   The dev server runs on port 3000.
+
+4. Start the multiplayer server, if you are working on live features:
+
+   ```bash
+   npm run multiplayer:dev
+   ```
+
+## Scripts
+
+| Command | What it does |
+| --- | --- |
+| `npm run dev` | Start the development server |
+| `npm run build` | Production build |
+| `npm run preview` | Run the production build locally |
+| `npm test` | Run the Vitest suite once |
+| `npm run test:watch` | Run tests in watch mode |
+| `npm run typecheck` | TypeScript check with no emit |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier write |
+| `npm run db:check` | Check database migrations are in sync |
+| `npm run db:apply` | Apply database migrations |
+| `npm run verify:map:live` | Smoke-check the live map |
+
+Before merging, run `npm run typecheck`, `npm test` and `npm run build`.
+
+## Contributing
+
+- Present the architecture and game-loop plan before building a new feature.
+- Keep game-critical logic server-authoritative: add or change RPCs rather than trusting client state.
+- Reuse the existing design tokens and components.
+- Don't rewrite published Git history.
+- Add or update tests with each change.
+
+## Design
+
+Osun Life has a distinctive miniature Nigerian city look: flat, colourful and playful, with 3D-style elements. The design direction lives in `docs/osogbo-life-art-bible.md`. Use original shapes, illustrations and UI components only.
+
+## Audio licences
+
+Licence records for game audio are kept in `docs/audio-license-records.md`.

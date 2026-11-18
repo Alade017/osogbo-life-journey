@@ -8,8 +8,9 @@ describe("walk pose", () => {
       for (const angles of Object.values(pose.bones)) {
         for (const value of angles!) expect(Number.isFinite(value)).toBe(true);
       }
-      expect(pose.bones[BONE.lCalf]![0]).toBeLessThanOrEqual(0);
-      expect(pose.bones[BONE.rCalf]![0]).toBeLessThanOrEqual(0);
+      // Knees bend one way only (positive in this rig, after d962c42 fixed backward poses).
+      expect(pose.bones[BONE.lCalf]![0]).toBeGreaterThanOrEqual(0);
+      expect(pose.bones[BONE.rCalf]![0]).toBeGreaterThanOrEqual(0);
     }
   });
 

@@ -12,7 +12,7 @@ export const TOWN_SURFACE = {
 export function townSurfaceLayout(rows: readonly string[], cell: number) {
   if (!rows.length || cell <= 0 || !Number.isFinite(cell))
     throw new Error("Invalid town terrain dimensions");
-  const columns = rows[0].length;
+  const columns = rows[0]!.length;
   if (!columns || rows.some((row) => row.length !== columns))
     throw new Error("Town terrain rows must have equal widths");
   const land: WorldInstance[] = [];
@@ -38,7 +38,7 @@ export function townSurfaceLayout(rows: readonly string[], cell: number) {
         [1, 0],
         [0, -1],
         [0, 1],
-      ]) {
+      ] as const) {
         const neighbour = rows[z + dz]?.[x + dx];
         if (!neighbour || neighbour === "w") continue;
         banks.push({

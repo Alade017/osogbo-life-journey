@@ -23,7 +23,7 @@ export function findGridWalkPath(
   const queue: WalkPoint[] = [start],
     parents = new Map<string, WalkPoint | null>([[key(start), null]]);
   for (let i = 0; i < queue.length && i < maxNodes; i++) {
-    const p = queue[i];
+    const p = queue[i]!;
     if (key(p) === key(end)) {
       const path: WalkPoint[] = [];
       for (let at: WalkPoint | null = p; at; at = parents.get(key(at)) ?? null) path.push(at);
@@ -34,7 +34,7 @@ export function findGridWalkPath(
       [-0.5, 0],
       [0, 0.5],
       [0, -0.5],
-    ]) {
+    ] as const) {
       const next: WalkPoint = [p[0] + dx, p[1] + dz];
       if (parents.has(key(next)) || !clear(p, next)) continue;
       parents.set(key(next), p);

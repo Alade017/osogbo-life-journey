@@ -165,7 +165,7 @@ export const OJA_OBA_AREA: NeighborhoodArea = {
       kind: "market",
       shopSlug: "market-sales-stall",
       x: 145,
-      y: 165,
+      y: 200,
     },
     { id: "work", name: "Market loading yard", kind: "work", x: 500, y: 420 },
     {

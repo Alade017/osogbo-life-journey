@@ -23,7 +23,7 @@ export function ShapeGlyph({
 }: {
   shape: Shape;
   size?: number;
-  color?: string;
+  color?: string | undefined;
 }) {
   const fill = color ?? SHAPE_COLORS[shape];
   return (

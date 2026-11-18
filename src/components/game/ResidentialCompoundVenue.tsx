@@ -27,7 +27,7 @@ export function ResidentialCompoundVenue({
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const heading = useId();
   const unavailable = useCallback(() => setStatus("fallback"), []);
-  const feature = features.find((item) => item.id === selected) ?? features[0];
+  const feature = features.find((item) => item.id === selected) ?? features[0]!;
   const canEnter = !!home && !!onEnterHome;
   useEffect(() => {
     const timer = window.setTimeout(

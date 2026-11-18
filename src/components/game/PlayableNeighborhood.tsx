@@ -788,9 +788,9 @@ export function PlayableNeighborhood() {
       !district ||
       !roomRef.current
     )
-      return;
+      return undefined;
     const pendingNav = consumeNeighborhoodNavigation();
-    if (!pendingNav) return;
+    if (!pendingNav) return undefined;
 
     const room = roomRef.current;
     if (pendingNav.mode === "keke") {
@@ -828,6 +828,7 @@ export function PlayableNeighborhood() {
     dispatchZone(setPendingZoneId(pendingNav.primaryZoneId));
     startPathfindingTo(pendingNav.targetScenePoint);
     toast.message(`Walking to ${pendingNav.landmarkName}`);
+    return undefined;
   }, [
     connectionState,
     currentLocation?.slug,

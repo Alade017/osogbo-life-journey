@@ -17,6 +17,23 @@ describe("Ludo seating", () => {
       "YELLOW",
     ]);
   });
+
+  it("pairs the human with the colour picked and its opposite arm for two players", () => {
+    const greenSeats = seatsFor(2, "GREEN");
+    expect(greenSeats.filter((seat) => seat.playerId === "you").map((seat) => seat.colour)).toEqual([
+      "GREEN",
+      "BLUE",
+    ]);
+    expect(greenSeats.filter((seat) => seat.playerId !== "you").map((seat) => seat.colour)).toEqual([
+      "YELLOW",
+      "RED",
+    ]);
+    const yellowSeats = seatsFor(2, "YELLOW");
+    expect(yellowSeats.filter((seat) => seat.playerId === "you").map((seat) => seat.colour)).toEqual([
+      "YELLOW",
+      "RED",
+    ]);
+  });
 });
 
 describe("Ludo tap resolution", () => {

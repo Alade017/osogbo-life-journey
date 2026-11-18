@@ -7,10 +7,10 @@ describe("authored road routing", () => {
     const route = findTownRoute(rows, [0, 1], [4, 1])!;
     expect(route.cells.length).toBe(7);
     for (let i = 0; i < route.cells.length; i++) {
-      const [x, z] = route.cells[i];
-      expect(rows[z][x]).toBe("r");
+      const [x, z] = route.cells[i]!;
+      expect(rows[z]![x]).toBe("r");
       if (i)
-        expect(Math.abs(x - route.cells[i - 1][0]) + Math.abs(z - route.cells[i - 1][1])).toBe(1);
+        expect(Math.abs(x - route.cells[i - 1]![0]) + Math.abs(z - route.cells[i - 1]![1])).toBe(1);
     }
   });
   it("snaps to road access without inventing a line across the building plot", () => {
@@ -38,7 +38,7 @@ describe("authored road routing", () => {
     expect(sampleTownRoute([], 0)).toBeNull();
   });
   it("never leaves authored roads when routing between real map landmarks", () => {
-    const start = town.landmarks[0];
+    const start = town.landmarks[0]!;
     let connected = 0;
     for (const destination of town.landmarks) {
       const route = findTownRoute(
@@ -48,7 +48,7 @@ describe("authored road routing", () => {
       );
       if (!route) continue;
       connected++;
-      for (const [x, z] of route.cells) expect(town.grid.rows[z][x]).toBe("r");
+      for (const [x, z] of route.cells) expect(town.grid.rows[z]![x]).toBe("r");
     }
     expect(connected).toBeGreaterThan(1);
   });

@@ -31,7 +31,7 @@ describe("district housing composition", () => {
   it("respects empty budgets and leaves unassigned district margins open", () => {
     expect(townResidentialLayout({ ...input, limit: 0 })).toEqual([]);
     expect(
-      townResidentialLayout({ ...input, districts: [districts[0]] }).every(
+      townResidentialLayout({ ...input, districts: [districts[0]!] }).every(
         (h) => h.z === 1 && h.x < 4,
       ),
     ).toBe(true);

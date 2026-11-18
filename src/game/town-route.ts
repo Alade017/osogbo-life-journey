@@ -15,10 +15,12 @@ export function findTownRoute(
   );
   if (!roads.length) return null;
   const nearest = (p: RouteCell) =>
-    roads.reduce((best, cell) =>
-      Math.hypot(cell[0] - p[0], cell[1] - p[1]) < Math.hypot(best[0] - p[0], best[1] - p[1])
-        ? cell
-        : best,
+    roads.reduce(
+      (best, cell) =>
+        Math.hypot(cell[0] - p[0], cell[1] - p[1]) < Math.hypot(best[0] - p[0], best[1] - p[1])
+          ? cell
+          : best,
+      roads[0]!,
     );
   const start = nearest(origin),
     end = nearest(destination),
@@ -26,7 +28,7 @@ export function findTownRoute(
   const queue: RouteCell[] = [start],
     parents = new Map<string, RouteCell | null>([[key(start), null]]);
   for (let cursor = 0; cursor < queue.length; cursor++) {
-    const cell = queue[cursor];
+    const cell = queue[cursor]!;
     if (key(cell) === key(end)) {
       const cells: RouteCell[] = [];
       for (
@@ -42,7 +44,7 @@ export function findTownRoute(
       [-1, 0],
       [0, 1],
       [0, -1],
-    ]) {
+    ] as const) {
       const next: RouteCell = [cell[0] + dx, cell[1] + dz];
       if (rows[next[1]]?.[next[0]] !== "r" || parents.has(key(next))) continue;
       parents.set(key(next), cell);
@@ -56,8 +58,8 @@ export function sampleTownRoute(cells: readonly RouteCell[], progress: number): 
   if (!cells.length) return null;
   const index = Math.max(0, Math.min(1, progress)) * (cells.length - 1),
     i = Math.floor(index),
-    a = cells[i],
-    b = cells[Math.min(i + 1, cells.length - 1)],
+    a = cells[i]!,
+    b = cells[Math.min(i + 1, cells.length - 1)]!,
     t = index - i;
   return [a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t];
 }
