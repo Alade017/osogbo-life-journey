@@ -6,7 +6,7 @@ describe("map viewport coverage", () => {
   for (const [w, h] of [
     [390, 844],
     [1440, 900],
-  ])
+  ] as const)
     for (const level of [1, 2, 4]) {
       it(`keeps ground under all viewport corners at ${w}x${h}, zoom ${level}`, () => {
         const frame = mapCameraFrame(115.2, 86.4, w, h);

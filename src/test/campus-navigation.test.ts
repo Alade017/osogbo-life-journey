@@ -15,8 +15,8 @@ function validPath(area: CampusAreaId, path: ReturnType<typeof campusWalkPath>) 
     for (let t = 0; t <= 1; t += 0.1)
       expect(
         canWalkCampus(area, [
-          path![i - 1][0] * (1 - t) + path![i][0] * t,
-          path![i - 1][1] * (1 - t) + path![i][1] * t,
+          path![i - 1]![0] * (1 - t) + path![i]![0] * t,
+          path![i - 1]![1] * (1 - t) + path![i]![1] * t,
         ]),
       ).toBe(true);
 }

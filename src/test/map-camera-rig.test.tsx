@@ -85,9 +85,9 @@ it("moves camera and orbit target together so focus changes preserve the viewing
 
 it("locks rotation and maps a single-finger or left-button drag to panning", () => {
   render(<MapCameraRig width={100} depth={60} target={[0, 0, 0]} />);
-  expect(state.controlProps.enableRotate).toBe(false);
-  expect(state.controlProps.touches).toEqual({ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN });
-  expect(state.controlProps.mouseButtons).toEqual({
+  expect(state.controlProps["enableRotate"]).toBe(false);
+  expect(state.controlProps["touches"]).toEqual({ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN });
+  expect(state.controlProps["mouseButtons"]).toEqual({
     LEFT: MOUSE.PAN,
     MIDDLE: MOUSE.DOLLY,
     RIGHT: MOUSE.PAN,
@@ -108,7 +108,7 @@ it("bounds a drag before the city can disappear off screen", () => {
   const offset = state.camera.position.clone().sub(state.orbit.target);
   state.orbit.target.set(1000, 0, 1000);
   state.camera.position.copy(offset).add(state.orbit.target);
-  (state.controlProps.onChange as () => void)();
+  (state.controlProps["onChange"] as () => void)();
   const limits = mapCameraPanLimits(100, 60, state.camera);
   expect(state.orbit.target.x).toBeCloseTo(limits.x);
   expect(state.orbit.target.z).toBeCloseTo(limits.z);

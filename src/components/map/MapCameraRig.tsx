@@ -24,10 +24,10 @@ export function MapCameraRig({
   width: number;
   depth: number;
   target: readonly [number, number, number];
-  zoom?: number;
-  onManual?: () => void;
-  active?: boolean;
-  focusInsets?: MapFocusInsets;
+  zoom?: number | undefined;
+  onManual?: () => void | undefined;
+  active?: boolean | undefined;
+  focusInsets?: MapFocusInsets | undefined;
 }) {
   const { camera: sceneCamera, size, invalidate } = useThree();
   const camera = sceneCamera as OrthographicCamera;

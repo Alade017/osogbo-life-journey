@@ -9,7 +9,7 @@ function Part({
 }: {
   at: [number, number, number];
   size: [number, number, number];
-  color?: string;
+  color?: string | undefined;
 }) {
   return (
     <mesh position={at} castShadow receiveShadow>

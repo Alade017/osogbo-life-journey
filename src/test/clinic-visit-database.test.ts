@@ -15,7 +15,7 @@ async function command(cmd: string) {
       "select clinic_visit_command($1) as visit",
       [cmd],
     )
-  ).rows[0].visit;
+  ).rows[0]!.visit;
 }
 beforeAll(async () => {
   db = new PGlite();
@@ -39,7 +39,7 @@ it("reserves one station and queues the next patient without duplicate check-ins
       await db.query<{ count: number }>(
         "select count(*)::int as count from clinic_visits where status='examination'",
       )
-    ).rows[0].count,
+    ).rows[0]!.count,
   ).toBe(1);
 });
 it("cancels a visit and releases the station to the waiting patient", async () => {

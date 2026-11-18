@@ -11,48 +11,48 @@ export type MapSearchTarget = string | { id: string; kind?: "district" | "landma
 export type MapPlayerLocation = {
   x: number;
   y: number;
-  label?: string;
-  activity?: string;
-  markerType?: "player" | "stall" | "job";
+  label?: string | undefined;
+  activity?: string | undefined;
+  markerType?: "player" | "stall" | "job" | undefined;
 };
 export type MapEventChip = { id: string; label: string; x: number; y: number };
 export type MapBillboardMarker = {
   campaignId: string;
   landmarkId: string;
   advertiserName: string;
-  title?: string;
-  imageUrl?: string | null;
+  title?: string | undefined;
+  imageUrl?: string | null | undefined;
   count: number;
 };
 
 /** Display-only property input. Ownership, rent, and status remain server/game-state owned. */
 export type MapProperty = {
   id: string;
-  label?: string;
+  label?: string | undefined;
   type: "compound" | "flat" | "shophouse";
   tier: 1 | 2 | 3;
   status: "owned" | "current" | "rent_due" | "overdue" | "vacant";
   position: [number, number, number];
-  rotation?: number;
-  ownerName?: string;
+  rotation?: number | undefined;
+  ownerName?: string | undefined;
 };
 
 export interface MapCanvasProps {
   onSelectDistrict: (id: string) => void;
   onSelectLandmark: (id: string) => void;
-  searchTarget?: MapSearchTarget | null;
-  selectedLandmarkId?: string | null;
-  travelMode?: import("@/lib/transport-service").TravelMode | null;
-  travelPending?: boolean;
-  playerLocation?: MapPlayerLocation | null;
-  eventChips?: MapEventChip[];
-  billboardMarkers?: MapBillboardMarker[];
-  onSelectBillboard?: (campaignId: string) => void;
-  availableLandmarkIds?: readonly string[];
+  searchTarget?: MapSearchTarget | null | undefined;
+  selectedLandmarkId?: string | null | undefined;
+  travelMode?: import("@/lib/transport-service").TravelMode | null | undefined;
+  travelPending?: boolean | undefined;
+  playerLocation?: MapPlayerLocation | null | undefined;
+  eventChips?: MapEventChip[] | undefined;
+  billboardMarkers?: MapBillboardMarker[] | undefined;
+  onSelectBillboard?: (campaignId: string) => void | undefined;
+  availableLandmarkIds?: readonly string[] | undefined;
   /** Pass undefined while the existing property source is loading. */
   properties?: readonly MapProperty[] | undefined;
-  onSelectProperty?: (property: MapProperty) => void;
-  onSelectEvent?: (landmarkId: string) => void;
+  onSelectProperty?: (property: MapProperty) => void | undefined;
+  onSelectEvent?: (landmarkId: string) => void | undefined;
 }
 
 const propertyStatusText: Record<MapProperty["status"], string> = {

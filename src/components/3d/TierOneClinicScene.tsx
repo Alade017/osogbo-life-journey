@@ -14,7 +14,7 @@ function Box({
 }: {
   position: [number, number, number];
   size: [number, number, number];
-  color?: string;
+  color?: string | undefined;
 }) {
   return (
     <mesh position={position} castShadow receiveShadow>
@@ -222,10 +222,12 @@ export function TierOneClinicScene({
             size={[0.12, exterior ? 3.2 : 0.56, room.depth]}
             color={WORLD_PALETTE.wall}
           />
-          {[
-            [room.x, room.doorX - 0.8],
-            [room.doorX + 0.8, room.x + room.width],
-          ].map(([a, b], i) => (
+          {(
+            [
+              [room.x, room.doorX - 0.8],
+              [room.doorX + 0.8, room.x + room.width],
+            ] as [number, number][]
+          ).map(([a, b], i) => (
             <Box
               key={i}
               position={[
@@ -281,7 +283,7 @@ export function TierOneClinicScene({
         </>
       ) : (
         fixtures?.map((f) => {
-          const p = f.kind === "counter" ? [-8, 4] : f.kind === "seat" ? [7, 4] : [-9, -6];
+          const p = (f.kind === "counter" ? [-8, 4] : f.kind === "seat" ? [7, 4] : [-9, -6]) as [number, number];
           return (
             <group
               key={f.id}

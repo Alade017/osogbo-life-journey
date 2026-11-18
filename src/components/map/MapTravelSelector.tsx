@@ -27,8 +27,8 @@ type Props = {
   open: boolean;
   landmark: { id: string; label: string; category: string };
   districtName: string;
-  accountId?: string;
-  characterId?: string;
+  accountId?: string | undefined;
+  characterId?: string | undefined;
   destination: Destination | null;
   isLoadingDestination: boolean;
   destinationLoadError: boolean;

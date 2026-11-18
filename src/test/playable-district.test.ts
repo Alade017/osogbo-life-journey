@@ -11,7 +11,7 @@ import {
   checkNeighborhoodEntrances,
   neighborhoodRoadComponents,
 } from "@/game/neighborhood-navigation";
-import { canOccupyNeighborhoodPoint } from "@/game/authoritative-movement";
+import { PLAYER_WORLD_BOUNDS, canOccupyNeighborhoodPoint } from "@/game/authoritative-movement";
 
 it("enables any stable slug with an active row and valid coordinates", () => {
   for (const slug of ["city-centre", "oja-oba", "student-district", "osogbo-central-mosque"]) {
@@ -58,7 +58,7 @@ it.each(["city-centre", "oja-oba"])("uses the same %s origin as the authoritativ
   expect(toWorld({ x: bounds.left, y: bounds.top }, district.origin)).toEqual({ x: 0, y: 0 });
   expect(
     toWorld({ x: bounds.left + bounds.width, y: bounds.top + bounds.height }, district.origin),
-  ).toEqual({ x: 14, y: 12 });
+  ).toEqual({ x: PLAYER_WORLD_BOUNDS.maxX, y: PLAYER_WORLD_BOUNDS.maxY });
 });
 
 it("keeps the market distinct and preserves personal-home access only in Olaiya", () => {

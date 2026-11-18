@@ -17,7 +17,7 @@ describe("solid town terrain", () => {
   it("leaves real openings above water instead of hiding it under a full ground slab", () => {
     const terrain = townSurfaceLayout(["ggg", "gwg", "ggg"], 3.6);
     expect(terrain.water).toHaveLength(1);
-    const water = terrain.water[0];
+    const water = terrain.water[0]!;
     expect(water.position[1] + water.scale![1] / 2).toBeCloseTo(TOWN_SURFACE.waterTop);
     expect(terrain.land.some((tile) => tile.position[0] === 0 && tile.position[2] === 0)).toBe(
       false,
@@ -34,14 +34,14 @@ describe("solid town terrain", () => {
     const homes = townResidentialLayout(input);
     expect(homes.length).toBeGreaterThan(0);
     for (const home of homes) {
-      expect(town.grid.rows[home.z][home.x]).toBe("g");
+      expect(town.grid.rows[home.z]![home.x]).toBe("g");
       expect(
         town.grid.buildings.some(
           (b) => Math.abs(home.x - b.x - 0.5) < 1.15 && Math.abs(home.z - b.z - 0.5) < 1.15,
         ),
       ).toBe(false);
     }
-    const first = homes[0];
+    const first = homes[0]!;
     const reserved = [
       [
         (first.x - (town.meta.grid.columns - 1) / 2) * 3.6,

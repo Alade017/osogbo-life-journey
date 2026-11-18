@@ -13,7 +13,7 @@ import { MapCameraRig } from "./MapCameraRig";
 
 const district = { area: CITY_CENTRE_AREA, origin: OLAIYA_ORIGIN, personalHome: true };
 const noop = () => {};
-const empty = [];
+const empty: never[] = [];
 const overviewTarget = [0, 0, 0] as const;
 
 function Marker({

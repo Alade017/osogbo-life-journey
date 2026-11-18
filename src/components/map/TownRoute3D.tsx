@@ -26,8 +26,8 @@ export function TownRoute3D({
     const vertices: number[] = [],
       half = cell * 0.055;
     for (let i = 1; i < route.cells.length; i++) {
-      const a = point(...route.cells[i - 1]),
-        b = point(...route.cells[i]);
+      const a = point(...route.cells[i - 1]!),
+        b = point(...route.cells[i]!);
       const dx = b[0] - a[0],
         dz = b[2] - a[2],
         length = Math.hypot(dx, dz),
@@ -39,7 +39,7 @@ export function TownRoute3D({
         [b[0] + ox, b[1], b[2] + oz],
         [b[0] - ox, b[1], b[2] - oz],
       ];
-      for (const j of [0, 1, 2, 2, 1, 3]) vertices.push(...corners[j]);
+      for (const j of [0, 1, 2, 2, 1, 3]) vertices.push(...corners[j]!);
     }
     const g = new BufferGeometry();
     g.setAttribute("position", new Float32BufferAttribute(vertices, 3));

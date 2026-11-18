@@ -11,8 +11,8 @@ function Block({
 }: {
   at: Point;
   size: Point;
-  tone?: WorldTone;
-  color?: string;
+  tone?: WorldTone | undefined;
+  color?: string | undefined;
 }) {
   return (
     <mesh position={at} castShadow receiveShadow>

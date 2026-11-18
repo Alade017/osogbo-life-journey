@@ -288,7 +288,7 @@ function CreateCharacter() {
               />
               <Picker
                 label="Hairstyle"
-                options={HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER.nonbinary}
+                options={HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["nonbinary"] ?? []}
                 value={ap.hair}
                 onChange={(hair) => setAp({ ...ap, hair })}
               />

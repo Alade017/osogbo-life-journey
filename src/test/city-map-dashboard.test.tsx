@@ -132,6 +132,15 @@ afterEach(() => {
   clients.splice(0).forEach((client) => client.clear());
 });
 
+/** Picks a place from the accessible "Places on the map" list, which opens its travel sheet. */
+function openPlace(label: string) {
+  fireEvent.click(
+    within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {
+      name: new RegExp(`^${label},`, "i"),
+    }),
+  );
+}
+
 function renderDashboard(currentSlug?: string, insideHome = false) {
   testState.insideHome = insideHome;
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -193,23 +202,17 @@ function renderDashboard(currentSlug?: string, insideHome = false) {
 }
 
 describe("isometric town map", () => {
-  it("offers the market walking route only after confirmed arrival", () => {
+  it("opens the walking route from the town map", () => {
     renderDashboard("oja-oba");
-    fireEvent.click(screen.getByText("Map options"));
-    expect(screen.getByRole("link", { name: "Walk Oja-Oba Market" })).toHaveAttribute(
-      "href",
-      "/neighborhood",
-    );
-    expect(screen.queryByRole("link", { name: "Walk Olaiya" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("link", { name: "Visit Oja-Oba Market" })).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Walk the streets" }));
+    expect(testState.navigate).toHaveBeenCalledWith({ to: "/neighborhood" });
   });
 
   it("offers the transport selector rather than walking when another district is confirmed", async () => {
     renderDashboard("student-district");
-    fireEvent.click(screen.getByText("Map options"));
-    fireEvent.click(screen.getByRole("button", { name: "Visit Oja-Oba Market" }));
+    openPlace("Oja-Oba Market");
     expect(await screen.findByRole("dialog")).toBeVisible();
-    expect(screen.queryByRole("link", { name: "Walk Oja-Oba Market" })).not.toBeInTheDocument();
+    expect(testState.travelToLocation).not.toHaveBeenCalled();
   }, 15_000);
 
   it("matches a selected venue with its server event landmark ID", async () => {
@@ -241,7 +244,7 @@ describe("isometric town map", () => {
 
   it("opens the transport selector on landmark selection and cancellation does not travel", async () => {
     renderDashboard("residential");
-    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    openPlace("Cedar Bank");
     expect(await screen.findByRole("dialog")).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
     expect(testState.travelToLocation).not.toHaveBeenCalled();
@@ -256,10 +259,10 @@ describe("isometric town map", () => {
           ...testState.character,
           current_location_id: locationId,
         };
-        return { location: "city-centre" };
+        return { location: "cedar-bank" };
       },
     );
-    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    openPlace("Cedar Bank");
     await screen.findByText("Destination access confirmed.");
     fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
     const confirmButton = screen.getByRole("button", { name: "Confirm and travel" });
@@ -270,11 +273,11 @@ describe("isometric town map", () => {
       expect(testState.travelToLocation).toHaveBeenCalledTimes(1);
       expect(testState.navigate).toHaveBeenCalledWith({
         to: "/location/$slug",
-        params: { slug: "city-centre" },
+        params: { slug: "cedar-bank" },
       });
     });
     expect(testState.travelToLocation).toHaveBeenCalledWith({
-      locationId: "destination-city-centre",
+      locationId: "destination-cedar-bank",
       mode: "danfo",
     });
   }, 15_000);
@@ -282,7 +285,7 @@ describe("isometric town map", () => {
   it("keeps the player on the map after failed travel", async () => {
     renderDashboard("residential");
     testState.travelToLocation.mockRejectedValueOnce(new Error("INSUFFICIENT_FUNDS"));
-    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    openPlace("Cedar Bank");
     await screen.findByText("Destination access confirmed.");
     fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
@@ -296,7 +299,7 @@ describe("isometric town map", () => {
   it("clears the queued home departure when navigation to the house fails", async () => {
     renderDashboard("residential", true);
     testState.navigate.mockRejectedValueOnce(new Error("navigation failed"));
-    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    openPlace("Cedar Bank");
     await screen.findByText("Destination access confirmed.");
     fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
@@ -309,14 +312,14 @@ describe("isometric town map", () => {
   it("preserves the queued home departure after successful navigation", async () => {
     renderDashboard("residential", true);
     testState.navigate.mockResolvedValueOnce(undefined);
-    fireEvent.click(screen.getByRole("button", { name: "Travel to Olaiya" }));
+    openPlace("Cedar Bank");
     await screen.findByText("Destination access confirmed.");
     fireEvent.click(screen.getByRole("radio", { name: /Danfo/ }));
     fireEvent.click(screen.getByRole("button", { name: "Confirm and travel" }));
 
     await vi.waitFor(() => expect(testState.navigate).toHaveBeenCalledWith({ to: "/house" }));
     expect(takeDepartureFromHome()).toEqual({
-      locationId: "destination-city-centre",
+      locationId: "destination-cedar-bank",
       mode: "danfo",
     });
     expect(testState.travelToLocation).not.toHaveBeenCalled();
@@ -342,7 +345,6 @@ describe("isometric town map", () => {
         name: /Civic court, services/i,
       }),
     ).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "Travel to Olaiya" })).toBeInTheDocument();
     expect(screen.queryByRole("img", { name: "Illustrated town map fallback" })).toBeNull();
   });
 
@@ -410,7 +412,6 @@ describe("isometric town map", () => {
 
   it("shows only public venue categories for towns outside the detailed Osogbo map", () => {
     renderDashboard();
-    fireEvent.click(screen.getByText("Map options"));
     fireEvent.click(screen.getByRole("button", { name: "Explore Osun" }));
     fireEvent.click(screen.getByRole("button", { name: "Ilesa" }));
     expect(screen.getByRole("heading", { name: "Ilesa" })).toBeInTheDocument();
@@ -434,23 +435,12 @@ describe("isometric town map", () => {
   });
 });
 
-it("keeps transport handoff, filtering and search usable without the removed town-focus state", async () => {
+it("keeps the transport handoff and cancelling usable from the town map", async () => {
   testState.href = "/map?transport=danfo";
   renderDashboard("city-centre");
-  const filters = screen.getByLabelText("Filter places");
-  const buttons = within(filters).getAllByRole("button");
-  fireEvent.click(buttons[1]!);
-  expect(buttons[1]).toHaveAttribute("aria-pressed", "true");
-  fireEvent.change(screen.getByRole("textbox", { name: "Search districts and landmarks" }), {
-    target: { value: townData.landmarks[0]!.label },
-  });
-  fireEvent.click(screen.getByRole("button", { name: /^Search$/ }));
-  expect(
-    await screen.findByRole("dialog", { name: townData.landmarks[0]!.label }),
-  ).toBeInTheDocument();
+  openPlace("Cedar Bank");
+  expect(await screen.findByRole("dialog")).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Cancel travel selection" }));
-  expect(
-    screen.getByRole("textbox", { name: "Search districts and landmarks" }),
-  ).toBeInTheDocument();
+  expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   expect(testState.travelToLocation).not.toHaveBeenCalled();
 });

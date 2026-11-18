@@ -20,8 +20,8 @@ export function WorldMaterial({
   color,
   map,
 }: {
-  tone?: WorldTone;
-  color?: string;
+  tone?: WorldTone | undefined;
+  color?: string | undefined;
   map?: Texture | null;
 }) {
   return (
@@ -86,7 +86,7 @@ export function WorldLighting({
       <directionalLight
         position={[size * 0.3, size, size * 0.4]}
         intensity={refined ? 2.4 : dimmed ? 0.7 : 2}
-        color={refined ? WORLD_LIGHT.sun : undefined}
+        {...(refined ? { color: WORLD_LIGHT.sun } : {})}
         castShadow
         shadow-mapSize={refined ? [2048, 2048] : [1024, 1024]}
         shadow-radius={refined ? 4 : 1}
@@ -256,7 +256,7 @@ export function WorldInstances({
   items: readonly WorldInstance[];
   tone: WorldTone;
   /** Optional colour that replaces the tone's palette colour for these instances. */
-  color?: string;
+  color?: string | undefined;
   shape?: "box" | "sphere";
   castShadow?: boolean;
   animate?: ((object: Object3D, index: number, seconds: number) => void) | undefined;

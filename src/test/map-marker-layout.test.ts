@@ -19,7 +19,7 @@ describe("readable map markers", () => {
       { id: "b", x: 120, y: 100 },
     ];
     expect(visibleMapMarkers(crowded, 390, 500).size).toBe(1);
-    expect(visibleMapMarkers([{ ...crowded[0] }, { ...crowded[1], x: 160 }], 390, 500).size).toBe(
+    expect(visibleMapMarkers([{ ...crowded[0]! }, { ...crowded[1]!, x: 160 }], 390, 500).size).toBe(
       2,
     );
   });

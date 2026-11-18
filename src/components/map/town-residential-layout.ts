@@ -44,7 +44,7 @@ export function townResidentialLayout({
   const blocks = new Map<string, TownInfillHome[]>();
   for (let z = 1; z < rows.length - 1; z++)
     for (let x = 1; x < columns - 1; x++) {
-      if (rows[z][x] !== "g" || reservedCells.some(([rx, rz]) => x === rx && z === rz)) continue;
+      if (rows[z]![x] !== "g" || reservedCells.some(([rx, rz]) => x === rx && z === rz)) continue;
       const district = districts.find(
         (d) =>
           x >= d.gridArea.x &&
@@ -86,8 +86,9 @@ export function townResidentialLayout({
   for (let index = 0; result.length < limit; index++) {
     let added = false;
     for (const block of queues) {
-      if (block[index]) {
-        result.push(block[index]);
+      const next = block[index];
+      if (next) {
+        result.push(next);
         added = true;
         if (result.length >= limit) return result;
       }

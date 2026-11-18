@@ -361,12 +361,6 @@ export function CityMapDashboard(
       query ? "?" + query : window.location.pathname,
     );
   }, [availableLandmarks.data, onLandmark, setDestinationTab]);
-  const submitSearch = () => {
-    if (!searchMatches) return;
-    setMapLevel("town");
-
-    setSearchTarget({ id: searchMatches.id, kind: searchMatches.kind });
-  };
   const playerMapPosition = useMemo(
     () => resolvePlayerMapPosition(character.data, livePlayerPose),
     [character.data, livePlayerPose],
