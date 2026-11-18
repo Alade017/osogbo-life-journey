@@ -5,23 +5,41 @@ import {
   roomCoordinatesToPercent,
   type GuideZoneBounds,
 } from "./house-room-contract";
+import { duplexBlueprint } from "./duplex-blueprint";
 import { bungalowBlueprint } from "./bungalow-blueprint";
 import { boundsContain } from "./house-blueprints";
 
-function bungalowGuideBounds(slotType: string, artKey: string): GuideZoneBounds | null {
-  const [width, depth] = HOUSE_ROOM_SIZE["bungalow"]!;
-  const plan = bungalowBlueprint(width, depth);
+function blueprintGuideBounds(
+  slotType: string,
+  artKey: string,
+  houseTypeId: "bungalow" | "duplex" = "bungalow",
+  floor: 0 | 1 = 0,
+): GuideZoneBounds | null {
+  const [width, depth] = HOUSE_ROOM_SIZE[houseTypeId]!;
+  const plan =
+    houseTypeId === "duplex"
+      ? duplexBlueprint(width, depth, floor)
+      : bungalowBlueprint(width, depth);
   const id =
-    slotType === "bed" || slotType === "storage" || slotType === "light"
-      ? "bedroom-2"
-      : slotType === "bathroom"
-        ? "bathroom"
-        : slotType === "kitchen"
-          ? "kitchen"
-          : artKey === "dining-table" || artKey === "dining-chair"
-            ? "dining"
-            : "sitting";
-  const room = plan.rooms.find((room) => room.id === id)!;
+    slotType === "fitness"
+      ? "gym"
+      : slotType === "bed" || slotType === "storage" || slotType === "light"
+        ? "bedroom-2"
+        : slotType === "bathroom"
+          ? "bathroom"
+          : slotType === "kitchen"
+            ? "kitchen"
+            : artKey === "dining-table" || artKey === "dining-chair"
+              ? "dining"
+              : "sitting";
+  const target =
+    houseTypeId === "duplex" && id === "bedroom-2" && floor === 0
+      ? "bedroom"
+      : houseTypeId === "duplex" && id === "kitchen" && floor === 1
+        ? "study"
+        : id;
+  const room = plan.rooms.find((room) => room.id === target);
+  if (!room) return null;
   const [x0, y1] = roomCoordinatesToPercent(room.minX, room.minZ, width, depth);
   const [x1, y0] = roomCoordinatesToPercent(room.maxX, room.maxZ, width, depth);
   return { x0, x1, y0, y1 };
@@ -60,13 +78,27 @@ export function guideFor(
   slotType: string,
   artKey: string,
   houseTypeId?: string,
+  floor: 0 | 1 = 0,
 ): ArrangementGuide | null {
   if (isWallArtKind(artKey)) {
     return { hint: "On the back wall. Slide it to where you want it.", zoneBounds: null };
   }
+  if (houseTypeId === "duplex" && floor === 1 && slotType === "kitchen")
+    return { hint: "Place cooking appliances in the downstairs kitchen.", zoneBounds: null };
+  if ((houseTypeId === "bungalow" || houseTypeId === "duplex") && slotType === "fitness")
+    return {
+      hint:
+        houseTypeId === "duplex" && floor === 0
+          ? "The gym is upstairs."
+          : "In the shared gym, leaving space around equipment and the door.",
+      zoneBounds:
+        houseTypeId === "duplex" && floor === 0
+          ? null
+          : blueprintGuideBounds(slotType, artKey, houseTypeId, floor),
+    };
   const rule = GUIDE_RULES[slotType];
   if (!rule) return null;
-  if (houseTypeId === "bungalow")
+  if (houseTypeId === "bungalow" || houseTypeId === "duplex")
     return {
       hint:
         slotType === "bathroom"
@@ -74,7 +106,7 @@ export function guideFor(
           : slotType === "bed" || slotType === "storage" || slotType === "light"
             ? "In any bedroom, keeping space beside the bed and door."
             : rule.hint,
-      zoneBounds: rule.zone ? bungalowGuideBounds(slotType, artKey) : null,
+      zoneBounds: rule.zone ? blueprintGuideBounds(slotType, artKey, houseTypeId, floor) : null,
     };
   return { hint: rule.hint, zoneBounds: rule.zone ? GUIDE_ZONE_BOUNDS[rule.zone] : null };
 }
@@ -101,13 +133,17 @@ export function arrangementWarnings(
   y: number,
   doorX: number,
   houseTypeId?: string,
+  floor: 0 | 1 = 0,
 ): string[] {
   if (isWallArtKind(artKey)) return [];
   let inWet = x > 50 && y < 50;
   let inSleep = x <= 50 && y >= 50;
-  if (houseTypeId === "bungalow") {
-    const [width, depth] = HOUSE_ROOM_SIZE["bungalow"]!;
-    const plan = bungalowBlueprint(width, depth);
+  if (houseTypeId === "bungalow" || houseTypeId === "duplex") {
+    const [width, depth] = HOUSE_ROOM_SIZE[houseTypeId]!;
+    const plan =
+      houseTypeId === "duplex"
+        ? duplexBlueprint(width, depth, floor)
+        : bungalowBlueprint(width, depth);
     const px = (x / 100 - 0.5) * (width - 0.8),
       pz = (0.5 - y / 100) * (depth - 0.8);
     inWet = plan.wetAreas.some((area) => boundsContain(area, px, pz));

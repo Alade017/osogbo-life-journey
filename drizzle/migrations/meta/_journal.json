@@ -729,6 +729,27 @@
       "when": 1794550000000,
       "tag": "0102_mini_game_table_recovery",
       "breakpoints": true
+    },
+    {
+      "idx": 103,
+      "version": "7",
+      "when": 1794963600000,
+      "tag": "0103_bungalow_two_bedroom_gym",
+      "breakpoints": true
+    },
+    {
+      "idx": 104,
+      "version": "7",
+      "when": 1794967200000,
+      "tag": "0104_duplex_upstairs_gym",
+      "breakpoints": true
+    },
+    {
+      "idx": 105,
+      "version": "7",
+      "when": 1794968400000,
+      "tag": "0105_house_rearrange",
+      "breakpoints": true
     }
   ]
 }

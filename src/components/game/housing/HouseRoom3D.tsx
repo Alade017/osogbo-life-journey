@@ -48,6 +48,8 @@ import {
 } from "@/components/3d/WorldScene";
 import { ROOM_VIEW_CAMERA, ROOM_VIEW_PALETTE, WORLD_SCALE } from "@/components/3d/world-theme";
 import { packagePoint } from "@/game/house-navigation";
+import { createHouseStairModel } from "./house-stair-model";
+import { disposeStudioInterior } from "./studio-interior";
 import { BlueprintInterior, StudioRug } from "./StudioInterior";
 import { STUDIO_FINISH, isBlueprintHomeType } from "./house-blueprints";
 
@@ -154,12 +156,14 @@ function RoomFloor({
 function HouseStairsModel({
   stairs,
   onUse,
+  upperFloor = false,
 }: {
   stairs: NonNullable<ReturnType<typeof houseStairs>>;
   onUse: (() => void) | undefined;
+  upperFloor?: boolean;
 }) {
-  const steps = 8;
-  const stepDepth = (stairs.z1 - stairs.z0) / steps;
+  const model = useMemo(() => createHouseStairModel(stairs, upperFloor), [stairs, upperFloor]);
+  useEffect(() => () => disposeStudioInterior(model), [model]);
   return (
     <group
       onClick={(event) => {
@@ -167,24 +171,7 @@ function HouseStairsModel({
         if (event.delta <= 4) onUse?.();
       }}
     >
-      {Array.from({ length: steps }, (_, index) => {
-        const height = (index + 1) * 0.18;
-        return (
-          <mesh
-            key={`stair-step-${index}`}
-            castShadow
-            receiveShadow
-            position={[
-              (stairs.x0 + stairs.x1) / 2,
-              height / 2,
-              stairs.z1 - stepDepth * (index + 0.5),
-            ]}
-          >
-            <boxGeometry args={[stairs.x1 - stairs.x0, height, stepDepth]} />
-            <meshStandardMaterial color={FURNITURE_COLOURS.mediaWood} roughness={0.7} />
-          </mesh>
-        );
-      })}
+      <primitive object={model} />
     </group>
   );
 }
@@ -253,24 +240,38 @@ function OsogboRoomPrototype({
   const doorwayWidth = 1.12;
   const doorHeight = WORLD_SCALE.door * 1.1;
   const rearDoorCenter = houseRearDoorCenter(houseTypeId, width);
+  const blueprintStairs = useMemo(
+    () => houseStairs(houseTypeId, width, depth),
+    [houseTypeId, width, depth],
+  );
   if (isBlueprintHomeType(houseTypeId))
     return (
       <group>
         <BlueprintInterior
           houseTypeId={houseTypeId}
+          activeFloor={activeFloor}
           width={width}
           depth={depth}
           editMode={editMode}
           wallsClosed={wallsClosed ?? houseWallsDefaultClosed(houseTypeId)}
           roomView={roomView}
         />
-        <HouseDoorPanel
-          hingeX={rearDoorCenter - doorwayWidth / 2}
-          z={-depth / 2}
-          width={doorwayWidth}
-          height={2.05}
-          open={doorOpen}
-        />
+        {activeFloor === 0 && (
+          <HouseDoorPanel
+            hingeX={rearDoorCenter - doorwayWidth / 2}
+            z={-depth / 2}
+            width={doorwayWidth}
+            height={2.05}
+            open={doorOpen}
+          />
+        )}
+        {blueprintStairs && (
+          <HouseStairsModel
+            stairs={blueprintStairs}
+            upperFloor={activeFloor === 1}
+            onUse={onUseStairs}
+          />
+        )}
       </group>
     );
   return (
@@ -2053,6 +2054,8 @@ export function HouseRoom3D({
   roomView: roomViewId = null,
   guideZone = null,
   characterName = "Your character",
+  showCharacter = true,
+  actorSpawnKey,
   appearance = {},
   gender = "nonbinary",
   equipment = [],
@@ -2081,9 +2084,11 @@ export function HouseRoom3D({
   const roomView = useMemo(
     () =>
       roomViewId
-        ? (houseRoomViews(houseTypeId, width, depth).find((room) => room.id === roomViewId) ?? null)
+        ? (houseRoomViews(houseTypeId, width, depth, activeFloor).find(
+            (room) => room.id === roomViewId,
+          ) ?? null)
         : null,
-    [houseTypeId, width, depth, roomViewId],
+    [houseTypeId, width, depth, roomViewId, activeFloor],
   );
   // In a room view only that room's furniture is shown and can be used.
   const placements = roomView
@@ -2235,12 +2240,14 @@ export function HouseRoom3D({
                 ? SHARED_FURNITURE_STYLE
                 : houseTypeId === "single-room" ||
                     houseTypeId === "mini-flat" ||
-                    houseTypeId === "bungalow"
+                    houseTypeId === "bungalow" ||
+                    houseTypeId === "duplex"
                   ? PRIVATE_FURNITURE_STYLE
                   : DEFAULT_FURNITURE_STYLE
           }
         >
           <Canvas
+            style={{ touchAction: "none" }}
             frameloop="demand"
             dpr={[1, 1.5]}
             shadows
@@ -2341,30 +2348,32 @@ export function HouseRoom3D({
                 <meshBasicMaterial transparent opacity={0} depthWrite={false} />
               </mesh>
             )}
-            {actorPosition ? (
-              <WorldCharacter
-                name={characterName}
-                appearance={appearance}
-                gender={gender}
-                equipment={equipment}
-                position={actorPosition}
-                facing={actorFacing}
-                animation={animationState}
-                {...(taskPose ? { taskPose } : {})}
-              />
-            ) : (
-              <RoomCharacter
-                name={characterName}
-                appearance={appearance}
-                gender={gender}
-                equipment={equipment}
-                animationState={animationState}
-                activityRequestId={activityRequestId}
-                activityLabel={activityLabel}
-                position={[0, 0.06, depth * 0.18]}
-                bedPosition={bedPosition}
-              />
-            )}
+            {showCharacter &&
+              (actorPosition ? (
+                <WorldCharacter
+                  key={actorSpawnKey}
+                  name={characterName}
+                  appearance={appearance}
+                  gender={gender}
+                  equipment={equipment}
+                  position={actorPosition}
+                  facing={actorFacing}
+                  animation={animationState}
+                  {...(taskPose ? { taskPose } : {})}
+                />
+              ) : (
+                <RoomCharacter
+                  name={characterName}
+                  appearance={appearance}
+                  gender={gender}
+                  equipment={equipment}
+                  animationState={animationState}
+                  activityRequestId={activityRequestId}
+                  activityLabel={activityLabel}
+                  position={[0, 0.06, depth * 0.18]}
+                  bedPosition={bedPosition}
+                />
+              ))}
             {foodDeliveries
               .filter(
                 (delivery) =>
@@ -2477,7 +2486,8 @@ export function HouseRoom3D({
               width={roomView ? roomView.maxX - roomView.minX : width}
               depth={roomView ? roomView.maxZ - roomView.minZ : depth}
               stage
-              horizontalOrbit={!editMode && !roomView}
+              horizontalOrbit={!editMode}
+              orbitArc={Math.PI}
               verticalOrbit={!editMode && !roomView}
               polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
               target={

@@ -27,7 +27,7 @@ export type { Appearance } from "@/game/avatar-appearance";
 
 export type AvatarEquipment = { slot: string };
 export type AvatarFacing = "north" | "east" | "south" | "west";
-export type AvatarAnimationState = "idle" | "walk" | "turn" | "talk" | "work" | "sleep";
+export type AvatarAnimationState = "idle" | "walk" | "turn" | "talk" | "work" | "sleep" | "dance";
 
 export const AVATAR_VIEWBOX = { width: 64, height: 80 } as const;
 // AvatarArtwork is also serialized into a standalone SVG image for the renderer. CSS
@@ -38,6 +38,8 @@ function poseFor(state: AvatarAnimationState, frame: number) {
   const index = Number.isFinite(frame) ? Math.abs(Math.floor(frame)) : 0;
   const walk = [-1, 1, 1, -1][index % 4]!;
   const work = [-1, 0, 1, 0][index % 4]!;
+  if (state === "dance")
+    return { bob: index % 2 ? -2 : 0, arm: work * 30, leg: walk * 9, lean: work * 5 };
   if (state === "walk") return { bob: index % 2 ? -1 : 1, arm: walk * 22, leg: walk * 16, lean: 0 };
   if (state === "work") return { bob: index % 2 ? -1 : 0, arm: work * 34, leg: 0, lean: work * 2 };
   if (state === "talk") return { bob: 0, arm: index % 2 ? -18 : -30, leg: 0, lean: 0 };

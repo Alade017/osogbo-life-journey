@@ -17,6 +17,9 @@ import {
 } from "@/game/character-texture";
 
 describe("cached avatar artwork and animation clips", () => {
+  it("keeps the sprite atlas within a 4096 pixel mobile texture", () => {
+    expect(AVATAR_FRAME_HEIGHT * AVATAR_SPRITE_FRAME_COUNT).toBeLessThanOrEqual(4096);
+  });
   it("keeps every saved appearance palette index and falls back on invalid data", () => {
     const fullAppearance = {
       skin: 5,
@@ -29,7 +32,10 @@ describe("cached avatar artwork and animation clips", () => {
       stature: 2,
       build: 3,
     };
-    expect(normalizeAvatarAppearance(fullAppearance, "male")).toEqual({ ...fullAppearance, clothed: true });
+    expect(normalizeAvatarAppearance(fullAppearance, "male")).toEqual({
+      ...fullAppearance,
+      clothed: true,
+    });
     expect(normalizeAvatarAppearance({ skin: -1, hair: 88, outfit: 9 }, "female")).toEqual({
       clothed: false,
       skin: 1,

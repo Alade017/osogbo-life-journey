@@ -49,3 +49,16 @@
   background: var(--primary);
   transition: width 240ms ease;
 }
+
+/* Keep the actual door and walk-in animation visible while input is blocked. */
+.outside-transition[data-kind="entering"] {
+  background: transparent;
+  backdrop-filter: none;
+  place-items: end center;
+  padding-bottom: calc(112px + env(safe-area-inset-bottom));
+}
+.outside-transition[data-kind="entering"] .outside-transition-card {
+  width: min(300px, 90%);
+  gap: 6px;
+  padding: 12px 16px;
+}

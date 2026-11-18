@@ -6,6 +6,7 @@ import {
   roomObstacles,
   type RoomPoint,
   placementsOverlappingWalls,
+  runHouseStairTransition,
 } from "@/game/house-navigation";
 import {
   HOUSE_GRID_STEP,
@@ -14,8 +15,6 @@ import {
   firstFreeHouseGridCell,
   houseDoorThreshold,
   houseStairs,
-  BED_HEADBOARD_SIDE,
-  sleepFacingForHeadboard,
   isHouseGridCellOccupied,
   snapToHouseGrid,
   firstFreeBackWallCell,
@@ -37,7 +36,7 @@ import {
   House,
   Sunrise,
   WifiOff,
-  DoorClosed,
+  RefreshCcwDot,
   DoorOpen,
   LoaderCircle,
   Lightbulb,
@@ -729,6 +728,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     onError: (error: Error) => toast.error(error.message),
   });
 
+  const canonicalHome = canonicalHomeQuery.data;
+  const isInsideHome =
+    !!canonicalHome && character?.inside_home_property_id === canonicalHome.playerPropertyId;
   const homePresence = useMutation({
     // Entering from outside starts the door walk; the effect below plays it once the page sees it.
     onMutate: (command) => {
@@ -737,11 +739,30 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     mutationFn: async (command: "enter_player_home" | "leave_player_home") => {
       const { data, error } = await supabase.rpc(command);
       if (error) throw new Error(error.message);
-      if (!isRecord(data) || typeof data["locationId"] !== "string")
+      if (
+        !isRecord(data) ||
+        typeof data["locationId"] !== "string" ||
+        (command === "enter_player_home" && typeof data["playerPropertyId"] !== "string")
+      )
         throw new Error("The server did not confirm your location. Try again.");
       return data;
     },
-    onSuccess: async (_data, command) => {
+    onSuccess: async (data, command) => {
+      // Apply the confirmed RPC result immediately; a failed refetch must not leave a ghost at home.
+      queryClient.setQueryData(q.character().queryKey, (previous: typeof character) =>
+        previous
+          ? {
+              ...previous,
+              current_location_id: data["locationId"] as string,
+              inside_home_property_id:
+                command === "enter_player_home"
+                  ? typeof data["playerPropertyId"] === "string"
+                    ? data["playerPropertyId"]
+                    : previous.inside_home_property_id
+                  : null,
+            }
+          : previous,
+      );
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
         queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
@@ -769,10 +790,16 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     HOUSE_ROOM_SIZE["shared-room"]!;
   const movement = useHouseMovement(serverState?.house?.id ?? "none", [0, 0.06, roomDepth * 0.18]);
   // The room view shows one room close up. It follows the character until a room or the whole home is picked.
+  const [activeFloor, setActiveFloor] = useState<0 | 1>(0);
+  const [climbingStairs, setClimbingStairs] = useState(false);
   const roomViews = serverState?.house
-    ? houseRoomViews(serverState.house.house_type_id, roomWidth, roomDepth)
+    ? houseRoomViews(serverState.house.house_type_id, roomWidth, roomDepth, activeFloor)
     : [];
   const [pinnedRoom, setPinnedRoom] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    setActiveFloor(0);
+    setPinnedRoom(undefined);
+  }, [serverState?.house?.id]);
   const followedRoom =
     roomViews.find((room) => roomViewContains(room, movement.position[0], movement.position[2]))
       ?.id ??
@@ -787,7 +814,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const [cancellingTask, setCancellingTask] = useState(false);
   const autoCompleting = useRef<string | null>(null);
   const [clockNow, setClockNow] = useState(Date.now());
-  const [activeFloor, setActiveFloor] = useState<0 | 1>(0);
   const floorPlacements = scenePlacements.filter((item) => (item.floor ?? 0) === activeFloor);
   const obstacles = roomObstacles(
     serverState?.house?.house_type_id ?? "shared-room",
@@ -799,46 +825,91 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   );
   const stairs = houseStairs(serverState?.house?.house_type_id ?? "", roomWidth, roomDepth);
   /** Walk to the stairs, climb them, then switch to the other floor at the far end. */
-  const climbStairs = async () => {
-    if (!stairs || editing || taskBusy || isOffline || !isInsideHome) return;
-    const up = activeFloor === 0;
-    const from = up ? stairs.bottom : stairs.top;
-    const to = up ? stairs.top : stairs.bottom;
+  const climbStairs = async (): Promise<boolean> => {
+    if (!stairs || editing || taskBusy || isOffline || !isInsideHome || interactionLock.current)
+      return false;
+    interactionLock.current = true;
+    setClimbingStairs(true);
+    setSelectedPlacement(null);
+    setPinnedRoom(null);
     setActivityError("");
-    if (!(await walkTo([from[0], 0.06, from[1]]))) return;
-    if (!(await walkTo([to[0], 0.06, to[1]]))) return;
-    setActiveFloor(up ? 1 : 0);
+    try {
+      const arrived = await runHouseStairTransition({
+        stairs,
+        fromFloor: activeFloor,
+        approach: (point) => walkTo(point),
+        walk: movement.walk,
+        setFloor: setActiveFloor,
+        place: movement.place,
+      });
+      if (arrived) setPinnedRoom(undefined);
+      return arrived;
+    } finally {
+      interactionLock.current = false;
+      setClimbingStairs(false);
+    }
   };
   const [doorOpen, setDoorOpen] = useState(false);
+  const [doorInteracting, setDoorInteracting] = useState(false);
+  const [doorSequence, setDoorSequence] = useState(false);
+  const doorSequenceLock = useRef(false);
+  const [doorFacing, setDoorFacing] = useState("north");
   const outside = useOutsideTransition();
   const enteringRan = useRef(false);
   /** Walk to the door, open it, confirm the move with the server, then go to the neighbourhood. */
   const goOutside = async () => {
-    if (editing || taskBusy || isOffline || !serverState?.house) return;
+    if (
+      editing ||
+      taskBusy ||
+      isOffline ||
+      !isInsideHome ||
+      !serverState?.house ||
+      doorSequenceLock.current
+    )
+      return;
+    doorSequenceLock.current = true;
     setActivityError("");
     const [doorX, doorY, doorZ] = houseDoorThreshold(
       serverState.house.house_type_id,
       roomWidth,
       roomDepth,
     );
-    // The walk and the door swing play in the room first, so they stay visible.
-    if (!(await walkTo([doorX, doorY, doorZ]))) return;
-    setDoorOpen(true);
-    await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
-    beginTransition("leaving", "Confirming your move", 3);
     try {
+      if (activeFloor === 1 && !(await climbStairs())) return;
+      setDoorSequence(true);
+      if (!(await walkTo([doorX, doorY, doorZ], false, 0))) return;
+      setDoorFacing("north");
+      setDoorInteracting(true);
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
+      setDoorOpen(true);
+      await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+      setDoorInteracting(false);
+      // The threshold and short exterior leg are reserved for the entrance animation.
+      if (
+        !(await movement.walk([
+          [doorX, doorY, doorZ],
+          [doorX, doorY, -roomDepth / 2 - 0.45],
+        ]))
+      )
+        return;
+      beginTransition("leaving", "Confirming your move", 3);
       await homePresence.mutateAsync("leave_player_home");
+      completeTransitionStep("Loading the neighbourhood");
+      await navigate({ to: "/neighborhood" });
     } catch {
-      setDoorOpen(false);
+      movement.place([doorX, doorY, doorZ]);
       endTransition();
-      return;
+    } finally {
+      setDoorOpen(false);
+      setDoorInteracting(false);
+      setDoorSequence(false);
+      doorSequenceLock.current = false;
     }
-    completeTransitionStep("Loading the neighbourhood");
-    await navigate({ to: "/neighborhood" });
   };
   /** Arriving from the neighbourhood: the door opens and the character walks in. */
   useEffect(() => {
-    if (outside.kind !== "entering" || !serverState?.house || enteringRan.current) return;
+    if (outside.kind !== "entering" || !isInsideHome || !serverState?.house || enteringRan.current)
+      return;
     enteringRan.current = true;
     const [doorX, doorY, doorZ] = houseDoorThreshold(
       serverState.house.house_type_id,
@@ -846,20 +917,45 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       roomDepth,
     );
     const start: RoomPoint = [0, 0.06, roomDepth * 0.18];
+    setActiveFloor(0);
+    setPinnedRoom(null);
+    setDoorFacing("south");
+    setDoorInteracting(true);
     completeTransitionStep("Opening the door");
-    movement.place([doorX, doorY, doorZ]);
+    const exterior: RoomPoint = [doorX, doorY, -roomDepth / 2 - 0.45];
+    movement.place(exterior);
     setDoorOpen(true);
     void (async () => {
       await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+      setDoorInteracting(false);
       completeTransitionStep("Walking in");
-      await movement.walk([start]);
+      const path = findRoomPath(
+        [doorX, doorY, doorZ],
+        start,
+        roomWidth,
+        roomDepth,
+        roomObstacles(
+          serverState.house!.house_type_id,
+          roomWidth,
+          roomDepth,
+          placements.filter((item) => (item.floor ?? 0) === 0),
+          slots,
+          0,
+        ),
+      );
+      if (path) await movement.walk([exterior, [doorX, doorY, doorZ], ...path]);
+      else {
+        movement.place([doorX, doorY, doorZ]);
+        toast.error("The entrance is blocked. Rearrange your furniture to clear the way.");
+      }
       setDoorOpen(false);
+      setDoorInteracting(false);
       endTransition();
       enteringRan.current = false;
     })();
     // The room is ready once its house data is loaded; the sequence runs once per arrival.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [outside.kind, serverState?.house?.id]);
+  }, [outside.kind, serverState?.house?.id, isInsideHome]);
   /** A trip started from inside: finish the walk and door sequence before requesting server travel. */
   const leaveForTrip = async (departure: HomeDeparture) => {
     if (
@@ -869,63 +965,103 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       !serverState?.house ||
       !isInsideHome ||
       !gameTime.ready ||
-      gameTime.busy
+      gameTime.busy ||
+      doorSequenceLock.current
     )
       return;
     setActivityError("");
-    const [doorX, doorY, doorZ] = houseDoorThreshold(
-      serverState.house.house_type_id,
-      roomWidth,
-      roomDepth,
-    );
-    let transitionStarted = false;
+    if (activeFloor === 1 && !(await climbStairs())) return;
+    doorSequenceLock.current = true;
+    setDoorSequence(true);
     try {
-      const departed = await runHomeDepartureAfterWalk(
-        () => walkTo([doorX, doorY, doorZ]),
-        async () => {
-          setDoorOpen(true);
-          await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
-          beginTransition("leaving", "Heading out for your trip", 3);
-          transitionStarted = true;
-          await rpc.travelToLocation(departure);
-        },
+      const [doorX, doorY, doorZ] = houseDoorThreshold(
+        serverState.house.house_type_id,
+        roomWidth,
+        roomDepth,
       );
-      if (!departed) return;
-    } catch (error) {
+      let transitionStarted = false;
+      try {
+        const departed = await runHomeDepartureAfterWalk(
+          () => walkTo([doorX, doorY, doorZ], false, 0),
+          async () => {
+            setDoorFacing("north");
+            setDoorInteracting(true);
+            await new Promise<void>((resolve) => window.setTimeout(resolve, 250));
+            setDoorOpen(true);
+            await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+            setDoorInteracting(false);
+            if (
+              !(await movement.walk([
+                [doorX, doorY, doorZ],
+                [doorX, doorY, -roomDepth / 2 - 0.45],
+              ]))
+            )
+              throw new Error("Departure was interrupted.");
+            beginTransition("leaving", "Heading out for your trip", 3);
+            transitionStarted = true;
+            await rpc.travelToLocation(departure);
+            queryClient.setQueryData(q.character().queryKey, (previous: typeof character) =>
+              previous
+                ? {
+                    ...previous,
+                    current_location_id: departure.locationId,
+                    inside_home_property_id: null,
+                  }
+                : previous,
+            );
+          },
+        );
+        if (!departed) return;
+      } catch (error) {
+        setDoorOpen(false);
+        if (transitionStarted) endTransition();
+        setActivityError(error instanceof Error ? error.message : "Travel could not be completed.");
+        return;
+      }
+      try {
+        completeTransitionStep("Travelling");
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
+          queryClient.invalidateQueries({ queryKey: q.locations().queryKey }),
+          queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
+        ]);
+        completeTransitionStep("Loading your destination");
+        const saved = await queryClient.fetchQuery(q.character());
+        const locations = await queryClient.fetchQuery(q.locations());
+        const destination = locations?.find((location) => location.id === departure.locationId);
+        if (saved?.current_location_id !== departure.locationId || !destination?.slug)
+          throw new Error("Destination is not ready.");
+        await navigate({ to: "/location/$slug", params: { slug: destination.slug } });
+        endTransition();
+      } catch {
+        endTransition();
+        setActivityError(
+          "Travel completed, but the destination could not be opened. Open the city map to continue; do not pay for the trip again.",
+        );
+      }
+    } finally {
       setDoorOpen(false);
-      if (transitionStarted) endTransition();
-      setActivityError(error instanceof Error ? error.message : "Travel could not be completed.");
-      return;
-    }
-    try {
-      completeTransitionStep("Travelling");
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: q.character().queryKey }),
-        queryClient.invalidateQueries({ queryKey: q.locations().queryKey }),
-        queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
-      ]);
-      completeTransitionStep("Loading your destination");
-      const saved = await queryClient.fetchQuery(q.character());
-      const locations = await queryClient.fetchQuery(q.locations());
-      const destination = locations?.find((location) => location.id === departure.locationId);
-      if (saved?.current_location_id !== departure.locationId || !destination?.slug)
-        throw new Error("Destination is not ready.");
-      await navigate({ to: "/location/$slug", params: { slug: destination.slug } });
-      endTransition();
-    } catch {
-      endTransition();
-      setActivityError(
-        "Travel completed, but the destination could not be opened. Open the city map to continue; do not pay for the trip again.",
-      );
+      setDoorInteracting(false);
+      setDoorSequence(false);
+      doorSequenceLock.current = false;
     }
   };
-  const walkTo = (point: RoomPoint, interact = false) => {
+  const walkTo = (point: RoomPoint, interact = false, floor: 0 | 1 = activeFloor) => {
     const path = findRoomPath(
       movement.positionRef.current,
       point,
       roomWidth,
       roomDepth,
-      obstacles,
+      floor === activeFloor
+        ? obstacles
+        : roomObstacles(
+            houseTypeId ?? "shared-room",
+            roomWidth,
+            roomDepth,
+            placements.filter((item) => (item.floor ?? 0) === floor),
+            slots,
+            floor,
+          ),
       interact,
     );
     if (!path) {
@@ -1011,6 +1147,57 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       toast.error(error.message);
     },
   });
+  const rearrange = useMutation({
+    mutationFn: async () => {
+      const response = await authorizedFetch("/api/house/rearrange", { method: "POST" });
+      const result = await response.json().catch(() => null);
+      if (!response.ok || !isRecord(result)) {
+        const code = isRecord(result) && isRecord(result["error"]) ? result["error"]["code"] : null;
+        throw new Error(
+          code === "NO_CLEAR_LAYOUT"
+            ? "There isn't enough room for every item. Store a few items, then rearrange again."
+            : code === "LAYOUT_CHANGED"
+              ? "Your layout changed in another window. Try again."
+              : "Your room could not be rearranged. Try again.",
+        );
+      }
+      const state = normalizeHouseState(result["state"]);
+      if (!state) throw new Error("The server did not confirm the new layout.");
+      return state;
+    },
+    onSuccess: (state) => {
+      if (character?.id)
+        updateHouseStateStore(queryClient, character.id, { state, source: "server" });
+      if (state.house) {
+        const entry =
+          activeFloor === 1 && stairs
+            ? ([stairs.top[0], 0.06, stairs.top[1]] as RoomPoint)
+            : houseDoorThreshold(state.house.house_type_id, roomWidth, roomDepth);
+        const nextObstacles = roomObstacles(
+          state.house.house_type_id,
+          roomWidth,
+          roomDepth,
+          state.placements.filter((p) => (p.floor ?? 0) === activeFloor),
+          slots,
+          activeFloor,
+        );
+        const clear = findRoomPath(
+          entry,
+          movement.positionRef.current,
+          roomWidth,
+          roomDepth,
+          nextObstacles,
+          true,
+        );
+        if (clear?.length) movement.place(clear[clear.length - 1]!);
+      }
+      setSelectedPlacement(null);
+      setPinnedRoom(null);
+      setActivityError("");
+      toast.success("Furniture rearranged. Walking paths are clear.");
+    },
+    onError: (error: Error) => toast.error(error.message),
+  });
   const lightMutation = useMutation({
     mutationFn: (on: boolean) => setHouseLight(on),
     onMutate: async (on: boolean) => {
@@ -1028,9 +1215,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const wornItemIds = new Set(
     Object.values(outfit).filter((itemId): itemId is string => typeof itemId === "string"),
   );
-  const canonicalHome = canonicalHomeQuery.data;
-  const isInsideHome =
-    !!canonicalHome && character?.inside_home_property_id === canonicalHome.playerPropertyId;
   const departureRan = useRef(false);
   const deliveryQueryKey = [
     "homeFoodDeliveries",
@@ -1142,7 +1326,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     : false;
   const guide =
     draftPlacement && draftMove
-      ? guideFor(draftPlacement.slot_type, draftPlacement.art_key, houseTypeId ?? undefined)
+      ? guideFor(
+          draftPlacement.slot_type,
+          draftPlacement.art_key,
+          houseTypeId ?? undefined,
+          activeFloor,
+        )
       : null;
   const arrangementNotes =
     draftPlacement && draftMove
@@ -1153,6 +1342,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           draftMove.y,
           houseDoorPercentX(houseTypeId ?? ""),
           houseTypeId ?? undefined,
+          activeFloor,
         )
       : [];
   const startMove = (placement: HousePlacement) => {
@@ -1272,6 +1462,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     }
   };
   const collectPackage = async (orderId: string) => {
+    if (activeFloor !== 0) {
+      setActivityError("Go downstairs to collect your delivery.");
+      return;
+    }
     if (
       interactionLock.current ||
       gameTime.simulation.currentAction ||
@@ -1325,7 +1519,13 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const timedActionId = timedActivity?.actionId;
   const timedRequestId = timedActivity?.requestId;
   const taskTiming = gameTime.homeTaskTiming;
-  const taskBusy = !!timedActivity || !!walkingTask || startingTask || cancellingTask;
+  const taskBusy =
+    doorSequence ||
+    climbingStairs ||
+    !!timedActivity ||
+    !!walkingTask ||
+    startingTask ||
+    cancellingTask;
   /** A map trip started from inside the house runs here, once, when the house is ready. */
   useEffect(() => {
     if (departureRan.current) return;
@@ -1425,7 +1625,11 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const activityFurniture = currentActivity
     ? ACTION_CATALOG[currentActivity.actionId].requiredFurniture
     : undefined;
-  const activePlacement = placements.find((p) => p.art_key === activityFurniture);
+  const activePlacement = floorPlacements.find((p) => p.art_key === activityFurniture);
+  const furnitureAngle = ((activePlacement?.rotation_deg ?? 0) * Math.PI) / 180;
+  const furnitureFacing = (["south", "west", "north", "east"] as const)[
+    Math.round((activePlacement?.rotation_deg ?? 0) / 90) % 4
+  ]!;
   const taskPoint = activePlacement
     ? placementPoint(activePlacement, slots, roomWidth, roomDepth)
     : null;
@@ -1438,11 +1642,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     taskPoint && currentActivity?.animation === "sleeping"
       ? [taskPoint[0], 0.45, taskPoint[2]]
       : taskPoint && seated
-        ? [taskPoint[0], 0.28, taskPoint[2] + 0.25]
+        ? [
+            taskPoint[0] - Math.sin(furnitureAngle) * 0.25,
+            0.28,
+            taskPoint[2] + Math.cos(furnitureAngle) * 0.25,
+          ]
         : movement.position;
   const taskFacing =
     taskPoint && currentActivity?.animation === "sleeping"
-      ? sleepFacingForHeadboard(BED_HEADBOARD_SIDE)
+      ? furnitureFacing
       : taskPoint && !seated
         ? Math.abs(taskPoint[0] - movement.position[0]) >
           Math.abs(taskPoint[2] - movement.position[2])
@@ -1452,7 +1660,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           : taskPoint[2] > movement.position[2]
             ? "south"
             : "north"
-        : "south";
+        : furnitureFacing;
   const taskPose = collectingPackage
     ? ("collect" as const)
     : currentActivity
@@ -1535,8 +1743,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
 
   const house = serverState.house;
   const layoutConflicts =
-    house.house_type_id === "bungalow"
-      ? placementsOverlappingWalls(house.house_type_id, roomWidth, roomDepth, placements, slots)
+    house.house_type_id === "bungalow" || house.house_type_id === "duplex"
+      ? placementsOverlappingWalls(
+          house.house_type_id,
+          roomWidth,
+          roomDepth,
+          placements.filter((item) => (item.floor ?? 0) === activeFloor),
+          slots,
+          activeFloor,
+        )
       : [];
   return (
     <div className={`house-page house-page-fill${editing ? " is-editing" : ""}`}>
@@ -1609,30 +1824,38 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           <button
             type="button"
             className="house-icon-button house-walls-switch"
-            aria-pressed={wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)}
-            aria-label={
-              (wallsSetting ?? houseWallsDefaultClosed(house.house_type_id))
-                ? "Open the walls"
-                : "Close the walls"
+            aria-label="Rearrange home"
+            title="Rearrange furniture and clear walking paths"
+            disabled={
+              isOffline ||
+              taskBusy ||
+              movement.walking ||
+              homePresence.isPending ||
+              outside.kind !== null ||
+              rearrange.isPending
             }
-            title={
-              (wallsSetting ?? houseWallsDefaultClosed(house.house_type_id))
-                ? "Walls closed"
-                : "Walls open"
-            }
-            disabled={isOffline || !character?.id || wallsMutation.isPending}
-            onClick={() =>
-              wallsMutation.mutate(!(wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)))
-            }
+            aria-busy={rearrange.isPending}
+            onClick={() => rearrange.mutate()}
           >
-            {(wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)) ? (
-              <DoorClosed size={20} aria-hidden="true" />
-            ) : (
-              <DoorOpen size={20} aria-hidden="true" />
-            )}
+            <RefreshCcwDot
+              size={20}
+              aria-hidden="true"
+              className={rearrange.isPending ? "animate-spin" : undefined}
+            />
           </button>
         )}
-        {!editing && activeFloor === 0 && roomViews.length > 0 && (
+        {editing && (
+          <label className="house-walls-option">
+            <input
+              type="checkbox"
+              checked={wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)}
+              disabled={isOffline || wallsMutation.isPending}
+              onChange={(event) => wallsMutation.mutate(event.target.checked)}
+            />
+            Full walls
+          </label>
+        )}
+        {!editing && roomViews.length > 0 && (
           <div className="house-room-views" role="group" aria-label="Room view">
             {roomViews.length > 4 ? (
               <select
@@ -1691,9 +1914,14 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </div>
         )}
         {!editing && stairs && (
-          <span className="house-floor-label" role="status" aria-live="polite">
-            {activeFloor === 0 ? "Ground floor" : "Upstairs"}
-          </span>
+          <button
+            type="button"
+            className="house-floor-label"
+            disabled={taskBusy || isOffline}
+            onClick={() => void climbStairs()}
+          >
+            {activeFloor === 0 ? "Go upstairs ↑" : "Go downstairs ↓"}
+          </button>
         )}
       </div>
       <section
@@ -1701,19 +1929,28 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         aria-label={`${house.house_type.label} room`}
       >
         <HouseRoomRenderer
-          roomView={activeFloor === 0 ? roomView : null}
+          roomView={roomView}
           guideZone={guide?.zoneBounds ?? null}
-          inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
+          inputBlocked={
+            taskBusy ||
+            rearrange.isPending ||
+            outside.kind !== null ||
+            (!editing && (!isInsideHome || (!!selectedPlacement && !!selectedAction)))
+          }
           houseTypeId={house.house_type_id}
           lightOn={lightOn}
-          wallsClosed={wallsSetting}
+          wallsClosed={editing ? wallsSetting : false}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
+          showCharacter={isInsideHome}
           characterName={character?.name ?? "Your character"}
           appearance={appearance}
           gender={character?.gender ?? "nonbinary"}
           equipment={avatarEquipment}
+          actorSpawnKey={outside.kind === "entering" && doorOpen ? "arrival" : "resident"}
           actorPosition={performingPosition}
-          actorFacing={currentActivity ? taskFacing : movement.facing}
+          actorFacing={
+            doorInteracting ? doorFacing : currentActivity ? taskFacing : movement.facing
+          }
           {...(taskPose ? { taskPose } : {})}
           doorOpen={doorOpen}
           onWalk={(point) => {
@@ -1724,11 +1961,13 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           }}
           onCollectPackage={(id) => void collectPackage(id)}
           animationState={
-            movement.walking
-              ? "walk"
-              : currentActivity
-                ? avatarAnimationForActivity(currentActivity.animation)
-                : "idle"
+            doorInteracting
+              ? "interact"
+              : movement.walking
+                ? "walk"
+                : currentActivity
+                  ? avatarAnimationForActivity(currentActivity.animation)
+                  : "idle"
           }
           activityRequestId={currentActivity?.requestId ?? null}
           activityLabel={currentActivity ? ACTION_CATALOG[currentActivity.actionId].name : null}
@@ -1736,7 +1975,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           placements={floorPlacements}
           activeFloor={activeFloor}
           {...(stairs ? { onUseStairs: () => void climbStairs() } : {})}
-          foodDeliveries={deliveries.data ?? []}
+          foodDeliveries={activeFloor === 0 ? (deliveries.data ?? []) : []}
           movingPlacement={null}
           draftMove={draftMove}
           onDraftMove={(x, y) =>

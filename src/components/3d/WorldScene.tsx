@@ -125,6 +125,7 @@ export function WorldCamera({
   polarAngle,
   onZoomChange,
   horizontalOrbit = false,
+  orbitArc = (Math.PI * 2) / 3,
   verticalOrbit = false,
   distanceScale = 1,
   freeExplore = false,
@@ -140,6 +141,7 @@ export function WorldCamera({
   polarAngle?: number;
   onZoomChange?: (zoom: number) => void;
   horizontalOrbit?: boolean;
+  orbitArc?: number;
   verticalOrbit?: boolean;
   /** Scales the camera distance past the zoom clamp, for close-up framing. */
   distanceScale?: number;
@@ -231,10 +233,10 @@ export function WorldCamera({
             : polar + (stage ? 0 : 0.08)
       }
       minAzimuthAngle={
-        freeExplore ? -Infinity : azimuth - (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)
+        freeExplore ? -Infinity : azimuth - (horizontalOrbit ? orbitArc / 2 : stage ? 0 : 0.14)
       }
       maxAzimuthAngle={
-        freeExplore ? Infinity : azimuth + (horizontalOrbit ? Math.PI / 3 : stage ? 0 : 0.14)
+        freeExplore ? Infinity : azimuth + (horizontalOrbit ? orbitArc / 2 : stage ? 0 : 0.14)
       }
     />
   );
