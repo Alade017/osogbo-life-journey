@@ -2,7 +2,7 @@ import { LocationVenueScene } from "./LocationVenueScene";
 import { BUKA_VENUE_DESIGN } from "@/lib/location-venue-designs";
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Link, useNavigate } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import {
   Briefcase,
   Bus,
