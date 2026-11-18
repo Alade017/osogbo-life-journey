@@ -420,11 +420,7 @@ export function PlayableNeighborhood() {
   const [npcPositionOverrides, setNpcPositionOverrides] = useState<
     Record<string, { x: number; y: number }>
   >({});
-  const [zoneState, dispatchZone] = useReducer(
-    neighborhoodReducer,
-    undefined,
-    initialNeighborhoodState,
-  );
+  const [zoneState, dispatchZone] = useReducer(neighborhoodReducer, initialNeighborhoodState);
   const [hasWalked, setHasWalked] = useState(false);
   const autoWalkRouteRef = useRef<{ route: WorldPoint[]; index: number } | null>(null);
   const zoneModalOpen = zoneState.activeZoneId !== null || zoneState.activeNpcId !== null;
@@ -1086,7 +1082,7 @@ export function PlayableNeighborhood() {
 
   const effectiveNeeds = useMemo(
     () => effectiveNeedsFromCharacter(characterQuery.data, simulation.needs),
-    [characterQuery.data, simulation.needs, zoneState.needOffsets],
+    [characterQuery.data, simulation.needs],
   );
   const pocketBalance = walletQuery.data?.balance ?? 0;
   const bankBalance = walletQuery.data?.bank_balance ?? 0;
