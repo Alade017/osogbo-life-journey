@@ -1,3 +1,5 @@
+import { createVisibleSkin } from "./humanoid-clothing";
+import type { WornOutfit } from "@/game/wearable-outfits";
 import { createPortal, useFrame, useThree } from "@react-three/fiber";
 import { useEffect, useMemo, type ReactNode } from "react";
 import { Euler, Quaternion, type Material } from "three";
@@ -45,7 +47,7 @@ export function bodyVariantFor(gender: string): BodyVariant {
 export function motionFor(animation: string, walking: boolean, taskPose?: string): PoseMotion {
   const task = taskPose ? TASK_MOTIONS[taskPose] : undefined;
   if (task) return task;
-  if (walking) return "Walk";
+  if (walking || animation === "walk") return "Walk";
   if (animation === "work") return "Work";
   if (animation === "interact") return "Interact";
   if (animation === "talk") return "Talk";
@@ -80,6 +82,7 @@ export function CharacterBody({
   held = null,
   appearance = {},
   gender = "nonbinary",
+  outfit,
 }: {
   variant: BodyVariant;
   height: number;
@@ -88,6 +91,7 @@ export function CharacterBody({
   held?: ReactNode;
   appearance?: Appearance;
   gender?: string;
+  outfit?: WornOutfit;
 }) {
   const { invalidate } = useThree();
   const safe = normalizeAvatarAppearance(appearance, gender);
@@ -109,6 +113,12 @@ export function CharacterBody({
       }),
     [variant, skinColor, hairColor, hairShape, safe.build],
   );
+  const clothed = safe.clothed;
+  const cut = outfit?.topCut ?? "tee";
+  const visibleBody = useMemo(
+    () => (clothed ? createVisibleSkin(rig.meshes[0]!, cut) : rig.meshes[0]!),
+    [rig, clothed, cut],
+  );
   const hand = rig.byName.get(BONE.rHand) ?? null;
   const head = rig.byName.get(BONE.head) ?? null;
 
@@ -119,6 +129,7 @@ export function CharacterBody({
           (material as Material).dispose();
         }
       }
+      rig.meshes[0]?.skeleton.dispose();
     };
   }, [rig]);
 
@@ -147,15 +158,17 @@ export function CharacterBody({
     <group scale={height}>
       <primitive object={rig.root} />
       {rig.meshes.map((mesh, index) => (
-        <primitive key={index} object={mesh} />
+        <primitive key={index} object={index === 0 ? visibleBody : mesh} dispose={null} />
       ))}
-      <CharacterWardrobe rig={rig.root} appearance={safe} gender={gender} />
+      <CharacterWardrobe body={rig.meshes[0]!} appearance={safe} outfit={outfit} />
       {head && safe.headwear > 0
         ? createPortal(
-            <ProceduralHeadwear
-              style={safe.headwear as 1 | 2 | 3}
-              color={HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!}
-            />,
+            <group scale={[0.7, 1, 0.82]}>
+              <ProceduralHeadwear
+                style={safe.headwear as 1 | 2 | 3}
+                color={HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!}
+              />
+            </group>,
             head,
           )
         : null}

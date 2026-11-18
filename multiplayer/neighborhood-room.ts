@@ -1,3 +1,4 @@
+import { publicWornEquipment } from "../src/game/wearable-outfits.ts";
 import { Room, type AuthContext, type Client } from "colyseus";
 import { NeighborhoodState, NetworkPlayer } from "../src/game/multiplayer-state.ts";
 import {
@@ -88,11 +89,8 @@ async function saveCheckpoint(target: CheckpointTarget, point: CheckpointPoint) 
   return (data as { saved?: unknown } | null)?.saved === true;
 }
 
-function serializeEquipment(rows: { slot?: unknown }[]) {
-  const allowed = new Set(["head", "top", "bottom", "shoes", "accessory"]);
-  return JSON.stringify(
-    rows.flatMap(({ slot }) => (typeof slot === "string" && allowed.has(slot) ? [{ slot }] : [])),
-  );
+function serializeEquipment(rows: unknown) {
+  return JSON.stringify(publicWornEquipment(rows));
 }
 
 function supabaseSettings() {
@@ -150,7 +148,7 @@ async function readCharacter(accessToken: string, locationId: string) {
     throw new Error("This destination is not available for walking.");
   const area = neighborhoodAreaForLocation(location);
   const equipmentQuery = new URLSearchParams({
-    select: "slot",
+    select: "slot,item:inventory_items(slug,equippable,equipment_slot,effects)",
     character_id: `eq.${character.id}`,
   });
   const equipmentResponse = await fetch(`${url}/rest/v1/player_equipment?${equipmentQuery}`, {
@@ -158,7 +156,7 @@ async function readCharacter(accessToken: string, locationId: string) {
     signal: AbortSignal.timeout(5_000),
   });
   if (!equipmentResponse.ok) throw new Error("Your equipped items could not be loaded.");
-  const equipment = serializeEquipment((await equipmentResponse.json()) as { slot?: unknown }[]);
+  const equipment = serializeEquipment(await equipmentResponse.json());
   const entrance = cityEntranceForRecord(location);
   return {
     userId: user.id,

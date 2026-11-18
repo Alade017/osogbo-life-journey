@@ -67,6 +67,10 @@ beforeAll(async () => {
       ].includes(e.tag),
   ))
     await db.exec(readFileSync(`drizzle/migrations/${tag}.sql`, "utf8").replace(/^\uFEFF/, ""));
+  // Keep shop checks deterministic; production uses shared real Lagos time, not character.game_time_hour.
+  await db.exec(
+    `create or replace function public.world_clock() returns jsonb language sql stable as $$ select '{"hour":10,"minute":0,"day":1,"weekday":0}'::jsonb $$`,
+  );
   for (const user of [uid, other]) {
     await db.query("insert into auth.users(id) values($1)", [user]);
     await db.query("insert into profiles(id,display_name) values($1,'Crafter')", [user]);
@@ -271,4 +275,74 @@ it("shows owned ingredient counts and both seeded stations through the catalogue
   expect(readFileSync("supabase/migrations/20261118133000_adire_crafting.sql", "utf8")).toBe(
     readFileSync("drizzle/migrations/0107_adire_crafting.sql", "utf8"),
   );
+});
+
+it("buys, equips, replaces and removes real clothing with server ownership checks", async () => {
+  const offers = (
+    await db.query<{ id: string; item_id: string; location_id: string; effects: unknown }>(
+      "select si.id,si.item_id,s.location_id,i.effects from shop_items si join shops s on s.id=si.shop_id join inventory_items i on i.id=si.item_id where s.category='clothing' and i.slug='indigo_adire_shirt' limit 1",
+    )
+  ).rows;
+  expect(offers).toHaveLength(1);
+  const offer = offers[0]!;
+  await db.query("update characters set current_location_id=$1 where id=$2", [
+    offer.location_id,
+    cid,
+  ]);
+  await db.query("select purchase_shop_item($1,1,$2)", [offer.id, nonce()]);
+  const entry = (
+    await db.query<{ id: string }>(
+      "select id from player_inventory where character_id=$1 and item_id=$2",
+      [cid, offer.item_id],
+    )
+  ).rows[0]!;
+  await db.query("select set_config('test.user_id',$1,false)", [other]);
+  await expect(db.query("select equip_inventory_item($1,'top')", [entry.id])).rejects.toThrow(
+    "You do not own this item",
+  );
+  await db.query("select set_config('test.user_id',$1,false)", [uid]);
+  await db.query("select equip_inventory_item($1,'top')", [entry.id]);
+  expect(
+    (
+      await db.query<{ item_id: string }>(
+        "select item_id from player_equipment where character_id=$1 and slot='top'",
+        [cid],
+      )
+    ).rows[0]!.item_id,
+  ).toBe(offer.item_id);
+  const replacement = (
+    await db.query<{ id: string; item_id: string }>(
+      "select si.id,si.item_id from shop_items si join inventory_items i on i.id=si.item_id where si.shop_id=(select shop_id from shop_items where id=$1) and i.slug='city_cream_tee'",
+      [offer.id],
+    )
+  ).rows[0]!;
+  await db.query("select purchase_shop_item($1,1,$2)", [replacement.id, nonce()]);
+  const replacementEntry = (
+    await db.query<{ id: string }>(
+      "select id from player_inventory where character_id=$1 and item_id=$2",
+      [cid, replacement.item_id],
+    )
+  ).rows[0]!;
+  await db.query("select equip_inventory_item($1,'top')", [replacementEntry.id]);
+  expect(
+    (
+      await db.query<{ item_id: string }>(
+        "select item_id from player_equipment where character_id=$1 and slot='top'",
+        [cid],
+      )
+    ).rows[0]!.item_id,
+  ).toBe(replacement.item_id);
+  await db.query("select unequip_item('top')");
+  expect(
+    (
+      await db.query("select id from player_inventory where character_id=$1 and item_id=$2", [
+        cid,
+        offer.item_id,
+      ])
+    ).rows,
+  ).toHaveLength(1);
+  expect(
+    (await db.query("select id from player_equipment where character_id=$1 and slot='top'", [cid]))
+      .rows,
+  ).toHaveLength(0);
 });

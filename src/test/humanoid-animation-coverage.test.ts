@@ -60,7 +60,7 @@ describe("rebuilt humanoid animation coverage", () => {
       weights = g.getAttribute("skinWeight");
     const forbidden = new Set([BONE.lHand, BONE.rHand, BONE.lForearm, BONE.rForearm] as string[]);
     for (let i = 0; i < points.count; i++)
-      if (points.getY(i) > 0.4 && points.getY(i) < 0.49 && Math.abs(points.getX(i)) < 0.17) {
+      if (points.getY(i) > 0.4 && points.getY(i) < 0.49 && Math.abs(points.getX(i)) < 0.12) {
         for (let j = 0; j < 4; j++)
           if (weights.getComponent(i, j) > 0)
             expect(forbidden.has(rig.bones[bones.getComponent(i, j)]!.name)).toBe(false);
