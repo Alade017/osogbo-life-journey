@@ -1,6 +1,6 @@
 import { useEffect, useState, type CSSProperties, type FormEvent } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Eye, EyeOff, MapPin, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import cityPhoto from "@/assets/osogbo-city.jpg";
 import { supabase } from "@/integrations/supabase/client";
@@ -118,47 +118,68 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
     }
   }
 
-  async function google() {
-    setBusy(true);
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/login` },
-      });
-      if (error) throw error;
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Google sign-in failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const paneStyle = { "--dir": direction } as CSSProperties;
   const showSwitch = !resettingPassword && !recoverySent;
   const formKey = `${mode}-${recoverySent ? "recover" : resettingPassword ? "reset" : "form"}`;
 
   return (
-    <div className="auth-screen relative isolate min-h-screen overflow-hidden bg-ink">
-      <img
-        src={cityPhoto}
-        alt=""
-        aria-hidden="true"
-        className="absolute inset-0 h-full w-full object-cover object-center"
-      />
-      <div className="absolute inset-0 auth-screen-scrim" />
-      <main className="auth-layout relative mx-auto flex min-h-screen items-center justify-center px-4 py-6">
-        <section className="auth-form-panel w-full max-w-md" aria-label="Player account">
-          <div className="auth-form-card game-panel pop-in w-full">
-            <Link to="/" className="auth-form-logo" aria-label="OSUN LIFE home">
-              <Logo />
-            </Link>
-            <p className="auth-form-eyebrow">
-              <ShieldCheck size={14} aria-hidden="true" /> Secure player access
+    <div className="auth-screen">
+      <header className="auth-header">
+        <Link to="/" className="auth-brand-link" aria-label="OSUN LIFE home">
+          <Logo />
+        </Link>
+        <Link to="/" className="auth-back-link">
+          <ArrowLeft size={16} aria-hidden="true" /> Back to start
+        </Link>
+      </header>
+      <main className="auth-layout">
+        <aside className="auth-city-panel" aria-label="Life in Osogbo">
+          <img src={cityPhoto} alt="" aria-hidden="true" className="auth-city-photo" />
+          <div className="auth-city-shade" />
+          <p className="auth-city-location">
+            <MapPin size={15} aria-hidden="true" /> OSOGBO, NIGERIA
+          </p>
+          <div className="auth-city-content">
+            <p className="auth-city-kicker">A life of your own</p>
+            <h1>
+              Your city.
+              <br /> Your next chapter.
+            </h1>
+            <p>
+              Find your place, build your career, and make the city your own. Your story starts
+              here.
             </p>
-
+            <div className="auth-city-caption">
+              <span>Live. Build. Prosper.</span>
+              <ArrowUpRight size={24} aria-hidden="true" />
+            </div>
+          </div>
+        </aside>
+        <section className="auth-form-panel" aria-label="Player account">
+          <div className="auth-form-card">
+            <p className="auth-form-eyebrow">
+              <ShieldCheck size={15} aria-hidden="true" /> YOUR OSUN LIFE ACCOUNT
+            </p>
             {showSwitch && (
               <div
                 className="auth-switch"
+                onKeyDown={(event) => {
+                  if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key) || busy)
+                    return;
+                  event.preventDefault();
+                  const next =
+                    event.key === "Home"
+                      ? "login"
+                      : event.key === "End"
+                        ? "signup"
+                        : mode === "login"
+                          ? "signup"
+                          : "login";
+                  switchMode(next);
+                  event.currentTarget
+                    .querySelector<HTMLButtonElement>(`#auth-tab-${next}`)
+                    ?.focus();
+                }}
                 role="tablist"
                 aria-label="Log in or sign up"
                 style={{ "--pos": mode === "login" ? 0 : 1 } as CSSProperties}
@@ -167,6 +188,9 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                 <button
                   type="button"
                   role="tab"
+                  id="auth-tab-login"
+                  aria-controls="auth-form-pane"
+                  tabIndex={mode === "login" ? 0 : -1}
                   aria-selected={mode === "login"}
                   className="auth-switch-option"
                   onClick={() => switchMode("login")}
@@ -177,6 +201,9 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                 <button
                   type="button"
                   role="tab"
+                  id="auth-tab-signup"
+                  aria-controls="auth-form-pane"
+                  tabIndex={mode === "signup" ? 0 : -1}
                   aria-selected={mode === "signup"}
                   className="auth-switch-option"
                   onClick={() => switchMode("signup")}
@@ -187,7 +214,14 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
               </div>
             )}
 
-            <div key={formKey} className="auth-pane" style={paneStyle}>
+            <div
+              key={formKey}
+              id="auth-form-pane"
+              role={showSwitch ? "tabpanel" : undefined}
+              aria-labelledby={showSwitch ? `auth-tab-${mode}` : undefined}
+              className="auth-pane"
+              style={paneStyle}
+            >
               {recoverySent ? (
                 <>
                   <h2 className="text-2xl font-bold">Reset your password</h2>
@@ -198,7 +232,10 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                     <div className="space-y-1.5">
                       <Label htmlFor="email">Email</Label>
                       <Input
+                        disabled={busy}
                         id="email"
+                        autoComplete="email"
+                        placeholder="you@example.com"
                         type="email"
                         required
                         value={email}
@@ -249,7 +286,14 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                           {mode === "signup" ? "Username" : "Username or email"}
                         </Label>
                         <Input
+                          disabled={busy}
                           id="username"
+                          placeholder={
+                            mode === "signup" ? "Choose a username" : "Your username or email"
+                          }
+                          autoCapitalize="none"
+                          spellCheck={false}
+                          aria-describedby={mode === "signup" ? "auth-username-hint" : undefined}
                           autoComplete="username"
                           required
                           value={username}
@@ -257,8 +301,8 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                           className="h-11 border bg-card"
                         />
                         {mode === "signup" && (
-                          <p className="text-xs text-muted-foreground">
-                            3-24 letters, numbers or underscores. Email can be added later in
+                          <p id="auth-username-hint" className="text-xs text-muted-foreground">
+                            3–24 letters, numbers or underscores. Email can be added later in
                             Settings.
                           </p>
                         )}
@@ -269,6 +313,7 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                       <Label htmlFor="password">Password</Label>
                       <div className="relative">
                         <Input
+                          disabled={busy}
                           id="password"
                           type={showPassword ? "text" : "password"}
                           required
@@ -301,6 +346,7 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                       <div className="space-y-1.5">
                         <Label htmlFor="confirm-password">Confirm password</Label>
                         <Input
+                          disabled={busy}
                           id="confirm-password"
                           type={showPassword ? "text" : "password"}
                           required
@@ -340,44 +386,13 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                       >
                         Forgot password?
                       </button>
-                      <div className="auth-divider flex items-center gap-3 text-xs font-semibold text-muted-foreground">
-                        <span className="h-px flex-1 bg-border" /> OR{" "}
-                        <span className="h-px flex-1 bg-border" />
-                      </div>
-                      <Button
-                        variant="plain"
-                        size="lg"
-                        className="auth-submit-button auth-google-button w-full"
-                        onClick={google}
-                        disabled={busy}
-                        aria-busy={busy}
-                      >
-                        <svg className="auth-google-mark" viewBox="0 0 24 24" aria-hidden="true">
-                          <path
-                            fill="#4285F4"
-                            d="M23.5 12.27c0-.82-.07-1.6-.2-2.36H12v4.47h6.46a5.52 5.52 0 0 1-2.4 3.62v3h3.88c2.27-2.09 3.56-5.17 3.56-8.73z"
-                          />
-                          <path
-                            fill="#34A853"
-                            d="M12 24c3.24 0 5.95-1.07 7.94-2.9l-3.88-3c-1.08.72-2.45 1.15-4.06 1.15-3.12 0-5.77-2.11-6.71-4.95H1.28v3.09A12 12 0 0 0 12 24z"
-                          />
-                          <path
-                            fill="#FBBC05"
-                            d="M5.29 14.3a7.2 7.2 0 0 1 0-4.6V6.61H1.28a12 12 0 0 0 0 10.78z"
-                          />
-                          <path
-                            fill="#EA4335"
-                            d="M12 4.75c1.76 0 3.34.61 4.59 1.8l3.43-3.43C17.94 1.19 15.23 0 12 0A12 12 0 0 0 1.28 6.61L5.29 9.7C6.23 6.86 8.88 4.75 12 4.75z"
-                          />
-                        </svg>
-                        Continue with Google
-                      </Button>
                     </>
                   )}
                 </>
               )}
             </div>
           </div>
+          <p className="auth-account-note">One account. A whole city of possibilities.</p>
         </section>
       </main>
     </div>
