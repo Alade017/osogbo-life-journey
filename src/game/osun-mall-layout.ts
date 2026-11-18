@@ -81,3 +81,55 @@ export function findMallPath(from: WalkPoint, to: WalkPoint): WalkPoint[] | null
   if (!canWalkInMall(to)) return null;
   return findGridWalkPath(from, to, canWalkInMall);
 }
+
+/** Where a visitor's walk starts and ends: the main doors on the open front edge. */
+export const MALL_ENTRANCE: WalkPoint = [0, 6.2];
+
+/** Spots in front of the shelves and displays where shoppers stop to browse. */
+export const MALL_BROWSE_SPOTS: readonly WalkPoint[] = [
+  [-1.6, -3.2],
+  [-1.6, -0.4],
+  [1.2, -3.2],
+  [1.2, -0.4],
+  [-1.6, 2.6],
+  [0.2, 1.9],
+];
+
+/** Queue spots in front of the checkout counter, in the order people join the line. */
+export const MALL_TILL_QUEUE: readonly WalkPoint[] = [
+  [4.5, 4.6],
+  [3.5, 4.6],
+  [2.5, 4.6],
+  [1.5, 4.6],
+];
+
+export type MallStaffRole = "till" | "floor" | "security" | "supervisor" | "staff-room" | "control-room";
+
+export type MallStaffMember = {
+  id: string;
+  role: MallStaffRole;
+  position: WalkPoint;
+  /** Which way they face, in scene terms. Staff stay put; they never walk the routes. */
+  facing: "north" | "south" | "east" | "west";
+};
+
+/**
+ * Fourteen staff: four tills, four on the floor, two at the entrance, one supervisor, and three
+ * in the restricted rooms (out of the player's reach, so they are never walking routes).
+ */
+export const MALL_STAFF: readonly MallStaffMember[] = [
+  { id: "till-1", role: "till", position: [2.6, 2.2], facing: "south" },
+  { id: "till-2", role: "till", position: [3.4, 2.2], facing: "south" },
+  { id: "till-3", role: "till", position: [4.6, 2.2], facing: "south" },
+  { id: "till-4", role: "till", position: [5.4, 2.2], facing: "south" },
+  { id: "floor-1", role: "floor", position: [-1.6, -5.6], facing: "east" },
+  { id: "floor-2", role: "floor", position: [1.2, -5.6], facing: "west" },
+  { id: "floor-3", role: "floor", position: [-2.6, 0.6], facing: "east" },
+  { id: "floor-4", role: "floor", position: [2.6, 1.2], facing: "north" },
+  { id: "security-1", role: "security", position: [-1.2, 5.8], facing: "north" },
+  { id: "security-2", role: "security", position: [1.2, 5.8], facing: "north" },
+  { id: "supervisor", role: "supervisor", position: [-3.6, 2.2], facing: "east" },
+  { id: "staff-room-1", role: "staff-room", position: [6.6, -5.6], facing: "west" },
+  { id: "staff-room-2", role: "staff-room", position: [7.2, -6.2], facing: "north" },
+  { id: "control-room-1", role: "control-room", position: [-7, -5], facing: "east" },
+];
