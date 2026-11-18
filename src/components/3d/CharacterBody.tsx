@@ -49,6 +49,7 @@ export function motionFor(animation: string, walking: boolean, taskPose?: string
   if (animation === "work") return "Work";
   if (animation === "interact") return "Interact";
   if (animation === "talk") return "Talk";
+  if (animation === "dance") return "Dance";
   return "Idle";
 }
 
@@ -64,6 +65,7 @@ const LOOPING_MOTIONS = new Set<PoseMotion>([
   "Collect",
   "Work",
   "Interact",
+  "Dance",
 ]);
 
 /**

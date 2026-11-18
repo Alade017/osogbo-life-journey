@@ -16,6 +16,7 @@ const MOTIONS: PoseMotion[] = [
   "Cook",
   "Collect",
   "Stretch",
+  "Dance",
 ];
 
 describe("motionFor", () => {
@@ -123,4 +124,27 @@ describe("humanoid rig", () => {
   it("keeps the shadow tuning available to the ground shadow", () => {
     expect(CHARACTER_GROUND.shadowRadius).toBeGreaterThan(0);
   });
+});
+
+it("selects dancing while stationary and lets walking or a task interrupt it", () => {
+  expect(motionFor("dance", false)).toBe("Dance");
+  expect(motionFor("dance", true)).toBe("Walk");
+  expect(motionFor("dance", false, "sit")).toBe("Sit");
+});
+
+it("loops the whole dance continuously without a pose discontinuity", () => {
+  const start = poseFor("Dance", 0),
+    end = poseFor("Dance", 2);
+  expect(end.rootY).toBeCloseTo(start.rootY!, 10);
+  for (const [bone, angles] of Object.entries(start.bones))
+    end.bones[bone as keyof typeof end.bones]!.forEach((angle, axis) =>
+      expect(angle).toBeCloseTo(angles![axis]!, 10),
+    );
+  const before = poseFor("Dance", 2 - 1e-5),
+    after = poseFor("Dance", 2 + 1e-5);
+  for (const [bone, angles] of Object.entries(before.bones))
+    after.bones[bone as keyof typeof after.bones]!.forEach((angle, axis) =>
+      expect(Math.abs(angle - angles![axis]!)).toBeLessThan(0.001),
+    );
+  expect(poseFor("Dance", 0.25).bones[BONE.rUpperArm]).not.toEqual(start.bones[BONE.rUpperArm]);
 });

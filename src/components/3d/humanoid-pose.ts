@@ -30,8 +30,21 @@ export const ROOT_REST_Y = 0.5;
 
 export type Euler3 = [number, number, number];
 export type PoseMotion =
-  "Idle" | "Walk" | "Work" | "Talk" | "Interact" | "Sit" | "Wash" | "Cook" | "Collect" | "Stretch";
+  | "Idle"
+  | "Walk"
+  | "Work"
+  | "Talk"
+  | "Interact"
+  | "Sit"
+  | "Wash"
+  | "Cook"
+  | "Collect"
+  | "Stretch"
+  | "Dance";
 export type Pose = { bones: Partial<Record<BoneName, Euler3>>; rootY?: number };
+
+/** Four-beat, in-place club groove. No world movement or simulation rewards are implied. */
+export const DANCE_LOOP_SECONDS = 2;
 
 const sin = Math.sin;
 const cos = Math.cos;
@@ -50,6 +63,34 @@ export function poseFor(
   options: { hipSway: number } = { hipSway: 1 },
 ): Pose {
   switch (motion) {
+    case "Dance": {
+      const phase = (t * Math.PI * 2) / DANCE_LOOP_SECONDS;
+      const sway = sin(phase),
+        pulse = sin(phase * 4);
+      const left = Math.max(0, sway),
+        right = Math.max(0, -sway);
+      return {
+        rootY: -0.008 + pulse * 0.004,
+        bones: {
+          [BONE.root]: [0, sway * 0.12, sway * 0.035],
+          [BONE.spine]: [0.04, -sway * 0.1, -sway * 0.025],
+          [BONE.spine2]: [pulse * 0.025, sin(phase * 2) * 0.1, 0],
+          [BONE.head]: [-0.035 + pulse * 0.035, -sway * 0.08, 0],
+          [BONE.lUpperArm]: [-0.65 + sin(phase * 2) * 0.3, 0.1, 0.32 + sway * 0.12],
+          [BONE.rUpperArm]: [-0.65 - sin(phase * 2) * 0.3, -0.1, -0.32 + sway * 0.12],
+          [BONE.lForearm]: [-0.85 + pulse * 0.15, 0, 0],
+          [BONE.rForearm]: [-0.85 - pulse * 0.15, 0, 0],
+          [BONE.lHand]: [0, 0, sin(phase * 2) * 0.1],
+          [BONE.rHand]: [0, 0, -sin(phase * 2) * 0.1],
+          [BONE.lThigh]: [-0.06 - left * 0.16, 0, 0.015 + sway * 0.025],
+          [BONE.rThigh]: [-0.06 - right * 0.16, 0, -0.015 + sway * 0.025],
+          [BONE.lCalf]: [0.12 + left * 0.28, 0, 0],
+          [BONE.rCalf]: [0.12 + right * 0.28, 0, 0],
+          [BONE.lFoot]: [-0.06 - left * 0.12, 0, -sway * 0.02],
+          [BONE.rFoot]: [-0.06 - right * 0.12, 0, -sway * 0.02],
+        },
+      };
+    }
     case "Walk": {
       const p = t * 6.2;
       const s = sin(p);

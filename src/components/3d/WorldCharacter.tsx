@@ -109,6 +109,7 @@ export function WorldCharacter({
       animation === "walk" ||
       animation === "work" ||
       animation === "talk" ||
+      animation === "dance" ||
       animation === "interact" ||
       !!taskPose;
     if (!moved && !continuous && !walking) return;

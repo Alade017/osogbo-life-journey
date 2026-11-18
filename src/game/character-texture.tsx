@@ -72,7 +72,7 @@ export function avatarTextureKey(
 ) {
   const normalized = normalizeAvatarAppearance(appearance, gender);
   const slots = equipment.map(({ slot }) => slot).sort();
-  return `osogbo-avatar-${stableHash(JSON.stringify([gender, normalized, slots]))}`;
+  return `osogbo-avatar-${stableHash(JSON.stringify([gender, normalized, slots, AVATAR_ANIMATION_CLIPS]))}`;
 }
 
 /** Build a single, static SVG atlas. Frames are chosen by the renderer; SVG never runs per game frame. */

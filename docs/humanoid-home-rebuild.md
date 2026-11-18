@@ -11,3 +11,9 @@ Home scenes allow a total 180-degree horizontal swipe outside editing. The compl
 Validation includes closed-surface topology across male/female builds, real rig frame playback for every pose, animation deformation coverage, clothing bindings, all six house layouts, correct room types, database ownership/concurrency/atomicity checks, presence/travel database tests and camera controls. Production builds and affected-file lint pass. Global typechecking retains existing repository diagnostics without new diagnostic signatures.
 
 The character preview is an offline render of the actual source meshes, not a live browser capture. Signed-in mobile WebGL interaction and the production migration have not been verified/applied in this workspace.
+
+## Nightclub dance animation
+
+Both bodies now support `animation="dance"` on `WorldCharacter`. The two-second in-place groove blends hip sway, torso counter-rotation, alternating arm gestures, knee bends and foot taps on the existing rig, without adding polygons or moving the player through the world. Walking overrides dancing and returning to `idle` blends back to rest. Reduced motion holds a static pose. The sprite fallback also supports dancing; its atlas remains below 4096 pixels tall and its cache key includes clip definitions.
+
+The future nightclub should set this presentation state from its approved player activity. This update adds animation support only; it does not create a nightclub, simulation rewards, entry fees or a dance action in the server catalog.

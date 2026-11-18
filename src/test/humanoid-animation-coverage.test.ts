@@ -13,6 +13,7 @@ const motions: PoseMotion[] = [
   "Cook",
   "Collect",
   "Stretch",
+  "Dance",
 ];
 describe("rebuilt humanoid animation coverage", () => {
   it.each(
