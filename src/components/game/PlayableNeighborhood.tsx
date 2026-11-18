@@ -1078,7 +1078,7 @@ export function PlayableNeighborhood() {
 
   const handleNpcTipSelect = useCallback((npc: ZoneNpcSpec, tipIndex: number) => {
     const tip = npc.tips[tipIndex % npc.tips.length] ?? npc.greeting;
-    dispatchZone(recordNpcChatAction({ npc, tip }));
+    dispatchZone(recordNpcChatAction({ tip }));
   }, []);
 
   const effectiveNeeds = useMemo(
