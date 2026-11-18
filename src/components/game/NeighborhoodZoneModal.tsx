@@ -23,7 +23,12 @@ import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { formatNaira, q, rpc } from "@/lib/game";
 import type { Needs } from "@/lib/life-simulation";
 import { estimateTrip, type TravelMode } from "@/lib/transport-service";
-import { isServerBackedBankTransfer, type InteractableZoneSpec, type ZoneActionOutcome, type ZoneNpcSpec } from "@/game/neighborhood-interactions";
+import {
+  isServerBackedBankTransfer,
+  type InteractableZoneSpec,
+  type ZoneActionOutcome,
+  type ZoneNpcSpec,
+} from "@/game/neighborhood-interactions";
 
 function CategoryIcon({ category }: { category: InteractableZoneSpec["category"] }) {
   switch (category) {
