@@ -409,7 +409,9 @@ function LocationPage() {
         </p>
       </div>
 
-      {isHere && <LocationVenueScene key={loc.id} slug={loc.slug} locationName={loc.name} />}
+      {isHere && (
+        <LocationVenueScene key={loc.id} slug={loc.slug} locationName={loc.name} locationId={loc.id} />
+      )}
 
       {isHere && isPlayableDistrict(loc.slug) && (
         <Button asChild variant="plain">
