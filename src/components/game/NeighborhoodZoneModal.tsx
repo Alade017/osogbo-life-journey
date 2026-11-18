@@ -22,6 +22,7 @@ import {
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
+import { FoodVenueServices } from "@/components/game/FoodVenueServices";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { formatNaira, q, rpc } from "@/lib/game";
@@ -448,10 +449,13 @@ export function NeighborhoodZoneModal({
 
             {subTab === "market" && (
               <div className="rounded-xl border border-[#16225C]/15 bg-white/85 p-2">
-                <MarketPage
-                  {...(zone.shopSlug != null ? { shopSlug: zone.shopSlug } : {})}
-                  foodOnly={zone.foodOnly ?? false}
-                />
+                {zone.foodOnly ? (
+                  <FoodVenueServices shopSlug={zone.shopSlug} />
+                ) : (
+                  <MarketPage
+                    {...(zone.shopSlug != null ? { shopSlug: zone.shopSlug } : {})}
+                  />
+                )}
               </div>
             )}
 
