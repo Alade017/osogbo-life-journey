@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { BriefcaseBusiness, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { q, rpc, formatNaira, useGameAction } from "@/lib/game";
-import { canPromoteCareer, isCareerJob, nextCareerStep } from "@/lib/career-rules";
+import { canPromoteCareer, careerPathForJob, isCareerJob, nextCareerStep } from "@/lib/career-rules";
 import {
   cancelCareerShift,
   claimCareerShift,
@@ -95,7 +95,7 @@ export function CareerPanel({ mode = "all" }: { mode?: "all" | "current" | "oppo
   const activeCareer = currentJob && isCareerJob(currentJob.slug) ? currentJob : null;
   const careerJobs = jobs.filter((job) => isCareerJob(job.slug) && job.is_available);
   const activeShift = history.data.find((shift) => shift.status === "active");
-  const currentPath = activeCareer?.slug.includes("retail") ? "retail" : "banking";
+  const currentPath = activeCareer ? careerPathForJob(activeCareer.slug) : null;
   const rank = catalog.data.ranks.find(
     (item) => item.path_slug === currentPath && item.level === currentEmployment?.career_level,
   );
@@ -275,7 +275,7 @@ export function CareerPanel({ mode = "all" }: { mode?: "all" | "current" | "oppo
       {mode !== "current" && (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
           {careerJobs.map((job) => {
-            const pathSlug = job.slug.includes("retail") ? "retail" : "banking";
+            const pathSlug = careerPathForJob(job.slug);
             const path = catalog.data.paths.find((item) => item.slug === pathSlug);
             const entry = catalog.data.ranks.find(
               (item) => item.path_slug === pathSlug && item.level === 1,

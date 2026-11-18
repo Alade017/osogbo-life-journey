@@ -649,3 +649,200 @@
     transition: none;
   }
 }
+
+
+/* Dedicated inventory screen: compact, item-first and consistent with the game HUD. */
+.pi-inventory {
+  max-width: 1180px;
+  margin-inline: auto;
+  padding: clamp(0.75rem, 2.5vw, 1.5rem);
+  gap: clamp(1rem, 2.5vw, 1.5rem);
+}
+
+.pi-inventory .pi-inventory-masthead {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.9rem;
+  padding: clamp(0.85rem, 2vw, 1.25rem);
+  border: 1px solid var(--border);
+  border-radius: 22px;
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+}
+
+.pi-inventory-mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--primary) 24%, var(--border));
+  border-radius: 16px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 9%, var(--card));
+}
+
+.pi-inventory-heading { min-width: 0; }
+.pi-inventory .pi-inventory-heading h1 { font-size: clamp(1.45rem, 4vw, 2rem); }
+.pi-inventory .pi-inventory-heading .pi-sub { font-size: 0.82rem; line-height: 1.4; }
+
+.pi-inventory-total {
+  display: grid;
+  justify-items: end;
+  gap: 0.1rem;
+  white-space: nowrap;
+}
+
+.pi-inventory-total strong {
+  color: var(--primary);
+  font-size: 1.45rem;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+.pi-inventory-total small {
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.pi-inventory .pi-stage {
+  border-color: var(--border);
+  background: radial-gradient(circle at 50% 28%, color-mix(in srgb, var(--primary) 12%, var(--card)), var(--card) 72%);
+}
+
+.pi-inventory .pi-stage-foot strong { color: var(--foreground); }
+.pi-inventory .pi-stage-foot span { color: var(--muted-foreground); }
+.pi-inventory .pi-tile,
+.pi-inventory .pi-detail,
+.pi-inventory .pi-slot { transition: border-color 160ms ease, box-shadow 160ms ease; }
+
+.pi-inventory .pi-tile:hover,
+.pi-inventory .pi-slot:hover { border-color: color-mix(in srgb, var(--primary) 42%, var(--border)); }
+
+.pi-inventory :is(.pi-tile, .pi-filters button, .pi-chip-btn):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 480px) {
+  .pi-inventory .pi-inventory-masthead { grid-template-columns: auto minmax(0, 1fr); }
+  .pi-inventory-total { grid-column: 2; justify-items: start; }
+  .pi-inventory .pi-stage { border-radius: 18px; }
+}
+
+
+/* Inventory opens as a focused in-world dialog, not a route transition. */
+.inventory-dialog-overlay {
+  background: rgb(7 12 22 / 58%);
+  backdrop-filter: blur(5px);
+}
+
+.inventory-dialog-shell {
+  position: fixed;
+  z-index: var(--game-dialog-layer);
+  inset: 50% auto auto 50%;
+  display: flex;
+  width: min(80vw, 1180px);
+  height: 80dvh;
+  max-height: 80dvh;
+  max-width: none;
+  min-width: 0;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: var(--background);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 28%);
+  transform: translate(-50%, -50%);
+  outline: none;
+}
+
+.inventory-dialog-scroll {
+  min-height: 0;
+  height: 100%;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+.inventory-dialog-scroll > .pi-page {
+  min-height: 100%;
+  max-width: none;
+}
+
+.inventory-dialog-cancel {
+  position: absolute;
+  z-index: 5;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  min-width: 44px;
+  min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 13px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--popover);
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+  box-shadow: var(--elevation-card);
+  cursor: pointer;
+}
+
+.inventory-dialog-cancel:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.inventory-dialog-cancel:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.inventory-dialog-loading {
+  display: grid;
+  min-height: 100%;
+  place-items: center;
+  color: var(--muted-foreground);
+  font-size: 0.9rem;
+}
+
+@media (max-width: 640px) {
+  .inventory-dialog-shell {
+    width: min(80vw, 1180px);
+    height: 80dvh;
+    max-height: 80dvh;
+    border-radius: 20px;
+  }
+
+  .inventory-dialog-cancel {
+    top: 8px;
+    right: 8px;
+    min-width: 40px;
+    min-height: 38px;
+    padding-inline: 11px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inventory-dialog-shell,
+  .inventory-dialog-overlay {
+    animation: none !important;
+    transition: none !important;
+  }
+}
+
+.inventory-dialog-scroll .pi-inventory-masthead {
+  padding-right: 6.5rem;
+}
+
+@media (max-width: 480px) {
+  .inventory-dialog-scroll .pi-inventory-masthead {
+    padding-right: 5.25rem;
+  }
+}

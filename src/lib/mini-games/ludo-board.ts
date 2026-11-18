@@ -7,6 +7,7 @@
  */
 import {
   FINISH_STEP,
+  HOME_STEPS,
   LAST_TRACK_STEP,
   YARD_STEP,
   absoluteTile,
@@ -19,9 +20,14 @@ const MID = (BOARD_SIZE - 1) / 2;
 const EDGE = (BOARD_SIZE - 3) / 2;
 const ARMS = 4;
 const LOOP_LENGTH = 52;
+/** Space around the board for finished pawns to wait on, in squares. */
+export const RAIL_MARGIN = 1.6;
+/** The whole stage in squares: the board plus a rail on every side. */
+export const VIEW_SQUARES = BOARD_SIZE + 2 * RAIL_MARGIN;
+/** Finished pawns line up on the rail, one slot per token. */
+const RAIL_OFFSETS: readonly number[] = [-1.35, -0.45, 0.45, 1.35];
 /** The centre square: the 3x3 block at the middle of the board. */
 export const CENTRE = { low: EDGE, size: BOARD_SIZE - 2 * EDGE };
-const HOME_STEPS = 6;
 const HOME_FIRST_STEP = LAST_TRACK_STEP + 1;
 
 export type Cell = readonly [row: number, col: number];
@@ -69,8 +75,11 @@ export function homeLane(arm: number): readonly Cell[] {
   );
 }
 
-/** Yard centre for arm 0 is the bottom-left corner; other arms turn it. */
-const YARD_CENTRE: Point = { x: EDGE / 2, y: BOARD_SIZE - EDGE / 2 };
+/**
+ * Yard centre for arm 0 (RED): the top-left corner, right beside RED's start tile (top-left of the left
+ * arm). Each later arm turns it clockwise, so every yard sits beside its own colour's start tile.
+ */
+const YARD_CENTRE: Point = { x: EDGE / 2, y: EDGE / 2 };
 const YARD_OFFSET = 1.25;
 export const YARD_SLOTS: readonly Point[] = [
   { x: -YARD_OFFSET, y: -YARD_OFFSET },
@@ -87,13 +96,22 @@ export function tokenPoint(colour: Colour, step: number, token: number): Point {
     const centre = turnPointBy(YARD_CENTRE, arm);
     return { x: centre.x + slot.x, y: centre.y + slot.y };
   }
-  if (step === FINISH_STEP) return { x: MID + 0.5, y: MID + 0.5 };
+  if (step === FINISH_STEP) return railPoint(arm, token);
   if (step <= LAST_TRACK_STEP) {
     const [row, col] = LOOP_CELLS[absoluteTile(colour, step)] ?? LOOP_CELLS[0]!;
     return { x: col + 0.5, y: row + 0.5 };
   }
   const [row, col] = homeLane(arm)[step - HOME_FIRST_STEP] ?? homeLane(arm)[0]!;
   return { x: col + 0.5, y: row + 0.5 };
+}
+
+/**
+ * A finished token waits on the rail just outside its own arm. RED's rail is on the left edge, and the
+ * other arms turn it clockwise, so each colour's finished pawns sit at its home colour's edge.
+ */
+export function railPoint(arm: number, token: number): Point {
+  const offset = RAIL_OFFSETS[token % RAIL_OFFSETS.length] ?? 0;
+  return turnPointBy({ x: -(RAIL_MARGIN - 0.6), y: MID + 0.5 + offset }, arm);
 }
 
 /** Yard rectangles, one per arm: a 6-cell square in the corner beside the arm. */

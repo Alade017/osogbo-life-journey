@@ -13,6 +13,7 @@ import {
 } from "@/lib/mini-games/ludo-engine";
 import {
   BOARD_SIZE,
+  CENTRE,
   LOOP_CELLS,
   homeLane,
   hopStep,
@@ -50,7 +51,7 @@ describe("ludo board geometry", () => {
   it("gives each colour a home lane that starts beside its own start tile", () => {
     COLOURS.forEach((colour, arm) => {
       const lane = homeLane(arm);
-      expect(new Set(lane.map(key)).size).toBe(6);
+      expect(new Set(lane.map(key)).size).toBe(5);
       const lastLoop = LOOP_CELLS[absoluteTile(colour, LAST_TRACK_STEP)]!;
       const step = Math.max(
         Math.abs(lastLoop[0] - lane[0]![0]),
@@ -78,10 +79,33 @@ describe("ludo board geometry", () => {
       x: LOOP_CELLS[13]![1] + 0.5,
       y: LOOP_CELLS[13]![0] + 0.5,
     });
-    expect(tokenPoint("RED", FINISH_STEP, 0)).toEqual({
-      x: (BOARD_SIZE - 1) / 2 + 0.5,
-      y: (BOARD_SIZE - 1) / 2 + 0.5,
+  });
+
+  it("keeps home lanes out of the centre square, so the dice have room there", () => {
+    const inCentre = ([row, col]: readonly [number, number]) =>
+      row >= CENTRE.low && row < CENTRE.low + CENTRE.size && col >= CENTRE.low && col < CENTRE.low + CENTRE.size;
+    COLOURS.forEach((_, arm) => {
+      expect(homeLane(arm).some(inCentre)).toBe(false);
     });
+  });
+
+  it("puts finished pawns on a rail just outside their own colour's edge", () => {
+    const outside = { RED: (p: { x: number }) => p.x < 0, GREEN: (p: { y: number }) => p.y < 0,
+      YELLOW: (p: { x: number }) => p.x > BOARD_SIZE, BLUE: (p: { y: number }) => p.y > BOARD_SIZE };
+    COLOURS.forEach((colour) => {
+      for (let token = 0; token < 4; token += 1) {
+        const point = tokenPoint(colour, FINISH_STEP, token);
+        expect(outside[colour](point), `${colour} ${token}`).toBe(true);
+      }
+    });
+    expect(tokenPoint("RED", FINISH_STEP, 0).x).toBeCloseTo(-1);
+    expect(tokenPoint("RED", FINISH_STEP, 0).y).toBeCloseTo(6.15);
+    // Four tokens get four separate slots on the rail.
+    const slots = new Set([0, 1, 2, 3].map((token) => {
+      const p = tokenPoint("GREEN", FINISH_STEP, token);
+      return `${p.x.toFixed(2)},${p.y.toFixed(2)}`;
+    }));
+    expect(slots.size).toBe(4);
   });
 
   it("gives every arm a yard rectangle on the board", () => {
@@ -93,6 +117,29 @@ describe("ludo board geometry", () => {
       expect(rect.x + rect.size).toBeLessThanOrEqual(BOARD_SIZE);
       expect(rect.y + rect.size).toBeLessThanOrEqual(BOARD_SIZE);
     }
+  });
+
+  it("puts each coloured yard beside its own colour's start tile", () => {
+    // A token leaving the yard enters at its start, so that start must be the nearest of the four.
+    const starts = COLOURS.map((colour) => ({ colour, point: tokenPoint(colour, 0, 0) }));
+    COLOURS.forEach((colour, arm) => {
+      const rect = yardRect(arm);
+      const centre = { x: rect.x + rect.size / 2, y: rect.y + rect.size / 2 };
+      const nearest = starts.reduce((best, start) =>
+        Math.hypot(start.point.x - centre.x, start.point.y - centre.y) <
+        Math.hypot(best.point.x - centre.x, best.point.y - centre.y)
+          ? start
+          : best,
+      );
+      expect(nearest.colour, colour).toBe(colour);
+      for (let token = 0; token < 4; token += 1) {
+        const point = tokenPoint(colour, YARD_STEP, token);
+        expect(point.x).toBeGreaterThan(rect.x);
+        expect(point.x).toBeLessThan(rect.x + rect.size);
+        expect(point.y).toBeGreaterThan(rect.y);
+        expect(point.y).toBeLessThan(rect.y + rect.size);
+      }
+    });
   });
 });
 
@@ -120,7 +167,7 @@ describe("computer choice", () => {
       phase: "WAITING_FOR_MOVE" as const,
       dice: [3, 1] as const,
       used: [false, false] as const,
-      pieces: { ...base.pieces, RED: [LAST_TRACK_STEP + 6, YARD_STEP, YARD_STEP, YARD_STEP] },
+      pieces: { ...base.pieces, RED: [FINISH_STEP - 1, YARD_STEP, YARD_STEP, YARD_STEP] },
     };
     const pick = bestComputerMove(state, "you");
     expect(pick?.token).toBe(0);

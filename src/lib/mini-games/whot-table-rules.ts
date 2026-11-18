@@ -41,7 +41,8 @@ export function applyWhotAction(
   }
 
   const card = state.hands[state.turn]?.find((item) => item.id === action.cardId);
-  if (!card || !canPlayCard(state, card)) return { ok: false, code: "CARD_NOT_PLAYABLE" };
+  const handSize = state.hands[state.turn]?.length ?? 0;
+  if (!card || !canPlayCard(state, card, handSize)) return { ok: false, code: "CARD_NOT_PLAYABLE" };
   if (card.rank === WHOT_RANK) {
     if (!action.shape) return { ok: false, code: "SHAPE_REQUIRED" };
     if (!SHAPES.includes(action.shape)) return { ok: false, code: "SHAPE_INVALID" };

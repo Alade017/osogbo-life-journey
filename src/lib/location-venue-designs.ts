@@ -1,6 +1,8 @@
 import { RESIDENTIAL_COMPOUND, compoundFeatures } from "@/game/residential-compound";
 import type { BankInteriorVariant } from "@/game/bank-interiors";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
+import { WORKPLACE_LAYOUT, type WorkplaceFeature } from "@/game/workplace-layout";
+import { FOOD_VENUE_LAYOUTS, type FoodVenueVariant } from "@/game/food-venue-layout";
 export type VenueFixtureKind =
   "counter" | "table" | "bench" | "shelf" | "screen" | "display" | "planter" | "seat";
 
@@ -25,7 +27,11 @@ export type LocationVenueDesign = {
   bankInterior?: BankInteriorVariant;
   transportPark?: boolean;
   sceneBounds?: { width: number; depth: number };
-  scene?: "campus" | "market" | "clinic" | "healthcare" | "residential";
+  scene?: "campus" | "market" | "clinic" | "healthcare" | "residential" | "workplace";
+  /** Built shopping-gallery interior (RetailInteriorScene). */
+  retailInterior?: boolean;
+  /** Built food-venue interior (BukaInteriorScene) and its footprint. */
+  foodInterior?: FoodVenueVariant;
   sceneSize?: { width: number; depth: number };
   name: string;
   description: string;
@@ -497,7 +503,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
   },
   "riverside-food-court": {
     foodInterior: "courtyard",
-    environment: { url: "/models/environments/market-and-bank/street-food-market-yard.glb" },
+    sceneSize: { width: FOOD_VENUE_LAYOUTS.courtyard.width, depth: FOOD_VENUE_LAYOUTS.courtyard.depth },
     name: "Riverside food court",
     description: "An open-sided dining room with vendor counters and shared tables.",
     floorColor: "#c7b99c",
@@ -926,10 +932,10 @@ const fallbackVenue: LocationVenueDesign = {
 };
 
 export function getLocationVenueDesign(slug: string, locationName: string): LocationVenueDesign {
-  const design =
+  const design: LocationVenueDesign =
     venues[slug] ??
     (["state-hospital", "general-hospital"].includes(slug)
-      ? { ...venues["sunrise-health-post"], name: locationName }
+      ? Object.assign({}, venues["sunrise-health-post"], { name: locationName })
       : fallbackVenue);
   return design === fallbackVenue ? { ...fallbackVenue, name: locationName } : design;
 }
@@ -963,6 +969,7 @@ export const BUKA_VENUE_DESIGN: LocationVenueDesign = {
   name: "Buka dining room",
   description: "A local canteen with a hot-food serving line, shared bench tables and a wash point.",
   foodInterior: "buka",
+  sceneSize: { width: FOOD_VENUE_LAYOUTS.buka.width, depth: FOOD_VENUE_LAYOUTS.buka.depth },
   floorColor: WORLD_PALETTE.ground,
   wallColor: WORLD_PALETTE.wall,
   accentColor: WORLD_PALETTE.clay,
