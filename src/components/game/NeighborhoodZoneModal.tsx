@@ -6,7 +6,6 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import {
   Briefcase,
   Bus,
-  CheckCircle2,
   Coins,
   Landmark,
   Map as MapIcon,
@@ -65,9 +64,7 @@ export function NeighborhoodZoneModal({
   currentLocationId,
   currentLocationSlug,
   npcTip,
-  onPerformZoneAction,
   onNpcTipSelect,
-  onToggleAccessory,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -81,9 +78,7 @@ export function NeighborhoodZoneModal({
   currentLocationId?: string | undefined;
   currentLocationSlug?: string | undefined;
   npcTip: string | null;
-  onPerformZoneAction: (zone: InteractableZoneSpec, outcome: ZoneActionOutcome) => void;
   onNpcTipSelect: (npc: ZoneNpcSpec, tipIndex: number) => void;
-  onToggleAccessory: (slug: string | null) => void;
 }) {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -140,11 +135,23 @@ export function NeighborhoodZoneModal({
     onOpenChange(nextOpen);
   };
 
+  const isServerBackedBankTransfer = (zoneSpec: InteractableZoneSpec, outcome: ZoneActionOutcome) =>
+    zoneSpec.category === "bank" &&
+    typeof outcome.bankDelta === "number" &&
+    outcome.bankDelta !== 0 &&
+    outcome.walletDelta === -outcome.bankDelta &&
+    !outcome.needDeltas &&
+    !outcome.xpGain &&
+    !outcome.craftItem &&
+    !outcome.equipSlot;
+
   const handleOutcomeClick = (zoneSpec: InteractableZoneSpec, outcome: ZoneActionOutcome) => {
+    if (!isServerBackedBankTransfer(zoneSpec, outcome) || !bankAccountQuery.data) {
+      toast.error("This activity is not connected to a server-authoritative action yet.");
+      return;
+    }
     if (outcome.walletDelta < 0 && pocketBalance < Math.abs(outcome.walletDelta)) {
-      toast.error(
-        `You need ${formatNaira(Math.abs(outcome.walletDelta))} pocket cash. Withdraw from the Bank or ATM first.`,
-      );
+      toast.error(`You need ${formatNaira(Math.abs(outcome.walletDelta))} pocket cash. Withdraw from the Bank or ATM first.`);
       return;
     }
     if ((outcome.bankDelta ?? 0) < 0 && bankBalance < Math.abs(outcome.bankDelta ?? 0)) {
@@ -152,25 +159,14 @@ export function NeighborhoodZoneModal({
       return;
     }
 
-    // Attempt server-authoritative bank transfer when bank account exists; always sync slice/cache cleanly.
-    if (zoneSpec.category === "bank" && bankAccountQuery.data && outcome.bankDelta) {
-      const amt = Math.abs(outcome.bankDelta);
-      bankTransfer.mutate(
-        { kind: outcome.bankDelta > 0 ? "deposit" : "withdraw", amount: amt },
-        {
-          onError: () => {
-            // Fall back smoothly to local state update in preview mode.
-            onPerformZoneAction(zoneSpec, outcome);
-          },
-          onSuccess: () => {
-            toast.success(outcome.toastMessage);
-          },
-        },
-      );
-      return;
-    }
-
-    onPerformZoneAction(zoneSpec, outcome);
+    const amount = Math.abs(outcome.bankDelta);
+    bankTransfer.mutate(
+      { kind: outcome.bankDelta > 0 ? "deposit" : "withdraw", amount },
+      {
+        onError: (error) => toast.error(error instanceof Error ? error.message : "The bank transfer was not completed."),
+        onSuccess: () => toast.success(outcome.toastMessage),
+      },
+    );
   };
 
   const transitDestinations = (locationsQuery.data ?? [])
@@ -282,6 +278,9 @@ export function NeighborhoodZoneModal({
             )}
             {subTab === "actions" && (
               <div className="space-y-4">
+                <p className="rounded-xl border border-amber-500/25 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
+                  Only confirmed bank transfers are available here. Other activities remain unavailable until their own server-backed handlers are implemented.
+                </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {zone.actions.map((outcome) => {
                     const priceLabel =
@@ -290,17 +289,16 @@ export function NeighborhoodZoneModal({
                         : outcome.walletDelta < 0
                           ? formatNaira(Math.abs(outcome.walletDelta))
                           : "Service";
+                    const supported = isServerBackedBankTransfer(zone, outcome);
                     const affordable =
-                      (outcome.walletDelta >= 0 ||
-                        pocketBalance >= Math.abs(outcome.walletDelta)) &&
-                      ((outcome.bankDelta ?? 0) >= 0 ||
-                        bankBalance >= Math.abs(outcome.bankDelta ?? 0));
+                      (outcome.walletDelta >= 0 || pocketBalance >= Math.abs(outcome.walletDelta)) &&
+                      ((outcome.bankDelta ?? 0) >= 0 || bankBalance >= Math.abs(outcome.bankDelta ?? 0));
 
                     return (
                       <button
                         key={outcome.id}
                         type="button"
-                        disabled={!affordable || bankTransfer.isPending}
+                        disabled={!supported || !bankAccountQuery.data || !affordable || bankTransfer.isPending}
                         onClick={() => handleOutcomeClick(zone, outcome)}
                         className="neighborhood-zone-action-tile"
                       >
@@ -317,6 +315,8 @@ export function NeighborhoodZoneModal({
                           </span>
                         </div>
                         <p className="text-xs text-[#4b5970]">{outcome.description}</p>
+                          {!supported && <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Not available yet</span>}
+                          {supported && !bankAccountQuery.data && <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Open a bank account to use</span>}
                         <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold text-[#16225C]">
                           {outcome.needDeltas?.hunger ? (
                             <span>
@@ -354,43 +354,7 @@ export function NeighborhoodZoneModal({
                   })}
                 </div>
 
-                {/* Local Crafted / Purchased Items Inventory Preview */}
-                {localInventory.length > 0 && (
-                  <div className="neighborhood-zone-pack-box">
-                    <div className="mb-2 flex items-center justify-between">
-                      <span className="flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-wider text-[#16225C]">
-                        <Package size={14} aria-hidden="true" />
-                        Satchel &amp; Zone Crafts ({localInventory.length})
-                      </span>
-                      <Link to="/inventory" className="text-xs font-bold text-[#16225C] underline">
-                        Open Inventory
-                      </Link>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      {localInventory.slice(0, 6).map((item) => {
-                        const isWearable = item.slot === "accessory";
-                        const equipped = equippedAccessorySlug === item.slug;
-                        return (
-                          <div key={item.id} className="neighborhood-zone-item-chip">
-                            <ShoppingBag size={12} aria-hidden="true" />
-                            <span>
-                              {item.name} ×{item.quantity}
-                            </span>
-                            {isWearable && (
-                              <button
-                                type="button"
-                                onClick={() => onToggleAccessory(equipped ? null : item.slug)}
-                                className="ml-1 min-h-[28px] rounded bg-[#16225C] px-2 py-0.5 text-[10px] font-bold text-[#FAF7F0]"
-                              >
-                                {equipped ? "Unequip" : "Equip"}
-                              </button>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+
               </div>
             )}
 
@@ -503,7 +467,7 @@ export function NeighborhoodZoneModal({
               </div>
               <DialogTitle className="text-xl font-black text-[#16225C]">{npc.name}</DialogTitle>
               <DialogDescription className="text-sm text-[#3a4668]">
-                Local Olaiya resident · Social score: <strong>{needs.social}%</strong>
+                Local Olaiya resident · Conversation tips
               </DialogDescription>
             </div>
 
@@ -529,7 +493,7 @@ export function NeighborhoodZoneModal({
                     Ask for Local Zone Tip
                   </strong>
                   <span className="text-xs text-[#4b5970]">
-                    Hear insider guidance about nearby spots (+10 Social)
+                    Hear informational guidance about nearby spots
                   </span>
                 </button>
 
@@ -541,11 +505,11 @@ export function NeighborhoodZoneModal({
                   className="neighborhood-zone-action-tile"
                 >
                   <strong className="flex items-center gap-1.5 text-sm text-[#16225C]">
-                    <CheckCircle2 size={15} className="text-[#1E9A5F]" aria-hidden="true" />
-                    Share Friendly Banter
+                    <MessageCircle size={15} aria-hidden="true" />
+                    Hear another local tip
                   </strong>
                   <span className="text-xs text-[#4b5970]">
-                    Boost your Social &amp; Mood around Olaiya (+10 Social, +4 Mood)
+                    Browse another piece of local information. No relationship reward is granted.
                   </span>
                 </button>
               </div>
