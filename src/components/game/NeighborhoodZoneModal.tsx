@@ -125,7 +125,6 @@ export function NeighborhoodZoneModal({
   };
 
 
-
   const handleOutcomeClick = (zoneSpec: InteractableZoneSpec, outcome: ZoneActionOutcome) => {
     if (!isServerBackedBankTransfer(zoneSpec, outcome) || !bankAccountQuery.data) {
       toast.error("This activity is not connected to a server-authoritative action yet.");
@@ -140,9 +139,10 @@ export function NeighborhoodZoneModal({
       return;
     }
 
-    const amount = Math.abs(outcome.bankDelta);
+    const bankDelta = outcome.bankDelta ?? 0;
+    const amount = Math.abs(bankDelta);
     bankTransfer.mutate(
-      { kind: outcome.bankDelta > 0 ? "deposit" : "withdraw", amount },
+      { kind: bankDelta > 0 ? "deposit" : "withdraw", amount },
       {
         onError: (error) => toast.error(error instanceof Error ? error.message : "The bank transfer was not completed."),
         onSuccess: () => toast.success(outcome.toastMessage),
@@ -259,7 +259,10 @@ export function NeighborhoodZoneModal({
             )}
             {subTab === "actions" && (
               <div className="space-y-4">
-                <p className="rounded-xl border border-amber-500/25 bg-amber-50 px-3 py-2 text-xs text-amber-900" role="status">
+                <p
+                  className="rounded-xl border border-amber-500/25 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                  role="status"
+                >
                   Only confirmed bank transfers are available here. Other activities remain unavailable until their own server-backed handlers are implemented.
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
@@ -273,13 +276,19 @@ export function NeighborhoodZoneModal({
                     const supported = isServerBackedBankTransfer(zone, outcome);
                     const affordable =
                       (outcome.walletDelta >= 0 || pocketBalance >= Math.abs(outcome.walletDelta)) &&
-                      ((outcome.bankDelta ?? 0) >= 0 || bankBalance >= Math.abs(outcome.bankDelta ?? 0));
+                      ((outcome.bankDelta ?? 0) >= 0 ||
+                        bankBalance >= Math.abs(outcome.bankDelta ?? 0));
 
                     return (
                       <button
                         key={outcome.id}
                         type="button"
-                        disabled={!supported || !bankAccountQuery.data || !affordable || bankTransfer.isPending}
+                        disabled={
+                          !supported ||
+                          !bankAccountQuery.data ||
+                          !affordable ||
+                          bankTransfer.isPending
+                        }
                         onClick={() => handleOutcomeClick(zone, outcome)}
                         className="neighborhood-zone-action-tile"
                       >
@@ -296,8 +305,16 @@ export function NeighborhoodZoneModal({
                           </span>
                         </div>
                         <p className="text-xs text-[#4b5970]">{outcome.description}</p>
-                          {!supported && <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Not available yet</span>}
-                          {supported && !bankAccountQuery.data && <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">Open a bank account to use</span>}
+                        {!supported && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                            Not available yet
+                          </span>
+                        )}
+                        {supported && !bankAccountQuery.data && (
+                          <span className="text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                            Open a bank account to use
+                          </span>
+                        )}
                         <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold text-[#16225C]">
                           {outcome.needDeltas?.hunger ? (
                             <span>
@@ -334,8 +351,6 @@ export function NeighborhoodZoneModal({
                     );
                   })}
                 </div>
-
-
               </div>
             )}
 
