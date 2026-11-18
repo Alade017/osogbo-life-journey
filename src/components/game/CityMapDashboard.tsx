@@ -17,11 +17,6 @@ import {
   resolvePlayerMapPosition,
   useLivePlayerPose,
 } from "@/store/neighborhoodNavSync";
-import {
-  applyZoneOutcomeAction,
-  neighborhoodReducer,
-  syncZoneOutcomeToQueryCache,
-} from "@/store/neighborhoodSlice";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { useMapTravelController } from "@/components/map/use-map-travel-controller";
