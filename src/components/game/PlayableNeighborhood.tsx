@@ -69,10 +69,8 @@ import {
 import {
   closeZoneInteraction,
   effectiveNeedsFromCharacter,
-  loadPersistedNeighborhoodState,
   neighborhoodReducer,
   openZoneInteraction,
-  persistNeighborhoodState,
   recordNpcChatAction,
   setHoveredZoneId,
   setPendingZoneId,
@@ -425,7 +423,7 @@ export function PlayableNeighborhood() {
   const [zoneState, dispatchZone] = useReducer(
     neighborhoodReducer,
     undefined,
-    loadPersistedNeighborhoodState,
+    initialNeighborhoodState,
   );
   const [hasWalked, setHasWalked] = useState(false);
   const autoWalkRouteRef = useRef<{ route: WorldPoint[]; index: number } | null>(null);
@@ -459,10 +457,6 @@ export function PlayableNeighborhood() {
   );
 
   useEffect(() => {
-    persistNeighborhoodState(zoneState);
-  }, [zoneState]);
-
-  useEffect(() => {
     if (!player || !district) return;
     const scenePoint = toScene({ x: player.x, y: player.y }, district.origin);
     const [threeX, threeZ] = scenePointToThreeXZ(scenePoint);
@@ -483,30 +477,11 @@ export function PlayableNeighborhood() {
     : undefined;
   const scenePlayers = useMemo(
     () =>
-      players.map((candidate) => {
-        if (candidate.sessionId !== sessionId) return candidate;
-        let nextEquipment = candidate.equipment;
-        if (zoneState.equippedAccessorySlug) {
-          try {
-            const parsed = JSON.parse(candidate.equipment || "[]");
-            const arr = Array.isArray(parsed)
-              ? parsed.filter((entry) => entry?.slot !== "accessory")
-              : [];
-            arr.push({ slot: "accessory", item: { slug: zoneState.equippedAccessorySlug } });
-            nextEquipment = JSON.stringify(arr);
-          } catch {
-            nextEquipment = JSON.stringify([
-              { slot: "accessory", item: { slug: zoneState.equippedAccessorySlug } },
-            ]);
-          }
-        }
-        return {
-          ...candidate,
-          equipment: nextEquipment,
-          ...(actionAnimation ? { actionAnimation } : {}),
-        };
-      }),
-    [actionAnimation, players, sessionId, zoneState.equippedAccessorySlug],
+      players.map((candidate) => ({
+        ...candidate,
+        ...(candidate.sessionId === sessionId && actionAnimation ? { actionAnimation } : {}),
+      })),
+    [actionAnimation, players, sessionId],
   );
   useEffect(() => setNpcPositionOverrides({}), [currentLocation?.id]);
   const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
@@ -1110,11 +1085,11 @@ export function PlayableNeighborhood() {
   }, []);
 
   const effectiveNeeds = useMemo(
-    () => effectiveNeedsFromCharacter(characterQuery.data, simulation.needs, zoneState.needOffsets),
+    () => effectiveNeedsFromCharacter(characterQuery.data, simulation.needs),
     [characterQuery.data, simulation.needs, zoneState.needOffsets],
   );
-  const pocketBalance = walletQuery.data?.balance ?? 5000 + zoneState.walletOffset;
-  const bankBalance = walletQuery.data?.bank_balance ?? 12000 + zoneState.bankOffset;
+  const pocketBalance = walletQuery.data?.balance ?? 0;
+  const bankBalance = walletQuery.data?.bank_balance ?? 0;
   const activeZoneSpec = findInteractableZone(zoneState.activeZoneId);
   const activeZoneNpc = findZoneNpc(zoneState.activeNpcId);
   const closeInteraction = (open: boolean) => {
