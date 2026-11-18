@@ -37,12 +37,28 @@ type TableRow = {
   fee_percent: number;
 };
 type SeatRow = { character_id: string; seat: number; paid: number; last_active_at: string };
+/** The table the signed-in player is seated at, from mini_game_my_table. */
+type MyTable = {
+  table_id: string;
+  game: string;
+  status: string;
+  stake: number;
+  pot: number;
+  seat: number;
+};
 type BoardRow = { cells: string; turn: number; version: number };
 
 function messageOf(error: unknown): string {
   if (typeof error === "object" && error !== null && "message" in error) {
     const message = (error as { message?: unknown }).message;
-    if (typeof message === "string" && message) return message;
+    if (typeof message === "string" && message) {
+      if (message.includes("already at a table"))
+        return "You are already seated at a table. Go back to it, or leave it, before joining another.";
+      if (message.includes("no longer open"))
+        return "That table has closed. Pick another one.";
+      if (message.includes("Not enough")) return "You do not have enough cash for that stake.";
+      return message;
+    }
   }
   return "Something went wrong. Try again.";
 }
@@ -73,6 +89,17 @@ function StakeLobby({
   const client = useQueryClient();
   const [stake, setStake] = useState<number>(STAKES[0]);
   const [game, setGame] = useState<GameKind>("tictactoe");
+  const mine = useQuery({
+    queryKey: ["miniGame", "mine", characterId],
+    queryFn: async (): Promise<MyTable | null> => {
+      const { data, error } = await supabase.rpc("mini_game_my_table");
+      if (error) throw error;
+      return (data ?? null) as MyTable | null;
+    },
+    enabled: !!characterId,
+    refetchInterval: REFRESH_MS,
+  });
+  const seatedElsewhere = mine.data ?? null;
   const tables = useQuery({
     queryKey: ["miniGame", "open"],
     queryFn: async (): Promise<OpenTable[]> => {
@@ -120,6 +147,17 @@ function StakeLobby({
     },
     onError: (error: unknown) => toast.error(messageOf(error)),
   });
+  const leaveSeat = useMutation({
+    mutationFn: async (table: string) => {
+      const { error } = await supabase.rpc("mini_game_leave_table", { p_table: table });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      refreshAfterChange();
+      toast.success("You left the table. Your stake is back in your cash.");
+    },
+    onError: (error: unknown) => toast.error(messageOf(error)),
+  });
   const canAfford = (amount: number) => balance >= amount;
 
   return (
@@ -133,6 +171,33 @@ function StakeLobby({
           <p>Choose a game, set your stake, and challenge another player.</p>
         </div>
       </div>
+      {seatedElsewhere && (
+        <section className="mg-stake-current" role="status" aria-label="Your current table">
+          <div>
+            <span className="mg-stake-eyebrow">Your table</span>
+            <strong>
+              {gameLabel(seatedElsewhere.game)} · {formatNaira(seatedElsewhere.stake)} stake
+            </strong>
+            <small>
+              {seatedElsewhere.status === "open"
+                ? "Waiting for an opponent."
+                : "Match in progress."}
+            </small>
+          </div>
+          <div className="mg-stake-current-actions">
+            <Button onClick={() => onOpen(seatedElsewhere.table_id)}>Return to table</Button>
+            {seatedElsewhere.status === "open" && (
+              <Button
+                variant="plain"
+                disabled={leaveSeat.isPending}
+                onClick={() => leaveSeat.mutate(seatedElsewhere.table_id)}
+              >
+                Leave for a full refund
+              </Button>
+            )}
+          </div>
+        </section>
+      )}
       <section className="mg-stake-create" aria-labelledby="mg-stake-create-title">
         <div className="mg-stake-section-head">
           <div>
@@ -177,7 +242,7 @@ function StakeLobby({
         </div>
         <Button
           className="mg-stake-create-button"
-          disabled={!characterId || create.isPending || !canAfford(stake)}
+          disabled={!characterId || !!seatedElsewhere || create.isPending || !canAfford(stake)}
           onClick={() => create.mutate()}
         >
           {canAfford(stake) ? (
@@ -225,7 +290,7 @@ function StakeLobby({
         )}
         <ul className="mg-list mg-stake-table-list">
           {tables.data?.map((table) => {
-            const mine = table.host_character_id === characterId;
+            const isMine = table.host_character_id === characterId;
             return (
               <li key={table.id}>
                 <div className="mg-stake-table-card">
@@ -238,10 +303,21 @@ function StakeLobby({
                   </div>
                   <Button
                     className="mg-stake-join-button"
-                    disabled={mine || join.isPending || !canAfford(table.stake)}
+                    disabled={
+                      isMine ||
+                      !!seatedElsewhere ||
+                      join.isPending ||
+                      !canAfford(table.stake)
+                    }
                     onClick={() => join.mutate(table.id)}
                   >
-                    {mine ? "Your table" : canAfford(table.stake) ? "Join" : "Not enough cash"}
+                    {isMine
+                      ? "Your table"
+                      : seatedElsewhere
+                        ? "Seated elsewhere"
+                        : canAfford(table.stake)
+                          ? "Join"
+                          : "Not enough cash"}
                   </Button>
                 </div>
               </li>

@@ -10,7 +10,6 @@ import {
 } from "@/components/ui/dialog";
 import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
-  Backpack,
   Bell,
   Bike,
   BriefcaseBusiness,
@@ -123,9 +122,6 @@ const EducationPage = lazy(() =>
 const ProfilePage = lazy(() =>
   import("@/routes/_authenticated/_game/profile").then((m) => ({ default: m.ProfilePage })),
 );
-const InventoryPage = lazy(() =>
-  import("@/routes/_authenticated/_game/inventory").then((m) => ({ default: m.InventoryPage })),
-);
 const SupportApp = lazy(() =>
   import("@/components/game/phone/SupportApp").then((m) => ({ default: m.SupportApp })),
 );
@@ -172,7 +168,6 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
   { label: "Games", icon: Gamepad2, tone: "phone-app-coral" },
   { label: "Nigerian Schools", icon: School, tone: "phone-app-blue" },
-  { label: "Inventory", icon: Backpack, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
   { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue", emphasis: "important" },
@@ -199,7 +194,6 @@ const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
 const SETTINGS_STYLE_APPS = new Set([
   "Profile",
   "Support",
-  "Inventory",
   "Town News",
   "Market",
   "Education",
@@ -454,7 +448,6 @@ export function PhoneLauncher({
 
     if (appName === "People") return <PlayerSocial initialTab="players" phoneMode />;
     if (appName === "Profile") return <ProfilePage />;
-    if (appName === "Inventory") return <InventoryPage />;
 
     if (appName === "Market" || appName === "Market Stalls") {
       return <PhoneMarketApp />;

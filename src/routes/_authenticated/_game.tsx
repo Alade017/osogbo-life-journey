@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
+import { InventoryOverlay } from "@/components/game/InventoryOverlay";
 import { Smartphone } from "lucide-react";
 import { useGameViewport } from "@/hooks/use-game-viewport";
 import { GameMobileNav } from "@/components/game/GameMobileNav";
@@ -65,6 +66,9 @@ function GameLayout() {
   const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
   const [housingOpen, setHousingOpen] = useState(false);
   const [phoneOpen, setPhoneOpen] = useState(false);
+  const [inventoryOpen, setInventoryOpen] = useState(false);
+  const [hudIdle, setHudIdle] = useState(false);
+  const [hudPanelOpen, setHudPanelOpen] = useState(false);
   const [housingRequested, setHousingRequested] = useState(false);
   const [housingSource, setHousingSource] = useState<"home" | "profile">("home");
   const housingHandledThisSession = useRef(false);
@@ -73,6 +77,44 @@ function GameLayout() {
   )?.onboarding_step;
   const housingPending = onboardingStep === "housing";
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
+
+  useEffect(() => {
+    let timeout = window.setTimeout(() => setHudIdle(true), 4000);
+    const wakeHud = () => {
+      setHudIdle(false);
+      window.clearTimeout(timeout);
+      timeout = window.setTimeout(() => setHudIdle(true), 4000);
+    };
+    const wakeOnPointerMove = () => wakeHud();
+    window.addEventListener("pointerdown", wakeHud, { passive: true });
+    window.addEventListener("pointermove", wakeOnPointerMove, { passive: true });
+    window.addEventListener("keydown", wakeHud);
+    window.addEventListener("focusin", wakeHud);
+    return () => {
+      window.clearTimeout(timeout);
+      window.removeEventListener("pointerdown", wakeHud);
+      window.removeEventListener("pointermove", wakeOnPointerMove);
+      window.removeEventListener("keydown", wakeHud);
+      window.removeEventListener("focusin", wakeHud);
+    };
+  }, []);
+  useEffect(() => {
+    const handleHudPanel = (event: Event) => {
+      setHudPanelOpen(Boolean((event as CustomEvent<{ open?: boolean }>).detail?.open));
+    };
+    window.addEventListener("osogbo-hud-panel-open", handleHudPanel);
+    return () => window.removeEventListener("osogbo-hud-panel-open", handleHudPanel);
+  }, []);
+
+  useEffect(() => {
+    setHudPanelOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    if (!phoneOpen && !housingOpen && !inventoryOpen) return;
+    setHudPanelOpen(false);
+    window.dispatchEvent(new Event("osogbo-hud-dismiss-panels"));
+  }, [phoneOpen, housingOpen, inventoryOpen]);
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
     return () => {
@@ -223,6 +265,9 @@ function GameLayout() {
             pathname === "/house" && "home-scene",
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
+            (housingOpen || inventoryOpen) && "hud-menu-open",
+            hudPanelOpen && "hud-panel-open",
+            hudIdle && "hud-idle",
           )}
         >
           <WorldEnvironment />
@@ -262,7 +307,11 @@ function GameLayout() {
           />
 
           <div className={phoneOpen ? "gbb is-open" : "gbb"}>
-            <GameMobileNav hidden={phoneOpen} onNavigate={() => setPhoneOpen(false)} />
+            <GameMobileNav
+              hidden={phoneOpen || inventoryOpen}
+              onNavigate={() => setPhoneOpen(false)}
+              onInventoryOpen={() => setInventoryOpen(true)}
+            />
             <PhoneLauncher
               compact
               className="gbb-phone"
@@ -270,11 +319,18 @@ function GameLayout() {
               onOpenChange={setPhoneOpen}
               dock={
                 <div className="gbb">
-                  <GameMobileNav onNavigate={() => setPhoneOpen(false)} />
+                  <GameMobileNav
+                    onNavigate={() => setPhoneOpen(false)}
+                    onInventoryOpen={() => {
+                      setPhoneOpen(false);
+                      setInventoryOpen(true);
+                    }}
+                  />
                 </div>
               }
             />
           </div>
+          <InventoryOverlay open={inventoryOpen} onOpenChange={setInventoryOpen} />
           <HousingChooser
             open={housingOpen}
             pending={housingPending || (housingRequested && housingSource === "profile")}

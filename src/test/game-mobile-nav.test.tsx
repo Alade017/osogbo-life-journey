@@ -34,11 +34,13 @@ import { GameMobileNav } from "@/components/game/GameMobileNav";
 
 it.each([
   ["Home", "/home"],
-  ["City", "/map"],
+  ["Map", "/map"],
   ["Career Life", "/jobs"],
 ])("%s keeps its full-page route and closes the phone", (label, route) => {
   const closePhone = vi.fn();
-  render(<GameMobileNav hidden={false} onNavigate={closePhone} />);
+  render(
+    <GameMobileNav hidden={false} onNavigate={closePhone} onInventoryOpen={vi.fn()} />,
+  );
   const link = screen.getByRole("link", { name: label });
   expect(link).toHaveAttribute("href", route);
 
@@ -49,7 +51,7 @@ it.each([
 
 it("keeps the phone launcher in the same navigation landmark", () => {
   render(
-    <GameMobileNav onNavigate={vi.fn()}>
+    <GameMobileNav onNavigate={vi.fn()} onInventoryOpen={vi.fn()}>
       <button>Phone</button>
     </GameMobileNav>,
   );
@@ -60,7 +62,20 @@ it("keeps the phone launcher in the same navigation landmark", () => {
 });
 
 it("removes the background dock from keyboard navigation while its modal copy is active", () => {
-  const { container } = render(<GameMobileNav hidden onNavigate={vi.fn()} />);
+  const { container } = render(<GameMobileNav hidden onNavigate={vi.fn()} onInventoryOpen={vi.fn()} />);
   expect(container.querySelector("nav")).toHaveAttribute("inert");
   expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
+});
+
+
+it("opens inventory from its own HUD control instead of navigating to a route", () => {
+  const openInventory = vi.fn();
+  render(<GameMobileNav onNavigate={vi.fn()} onInventoryOpen={openInventory} />);
+  const button = screen.getByRole("button", { name: "Open inventory" });
+  expect(button).toBeInTheDocument();
+  expect(button).not.toHaveAttribute("href");
+
+  fireEvent.click(button);
+
+  expect(openInventory).toHaveBeenCalledOnce();
 });

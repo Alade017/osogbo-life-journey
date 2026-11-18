@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { CivicServiceScene } from "@/components/3d/CivicServiceScene";
 import { BankInteriorScene } from "@/components/3d/BankInteriorScene";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
@@ -5,6 +6,9 @@ import { TransitParkScene } from "@/components/3d/TransitParkScene";
 import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
 import { transportMapHref } from "@/lib/transport-park";
 import { HealthcareScene } from "@/components/3d/HealthcareScene";
+import { WorkplaceScene } from "@/components/3d/WorkplaceScene";
+import { RetailInteriorScene } from "@/components/3d/RetailInteriorScene";
+import { BukaInteriorScene } from "@/components/3d/BukaInteriorScene";
 import { MarketTradingHall } from "@/components/3d/MarketTradingScene";
 import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
@@ -62,15 +66,20 @@ function FixtureModel({
 function BasicLocationVenueScene({
   slug,
   locationName,
+  design,
   onBrowseMarket,
   onBankServices,
 }: {
   slug: string;
   locationName: string;
+  design?: LocationVenueDesign;
   onBrowseMarket?: () => void;
   onBankServices?: () => void;
 }) {
-  const venue = useMemo(() => getLocationVenueDesign(slug, locationName), [slug, locationName]);
+  const venue = useMemo(
+    () => design ?? getLocationVenueDesign(slug, locationName),
+    [design, slug, locationName],
+  );
   const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -132,8 +141,8 @@ function BasicLocationVenueScene({
               aria-hidden="true"
             >
               <WorldCamera
-                width={bankLayout?.width ?? venue.sceneBounds?.width ?? 10}
-                depth={bankLayout?.depth ?? venue.sceneBounds?.depth ?? 7}
+                width={bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 10}
+                depth={bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 7}
                 stage
                 target={[0, 1.2, 0]}
                 zoom={1.2}
@@ -177,6 +186,34 @@ function BasicLocationVenueScene({
                   fixtures={venue.fixtures}
                   selected={selectedFixture}
                   onSelect={setSelectedFixture}
+                />
+              ) : venue.scene === "workplace" ? (
+                <WorkplaceScene
+                  fixtures={venue.fixtures}
+                  selected={selectedFixture}
+                  onSelect={setSelectedFixture}
+                  floorColor={venue.floorColor}
+                  wallColor={venue.wallColor}
+                  accentColor={venue.accentColor}
+                />
+              ) : venue.retailInterior ? (
+                <RetailInteriorScene
+                  fixtures={venue.fixtures}
+                  selected={selectedFixture}
+                  onSelect={setSelectedFixture}
+                  floorColor={venue.floorColor}
+                  wallColor={venue.wallColor}
+                  accentColor={venue.accentColor}
+                />
+              ) : venue.foodInterior ? (
+                <BukaInteriorScene
+                  variant={venue.foodInterior}
+                  fixtures={venue.fixtures}
+                  selected={selectedFixture}
+                  onSelect={setSelectedFixture}
+                  floorColor={venue.floorColor}
+                  wallColor={venue.wallColor}
+                  accentColor={venue.accentColor}
                 />
               ) : venue.environment ? (
                 <VenueEnvironment
@@ -269,6 +306,16 @@ function BasicLocationVenueScene({
           </a>
         </section>
       )}
+      {venue.scene === "workplace" && (
+        <nav aria-label="Workplace links" className="flex flex-wrap gap-2">
+          <Link to="/jobs" className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
+            Jobs & shifts
+          </Link>
+          <Link to="/education" className="rounded-lg border border-edge bg-card px-4 py-3 text-sm font-semibold">
+            Courses
+          </Link>
+        </nav>
+      )}
       {venue.bankInterior && onBankServices && (
         <button
           type="button"
@@ -323,10 +370,14 @@ function BasicLocationVenueScene({
 export function LocationVenueScene(props: {
   slug: string;
   locationName: string;
+  /** A venue design supplied by the caller, such as the neighbourhood Buka interior. */
+  design?: LocationVenueDesign;
+  /** The shop the visitor is inside, when the venue is a sub-building stall. */
+  shopSlug?: string | null;
   onBrowseMarket?: () => void;
   onBankServices?: () => void;
 }) {
-  const venue = getLocationVenueDesign(props.slug, props.locationName);
+  const venue = props.design ?? getLocationVenueDesign(props.slug, props.locationName);
   if (venue.scene === "clinic")
     return (
       <Suspense

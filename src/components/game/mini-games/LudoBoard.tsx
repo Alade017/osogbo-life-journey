@@ -1,4 +1,4 @@
-import { useEffect, useState, type CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties, type ReactNode } from "react";
 import { COLOURS, absoluteTile, isSafeTile, type Colour } from "@/lib/mini-games/ludo-engine";
 import { LUDO_COLOURS } from "@/components/game/mini-games/ludo-palette";
 import { LudoPawns3D, type ScenePiece } from "@/components/game/mini-games/LudoPawns3D";
@@ -62,19 +62,30 @@ export function LudoBoard({
   playable,
   onPick,
   playerCount,
+  onAnimatingChange,
+  children,
 }: {
   pieces: Progress;
   playable: ReadonlySet<string>;
   onPick: (colour: Colour, token: number) => void;
   playerCount: number;
+  onAnimatingChange?: (animating: boolean) => void;
+  /** Drawn over the board and the rails, such as the dice. */
+  children?: ReactNode;
 }) {
   const [shown, setShown] = useState<Progress>(pieces);
 
+  const animating = !sameAll(shown, pieces);
+
   useEffect(() => {
-    if (sameAll(shown, pieces)) return;
+    onAnimatingChange?.(animating);
+  }, [animating, onAnimatingChange]);
+
+  useEffect(() => {
+    if (!animating) return;
     const timer = window.setTimeout(() => setShown((current) => stepAll(current, pieces)), HOP_MS);
     return () => window.clearTimeout(timer);
-  }, [shown, pieces]);
+  }, [animating, shown, pieces]);
 
   // Group tokens that share a tile, so stacked tokens are scaled and laid out in a small sub-grid.
   const tiles = new Map<string, { colour: Colour; token: number; point: Point }[]>();
@@ -105,6 +116,7 @@ export function LudoBoard({
   );
 
   return (
+    <div className="lb-stage">
     <div className="lb-board" data-players={playerCount}>
       <div className="lb-grid" role="img" aria-label="Ludo board">
         {Array.from({ length: BOARD_SIZE * BOARD_SIZE }, (_, index) => {
@@ -243,7 +255,9 @@ export function LudoBoard({
           );
         }),
       )}
+    </div>
       <LudoPawns3D pieces={scenePieces} />
+      {children}
     </div>
   );
 }
