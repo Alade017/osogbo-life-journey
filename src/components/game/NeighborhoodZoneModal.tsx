@@ -481,7 +481,9 @@ export function NeighborhoodZoneModal({
                 <button
                   type="button"
                   onClick={() => {
-                    onNpcTipSelect(npc, tipIndex);
+                    const nextIdx = (tipIndex + 1) % npc.tips.length;
+                    setTipIndex(nextIdx);
+                    onNpcTipSelect(npc, nextIdx);
                   }}
                   className="neighborhood-zone-action-tile"
                 >
