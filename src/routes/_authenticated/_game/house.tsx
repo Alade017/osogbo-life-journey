@@ -6,6 +6,7 @@ import {
   roomObstacles,
   type RoomPoint,
   placementsOverlappingWalls,
+  runHouseStairTransition,
 } from "@/game/house-navigation";
 import {
   HOUSE_GRID_STEP,
@@ -769,10 +770,16 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     HOUSE_ROOM_SIZE["shared-room"]!;
   const movement = useHouseMovement(serverState?.house?.id ?? "none", [0, 0.06, roomDepth * 0.18]);
   // The room view shows one room close up. It follows the character until a room or the whole home is picked.
+  const [activeFloor, setActiveFloor] = useState<0 | 1>(0);
+  const [climbingStairs, setClimbingStairs] = useState(false);
   const roomViews = serverState?.house
-    ? houseRoomViews(serverState.house.house_type_id, roomWidth, roomDepth)
+    ? houseRoomViews(serverState.house.house_type_id, roomWidth, roomDepth, activeFloor)
     : [];
   const [pinnedRoom, setPinnedRoom] = useState<string | null | undefined>(undefined);
+  useEffect(() => {
+    setActiveFloor(0);
+    setPinnedRoom(undefined);
+  }, [serverState?.house?.id]);
   const followedRoom =
     roomViews.find((room) => roomViewContains(room, movement.position[0], movement.position[2]))
       ?.id ??
@@ -787,7 +794,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const [cancellingTask, setCancellingTask] = useState(false);
   const autoCompleting = useRef<string | null>(null);
   const [clockNow, setClockNow] = useState(Date.now());
-  const [activeFloor, setActiveFloor] = useState<0 | 1>(0);
   const floorPlacements = scenePlacements.filter((item) => (item.floor ?? 0) === activeFloor);
   const obstacles = roomObstacles(
     serverState?.house?.house_type_id ?? "shared-room",
@@ -799,15 +805,29 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   );
   const stairs = houseStairs(serverState?.house?.house_type_id ?? "", roomWidth, roomDepth);
   /** Walk to the stairs, climb them, then switch to the other floor at the far end. */
-  const climbStairs = async () => {
-    if (!stairs || editing || taskBusy || isOffline || !isInsideHome) return;
-    const up = activeFloor === 0;
-    const from = up ? stairs.bottom : stairs.top;
-    const to = up ? stairs.top : stairs.bottom;
+  const climbStairs = async (): Promise<boolean> => {
+    if (!stairs || editing || taskBusy || isOffline || !isInsideHome || interactionLock.current)
+      return false;
+    interactionLock.current = true;
+    setClimbingStairs(true);
+    setSelectedPlacement(null);
+    setPinnedRoom(null);
     setActivityError("");
-    if (!(await walkTo([from[0], 0.06, from[1]]))) return;
-    if (!(await walkTo([to[0], 0.06, to[1]]))) return;
-    setActiveFloor(up ? 1 : 0);
+    try {
+      const arrived = await runHouseStairTransition({
+        stairs,
+        fromFloor: activeFloor,
+        approach: (point) => walkTo(point),
+        walk: movement.walk,
+        setFloor: setActiveFloor,
+        place: movement.place,
+      });
+      if (arrived) setPinnedRoom(undefined);
+      return arrived;
+    } finally {
+      interactionLock.current = false;
+      setClimbingStairs(false);
+    }
   };
   const [doorOpen, setDoorOpen] = useState(false);
   const outside = useOutsideTransition();
@@ -816,13 +836,14 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const goOutside = async () => {
     if (editing || taskBusy || isOffline || !serverState?.house) return;
     setActivityError("");
+    if (activeFloor === 1 && !(await climbStairs())) return;
     const [doorX, doorY, doorZ] = houseDoorThreshold(
       serverState.house.house_type_id,
       roomWidth,
       roomDepth,
     );
     // The walk and the door swing play in the room first, so they stay visible.
-    if (!(await walkTo([doorX, doorY, doorZ]))) return;
+    if (!(await walkTo([doorX, doorY, doorZ], false, 0))) return;
     setDoorOpen(true);
     await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
     beginTransition("leaving", "Confirming your move", 3);
@@ -873,6 +894,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     )
       return;
     setActivityError("");
+    if (activeFloor === 1 && !(await climbStairs())) return;
     const [doorX, doorY, doorZ] = houseDoorThreshold(
       serverState.house.house_type_id,
       roomWidth,
@@ -881,7 +903,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     let transitionStarted = false;
     try {
       const departed = await runHomeDepartureAfterWalk(
-        () => walkTo([doorX, doorY, doorZ]),
+        () => walkTo([doorX, doorY, doorZ], false, 0),
         async () => {
           setDoorOpen(true);
           await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
@@ -919,13 +941,22 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       );
     }
   };
-  const walkTo = (point: RoomPoint, interact = false) => {
+  const walkTo = (point: RoomPoint, interact = false, floor: 0 | 1 = activeFloor) => {
     const path = findRoomPath(
       movement.positionRef.current,
       point,
       roomWidth,
       roomDepth,
-      obstacles,
+      floor === activeFloor
+        ? obstacles
+        : roomObstacles(
+            houseTypeId ?? "shared-room",
+            roomWidth,
+            roomDepth,
+            placements.filter((item) => (item.floor ?? 0) === floor),
+            slots,
+            floor,
+          ),
       interact,
     );
     if (!path) {
@@ -1142,7 +1173,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     : false;
   const guide =
     draftPlacement && draftMove
-      ? guideFor(draftPlacement.slot_type, draftPlacement.art_key, houseTypeId ?? undefined)
+      ? guideFor(
+          draftPlacement.slot_type,
+          draftPlacement.art_key,
+          houseTypeId ?? undefined,
+          activeFloor,
+        )
       : null;
   const arrangementNotes =
     draftPlacement && draftMove
@@ -1153,6 +1189,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           draftMove.y,
           houseDoorPercentX(houseTypeId ?? ""),
           houseTypeId ?? undefined,
+          activeFloor,
         )
       : [];
   const startMove = (placement: HousePlacement) => {
@@ -1272,6 +1309,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     }
   };
   const collectPackage = async (orderId: string) => {
+    if (activeFloor !== 0) {
+      setActivityError("Go downstairs to collect your delivery.");
+      return;
+    }
     if (
       interactionLock.current ||
       gameTime.simulation.currentAction ||
@@ -1325,7 +1366,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const timedActionId = timedActivity?.actionId;
   const timedRequestId = timedActivity?.requestId;
   const taskTiming = gameTime.homeTaskTiming;
-  const taskBusy = !!timedActivity || !!walkingTask || startingTask || cancellingTask;
+  const taskBusy =
+    climbingStairs || !!timedActivity || !!walkingTask || startingTask || cancellingTask;
   /** A map trip started from inside the house runs here, once, when the house is ready. */
   useEffect(() => {
     if (departureRan.current) return;
@@ -1535,8 +1577,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
 
   const house = serverState.house;
   const layoutConflicts =
-    house.house_type_id === "bungalow"
-      ? placementsOverlappingWalls(house.house_type_id, roomWidth, roomDepth, placements, slots)
+    house.house_type_id === "bungalow" || house.house_type_id === "duplex"
+      ? placementsOverlappingWalls(
+          house.house_type_id,
+          roomWidth,
+          roomDepth,
+          placements.filter((item) => (item.floor ?? 0) === activeFloor),
+          slots,
+          activeFloor,
+        )
       : [];
   return (
     <div className={`house-page house-page-fill${editing ? " is-editing" : ""}`}>
@@ -1632,7 +1681,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             )}
           </button>
         )}
-        {!editing && activeFloor === 0 && roomViews.length > 0 && (
+        {!editing && roomViews.length > 0 && (
           <div className="house-room-views" role="group" aria-label="Room view">
             {roomViews.length > 4 ? (
               <select
@@ -1691,9 +1740,14 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           </div>
         )}
         {!editing && stairs && (
-          <span className="house-floor-label" role="status" aria-live="polite">
-            {activeFloor === 0 ? "Ground floor" : "Upstairs"}
-          </span>
+          <button
+            type="button"
+            className="house-floor-label"
+            disabled={taskBusy || isOffline}
+            onClick={() => void climbStairs()}
+          >
+            {activeFloor === 0 ? "Go upstairs ↑" : "Go downstairs ↓"}
+          </button>
         )}
       </div>
       <section
@@ -1701,7 +1755,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         aria-label={`${house.house_type.label} room`}
       >
         <HouseRoomRenderer
-          roomView={activeFloor === 0 ? roomView : null}
+          roomView={roomView}
           guideZone={guide?.zoneBounds ?? null}
           inputBlocked={taskBusy || (!editing && !!selectedPlacement && !!selectedAction)}
           houseTypeId={house.house_type_id}
@@ -1736,7 +1790,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           placements={floorPlacements}
           activeFloor={activeFloor}
           {...(stairs ? { onUseStairs: () => void climbStairs() } : {})}
-          foodDeliveries={deliveries.data ?? []}
+          foodDeliveries={activeFloor === 0 ? (deliveries.data ?? []) : []}
           movingPlacement={null}
           draftMove={draftMove}
           onDraftMove={(x, y) =>

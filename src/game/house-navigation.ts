@@ -4,9 +4,47 @@ import {
   houseSlotPosition,
   roomPercentToPosition,
   houseRearDoorCenter,
+  houseStairs,
+  stairTraversalPath,
+  HOUSE_STAIR_RISE,
+  type HouseStairs,
 } from "@/components/game/housing/house-room-contract";
 export type RoomPoint = [number, number, number];
 export type RoomObstacle = { x: number; z: number; w: number; d: number; wall?: boolean };
+
+/** Keep the raised stair animation on the ground-floor scene, then land on a flat floor. */
+export async function runHouseStairTransition({
+  stairs,
+  fromFloor,
+  approach,
+  walk,
+  setFloor,
+  place,
+}: {
+  stairs: HouseStairs;
+  fromFloor: 0 | 1;
+  approach: (point: RoomPoint) => Promise<boolean>;
+  walk: (path: RoomPoint[]) => Promise<boolean>;
+  setFloor: (floor: 0 | 1) => void;
+  place: (point: RoomPoint) => void;
+}): Promise<boolean> {
+  const up = fromFloor === 0,
+    from = up ? stairs.bottom : stairs.top;
+  if (!(await approach([from[0], 0.06, from[1]]))) return false;
+  if (!up) {
+    setFloor(0);
+    place([stairs.top[0], 0.06 + HOUSE_STAIR_RISE, stairs.top[1]]);
+  }
+  if (!(await walk(stairTraversalPath(stairs, up)))) {
+    setFloor(0);
+    place([stairs.bottom[0], 0.06, stairs.bottom[1]]);
+    return false;
+  }
+  const landing = up ? stairs.top : stairs.bottom;
+  setFloor(up ? 1 : 0);
+  place([landing[0], 0.06, landing[1]]);
+  return true;
+}
 export function placementPoint(
   item: HousePlacement,
   slots: HouseSlot[],
@@ -39,8 +77,9 @@ export function placementsOverlappingWalls(
   depth: number,
   placements: HousePlacement[],
   slots: HouseSlot[],
+  floor: 0 | 1 = 0,
 ): HousePlacement[] {
-  const walls = roomObstacles(type, width, depth, [], slots);
+  const walls = roomObstacles(type, width, depth, [], slots, floor);
   return placements.filter((item) => {
     if (item.art_key.startsWith("wall-art")) return false;
     const furniture = furnitureObstacle(item, slots, width, depth);
@@ -79,7 +118,19 @@ export function roomObstacles(
   slots: HouseSlot[],
   floor: 0 | 1 = 0,
 ): RoomObstacle[] {
+  const stairs = houseStairs(type, width, depth);
   return [
+    ...(stairs
+      ? [
+          {
+            x: (stairs.x0 + stairs.x1) / 2,
+            z: (stairs.z0 + stairs.z1) / 2,
+            w: stairs.x1 - stairs.x0,
+            d: stairs.z1 - stairs.z0,
+            wall: true,
+          },
+        ]
+      : []),
     ...housePartitionSegmentsForFloor(type, width, depth, floor).map((s) => ({
       x: s.position[0],
       z: s.position[2],

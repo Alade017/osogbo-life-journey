@@ -1,4 +1,5 @@
 import { bungalowBlueprint } from "./bungalow-blueprint";
+import { duplexBlueprint } from "./duplex-blueprint";
 
 /** Architectural boundaries in room metres. Rendering and movement consume these together. */
 export type FloorBounds = { minX: number; maxX: number; minZ: number; maxZ: number };
@@ -92,6 +93,7 @@ export const HOUSE_BLUEPRINTS = {
   "single-room": privateRoomBlueprint,
   "mini-flat": miniFlatBlueprint,
   bungalow: bungalowBlueprint,
+  duplex: duplexBlueprint,
 } as const;
 export type BlueprintHomeType = keyof typeof HOUSE_BLUEPRINTS;
 

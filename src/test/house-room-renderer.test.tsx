@@ -86,7 +86,7 @@ describe("R3F home renderer boundary", () => {
     expect(housePartitionSegments("single-room", 8, 6)).toHaveLength(0);
     expect(housePartitionSegments("studio-flat", 8, 6)).toHaveLength(3);
     expect(housePartitionSegments("bungalow", 10, 8).length).toBeGreaterThan(7);
-    expect(housePartitionSegments("duplex", 12, 9)).toHaveLength(7);
+    expect(housePartitionSegments("duplex", 12, 9).length).toBeGreaterThan(7);
     expect(housePartitionSegments("bungalow", 10, 8).every((part) => part.size[1] < 2)).toBe(true);
   });
 
