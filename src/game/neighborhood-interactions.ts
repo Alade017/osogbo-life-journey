@@ -31,7 +31,7 @@ export type ZoneActionOutcome = {
   activityKind?: "purchase" | "shift" | "craft" | "service" | "transit";
 };
 
-export type ZoneService = "bank" | "market" | "jobs" | "transit" | "interior";
+export type ZoneService = "bank" | "market" | "jobs" | "transit" | "interior" | "barber" | "pos";
 
 export interface InteractableZoneSpec {
   /** Existing server-backed panels offered at this world target. */
@@ -450,6 +450,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-shop-barber",
+    services: ["barber"],
     zoneTag: "COMMERCIAL_SHOPS",
     category: "shops",
     title: "Dele Cutz Barber Salon",
@@ -460,16 +461,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
     badgeHeight: 2.75,
     hitSize: [2.6, 3.0, 2.4],
     actions: [
-      {
-        id: "barber-fresh-fade",
-        label: "Fresh Skin Fade & Beard Trim",
-        description: "Full grooming service boosting hygiene and confidence.",
-        walletDelta: -1500,
-        needDeltas: { hygiene: 38, fun: 18, social: 8 },
-        xpGain: 16,
-        toastMessage: "Stepped out with a crisp fade (+38 Hygiene, +18 Fun)!",
-        activityKind: "service",
-      },
       {
         id: "barber-hot-towel",
         label: "Cool Wash & Hot Towel Refresh",
@@ -484,6 +475,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-shop-pos",
+    services: ["pos"],
     zoneTag: "COMMERCIAL_SHOPS",
     category: "shops",
     title: "FastCash POS & Airtime Kiosk",
@@ -494,16 +486,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
     badgeHeight: 2.55,
     hitSize: [2.0, 2.5, 1.8],
     actions: [
-      {
-        id: "pos-cashout-2000",
-        label: "POS Cash-Out ₦2,000 (₦100 fee)",
-        description: "Convert ₦2,100 from bank savings into instant pocket cash.",
-        walletDelta: 2000,
-        bankDelta: -2100,
-        xpGain: 6,
-        toastMessage: "POS agent handed you ₦2,000 cash (₦100 convenience fee).",
-        activityKind: "service",
-      },
       {
         id: "pos-airtime-topup",
         label: "Buy ₦500 Airtime & Data Bundle",
