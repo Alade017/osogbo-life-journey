@@ -347,7 +347,7 @@ export function NeighborhoodZoneModal({
                               <span className="text-[#1E9A5F]">+{outcome.xpGain} XP</span>
                             ) : null}
                           </div>
-                        )}              )}
+                        )}
                       </button>
                     );
                   })}
