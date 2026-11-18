@@ -23,11 +23,7 @@ import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { formatNaira, q, rpc } from "@/lib/game";
 import type { Needs } from "@/lib/life-simulation";
 import { estimateTrip, type TravelMode } from "@/lib/transport-service";
-import type {
-  InteractableZoneSpec,
-  ZoneActionOutcome,
-  ZoneNpcSpec,
-} from "@/game/neighborhood-interactions";
+import { isServerBackedBankTransfer, type InteractableZoneSpec, type ZoneNpcSpec } from "@/game/neighborhood-interactions";
 
 function CategoryIcon({ category }: { category: InteractableZoneSpec["category"] }) {
   switch (category) {
@@ -128,15 +124,7 @@ export function NeighborhoodZoneModal({
     onOpenChange(nextOpen);
   };
 
-  const isServerBackedBankTransfer = (zoneSpec: InteractableZoneSpec, outcome: ZoneActionOutcome) =>
-    zoneSpec.category === "bank" &&
-    typeof outcome.bankDelta === "number" &&
-    outcome.bankDelta !== 0 &&
-    outcome.walletDelta === -outcome.bankDelta &&
-    !outcome.needDeltas &&
-    !outcome.xpGain &&
-    !outcome.craftItem &&
-    !outcome.equipSlot;
+
 
   const handleOutcomeClick = (zoneSpec: InteractableZoneSpec, outcome: ZoneActionOutcome) => {
     if (!isServerBackedBankTransfer(zoneSpec, outcome) || !bankAccountQuery.data) {
