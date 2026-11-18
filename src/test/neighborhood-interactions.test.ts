@@ -8,6 +8,7 @@ import {
   NEIGHBORHOOD_ZONE_NPCS,
   nearestInteractableZone,
   nearestZoneNpc,
+  isServerBackedBankTransfer,
 } from "@/game/neighborhood-interactions";
 import {
   applyZoneOutcomeAction,
@@ -66,51 +67,26 @@ describe("Olaiya neighborhood full zone interactivity & state slice", () => {
     }
   });
 
-  it("routes Adire crafting, accessory equipping, shifts, and NPC chats cleanly through neighborhoodReducer", () => {
+  it("allows only pure server-backed bank transfers as zone actions", () => {
+    const atm = findInteractableZone("zone-bank-atm")!;
+    const withdraw = atm.actions.find((action) => action.id === "atm-withdraw-2000")!;
+    const deposit = atm.actions.find((action) => action.id === "atm-deposit-2000")!;
+    expect(isServerBackedBankTransfer(atm, withdraw)).toBe(true);
+    expect(isServerBackedBankTransfer(atm, deposit)).toBe(true);
+
+    const pos = findInteractableZone("zone-shop-pos")!;
+    const posCashOut = pos.actions.find((action) => action.id === "pos-cashout-2000")!;
+    expect(isServerBackedBankTransfer(pos, posCashOut)).toBe(false);
+
+    const adire = findInteractableZone("zone-adire-vats")!;
+    expect(isServerBackedBankTransfer(adire, adire.actions[0]!)).toBe(false);
+  });
+
+  it("keeps authored NPC tips informational without granting social rewards", () => {
     let state = initialNeighborhoodState;
-
-    // 1. Tap-to-walk pending target & arrival open
-    state = neighborhoodReducer(state, setPendingZoneId("zone-adire-vats"));
-    expect(state.pendingZoneId).toBe("zone-adire-vats");
-
-    state = neighborhoodReducer(state, openZoneInteraction({ zoneId: "zone-adire-vats" }));
-    expect(state.pendingZoneId).toBeNull();
-    expect(state.activeZoneId).toBe("zone-adire-vats");
-
-    // 2. Dye Adire cloth (spends ₦1500, adds crafted wrapper to inventory, boosts fun + XP)
-    const adireZone = findInteractableZone("zone-adire-vats")!;
-    const dyeAction = adireZone.actions[0]!;
-    state = neighborhoodReducer(
-      state,
-      applyZoneOutcomeAction({ zoneTitle: adireZone.title, outcome: dyeAction }),
-    );
-    expect(state.walletOffset).toBe(-1500);
-    expect(state.needOffsets.fun).toBe(16);
-    expect(state.xpOffset).toBe(32);
-    expect(state.localInventory.some((i) => i.slug === "adire_indigo_wrapper")).toBe(true);
-    expect(state.localTransactions).toHaveLength(1);
-
-    // 3. Buy & equip Leather Backpack from Accessories Shop
-    const accZone =
-      findInteractableZone("shop-accessory-zone") ?? findInteractableZone("zone-shop-accessory")!;
-    const backpackAction = accZone.actions[0]!;
-    state = neighborhoodReducer(
-      state,
-      applyZoneOutcomeAction({ zoneTitle: accZone.title, outcome: backpackAction }),
-    );
-    expect(state.equippedAccessorySlug).toBe("backpack");
-    expect(state.localInventory.some((i) => i.slug === "backpack")).toBe(true);
-
-    // 4. Close modal & chat with a Zone NPC
-    state = neighborhoodReducer(state, closeZoneInteraction());
-    expect(state.activeZoneId).toBeNull();
-
     const npc = findZoneNpc("zone-npc-tunde")!;
-    state = neighborhoodReducer(
-      state,
-      recordNpcChatAction({ npc, tip: npc.tips[0]! }),
-    );
+    state = neighborhoodReducer(state, recordNpcChatAction({ npc, tip: npc.tips[0]! }));
     expect(state.lastNpcTip).toBe(npc.tips[0]);
     expect(state.needOffsets.social ?? 0).toBe(0);
-  });
+  });;
 });
