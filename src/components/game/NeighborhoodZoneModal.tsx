@@ -229,7 +229,7 @@ export function NeighborhoodZoneModal({
                   className={subTab === "market" ? "is-active" : ""}
                   onClick={() => setSubTab("market")}
                 >
-                  Server Shop Catalogue
+                  {zone.id === "zone-mini-mart" ? "Food & Drinks" : "Shop Catalogue"}
                 </button>
               )}
               {(zone.category === "adire" || zone.category === "filling-station") && (
@@ -267,13 +267,12 @@ export function NeighborhoodZoneModal({
                 </p>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {zone.actions.map((outcome) => {
-                    const priceLabel =
-                      outcome.walletDelta > 0
-                        ? `+${formatNaira(outcome.walletDelta)}`
-                        : outcome.walletDelta < 0
-                          ? formatNaira(Math.abs(outcome.walletDelta))
-                          : "Service";
                     const supported = isServerBackedBankTransfer(zone, outcome);
+                    const priceLabel = supported
+                      ? outcome.walletDelta > 0
+                        ? `+${formatNaira(outcome.walletDelta)}`
+                        : formatNaira(Math.abs(outcome.walletDelta))
+                      : "Unavailable";
                     const affordable =
                       (outcome.walletDelta >= 0 || pocketBalance >= Math.abs(outcome.walletDelta)) &&
                       ((outcome.bankDelta ?? 0) >= 0 ||
@@ -315,6 +314,7 @@ export function NeighborhoodZoneModal({
                             Open a bank account to use
                           </span>
                         )}
+                        {supported && (
                         <div className="flex flex-wrap gap-1.5 pt-1 text-[11px] font-bold text-[#16225C]">
                           {outcome.needDeltas?.hunger ? (
                             <span>
@@ -347,6 +347,7 @@ export function NeighborhoodZoneModal({
                             <span className="text-[#1E9A5F]">+{outcome.xpGain} XP</span>
                           ) : null}
                         </div>
+                        )}
                       </button>
                     );
                   })}
@@ -362,7 +363,10 @@ export function NeighborhoodZoneModal({
 
             {subTab === "market" && (
               <div className="rounded-xl border border-[#16225C]/15 bg-white/85 p-2">
-                <MarketPage shopSlug={zone.shopSlug ?? null} />
+                <MarketPage
+                  shopSlug={zone.shopSlug ?? undefined}
+                  foodOnly={zone.id === "zone-mini-mart"}
+                />
               </div>
             )}
 
