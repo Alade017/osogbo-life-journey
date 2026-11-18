@@ -69,6 +69,7 @@ import {
 import {
   closeZoneInteraction,
   effectiveNeedsFromCharacter,
+  initialNeighborhoodState,
   neighborhoodReducer,
   openZoneInteraction,
   recordNpcChatAction,
