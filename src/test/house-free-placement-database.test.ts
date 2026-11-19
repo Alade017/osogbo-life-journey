@@ -217,7 +217,9 @@ describe("free furniture placement database", () => {
         [house],
       )
     ).rows[0]!;
-    const unmirrored = before.find((placement) => placement.id !== target.id);
+    const unmirrored = before.find(
+      (placement) => placement.id !== target.id && placement.item_id !== target.item_id,
+    );
     await db.exec(
       "alter table public.home_items disable trigger sync_legacy_home_item_to_authoritative;",
     );
