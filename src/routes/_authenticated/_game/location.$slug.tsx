@@ -303,10 +303,7 @@ function LocationPage() {
   // Once the visitor is inside a walkable venue, go straight to the scene: no preview cards.
   if (isHere && loc.slug === "osun-mall") {
     return (
-      <div className="-mx-3 space-y-3 px-3 py-4 md:-mx-4 md:px-4 md:py-6">
-        <Link to="/map" className="inline-flex items-center gap-1 text-sm font-bold">
-          <ArrowLeft className="h-4 w-4" /> Back to map
-        </Link>
+      <div className="-mx-3 px-3 md:-mx-4 md:px-4">
         <LocationVenueScene
           key={loc.id}
           slug={loc.slug}

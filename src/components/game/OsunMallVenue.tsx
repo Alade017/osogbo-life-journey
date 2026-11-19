@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import type { Camera } from "three";
 import { MallBubbleLayer } from "./MallBubbleLayer";
 import {
@@ -155,8 +156,8 @@ export function OsunMallVenue({
   };
 
   return (
-    <section className="space-y-2" aria-label={`${locationName} interior`}>
-      <div className="relative h-80 overflow-hidden rounded-lg border border-edge bg-muted sm:h-[28rem]">
+    <section className="relative" aria-label={`${locationName} interior`}>
+      <div className="relative h-[calc(100dvh-7rem)] min-h-[24rem] overflow-hidden bg-muted">
         <Canvas
           frameloop="always"
           dpr={[1, 1.25]}
@@ -189,34 +190,51 @@ export function OsunMallVenue({
         </div>
       </div>
 
-      {message && (
-        <p role="status" className="text-sm text-muted-foreground">
-          {message}
-        </p>
-      )}
-
-      <div className="flex flex-wrap gap-2" role="group" aria-label="Place an item where you stand">
-        {MALL_PROPS.map((prop) => {
-          const used = placed.some((item) => item.id === prop.id);
-          return (
-            <button
-              key={prop.id}
-              type="button"
-              disabled={used}
-              onClick={() => placeProp(prop.id)}
-              className="rounded-lg border-2 border-edge px-3 py-1 text-sm font-semibold disabled:opacity-50"
-            >
-              {used ? `${prop.label} placed` : `Place ${prop.label.toLowerCase()}`}
-            </button>
-          );
-        })}
+      {/* Controls sit on the scene, the way the house does: no page chrome around it. */}
+      <div className="pointer-events-none absolute right-3 top-3">
+        <Link
+          to="/map"
+          className="pointer-events-auto rounded-lg border-2 border-edge bg-background/90 px-3 py-1 text-sm font-semibold"
+        >
+          Leave mall
+        </Link>
       </div>
 
-      <ol className="space-y-1 text-sm" aria-label="Reactions" aria-live="polite">
+      <div className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col items-center gap-2">
+        {message && (
+          <p
+            role="status"
+            className="pointer-events-none rounded-md bg-background/90 px-3 py-1 text-sm"
+          >
+            {message}
+          </p>
+        )}
+        <div
+          className="pointer-events-auto flex flex-wrap justify-center gap-2"
+          role="group"
+          aria-label="Place an item where you stand"
+        >
+          {MALL_PROPS.map((prop) => {
+            const used = placed.some((item) => item.id === prop.id);
+            return (
+              <button
+                key={prop.id}
+                type="button"
+                disabled={used}
+                onClick={() => placeProp(prop.id)}
+                className="rounded-lg border-2 border-edge bg-background/90 px-3 py-1 text-sm font-semibold disabled:opacity-50"
+              >
+                {used ? `${prop.label} placed` : `Place ${prop.label.toLowerCase()}`}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Reactions are announced to screen readers; the speech bubbles show them visually. */}
+      <ol className="sr-only" aria-label="Reactions" aria-live="polite">
         {log.map((line, index) => (
-          <li key={`${index}-${line}`} className="text-muted-foreground">
-            {line}
-          </li>
+          <li key={`${index}-${line}`}>{line}</li>
         ))}
       </ol>
     </section>
