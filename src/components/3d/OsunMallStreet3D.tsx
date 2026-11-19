@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import type { Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -11,6 +11,7 @@ import {
   STREET_OBSTACLES,
   STREET_PEDESTRIANS,
   STREET_RIDER_SPOT,
+  findStreetPath,
   type StreetRect,
 } from "@/game/osun-mall-street-layout";
 import { WorldCharacter } from "./WorldCharacter";
@@ -68,42 +69,66 @@ function Block({
   );
 }
 
-/** The okada: a bike with the rider beside it. Clicking either opens the ride panel. */
-function OkadaRider({ onRider }: { onRider: () => void }) {
-  const [x, z] = STREET_RIDER_SPOT;
+/** The bike's place relative to the rider's stand, so the bike moves with the rider. */
+const BIKE_OFFSET: WalkPoint = [2.6, -0.5];
+
+/**
+ * The okada: the rider and the bike together. The rider walks to `target` when a ride is found,
+ * and walks back to the stand when `target` clears. Clicking either opens the ride panel.
+ */
+function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoint | null }) {
+  const group = useRef<Group>(null);
+  const rider = useRef<{ pos: WalkPoint; walker: MallWalker | null }>({
+    pos: [STREET_RIDER_SPOT[0], STREET_RIDER_SPOT[1]],
+    walker: null,
+  });
+  const goal = useRef<string | null>(null);
+  useEffect(() => {
+    const key = target ? `${target[0]},${target[1]}` : "stand";
+    if (goal.current === key) return;
+    goal.current = key;
+    const to = target ?? STREET_RIDER_SPOT;
+    const path = findStreetPath(rider.current.pos, to);
+    if (path) rider.current.walker = createWalker(rider.current.pos, path);
+  }, [target]);
+  useFrame((_, delta) => {
+    const state = rider.current;
+    if (state.walker) {
+      const next = stepWalker(state.walker, Math.min(delta, 0.1));
+      state.pos = next.pos;
+      state.walker = next.done ? null : next;
+    }
+    group.current?.position.set(state.pos[0], 0, state.pos[1]);
+  });
   return (
     <group
+      ref={group}
       onClick={(event) => {
         if (!isClick(event)) return;
         event.stopPropagation();
         onRider();
       }}
     >
-      <mesh position={[-3.0, 0.42, 3.9]} castShadow>
-        <boxGeometry args={[1, 0.3, 0.25]} />
-        <meshStandardMaterial color="#f5c400" roughness={0.6} />
-      </mesh>
-      {[-0.36, 0.36].map((offset) => (
-        <mesh
-          key={offset}
-          position={[-3.0 + offset, 0.24, 3.9]}
-          rotation={[Math.PI / 2, 0, 0]}
-          castShadow
-        >
-          <cylinderGeometry args={[0.22, 0.22, 0.1, 12]} />
-          <meshStandardMaterial color="#1f2328" roughness={0.9} />
+      <group position={[BIKE_OFFSET[0], 0, BIKE_OFFSET[1]]}>
+        <mesh position={[0, 0.42, 0]} castShadow>
+          <boxGeometry args={[1, 0.3, 0.25]} />
+          <meshStandardMaterial color="#f5c400" roughness={0.6} />
         </mesh>
-      ))}
-      <group position={[x, 0, z]}>
-        <WorldCharacter
-          name="Okada rider"
-          gender="male"
-          appearance={RIDER_APPEARANCE}
-          facing="west"
-          animation="idle"
-          position={[0, 0, 0]}
-        />
+        {[-0.36, 0.36].map((offset) => (
+          <mesh key={offset} position={[offset, 0.24, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+            <cylinderGeometry args={[0.22, 0.22, 0.1, 12]} />
+            <meshStandardMaterial color="#1f2328" roughness={0.9} />
+          </mesh>
+        ))}
       </group>
+      <WorldCharacter
+        name="Okada rider"
+        gender="male"
+        appearance={RIDER_APPEARANCE}
+        facing="west"
+        animation="idle"
+        position={[0, 0, 0]}
+      />
     </group>
   );
 }
@@ -152,12 +177,15 @@ export function OsunMallStreet3D({
   onWalk,
   onEnterMall,
   onRider,
+  riderTarget,
 }: {
   sim: { current: StreetSim };
   playerAppearance: Appearance;
   playerGender: string;
   onWalk: (point: WalkPoint) => void;
   onEnterMall: () => void;
+  /** Where the rider should come to, when a ride has been found; null to wait at the stand. */
+  riderTarget: WalkPoint | null;
   onRider: () => void;
 }) {
   return (
@@ -202,7 +230,7 @@ export function OsunMallStreet3D({
       {STREET_OBSTACLES.map((rect) => (
         <Block key={rect.id} rect={rect} height={rect.id === "shelter" ? 2.4 : 1.2} tone="timber" />
       ))}
-      <OkadaRider onRider={onRider} />
+      <OkadaRider onRider={onRider} target={riderTarget} />
 
       {STREET_PEDESTRIANS.map((spot, index) => {
         const look = shopperLook(index + 40);

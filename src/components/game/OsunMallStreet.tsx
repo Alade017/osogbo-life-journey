@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -83,6 +83,12 @@ export function OsunMallStreet({
 
   const fare = fareQuery.data ?? null;
   const rides = ridesQuery.data ?? [];
+  const assignedRideId = rides.find((ride) => ride.status === "assigned")?.id ?? null;
+  const [riderTarget, setRiderTarget] = useState<WalkPoint | null>(null);
+  useEffect(() => {
+    // A found rider comes to where the visitor is standing, and goes back to the stand afterwards.
+    setRiderTarget(assignedRideId ? [sim.current.player.pos[0], sim.current.player.pos[1]] : null);
+  }, [assignedRideId]);
 
   const order = useMutation({
     mutationFn: async () => {
@@ -152,6 +158,7 @@ export function OsunMallStreet({
             onWalk={onWalk}
             onEnterMall={onEnterMall}
             onRider={() => setRiderOpen(true)}
+            riderTarget={riderTarget}
           />
         </Canvas>
 
