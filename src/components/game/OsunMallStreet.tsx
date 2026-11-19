@@ -18,6 +18,7 @@ import {
 } from "@/game/okada-destinations";
 import { canWalkOnStreet, findStreetPath, nextRiderTarget } from "@/game/osun-mall-street-layout";
 import { supabase } from "@/integrations/supabase/client";
+import { PRESENCE_HEARTBEAT_MS, reportMallZone } from "@/lib/osun-mall-presence";
 import { formatNaira, q } from "@/lib/game";
 
 type RideRow = {
@@ -100,6 +101,16 @@ export function OsunMallStreet({
     }, 250);
     return () => window.clearInterval(timer);
   }, [assignedRideId]);
+
+  useEffect(() => {
+    // The visitor is on the street: report it now and then, so the server accepts rides from here.
+    const report = () => {
+      reportMallZone("street").catch(() => undefined);
+    };
+    report();
+    const timer = window.setInterval(report, PRESENCE_HEARTBEAT_MS);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const order = useMutation({
     mutationFn: async () => {
