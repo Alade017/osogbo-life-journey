@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
+import type { Camera } from "three";
+import { MallBubbleLayer } from "./MallBubbleLayer";
 import {
   OsunMall3D,
   createMallSim,
@@ -11,6 +13,13 @@ import type { Appearance } from "@/game/avatar-appearance";
 import type { WalkPoint } from "@/game/grid-walk-path";
 import { createWalker, type MallWalker } from "@/game/mall-movement";
 import { MALL_PROPS, reactionFor, type MallPropId, type MallTarget } from "@/game/mall-reactions";
+import {
+  addBubble,
+  bubbleTargetFor,
+  PLAYER_BUBBLE_ID,
+  pruneBubbles,
+  type MallBubble,
+} from "@/game/mall-bubbles";
 import { canWalkInMall, findMallPath, restrictedZoneAt } from "@/game/osun-mall-layout";
 import { q } from "@/lib/game";
 import { joinMallRoom } from "@/lib/multiplayer-service";
@@ -41,6 +50,9 @@ export function OsunMallVenue({
   const [log, setLog] = useState<string[]>([]);
   const [placed, setPlaced] = useState<PlacedProp[]>([]);
   const clicks = useRef(0);
+  const [bubbles, setBubbles] = useState<MallBubble[]>([]);
+  const nextBubbleId = useRef(1);
+  const cameraRef = useRef<Camera | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -88,6 +100,22 @@ export function OsunMallVenue({
     return () => window.clearInterval(timer);
   }, []);
 
+  // Bubbles fade out after a few seconds. Pruning returns the same list when nothing expired.
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setBubbles((previous) => pruneBubbles(previous, performance.now()));
+    }, 250);
+    return () => window.clearInterval(timer);
+  }, []);
+
+  /** Shows one line in a speech bubble above the character it belongs to. */
+  const say = (targetId: string, text: string) => {
+    const id = nextBubbleId.current;
+    nextBubbleId.current += 1;
+    const now = performance.now();
+    setBubbles((previous) => addBubble(previous, targetId, text, now, id).bubbles);
+  };
+
   const onWalk = (point: WalkPoint) => {
     if (!canWalkInMall(point)) {
       const zone = restrictedZoneAt(point);
@@ -112,18 +140,16 @@ export function OsunMallVenue({
     clicks.current += 1;
     const line = reactionFor(target, clicks.current);
     setLog((previous) => [line, ...previous].slice(0, LOG_LENGTH));
+    say(bubbleTargetFor(target, sim.current.player.pos), line);
   };
 
   const placeProp = (id: MallPropId) => {
     if (placed.some((prop) => prop.id === id)) return;
     const position: WalkPoint = [sim.current.player.pos[0], sim.current.player.pos[1]];
     setPlaced((previous) => [...previous, { id, position }]);
-    setLog((previous) =>
-      [
-        `You put down a ${MALL_PROPS.find((p) => p.id === id)?.label.toLowerCase() ?? "item"}.`,
-        ...previous,
-      ].slice(0, LOG_LENGTH),
-    );
+    const line = `You put down a ${MALL_PROPS.find((p) => p.id === id)?.label.toLowerCase() ?? "item"}.`;
+    setLog((previous) => [line, ...previous].slice(0, LOG_LENGTH));
+    say(PLAYER_BUBBLE_ID, line);
   };
 
   return (
@@ -146,9 +172,11 @@ export function OsunMallVenue({
             onWalk={onWalk}
             onMove={onMove}
             onInteract={onInteract}
+            cameraRef={cameraRef}
             accent="#c2410c"
           />
         </Canvas>
+        <MallBubbleLayer bubbles={bubbles} sim={sim} cameraRef={cameraRef} />
         <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-background/85 px-3 py-1 text-xs font-semibold">
           {status === "joining"
             ? "Joining the mall…"

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { Vector3, type Group } from "three";
+import { Vector3, type Camera, type Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { WalkPoint } from "@/game/grid-walk-path";
 import { advanceCrowd, isPaying, MALL_CROWD_TARGET, type MallShopper } from "@/game/mall-crowd";
@@ -47,6 +47,18 @@ export type MallSim = {
 const SEND_INTERVAL_MS = 200;
 /** How often React re-renders for animation changes; positions move every frame without it. */
 const SNAPSHOT_INTERVAL_MS = 250;
+
+/** Hands the scene camera to the page, so the HTML speech bubbles can be placed on screen. */
+function CameraSync({ cameraRef }: { cameraRef: { current: Camera | null } }) {
+  const camera = useThree((state) => state.camera);
+  useEffect(() => {
+    cameraRef.current = camera;
+    return () => {
+      cameraRef.current = null;
+    };
+  }, [camera, cameraRef]);
+  return null;
+}
 
 export function createMallSim(people: MallPerson[] = []): MallSim {
   return {
@@ -492,6 +504,7 @@ export function OsunMall3D({
   onWalk,
   onMove,
   onInteract,
+  cameraRef,
   accent,
 }: {
   sim: { current: MallSim };
@@ -503,10 +516,12 @@ export function OsunMall3D({
   onWalk: (point: WalkPoint) => void;
   onMove: (point: WalkPoint) => void;
   onInteract: (target: MallTarget) => void;
+  cameraRef: { current: Camera | null };
   accent: string;
 }) {
   return (
     <>
+      <CameraSync cameraRef={cameraRef} />
       <FollowCamera sim={sim} />
       <WorldLighting size={16} />
       <MallInterior onWalk={onWalk} onInteract={onInteract} accent={accent} />
