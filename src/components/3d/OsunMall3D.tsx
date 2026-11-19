@@ -15,6 +15,7 @@ import {
 } from "@/game/osun-mall-layout";
 import { staffLook, type MallGender } from "@/game/mall-appearance";
 import { MALL_PROPS, type MallPropId, type MallTarget } from "@/game/mall-reactions";
+import type { AvatarEquipment } from "@/components/game/Avatar";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
 
@@ -401,12 +402,14 @@ function PlayerFigure({
   moving,
   gender,
   appearance,
+  equipment,
   onMove,
 }: {
   sim: { current: MallSim };
   moving: boolean;
   gender: string;
   appearance: Appearance;
+  equipment: readonly AvatarEquipment[];
   onMove: (point: WalkPoint) => void;
 }) {
   const group = useRef<Group>(null);
@@ -437,6 +440,7 @@ function PlayerFigure({
         name="You"
         gender={gender}
         appearance={appearance}
+        equipment={equipment}
         facing="south"
         animation={moving ? "walk" : "idle"}
         position={[0, 0, 0]}
@@ -500,6 +504,7 @@ export function OsunMall3D({
   playerMoving,
   playerGender,
   playerAppearance,
+  playerEquipment,
   placed,
   onWalk,
   onMove,
@@ -512,6 +517,7 @@ export function OsunMall3D({
   playerMoving: boolean;
   playerGender: string;
   playerAppearance: Appearance;
+  playerEquipment: readonly AvatarEquipment[];
   placed: readonly PlacedProp[];
   onWalk: (point: WalkPoint) => void;
   onMove: (point: WalkPoint) => void;
@@ -536,6 +542,7 @@ export function OsunMall3D({
         moving={playerMoving}
         gender={playerGender}
         appearance={playerAppearance}
+        equipment={playerEquipment}
         onMove={onMove}
       />
     </>

@@ -43,6 +43,8 @@ export function OsunMallVenue({
   const sim = useRef(createMallSim());
   const roomRef = useRef<MallRoomHandle | null>(null);
   const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery(q.equipment());
+  const playerEquipment = (equipment ?? []).map((row) => ({ slot: row.slot }));
   const [status, setStatus] = useState<"joining" | "ready" | "offline">("joining");
   const [message, setMessage] = useState<string | null>(null);
   const [playerMoving, setPlayerMoving] = useState(false);
@@ -168,6 +170,7 @@ export function OsunMallVenue({
             playerMoving={playerMoving}
             playerGender={character?.gender ?? "nonbinary"}
             playerAppearance={(character?.appearance as Appearance | undefined) ?? {}}
+            playerEquipment={playerEquipment}
             placed={placed}
             onWalk={onWalk}
             onMove={onMove}
