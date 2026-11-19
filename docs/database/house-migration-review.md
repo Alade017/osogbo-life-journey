@@ -65,24 +65,34 @@ A read-only production check found three active/overdue house rows:
 
 This means the current production data does not demonstrate a functioning one-to-one `home_items` mirror for those active houses. It also means the current rearrangement query's `user_id + slot_id` predicate matched no corresponding rows in the sampled active-house data. Do not interpret this as proof that players' authoritative placements are missing: `get_house_state` reads from `house_placements`, and those rows remain present.
 
-### Concrete issue: the legacy update predicate is insufficiently scoped
+### Concrete issue: the legacy update predicate was insufficiently scoped
 
-The current update matches legacy rows using only `i.user_id=p_player_id` and `i.slot_id=p.slot`. The hosted `home_items` table has a unique index on `(character_id,item_id)`, but no unique constraint on `(user_id,slot_id)`. A slot identifier alone is therefore not a safe identity for a legacy item. The `characters.user_id` index is unique, so the intended legacy row can be scoped through that player's character and the placement's item ID as well as its slot.
+The original update matched legacy rows using only `i.user_id=p_player_id` and `i.slot_id=p.slot`. The hosted `home_items` table has a unique constraint on `(character_id,item_id)`, but no unique constraint on `(user_id,slot_id)`. A slot identifier alone is not a safe identity for a legacy item. The legacy mirror trigger also upserts `house_placements` on `(player_house_id,slot)`; updating an unrelated legacy row with the same slot can therefore replace the authoritative placement's item ID.
 
-Before deployment, replace the broad match with a join constrained by:
-- `i.character_id` equal to the authenticated player's character ID;
+**Implemented correction on this branch:** both copies of the rearrangement migration now constrain the legacy update by:
+- the player's unique `characters.user_id` row and matching `i.character_id`;
+- `i.user_id = p_player_id`;
 - `i.item_id = p.item_id`;
 - `i.slot_id = p.slot`;
 - `i.placed = true`.
 
-Whether to copy `floor` and `rotation_deg` into `home_items` is a compatibility decision, not a confirmed current-scene bug. The current legacy home API does not return those fields, and the current authoritative scene reads them from `house_placements`. If the team elects to keep those legacy columns aligned, add the fields to the update and test them; do not claim that doing so fixes the authoritative scene.
+This is deliberately a no-op when the matching legacy row does not exist. It does not create compatibility rows or touch another item that happens to reuse the same slot identifier.
 
-**Required follow-up before deployment:**
-1. Harden the legacy-row match using character ID, item ID, slot ID, and placed status; confirm the expected row count and no-op behavior when no legacy row exists.
-2. Decide explicitly whether `home_items.floor` and `home_items.rotation_deg` are compatibility data that must be mirrored or obsolete columns. Do not assume they are consumed by the current scene.
-3. Add a database test for the exact legacy row match, including a same-slot/different-item decoy row, and assert authoritative placement identity, position, floor, and rotation remain correct after the trigger fires.
-4. Add a test for an authoritative placement with no matching legacy row; rearrangement must still succeed without creating or moving an unrelated `home_items` row.
-5. Run the focused rearrangement and house database tests against the corrected migration in an isolated test database.
+The update continues to mirror only x/y. The current legacy home API selects x/y/z but not floor/rotation, while the authoritative scene gets floor and rotation from `house_placements`. The hosted legacy columns `floor` and `rotation_deg` are not treated as current-scene state and are not updated by this compatibility write.
+
+### Regression coverage added
+
+The rearrangement database test now:
+- creates a deliberately inconsistent, placed legacy decoy with the same slot ID but a different item ID (with the mirror trigger temporarily disabled only while seeding that invalid fixture);
+- removes the legacy row for another authoritative placement, when one exists;
+- runs rearrangement with the real legacy trigger enabled;
+- asserts authoritative placement IDs, item IDs, slots, x/y, floor, and rotation remain correct;
+- asserts only the exact matching legacy row receives the new x/y;
+- asserts the same-slot/different-item decoy remains untouched;
+- asserts a missing legacy row is not recreated or used to move an unrelated item;
+- retains the inventory-quantity, stale-snapshot, duplicate-cell, and foreign-house checks.
+
+**Remaining validation:** run the focused PGlite/Vitest test and the broader house database suite. The code has been committed to the draft reconciliation PR, but no test run has yet been performed in this environment.
 
 ### Additional review notes
 
@@ -91,7 +101,7 @@ Whether to copy `floor` and `rotation_deg` into `home_items` is a compatibility 
 - The RPC returns `get_house_state`, which itself invokes house-status processing. Confirm this double invocation is intentional and idempotent.
 - The planner is server-side and considers room geometry, doorways, stairs, furniture collisions, and room reachability. Keep it authoritative; do not move layout planning to untrusted client input.
 
-**Disposition:** The authoritative placement model is sound in principle, but do not deploy this SQL unchanged. First harden the legacy mirror join and add trigger-aware tests; do not treat floor/rotation copying as a confirmed scene fix.
+**Disposition:** The scoped legacy mirror fix and regression coverage are now present in the draft PR. Do not deploy until the tests pass in an isolated database and the remaining function security/transaction review is complete.
 
 ## 3. Production safety
 
