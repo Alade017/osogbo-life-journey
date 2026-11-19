@@ -86,6 +86,10 @@ describe("free furniture placement database", () => {
     // 0085 drops the four-argument house_place_free, but 0079 is replayed after it here and
     // brings that overload back. Drop it again so the five-argument version is the only one.
     await db.exec("drop function if exists public.house_place_free(uuid, text, numeric, numeric);");
+    // Exercise the exact rearrangement function under test, not a hand-written test stub.
+    await db.exec(
+      readFileSync("supabase/migrations/20261118024000_house_rearrange.sql", "utf8"),
+    );
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 
@@ -192,6 +196,14 @@ describe("free furniture placement database", () => {
         [userId],
       )
     ).rows[0]!.id;
+    const expectedSnapshot = before.map(({ id, slot, x, y, floor, rotation_deg }) => ({
+      id,
+      slot,
+      x,
+      y,
+      floor,
+      rotation_deg,
+    }));
     const count = (
       await db.query<{ n: number }>(
         "select sum(quantity)::int n from public.player_items where player_id=$1",
@@ -258,7 +270,7 @@ describe("free furniture placement database", () => {
     }));
     const result = await db.query<{ result: Result }>(
       "select public.house_rearrange_owned_items($1,$2,$3,$4) result",
-      [userId, house, JSON.stringify(before), JSON.stringify(moves)],
+      [userId, house, JSON.stringify(expectedSnapshot), JSON.stringify(moves)],
     );
     expect(result.rows[0]!.result.ok).toBe(true);
     const after = await rows();
@@ -307,7 +319,7 @@ describe("free furniture placement database", () => {
       db.query("select public.house_rearrange_owned_items($1,$2,$3,$4)", [
         userId,
         house,
-        JSON.stringify(before),
+        JSON.stringify(expectedSnapshot),
         JSON.stringify(moves),
       ]),
     ).rejects.toThrow("LAYOUT_CHANGED");
