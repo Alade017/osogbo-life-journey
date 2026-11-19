@@ -173,13 +173,14 @@ describe("free furniture placement database", () => {
       (
         await db.query<{
           id: string;
+          item_id: string;
           slot: string;
           x: number;
           y: number;
           floor: number;
           rotation_deg: number;
         }>(
-          `select id,slot,x::float8,y::float8,floor,rotation_deg::float8 from public.house_placements
+          `select id,item_id,slot,x::float8,y::float8,floor,rotation_deg::float8 from public.house_placements
        where player_house_id=(select id from public.player_houses where player_id=$1 and status='active') order by id`,
           [userId],
         )
@@ -197,6 +198,54 @@ describe("free furniture placement database", () => {
         [userId],
       )
     ).rows[0]!.n;
+    // Seed an intentionally inconsistent legacy row with the same slot but a
+    // different item. Disable the mirror trigger only while creating this adversarial
+    // fixture; the rearrangement update itself must run with the real trigger enabled.
+    const characterId = (
+      await db.query<{ id: string }>(
+        "select id from public.characters where user_id=$1",
+        [userId],
+      )
+    ).rows[0]!.id;
+    const target = (
+      await db.query<{ id: string; item_id: string; slot: string; slot_type: string }>(
+        `select p.id,p.item_id,p.slot,ci.slot_type
+         from public.house_placements p
+         join public.content_items ci on ci.id=p.item_id
+         where p.player_house_id=$1
+         order by p.id limit 1`,
+        [house],
+      )
+    ).rows[0]!;
+    const unmirrored = before.find((placement) => placement.id !== target.id);
+    await db.exec(
+      "alter table public.home_items disable trigger sync_legacy_home_item_to_authoritative;",
+    );
+    try {
+      await db.query(
+        `insert into public.home_items(user_id,character_id,item_id,slot_type,slot_id,x,y,placed)
+         values($1,$2,$3,$4,$5,20,30,true)
+         on conflict(character_id,item_id) do update
+           set slot_type=excluded.slot_type,slot_id=excluded.slot_id,x=excluded.x,y=excluded.y,placed=true`,
+        [userId, characterId, target.item_id, target.slot_type, target.slot],
+      );
+      await db.query(
+        `insert into public.home_items(user_id,character_id,item_id,slot_type,slot_id,x,y,placed)
+         values($1,$2,'rearrange-slot-decoy',$3,$4,12,13,true)`,
+        [userId, characterId, target.slot_type, target.slot],
+      );
+      if (unmirrored) {
+        await db.query(
+          "delete from public.home_items where character_id=$1 and item_id=$2",
+          [characterId, unmirrored.item_id],
+        );
+      }
+    } finally {
+      await db.exec(
+        "alter table public.home_items enable trigger sync_legacy_home_item_to_authoritative;",
+      );
+    }
+
     // All original placements participate, including the starter furniture.
     const moves = before.map((p, i) => ({
       id: p.id,
@@ -212,7 +261,38 @@ describe("free furniture placement database", () => {
     expect(result.rows[0]!.result.ok).toBe(true);
     const after = await rows();
     expect(after.map((p) => p.id)).toEqual(before.map((p) => p.id));
+    expect(after.map((p) => p.item_id)).toEqual(before.map((p) => p.item_id));
     expect(after.map((p) => p.slot)).toEqual(before.map((p) => p.slot));
+    expect(after).toEqual(
+      expect.arrayContaining(moves.map((move) => expect.objectContaining(move))),
+    );
+    const targetMove = moves.find((move) => move.id === target.id)!;
+    const legacyTarget = (
+      await db.query<{ x: number; y: number; placed: boolean; slot_id: string }>(
+        "select x::float8,y::float8,placed,slot_id from public.home_items where character_id=$1 and item_id=$2",
+        [characterId, target.item_id],
+      )
+    ).rows[0]!;
+    expect(legacyTarget).toMatchObject({
+      x: targetMove.x,
+      y: targetMove.y,
+      placed: true,
+      slot_id: target.slot,
+    });
+    const decoy = (
+      await db.query<{ x: number; y: number; placed: boolean; slot_id: string }>(
+        "select x::float8,y::float8,placed,slot_id from public.home_items where character_id=$1 and item_id='rearrange-slot-decoy'",
+        [characterId],
+      )
+    ).rows[0]!;
+    expect(decoy).toMatchObject({ x: 12, y: 13, placed: true, slot_id: target.slot });
+    if (unmirrored) {
+      const orphan = await db.query(
+        "select id from public.home_items where character_id=$1 and item_id=$2",
+        [characterId, unmirrored.item_id],
+      );
+      expect(orphan.rows).toHaveLength(0);
+    }
     expect(
       (
         await db.query<{ n: number }>(
