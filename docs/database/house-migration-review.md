@@ -99,8 +99,10 @@ The rearrangement database test now:
 ### Additional review notes
 
 - The function is `SECURITY DEFINER` with `search_path = public`. Its execute grant is appropriately restricted to `service_role`, but a deployment review should inspect schema CREATE privileges and consider a hardened search path (e.g. trusted schemas only) while schema-qualifying all referenced objects.
-- The function calls `_process_player_house_status` before validating the requested house. This is an existing stateful house-maintenance routine; verify its side effects and transaction behaviour in the deployment test.
-- The RPC returns `get_house_state`, which itself invokes house-status processing. Confirm this double invocation is intentional and idempotent.
+- The function calls `_process_player_house_status` before validating the requested house. Read-only production inspection confirms this invokes the global `_advance_property_rent_cycles()` routine, which advances due/grace/rescue/repossessed rent-cycle states and may end tenancies across the database. This is an existing shared maintenance side effect, not a new write introduced by the scoped mirror fix; retain the server-only execution boundary and test its transaction behaviour.
+- The RPC returns `get_house_state`, which invokes house-status processing again. The rent-cycle transitions are status-based and appear idempotent for already-transitioned rows, but the duplicate invocation is unnecessary work and should be verified under staging load before changing this shared routine.
+- Read-only production privilege inspection shows `anon`, `authenticated`, and `service_role` do not have `CREATE` on schema `public`; only `postgres` does. This reduces the risk of an untrusted role shadowing objects resolved through the function's `search_path = public`. The RPC's execute privilege remains restricted to `service_role`.
+
 - The planner is server-side and considers room geometry, doorways, stairs, furniture collisions, and room reachability. Keep it authoritative; do not move layout planning to untrusted client input.
 
 **Disposition:** The scoped legacy mirror fix and regression coverage are now present in the draft PR. Do not deploy until the tests pass in an isolated database and the remaining function security/transaction review is complete.
@@ -115,6 +117,6 @@ Do not run `supabase db push` or `supabase migration repair` for these files yet
 
 - Run the focused `house-free-placement-database.test.ts` PGlite/Vitest test and the broader house database suite.
 - Run full typecheck, lint, and production build.
-- Review the `SECURITY DEFINER` search path, schema CREATE privileges, and the idempotency/side effects of the two house-status processing calls.
+- In staging, verify the existing global rent-cycle side effects and duplicate house-status processing calls; consider a narrowly scoped refactor only if shared lifecycle semantics are preserved.
 - Validate the corrected migration in an isolated staging database before production approval.
 - Separately confirm bungalow/duplex bedroom counts against room blueprints and rental UX; that catalogue mismatch is outside this rearrangement fix.
