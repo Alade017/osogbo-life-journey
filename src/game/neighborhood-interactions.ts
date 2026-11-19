@@ -31,7 +31,13 @@ export type ZoneActionOutcome = {
   activityKind?: "purchase" | "shift" | "craft" | "service" | "transit";
 };
 
+export type ZoneService =
+  "bank" | "market" | "jobs" | "transit" | "interior" | "barber" | "pos" | "craft";
+
 export interface InteractableZoneSpec {
+  /** Existing server-backed panels offered at this world target. */
+  services?: readonly ZoneService[];
+  foodOnly?: boolean;
   venueInterior?: "buka";
   id: string;
   zoneTag: NeighborhoodZoneTag;
@@ -50,6 +56,24 @@ export interface InteractableZoneSpec {
   /** Optional linked shop slug or travel mode hint. */
   shopSlug?: string | null;
   actions: readonly ZoneActionOutcome[];
+}
+
+/** Only a pure pocket↔bank transfer can be handled by the existing bank RPCs. */
+export function isServerBackedBankTransfer(
+  zone: InteractableZoneSpec,
+  outcome: ZoneActionOutcome,
+): boolean {
+  return (
+    zone.category === "bank" &&
+    typeof outcome.bankDelta === "number" &&
+    Number.isSafeInteger(outcome.bankDelta) &&
+    outcome.bankDelta !== 0 &&
+    outcome.walletDelta === -outcome.bankDelta &&
+    !outcome.needDeltas &&
+    !outcome.xpGain &&
+    !outcome.craftItem &&
+    !outcome.equipSlot
+  );
 }
 
 export interface ZoneNpcSpec {
@@ -77,6 +101,7 @@ export type NeighborhoodZoneTag =
 const AUTHORED_ZONES: readonly AuthoredZone[] = [
   {
     id: "zone-fuel-pumps",
+    services: ["jobs"],
     zoneTag: "FILLING_STATION",
     category: "filling-station",
     title: "Fuel & Go Forecourt Pumps",
@@ -116,6 +141,8 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-mini-mart",
+    services: ["market"],
+    foodOnly: true,
     zoneTag: "FILLING_STATION",
     category: "filling-station",
     title: "Fuel & Go Mini-Mart",
@@ -157,6 +184,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-vulcanizer",
+    services: ["jobs"],
     zoneTag: "FILLING_STATION",
     category: "filling-station",
     title: "Vulcanizer & Tire Corner",
@@ -196,6 +224,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-bank-atm",
+    services: ["bank"],
     zoneTag: "BANK",
     category: "bank",
     title: "Meridian Bank ATM Alcove",
@@ -212,7 +241,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
         description: "Pull spending cash from bank savings straight to pocket.",
         walletDelta: 2000,
         bankDelta: -2000,
-        xpGain: 5,
         toastMessage: "Withdrew ₦2,000 from Meridian ATM to pocket cash.",
         activityKind: "service",
       },
@@ -222,7 +250,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
         description: "Secure pocket Naira into your Osun Bank savings.",
         walletDelta: -2000,
         bankDelta: 2000,
-        xpGain: 5,
         toastMessage: "Deposited ₦2,000 into Osun Bank savings via ATM.",
         activityKind: "service",
       },
@@ -230,6 +257,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-bank-lobby",
+    services: ["bank"],
     zoneTag: "BANK",
     category: "bank",
     title: "Meridian Bank Customer Lobby",
@@ -246,7 +274,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
         description: "Deposit pocket earnings into savings with zero queue.",
         walletDelta: -5000,
         bankDelta: 5000,
-        xpGain: 10,
         toastMessage: "Teller confirmed ₦5,000 deposit to bank savings.",
         activityKind: "service",
       },
@@ -256,7 +283,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
         description: "Withdraw market budget cash from your savings.",
         walletDelta: 5000,
         bankDelta: -5000,
-        xpGain: 8,
         toastMessage: "Teller dispensed ₦5,000 to your pocket wallet.",
         activityKind: "service",
       },
@@ -264,6 +290,8 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-adire-vats",
+    services: ["craft", "market", "jobs"],
+    shopSlug: "adire-materials",
     zoneTag: "ADIRE_MARKET",
     category: "adire",
     title: "Indigo Dye Vats & Zinc Shed",
@@ -274,22 +302,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
     badgeHeight: 2.6,
     hitSize: [3.0, 2.6, 2.4],
     actions: [
-      {
-        id: "adire-craft-wrapper",
-        label: "Dye Adire Eleko Cloth",
-        description: "Dip tied cotton cloth into indigo vats and add to inventory.",
-        walletDelta: -1500,
-        needDeltas: { fun: 16, energy: -8, hygiene: -4 },
-        xpGain: 32,
-        craftItem: {
-          slug: "adire_indigo_wrapper",
-          name: "Indigo Adire Eleko Cloth",
-          category: "craft",
-          description: "Hand-dyed deep indigo Osogbo Adire cloth crafted at the yard.",
-        },
-        toastMessage: "Dyed Indigo Adire Eleko Cloth (+16 Fun, +32 XP) — added to inventory!",
-        activityKind: "craft",
-      },
       {
         id: "adire-artisan-shift",
         label: "Work Adire Artisan Shift",
@@ -304,6 +316,8 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-adire-racks",
+    services: ["craft", "market", "jobs"],
+    shopSlug: "adire-materials",
     zoneTag: "ADIRE_MARKET",
     category: "adire",
     title: "Adire Drying & Folding Racks",
@@ -314,22 +328,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
     badgeHeight: 2.35,
     hitSize: [2.6, 2.3, 2.8],
     actions: [
-      {
-        id: "adire-craft-scarf",
-        label: "Craft Indigo Adire Scarf",
-        description: "Finish and fold a sun-cured indigo neck scarf.",
-        walletDelta: -900,
-        needDeltas: { fun: 12, energy: -5 },
-        xpGain: 22,
-        craftItem: {
-          slug: "adire_indigo_scarf",
-          name: "Indigo Adire Scarf",
-          category: "craft",
-          description: "Sun-cured cassava-resist indigo scarf from Olaiya Makers' Yard.",
-        },
-        toastMessage: "Folded a fresh Indigo Adire Scarf — added to inventory!",
-        activityKind: "craft",
-      },
       {
         id: "adire-sell-batch",
         label: "Package Market Bundle",
@@ -344,6 +342,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-market-stalls",
+    services: ["market"],
     zoneTag: "ADIRE_MARKET",
     category: "market",
     title: "Open Market Produce & Cloth Tables",
@@ -385,6 +384,8 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-buka-stall",
+    services: ["interior", "market"],
+    foodOnly: true,
     venueInterior: "buka",
     zoneTag: "ADIRE_MARKET",
     category: "market",
@@ -420,6 +421,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-shop-barber",
+    services: ["barber"],
     zoneTag: "COMMERCIAL_SHOPS",
     category: "shops",
     title: "Dele Cutz Barber Salon",
@@ -430,16 +432,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
     badgeHeight: 2.75,
     hitSize: [2.6, 3.0, 2.4],
     actions: [
-      {
-        id: "barber-fresh-fade",
-        label: "Fresh Skin Fade & Beard Trim",
-        description: "Full grooming service boosting hygiene and confidence.",
-        walletDelta: -1500,
-        needDeltas: { hygiene: 38, fun: 18, social: 8 },
-        xpGain: 16,
-        toastMessage: "Stepped out with a crisp fade (+38 Hygiene, +18 Fun)!",
-        activityKind: "service",
-      },
       {
         id: "barber-hot-towel",
         label: "Cool Wash & Hot Towel Refresh",
@@ -454,6 +446,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-shop-pos",
+    services: ["pos"],
     zoneTag: "COMMERCIAL_SHOPS",
     category: "shops",
     title: "FastCash POS & Airtime Kiosk",
@@ -464,16 +457,6 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
     badgeHeight: 2.55,
     hitSize: [2.0, 2.5, 1.8],
     actions: [
-      {
-        id: "pos-cashout-2000",
-        label: "POS Cash-Out ₦2,000 (₦100 fee)",
-        description: "Convert ₦2,100 from bank savings into instant pocket cash.",
-        walletDelta: 2000,
-        bankDelta: -2100,
-        xpGain: 6,
-        toastMessage: "POS agent handed you ₦2,000 cash (₦100 convenience fee).",
-        activityKind: "service",
-      },
       {
         id: "pos-airtime-topup",
         label: "Buy ₦500 Airtime & Data Bundle",
@@ -488,6 +471,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-shop-accessory",
+    services: ["market"],
     zoneTag: "COMMERCIAL_SHOPS",
     category: "shops",
     title: "Iya Adire Style & Accessories",
@@ -540,6 +524,7 @@ const AUTHORED_ZONES: readonly AuthoredZone[] = [
   },
   {
     id: "zone-transit-stand",
+    services: ["transit", "jobs"],
     zoneTag: "COMMERCIAL_SHOPS",
     category: "transit",
     title: "Keke Napep & Korope Loading Stand",

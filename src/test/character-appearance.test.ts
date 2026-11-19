@@ -17,7 +17,7 @@ import {
 describe("character appearance customization", () => {
   it("resets to the established starter look", () => {
     expect(DEFAULT_CHARACTER_APPEARANCE).toEqual({
-      clothed: false,
+      clothed: true,
       skin: 1,
       hair: 1,
       hairColor: 0,

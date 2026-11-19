@@ -1,0 +1,15 @@
+# Barber and POS services
+
+The barber and POS panels are available from their existing City Centre world targets. Their options and prices come from `my_neighborhood_personal_services`; the browser supplies no trusted price, payout, fee or user id. The server checks the authenticated character's current district, active location and outside-home status. Existing world movement still walks to the selected shop before opening its panel; this RPC checks the district, rather than independently verifying multiplayer proximity.
+
+Hair styling saves only `hair` and `hairColor` after charging pocket cash. All other appearance fields remain unchanged. Saved palette indices match the existing male, female and nonbinary options. The current catalogue price is fictional ₦1,500. A confirmed haircut invalidates character data and asks the multiplayer server to refresh the player's appearance from its authenticated database snapshot. Profile/wardrobe and the shared world character then use the saved values. The existing refresh message now updates appearance as well as equipment; no client-supplied appearance is trusted by the room server.
+
+POS currently offers fictional ₦2,000 cash with a ₦100 fee: savings decrease by ₦2,100 and pocket cash increases by ₦2,000. It requires an open bank account. The withdrawal and fee have separate transaction entries; only the fee increases total expenses. No XP or needs bonuses are granted by either service.
+
+`use_neighborhood_personal_service` locks the owner character and wallet, validates the current server quote, and writes the payment, appearance/ledger and receipt in one transaction. A repeated request id returns its original receipt without charging again, even after departure. Reusing an id with different parameters fails. Direct authenticated catalogue/receipt writes are denied; receipt reads are owner-scoped.
+
+The client saves its request before submitting and disables automatic mutation retries. An uncertain response keeps the exact request for retry or recovery after a reload. A successful confirmation refreshes authoritative queries; it never writes receipt balance snapshots into the UI cache. If local storage cannot save the request, the client does not submit. Server validation failures permit a fresh selection after reloading the catalogue. Pending recovery remains available if the current catalogue cannot load.
+
+Deploy the web app and multiplayer room update, and apply migration `0106_barber_pos_services` (or its Supabase counterpart `20261118123000_barber_pos_services.sql`) once through the target database's normal migration workflow. Existing Supabase bank-account migrations must already be present for POS account checks. Do not apply both migration copies to the same database. Hosted migration application, live multiplayer refresh and physical-device browser interaction are not claimed by local tests.
+
+Hot-towel treatments, airtime purchases and crafting are still separate future services. This change implements paid hairstyles and POS cash withdrawals only.

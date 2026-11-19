@@ -1,3 +1,4 @@
+import { resolveWornOutfit } from "@/game/wearable-outfits";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, Vector3, type Group } from "three";
@@ -21,9 +22,8 @@ const FACING_YAW: Record<string, number> = {
 };
 
 /**
- * The same saved appearance contract is used by portraits and both world scenes. Bodies are
- * rigged adults with their own clothing and hair, so the saved outfit, hair and skin options no
- * longer change the body; height and build still scale it.
+ * Portraits and world scenes share the same saved skin, hair, fitted outfit and proportions.
+ * Stable biped bones preserve every task pose, held item and equipment socket.
  */
 export function WorldCharacter({
   appearance = {},
@@ -55,8 +55,9 @@ export function WorldCharacter({
   body?: BodyVariant | undefined;
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
+  const outfit = resolveWornOutfit(safe, gender, equipment);
+  if (outfit.hasWearables) safe.clothed = true;
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
-  const build = [0.9, 1, 1.07, 1.14][safe.build] ?? 1;
   const variant = body ?? bodyVariantFor(gender);
   const bodyRef = useRef<Group>(null);
   const { invalidate } = useThree();
@@ -185,10 +186,10 @@ export function WorldCharacter({
               : [0, 0, 0]
         }
         rotation={[animation === "sleep" ? -Math.PI / 2 : 0, 0, 0]}
-        scale={[build, 1, 1]}
       >
         <group ref={bodyRef}>
           <CharacterBody
+            outfit={outfit}
             variant={variant}
             height={h}
             motion={motion}

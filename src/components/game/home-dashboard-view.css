@@ -217,3 +217,118 @@
     order: -1;
   }
 }
+
+
+
+/* Keep the home summary in its own row so it cannot collide with room controls. */
+.city-game.navigation-redesign.home-scene .home-dashboard,
+.city-game.navigation-redesign.home-scene .home-dashboard .hd-stage {
+  height: 100%;
+  min-height: 0;
+}
+
+.city-game.navigation-redesign.home-scene .home-dashboard .hd-stage {
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.city-game.navigation-redesign.home-scene .home-dashboard .hd-status {
+  position: relative;
+  z-index: 30;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+  padding: 8px max(12px, env(safe-area-inset-right)) 8px max(12px, env(safe-area-inset-left));
+  border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--primary) 12%, var(--border));
+  border-radius: 0;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--foreground) 5%, transparent);
+  backdrop-filter: blur(18px);
+}
+
+.city-game.navigation-redesign.home-scene .home-dashboard .hd-area {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.city-game.navigation-redesign.home-scene .home-dashboard .hd-status-actions {
+  flex: 0 0 auto;
+  gap: 6px;
+}
+
+.city-game.navigation-redesign.home-scene .home-dashboard .hd-icon-button {
+  width: 42px;
+  min-height: 42px;
+  border-radius: 13px;
+}
+
+.city-game.navigation-redesign.home-scene .home-dashboard .hd-balance {
+  max-width: min(142px, 37vw);
+  min-height: 42px;
+  padding-inline: 10px;
+  border-radius: 14px;
+  font-size: clamp(0.72rem, 2.8vw, 0.86rem);
+}
+
+.city-game.navigation-redesign.home-scene .home-dashboard .hd-world {
+  min-height: 0;
+  overflow: hidden;
+}
+
+@media (max-width: 420px) {
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-status {
+    gap: 7px;
+    padding-block: 7px;
+  }
+
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-area {
+    gap: 7px;
+  }
+
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-area > svg {
+    width: 16px;
+    height: 16px;
+    padding: 8px;
+  }
+
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-area-copy strong {
+    font-size: 0.82rem;
+  }
+
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-area-copy small {
+    font-size: 0.7rem;
+  }
+
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-icon-button {
+    width: 38px;
+    min-height: 40px;
+  }
+
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-balance {
+    max-width: 112px;
+    min-height: 40px;
+    padding-inline: 8px;
+  }
+}
+
+@media (max-width: 360px) {
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-status {
+    flex-wrap: wrap;
+  }
+
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-area {
+    flex: 1 1 100%;
+  }
+
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-status-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
+  .city-game.navigation-redesign.home-scene .home-dashboard .hd-balance {
+    margin-right: auto;
+  }
+}

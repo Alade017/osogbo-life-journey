@@ -4,6 +4,9 @@ import { AuthCard } from "@/components/game/AuthCard";
 
 const auth = vi.hoisted(() => ({
   signInWithOAuth: vi.fn(),
+  resetPasswordForEmail: vi.fn(),
+  updateUser: vi.fn(),
+  success: vi.fn(),
   signInWithPassword: vi.fn(),
   setSession: vi.fn(),
   onAuthStateChange: vi.fn(),
@@ -23,11 +26,12 @@ vi.mock("@tanstack/react-router", () => ({
     <a href={to}>{children}</a>
   ),
 }));
-vi.mock("sonner", () => ({ toast: { error: auth.error } }));
+vi.mock("sonner", () => ({ toast: { error: auth.error, success: auth.success } }));
 
 describe("account sign-in", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.history.replaceState({}, "", "/login");
     auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
   });
 
@@ -77,15 +81,46 @@ describe("account sign-in", () => {
     });
   });
 
-  it("supports Google sign-in", async () => {
-    auth.signInWithOAuth.mockResolvedValue({ error: null });
+  it.each(["login", "signup"] as const)("does not offer Google sign-in in %s", (mode) => {
+    render(<AuthCard mode={mode} />);
+    expect(screen.queryByRole("button", { name: /Google/i })).not.toBeInTheDocument();
+    expect(auth.signInWithOAuth).not.toHaveBeenCalled();
+  });
+
+  it("switches account forms with keyboard navigation", () => {
     render(<AuthCard mode="login" />);
-    fireEvent.click(screen.getByRole("button", { name: "Continue with Google" }));
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Log in" }), { key: "ArrowRight" });
+    expect(screen.getByRole("tab", { name: "Sign up" })).toHaveAttribute("aria-selected", "true");
+    expect(screen.getByRole("button", { name: "Create account" })).toBeInTheDocument();
+    fireEvent.keyDown(screen.getByRole("tab", { name: "Sign up" }), { key: "Home" });
+    expect(screen.getByLabelText("Username or email")).toBeInTheDocument();
+  });
+
+  it("keeps email password recovery working", async () => {
+    auth.resetPasswordForEmail.mockResolvedValue({ error: null });
+    render(<AuthCard mode="login" />);
+    fireEvent.click(screen.getByRole("button", { name: "Forgot password?" }));
+    fireEvent.change(screen.getByLabelText("Email"), { target: { value: "player@example.com" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send reset link" }));
     await waitFor(() =>
-      expect(auth.signInWithOAuth).toHaveBeenCalledWith({
-        provider: "google",
-        options: { redirectTo: `${window.location.origin}/login` },
+      expect(auth.resetPasswordForEmail).toHaveBeenCalledWith("player@example.com", {
+        redirectTo: `${window.location.origin}/login?reset=1`,
       }),
     );
+  });
+
+  it("updates matching new passwords from the recovery link", async () => {
+    window.history.replaceState({}, "", "/login?reset=1");
+    auth.updateUser.mockResolvedValue({ error: null });
+    render(<AuthCard mode="login" />);
+    fireEvent.change(screen.getByLabelText("Password"), { target: { value: "new-password123" } });
+    fireEvent.change(screen.getByLabelText("Confirm password"), {
+      target: { value: "new-password123" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Update password" }));
+    await waitFor(() =>
+      expect(auth.updateUser).toHaveBeenCalledWith({ password: "new-password123" }),
+    );
+    expect(auth.signInWithOAuth).not.toHaveBeenCalled();
   });
 });

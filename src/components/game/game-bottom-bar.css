@@ -77,6 +77,10 @@
 }
 
 .gbb .gbb-phone {
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 44px;
+  max-width: none;
   color: var(--primary);
 }
 
@@ -205,5 +209,80 @@
   .gbb .gbb-phone,
   .game-needs-rail .game-needs-toggle {
     transition: none;
+  }
+}
+
+
+/* Keep the world status strip from compressing long labels into overlapping text. */
+.world-environment > .world-condition:first-child {
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.world-environment > .world-clock-label {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.world-environment > .world-event,
+.world-environment > .world-outage,
+.world-environment > [role="status"] {
+  flex: 1 1 220px;
+  min-width: 0;
+  max-width: 100%;
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 640px) {
+  .world-environment {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 6px 10px;
+    padding: 7px 10px;
+    font-size: 10px;
+  }
+
+  .world-environment > .world-condition:first-child {
+    min-width: 0;
+  }
+
+  .world-environment > .world-condition:first-child > span {
+    display: inline-flex;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .world-environment > .world-condition:first-child small {
+    display: none;
+  }
+
+  .world-environment > .world-clock-label {
+    justify-self: end;
+    font-size: 10px;
+  }
+
+  .world-environment > .world-event,
+  .world-environment > .world-outage,
+  .world-environment > [role="status"] {
+    grid-column: 1 / -1;
+    min-width: 0;
+    max-width: 100%;
+    margin-left: 0;
+    font-size: 10px;
+  }
+}
+
+@media (max-width: 380px) {
+  .gbb .gbb-phone {
+    flex: 0 0 44px;
+    width: 44px;
   }
 }

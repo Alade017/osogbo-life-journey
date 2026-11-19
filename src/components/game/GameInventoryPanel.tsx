@@ -167,15 +167,20 @@ export function GameInventoryPanel() {
           <CharacterPreview
             appearance={(character?.appearance ?? {}) as unknown as Appearance}
             gender={character?.gender ?? "nonbinary"}
+            interactive
             equipment={previewEquipment}
-            label="Your character wearing the currently equipped items"
+            label={
+              canTryOn
+                ? "Outfit try-on preview; choose Wear to save"
+                : "Your character wearing the saved outfit"
+            }
           />
           <div className="pi-stage-foot">
             <div>
               <strong>{selectedItem?.item?.name ?? "Your look"}</strong>
               <span>
                 {selectedItem && canTryOn
-                  ? "Previewing on your character"
+                  ? "Try-on preview — choose Wear to save"
                   : "Choose an item to try it on"}
               </span>
             </div>
@@ -202,7 +207,7 @@ export function GameInventoryPanel() {
           <section className="pi-section" aria-label="Equipment">
             <div className="pi-section-heading">
               <div>
-                <p className="pi-eyebrow">Character loadout</p>
+                <p className="pi-eyebrow">Your wardrobe</p>
                 <h2>Equipped</h2>
               </div>
               <span>
@@ -262,7 +267,10 @@ export function GameInventoryPanel() {
       </div>
 
       {!items?.length ? (
-        <EmptyState title="Your inventory is empty" body="Items you collect or purchase will appear here." />
+        <EmptyState
+          title="Your inventory is empty"
+          body="Items you collect or purchase will appear here."
+        />
       ) : (
         <>
           <div className="pi-section-heading">

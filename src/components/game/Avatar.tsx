@@ -1,3 +1,4 @@
+import { resolveWornOutfit, type WearableEquipment } from "@/game/wearable-outfits";
 import type { ReactNode } from "react";
 import {
   BODY_BUILDS,
@@ -25,7 +26,7 @@ export {
 } from "@/game/avatar-appearance";
 export type { Appearance } from "@/game/avatar-appearance";
 
-export type AvatarEquipment = { slot: string };
+export type AvatarEquipment = WearableEquipment;
 export type AvatarFacing = "north" | "east" | "south" | "west";
 export type AvatarAnimationState = "idle" | "walk" | "turn" | "talk" | "work" | "sleep" | "dance";
 
@@ -75,9 +76,9 @@ export function AvatarArtwork({
   const safe = normalizeAvatarAppearance(appearance, gender);
   const skin = SKIN_TONES[safe.skin]!;
   const hairColor = HAIR_COLORS[safe.hairColor]!;
-  const shirt = OUTFITS[safe.outfit]!;
-  const pants = TROUSERS[safe.bottoms]!;
-  const shoes = SHOE_COLORS[safe.shoes]!;
+  const wornOutfit = resolveWornOutfit(safe, gender, equipment);
+  if (wornOutfit.hasWearables) safe.clothed = true;
+  const [shirt, pants, shoes] = wornOutfit.colors;
   const hair = safe.hair;
   const bodyWidth = [0.9, 1, 1.07, 1.14][safe.build] ?? 1;
   const bodyHeight = [0.92, 1, 1.06][safe.stature] ?? 1;
