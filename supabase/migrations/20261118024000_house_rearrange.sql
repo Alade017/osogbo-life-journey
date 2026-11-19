@@ -34,8 +34,18 @@ begin
   update public.house_placements p set x=m.x,y=m.y,floor=m.floor,rotation_deg=m.rotation_deg
     from jsonb_to_recordset(p_moves) as m(id uuid,x numeric,y numeric,floor smallint,rotation_deg numeric)
     where p.id=m.id and p.player_house_id=h.id;
-  update public.home_items i set x=p.x,y=p.y,updated_at=now()
-    from public.house_placements p where p.player_house_id=h.id and i.user_id=p_player_id and i.slot_id=p.slot and i.placed;
+  -- Mirror coordinates only to the exact legacy item row. Slot IDs are not unique
+  -- across a character's legacy inventory, so never join on user_id + slot_id alone.
+  update public.home_items i
+    set x=p.x,y=p.y,updated_at=now()
+    from public.house_placements p
+    join public.characters c on c.user_id=p_player_id
+    where p.player_house_id=h.id
+      and i.user_id=p_player_id
+      and i.character_id=c.id
+      and i.item_id=p.item_id
+      and i.slot_id=p.slot
+      and i.placed;
   perform public._audit_house_action(p_player_id,'house.rearrange',null,'success',null,null,jsonb_build_object('count',n));
   return jsonb_build_object('ok',true,'state',public.get_house_state(p_player_id));
 end $$;
