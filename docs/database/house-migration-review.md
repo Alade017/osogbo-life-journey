@@ -92,7 +92,9 @@ The rearrangement database test now:
 - asserts a missing legacy row is not recreated or used to move an unrelated item;
 - retains the inventory-quantity, stale-snapshot, duplicate-cell, and foreign-house checks.
 
-**Remaining validation:** run the focused PGlite/Vitest test and the broader house database suite. The code has been committed to the draft reconciliation PR, but no test run has yet been performed in this environment.
+**Test harness correction:** the PGlite test now explicitly loads `supabase/migrations/20261118024000_house_rearrange.sql` after its prerequisite migrations, and projects the expected snapshot into the exact six fields consumed by the RPC (`id`, `slot`, `x`, `y`, `floor`, `rotation_deg`). This prevents a false `LAYOUT_CHANGED` caused by passing the test query's extra `item_id` field.
+
+**Remaining validation:** run the focused PGlite/Vitest test and the broader house database suite. The test harness and migration are committed to the draft reconciliation PR, but no test run has yet been performed in this environment.
 
 ### Additional review notes
 
@@ -111,8 +113,8 @@ Do not run `supabase db push` or `supabase migration repair` for these files yet
 
 ## 4. Validation still required
 
-- Confirm bungalow/duplex bedroom counts against room blueprints and rental UX.
-- Harden the `home_items` legacy-row join and verify trigger effects.
-- Decide whether legacy floor/rotation columns remain supported and test the chosen contract.
-- Run focused house tests, full typecheck, lint, and build.
-- Verify the final function definition, grants, and RLS after staging deployment.
+- Run the focused `house-free-placement-database.test.ts` PGlite/Vitest test and the broader house database suite.
+- Run full typecheck, lint, and production build.
+- Review the `SECURITY DEFINER` search path, schema CREATE privileges, and the idempotency/side effects of the two house-status processing calls.
+- Validate the corrected migration in an isolated staging database before production approval.
+- Separately confirm bungalow/duplex bedroom counts against room blueprints and rental UX; that catalogue mismatch is outside this rearrangement fix.
