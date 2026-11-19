@@ -71,7 +71,7 @@ it("requests a ride and displays the returned server ride history", async () => 
     db.rows["okada_ride_requests"] = [
       {
         id: "ride-1",
-        destination: "Town market",
+        destination: "Town Market",
         fare_minor: 300,
         status: "assigned",
         created_at: "2026-10-23T10:00:00Z",
@@ -80,13 +80,13 @@ it("requests a ride and displays the returned server ride history", async () => 
     return { data: null, error: null };
   });
   renderWithQuery(<PhoneCommunityServices app="Okada Rides" />);
-  fireEvent.change(await screen.findByPlaceholderText("Where are you going?"), {
-    target: { value: "Town market" },
+  fireEvent.change(await screen.findByLabelText(/Destination/), {
+    target: { value: "Town Market" },
   });
   fireEvent.click(screen.getByRole("button", { name: "Request ride" }));
   expect(await screen.findByText("Driver assigned")).toBeInTheDocument();
   expect(db.rpc).toHaveBeenCalledWith("request_okada_ride", {
-    p_destination: "Town market",
+    p_destination: "Town Market",
     p_request_id: expect.any(String),
   });
 });

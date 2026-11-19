@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { foodDeliveryService, type FoodDelivery } from "@/lib/food-delivery-service";
 import { formatNaira, q } from "@/lib/game";
+import { OKADA_DESTINATIONS, OKADA_HOME } from "@/game/okada-destinations";
 import { PaletteSelect } from "@/components/ui/palette-select";
 import { Bike, MapPin, PackageCheck, ShoppingBasket, UtensilsCrossed } from "lucide-react";
 import "./food-delivery-app.css";
@@ -571,19 +572,19 @@ function RidesApp() {
               <MapPin aria-hidden="true" />
               Destination
             </span>
-            <input
-              maxLength={120}
-              value={destination}
-              onChange={(event) => setDestination(event.target.value)}
-              placeholder="Where are you going?"
-            />
+            <select value={destination} onChange={(event) => setDestination(event.target.value)}>
+              <option value="">Choose a destination</option>
+              {OKADA_DESTINATIONS.map((place) => (
+                <option key={place} value={place}>
+                  {place === OKADA_HOME ? "Home" : place}
+                </option>
+              ))}
+            </select>
           </label>
           <button
             type="button"
             className="okada-submit"
-            disabled={
-              request.isPending || destination.trim().length < 2 || !wallet || fare > wallet.balance
-            }
+            disabled={request.isPending || !destination || !wallet || fare > wallet.balance}
             onClick={() => request.mutate()}
           >
             {request.isPending

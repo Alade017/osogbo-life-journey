@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
+import { OsunMallStreet } from "./OsunMallStreet";
 import type { Camera } from "three";
 import { MallBubbleLayer } from "./MallBubbleLayer";
 import {
@@ -21,7 +21,12 @@ import {
   pruneBubbles,
   type MallBubble,
 } from "@/game/mall-bubbles";
-import { canWalkInMall, findMallPath, restrictedZoneAt } from "@/game/osun-mall-layout";
+import {
+  MALL_ENTRANCE,
+  canWalkInMall,
+  findMallPath,
+  restrictedZoneAt,
+} from "@/game/osun-mall-layout";
 import { q } from "@/lib/game";
 import { joinMallRoom } from "@/lib/multiplayer-service";
 
@@ -48,6 +53,8 @@ export function OsunMallVenue({
   const playerEquipment = (equipment ?? []).map((row) => ({ slot: row.slot }));
   const [status, setStatus] = useState<"joining" | "ready" | "offline">("joining");
   const [message, setMessage] = useState<string | null>(null);
+  // Outside, the visitor is on the street; the mall room is only joined while inside.
+  const [outside, setOutside] = useState(false);
   const [playerMoving, setPlayerMoving] = useState(false);
   const [people, setPeople] = useState<MallPerson[]>([]);
   const [log, setLog] = useState<string[]>([]);
@@ -58,6 +65,7 @@ export function OsunMallVenue({
   const cameraRef = useRef<Camera | null>(null);
 
   useEffect(() => {
+    if (outside) return undefined;
     let cancelled = false;
     let joined: MallRoomHandle | null = null;
     joinMallRoom(locationId)
@@ -94,8 +102,9 @@ export function OsunMallVenue({
       cancelled = true;
       if (joined) void joined.leave();
       roomRef.current = null;
+      setPeople([]);
     };
-  }, [locationId]);
+  }, [locationId, outside]);
 
   // The walking state drives the animation, so React sees it a few times a second, not every frame.
   useEffect(() => {
@@ -155,6 +164,16 @@ export function OsunMallVenue({
     say(PLAYER_BUBBLE_ID, line);
   };
 
+  if (outside) {
+    const enterMall = () => {
+      // Back inside, the visitor starts at the entrance again.
+      sim.current.player.pos = [MALL_ENTRANCE[0], MALL_ENTRANCE[1]];
+      sim.current.player.walker = null;
+      setOutside(false);
+    };
+    return <OsunMallStreet onEnterMall={enterMall} accent="#c2410c" />;
+  }
+
   return (
     <section className="relative" aria-label={`${locationName} interior`}>
       <div className="relative h-[calc(100dvh-7rem)] min-h-[24rem] overflow-hidden bg-muted">
@@ -192,12 +211,13 @@ export function OsunMallVenue({
 
       {/* Controls sit on the scene, the way the house does: no page chrome around it. */}
       <div className="pointer-events-none absolute right-3 top-3">
-        <Link
-          to="/map"
+        <button
+          type="button"
+          onClick={() => setOutside(true)}
           className="pointer-events-auto rounded-lg border-2 border-edge bg-background/90 px-3 py-1 text-sm font-semibold"
         >
           Leave mall
-        </Link>
+        </button>
       </div>
 
       <div className="pointer-events-none absolute inset-x-3 bottom-3 flex flex-col items-center gap-2">
