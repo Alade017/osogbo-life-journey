@@ -61,3 +61,18 @@ export function findStreetPath(from: WalkPoint, to: WalkPoint): WalkPoint[] | nu
   if (!canWalkOnStreet(to)) return null;
   return findGridWalkPath(from, to, canWalkOnStreet);
 }
+
+/**
+ * Where an assigned rider should go. The rider follows the visitor, but only once the visitor has
+ * stopped; small moves keep the previous target so the rider does not restart its walk each time.
+ */
+export function nextRiderTarget(
+  previous: WalkPoint | null,
+  visitor: WalkPoint,
+  visitorMoving: boolean,
+): WalkPoint | null {
+  if (previous === null) return null;
+  if (visitorMoving) return previous;
+  const moved = Math.hypot(previous[0] - visitor[0], previous[1] - visitor[1]);
+  return moved < 0.3 ? previous : [visitor[0], visitor[1]];
+}
