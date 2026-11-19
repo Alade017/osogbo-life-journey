@@ -1000,7 +1000,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             beginTransition("leaving", "Heading out for your trip", 3);
             transitionStarted = true;
             await rpc.travelToLocation(departure);
-            queryClient.setQueryData(q.character().queryKey, (previous: typeof character) =>
+            queryClient.setQueryData(q.character().queryKey, (previous) =>
               previous
                 ? {
                     ...previous,

@@ -16,6 +16,9 @@ import { VenueSceneBoundary } from "./VenueSceneBoundary";
 const ClinicVenue = lazy(() =>
   import("./ClinicVenue").then((module) => ({ default: module.ClinicVenue })),
 );
+const OsunMallVenue = lazy(() =>
+  import("./OsunMallVenue").then((module) => ({ default: module.OsunMallVenue })),
+);
 const SchoolCampusVenue = lazy(() =>
   import("./SchoolCampusVenue").then((module) => ({ default: module.SchoolCampusVenue })),
 );
@@ -141,7 +144,9 @@ function BasicLocationVenueScene({
               aria-hidden="true"
             >
               <WorldCamera
-                width={bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 10}
+                width={
+                  bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 10
+                }
                 depth={bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 7}
                 stage
                 target={[0, 1.2, 0]}
@@ -308,10 +313,16 @@ function BasicLocationVenueScene({
       )}
       {venue.scene === "workplace" && (
         <nav aria-label="Workplace links" className="flex flex-wrap gap-2">
-          <Link to="/jobs" className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground">
+          <Link
+            to="/jobs"
+            className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground"
+          >
             Jobs & shifts
           </Link>
-          <Link to="/education" className="rounded-lg border border-edge bg-card px-4 py-3 text-sm font-semibold">
+          <Link
+            to="/education"
+            className="rounded-lg border border-edge bg-card px-4 py-3 text-sm font-semibold"
+          >
             Courses
           </Link>
         </nav>
@@ -370,6 +381,8 @@ function BasicLocationVenueScene({
 export function LocationVenueScene(props: {
   slug: string;
   locationName: string;
+  /** The server location id; the Osun Mall room needs it to confirm the visitor is inside. */
+  locationId?: string;
   /** A venue design supplied by the caller, such as the neighbourhood Buka interior. */
   design?: LocationVenueDesign;
   /** The shop the visitor is inside, when the venue is a sub-building stall. */
@@ -377,6 +390,16 @@ export function LocationVenueScene(props: {
   onBrowseMarket?: () => void;
   onBankServices?: () => void;
 }) {
+  if (props.slug === "osun-mall" && props.locationId)
+    return (
+      <Suspense
+        fallback={
+          <WorldLoadingIndicator title="Entering the mall" detail="Opening the shopping hall…" />
+        }
+      >
+        <OsunMallVenue locationId={props.locationId} locationName={props.locationName} />
+      </Suspense>
+    );
   const venue = props.design ?? getLocationVenueDesign(props.slug, props.locationName);
   if (venue.scene === "clinic")
     return (
