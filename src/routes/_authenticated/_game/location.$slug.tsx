@@ -300,6 +300,23 @@ function LocationPage() {
   if (isLoading || !character) return <LoadingState />;
   if (!loc) return <EmptyState title="District not found" body="That place isn't on the map." />;
 
+  // Once the visitor is inside a walkable venue, go straight to the scene: no preview cards.
+  if (isHere && loc.slug === "osun-mall") {
+    return (
+      <div className="-mx-3 space-y-3 px-3 py-4 md:-mx-4 md:px-4 md:py-6">
+        <Link to="/map" className="inline-flex items-center gap-1 text-sm font-bold">
+          <ArrowLeft className="h-4 w-4" /> Back to map
+        </Link>
+        <LocationVenueScene
+          key={loc.id}
+          slug={loc.slug}
+          locationName={loc.name}
+          locationId={loc.id}
+        />
+      </div>
+    );
+  }
+
   return (
     <div
       className={cn(
