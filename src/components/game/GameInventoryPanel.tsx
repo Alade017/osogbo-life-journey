@@ -133,14 +133,14 @@ export function GameInventoryPanel() {
   const normalizedEquipment = normalizeEquippedItems(equipment);
   const wornNow = normalizedEquipment.map((entry) => ({ slot: entry.slot, item: entry.item }));
   // Trying an item on: the stage shows the selected item in its slot, so 3D models appear live.
+  const canTryOn = !!selectedSlot && !equipError;
   const previewEquipment =
-    selectedSlot && selectedItem
+    canTryOn && selectedSlot && selectedItem
       ? [
           ...wornNow.filter((entry) => entry.slot !== selectedSlot),
           { slot: selectedSlot, item: selectedItem.item },
         ]
       : wornNow;
-  const canTryOn = !!selectedSlot && !equipError;
 
   return (
     <div className="pi-page pi-inventory">
@@ -216,7 +216,7 @@ export function GameInventoryPanel() {
             </div>
             <ul className="pi-slots" aria-label="Equipment slots">
               {EQUIPMENT_SLOTS.map((slot) => {
-                const equipped = equipment?.find((entry) => entry.slot === slot);
+                const equipped = normalizedEquipment.find((entry) => entry.slot === slot);
                 return (
                   <li
                     key={slot}
@@ -226,7 +226,7 @@ export function GameInventoryPanel() {
                     {equipped ? (
                       <strong className="pi-slot-item">{equipped.item?.name ?? "Equipped"}</strong>
                     ) : (
-                      <span className="pi-slot-empty">Nothing on</span>
+                      <span className="pi-slot-empty">No inventory item</span>
                     )}
                     <div className="pi-slot-actions">
                       <button
