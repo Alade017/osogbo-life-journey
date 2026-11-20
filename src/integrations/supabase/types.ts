@@ -7293,7 +7293,10 @@ export type Database = {
         Args: { p_accept: boolean; p_request_id: string };
         Returns: Json;
       };
-      complete_worship_prayer: { Args: { p_place_slug: string; p_request_id: string }; Returns: Json };
+      complete_worship_prayer: {
+        Args: { p_place_slug: string; p_prayer: string; p_request_id: string };
+        Returns: Json;
+      };
       set_osun_mall_presence: { Args: { p_zone: string }; Returns: undefined };
       respond_to_event: {
         Args: { p_request_id: string; p_requirement_id: string };
