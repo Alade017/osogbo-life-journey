@@ -117,8 +117,10 @@ export function WorldCharacter({
     const settleUntil = performance.now() + CHARACTER_MOTION.settleSeconds * 1000;
     const timer = window.setInterval(() => {
       invalidate();
-      if (performance.now() >= walkUntil.current) setWalking(false);
-      const active = continuous || performance.now() < Math.max(walkUntil.current, settleUntil);
+      const here = root.current?.position;
+      const travelling = !!here && Math.hypot(here.x - goal.current.x, here.z - goal.current.z) > 0.001;
+      if (!travelling && performance.now() >= walkUntil.current) setWalking(false);
+      const active = continuous || travelling || performance.now() < Math.max(walkUntil.current, settleUntil);
       if (!active) window.clearInterval(timer);
     }, 1000 / 15);
     return () => window.clearInterval(timer);
