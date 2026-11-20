@@ -442,6 +442,7 @@ export function R3FNeighborhoodSurface({
   targetedZoneNpcId = null,
   onSelectZone,
   onSelectZoneNpc,
+  onSelectFeature,
   onHoverZone,
   overview,
 }: {
@@ -467,6 +468,8 @@ export function R3FNeighborhoodSurface({
   targetedZoneNpcId?: string | null;
   onSelectZone?: (zoneId: string) => void;
   onSelectZoneNpc?: (npcId: string) => void;
+  /** A district feature block was clicked; receives the feature's label. */
+  onSelectFeature?: (label: string) => void;
   onHoverZone?: (zoneId: string | null) => void;
   /** Reuse the playable world's geometry for the map without a second world definition. */
   overview?: { camera: ReactNode; markers: ReactNode };
@@ -858,6 +861,25 @@ export function R3FNeighborhoodSurface({
                 ...(o.label !== undefined ? { label: o.label } : {}),
               }))}
           />
+          {!overview &&
+            (area.obstacles ?? [])
+              .filter((obstacle) => obstacle.id.startsWith("district-feature-") && obstacle.label)
+              .map((block) => {
+                const p = point(block.x, block.y);
+                return (
+                  <mesh
+                    key={`feature-hit-${block.id}`}
+                    position={[p[0], 1.1, p[2]]}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onSelectFeature?.(block.label ?? "");
+                    }}
+                  >
+                    <boxGeometry args={[block.width * unit, 2.2, block.height * unit]} />
+                    <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+                  </mesh>
+                );
+              })}
           {!overview &&
             area.obstacles
               ?.filter((obstacle) => obstacle.kind === "landmark" && obstacle.label)
