@@ -124,8 +124,17 @@ export function WorldCharacter({
     return () => window.clearInterval(timer);
   }, [x, y, z, animation, taskPose, reduced, invalidate, walking]);
   const yaw = FACING_YAW[facing] ?? 0;
+  const initialYaw = useRef(yaw);
+  useEffect(() => { invalidate(); }, [yaw, invalidate]);
   useFrame((_state, delta) => {
     const rootGroup = root.current;
+    if (rootGroup) {
+      const difference = Math.atan2(Math.sin(yaw - rootGroup.rotation.y), Math.cos(yaw - rootGroup.rotation.y));
+      if (Math.abs(difference) > 0.002) {
+        rootGroup.rotation.y += reduced ? difference : difference * blend(CHARACTER_MOTION.headTurnRate, delta);
+        invalidate();
+      } else rootGroup.rotation.y = yaw;
+    }
     if (rootGroup && rootGroup.position.distanceTo(goal.current) > 0.001) {
       const here = rootGroup.position;
       const [nx, ny, nz] = followStep(
@@ -145,7 +154,8 @@ export function WorldCharacter({
     if (lookAt && !reduced) {
       const worldYaw = Math.atan2(lookAt[0] - x, lookAt[2] - z);
       const limit = CHARACTER_MOTION.headTurnLimit * 0.5;
-      turn = MathUtils.clamp(worldYaw - yaw, -limit, limit);
+      const difference = worldYaw - (rootGroup?.rotation.y ?? yaw);
+      turn = MathUtils.clamp(Math.atan2(Math.sin(difference), Math.cos(difference)), -limit, limit);
     }
     if (Math.abs(group.rotation.y - turn) > 0.002) {
       group.rotation.y = MathUtils.lerp(
@@ -167,7 +177,7 @@ export function WorldCharacter({
     ? WORN_ITEM_MODELS[wornAccessory.item.slug]
     : undefined;
   return (
-    <group ref={root} name={`character:${name}`} rotation={[0, yaw, 0]}>
+    <group ref={root} name={`character:${name}`} rotation={[0, initialYaw.current, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} renderOrder={-1}>
         <circleGeometry args={[h * CHARACTER_GROUND.shadowRadius, 20]} />
         <meshBasicMaterial
