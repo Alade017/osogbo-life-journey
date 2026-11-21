@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Backpack, GlassWater, Package, Shirt, Smartphone, type LucideIcon } from "lucide-react";
+import { Backpack, GlassWater, Package, Search, Shirt, Smartphone, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { EmptyState } from "@/components/game/ui";
@@ -60,6 +60,7 @@ export function GameInventoryPanel() {
   } = useQuery(q.equipment());
   const [activeCategory, setActiveCategory] = useState<InventoryCategory | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
   const [requestedSlot, setRequestedSlot] = useState<EquipmentSlot | null>(null);
   const useItem = useGameAction(rpc.useInventoryItem, {
     onSuccess: () => toast.success("Item used. Your needs and game time were updated."),
@@ -105,9 +106,16 @@ export function GameInventoryPanel() {
 
   const inventory = items ?? [];
   const visibleItems = filterInventory(inventory, activeCategory);
-  const compatibleItems = requestedSlot
+  const slotItems = requestedSlot
     ? filterEquippableInventoryForSlot(visibleItems, requestedSlot)
     : visibleItems;
+  const query = search.trim().toLocaleLowerCase();
+  const compatibleItems = query
+    ? slotItems.filter((entry) =>
+        [entry.item?.name, entry.item?.description, entry.item?.slug]
+          .some((value) => value?.toLocaleLowerCase().includes(query)),
+      )
+    : slotItems;
   const selectedItem = items?.find((item) => item.id === selectedId);
   const itemActionsAvailable = typeof selectedItem?.item?.usable === "boolean";
   const selectedUse = selectedItem ? itemUseEffect(selectedItem.item) : null;
@@ -280,6 +288,20 @@ export function GameInventoryPanel() {
             </div>
             <span>{compatibleItems.length} shown</span>
           </div>
+          <div className="pi-bag-toolbar">
+            <label className="pi-inventory-search">
+              <Search size={18} aria-hidden="true" />
+              <span className="sr-only">Search inventory</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search your items"
+                aria-label="Search inventory"
+              />
+            </label>
+            <span className="pi-bag-count">{compatibleItems.length} of {inventory.length} stacks</span>
+          </div>
           <div className="pi-filters" role="group" aria-label="Filter bag by category">
             {categoryFilters.map((category) => (
               <button
@@ -302,7 +324,7 @@ export function GameInventoryPanel() {
               </button>
             </p>
           )}
-          {requestedSlot && compatibleItems.length === 0 && (
+          {requestedSlot && slotItems.length === 0 && (
             <p className="pi-banner" role="status">
               You do not have any {requestedSlot} equipment in your bag yet. Visit the market to
               look for some.
@@ -311,6 +333,11 @@ export function GameInventoryPanel() {
 
           <div className="pi-bag-layout">
             <div className="pi-bag" id="inventory-items">
+              {compatibleItems.length === 0 && (
+                <p className="pi-bag-empty" role="status">
+                  {query ? "No items match your search." : "No items in this category."}
+                </p>
+              )}
               {compatibleItems.map((item) => {
                 const Icon = ICONS[item.item?.icon ?? ""] ?? Package;
                 return (
