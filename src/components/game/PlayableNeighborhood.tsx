@@ -1740,6 +1740,7 @@ export function PlayableNeighborhood() {
                         }
                       >
                         <ResidentialCompoundVenue
+                          key={homeTypeId ?? "default"}
                           homeTypeId={homeTypeId}
                           enteringHome={enteringHome || homeBound}
                           {...(district?.personalHome && homeTypeId && !homeQuery.isError
