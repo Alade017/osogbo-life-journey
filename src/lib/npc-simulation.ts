@@ -16,6 +16,7 @@ export type NpcDefinition = {
     end: number;
     destination: "work" | "home" | "market" | "park";
     activity: string;
+    weekdays?: readonly number[];
   }[];
 };
 export type NpcActivity = {
@@ -159,26 +160,22 @@ export function npcActivityAt(
   locationBySlug: (slug: string) => string | null,
   weather: "sunny" | "cloudy" | "rainy" | "heavy-rain" = "sunny",
 ): NpcActivity {
-  const routine = npc.routine.find((entry) => time.hour >= entry.start && time.hour < entry.end);
-  const weatherFallback =
-    (weather === "rainy" || weather === "heavy-rain") && routine?.destination === "park";
-  const destination = weatherFallback
-    ? npc.homeSlug
-    : routine?.destination === "work"
-      ? npc.workSlug
-      : routine?.destination === "home"
-        ? npc.homeSlug
-        : routine?.destination === "market"
-          ? "oja-oba"
-          : "cultural-district";
-  const destinationSlug = locationBySlug(destination) ? destination : npc.homeSlug;
+  const matchesTime = (entry: NpcDefinition["routine"][number]) =>
+    time.hour >= entry.start && time.hour < entry.end;
+  const routine = npc.routine.find((entry) => entry.weekdays?.includes(time.weekday) && matchesTime(entry))
+    ?? npc.routine.find((entry) => !entry.weekdays && matchesTime(entry));
+  const kind = routine?.destination ?? "home";
+  const weatherFallback = (weather === "rainy" || weather === "heavy-rain") && kind === "park";
+  const requested = kind === "work" ? npc.workSlug : kind === "market" ? "oja-oba"
+    : kind === "park" ? "cultural-district" : npc.homeSlug;
+  const missing = !weatherFallback && !locationBySlug(requested);
+  const destinationSlug = weatherFallback || missing ? npc.homeSlug : requested;
   return {
     destinationSlug,
-    destination: weatherFallback ? "home" : (routine?.destination ?? "home"),
-    label: weatherFallback
-      ? "staying indoors during the rain"
-      : (routine?.activity ?? "taking a quiet break"),
-    available: time.hour >= 7 && time.hour < 22,
+    destination: weatherFallback || missing ? "home" : kind,
+    label: weatherFallback ? "staying indoors during the rain"
+      : missing ? "resting at home" : routine?.activity ?? "taking a quiet break",
+    available: !!locationBySlug(destinationSlug) && time.hour >= 7 && time.hour < 22,
   };
 }
 
