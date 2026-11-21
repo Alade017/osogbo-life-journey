@@ -36,6 +36,7 @@ import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { NeighborhoodZoneModal } from "@/components/game/NeighborhoodZoneModal";
+import { FeatureTravelPanel } from "@/components/game/FeatureTravelPanel";
 import { GROUND_ARRIVE_DISTANCE, groundIntent } from "@/game/ground-intent";
 import { commuteNotice } from "@/game/commute-notice";
 import "./commute-banner.css";
@@ -1258,25 +1259,23 @@ export function PlayableNeighborhood() {
                       <div
                         role="dialog"
                         aria-label={`${featureLabel} details`}
-                        className="fixed bottom-4 left-4 z-30 max-w-xs rounded-lg border-2 border-edge bg-background/95 p-3 text-sm shadow-lg"
+                        className="fixed bottom-4 left-4 z-30 max-h-[70dvh] w-72 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border-2 border-edge bg-background/95 p-3 text-sm shadow-lg"
                       >
                         <h2 className="font-bold">{featureLabel}</h2>
                         <p className="mt-1 text-muted-foreground">
                           {currentLocation?.name ?? "This district"} plans{" "}
                           {featureLabel.toLowerCase()} here.
                         </p>
-                        <div className="mt-3 flex items-center justify-between gap-2">
-                          {currentLocation?.slug ? (
-                            <Link
-                              to="/location/$slug"
-                              params={{ slug: currentLocation.slug }}
-                              className="rounded-md border-2 border-edge px-3 py-1 font-bold"
-                            >
-                              Travel to {currentLocation.name}
-                            </Link>
-                          ) : (
-                            <span />
-                          )}
+                        <FeatureTravelPanel
+                          featureLabel={featureLabel}
+                          currentLocationId={currentLocation?.id}
+                          locations={locationsQuery.data ?? []}
+                          character={characterQuery.data}
+                          cash={walletQuery.data?.balance}
+                          navigate={navigate}
+                          queryClient={queryClient}
+                        />
+                        <div className="mt-3 flex items-center justify-end gap-2">
                           <button
                             type="button"
                             className="font-semibold underline"
