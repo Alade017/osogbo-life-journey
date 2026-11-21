@@ -80,7 +80,7 @@ const server = new Server({ ...serverOptions, ...redisOptions });
 server.define("neighborhood", NeighborhoodRoom).filterBy(["locationId"]);
 server.define("party", PartyRoom).filterBy(["locationId"]);
 server.define("mall", MallRoom).filterBy(["locationId"]);
-server.define("ludo", LudoRoom);
+server.define("ludo", LudoRoom).filterBy(["tableId"]);
 
 const port = Number(process.env["PORT"] ?? process.env["MULTIPLAYER_PORT"] ?? 2567);
 const host = process.env["MULTIPLAYER_HOST"] ?? (process.env["PORT"] ? "0.0.0.0" : "127.0.0.1");
