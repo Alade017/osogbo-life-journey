@@ -137,6 +137,16 @@ export function GameInventoryPanel() {
           slot: selectedSlot,
         })
       : "This item cannot be equipped.";
+  const discardError = selectedItem && character
+    ? validatePlayerAction({
+        action: "discard",
+        characterId: character.id,
+        inventoryEntry: selectedItem,
+        quantity: 1,
+      })
+    : "Player data is not available.";
+  const inventoryMutationPending =
+    useItem.isPending || equipItem.isPending || unequipItem.isPending || discardItem.isPending;
   const categoryFilters: (InventoryCategory | "all")[] = ["all", ...INVENTORY_CATEGORIES];
   const normalizedEquipment = normalizeEquippedItems(equipment);
   const wornNow = normalizedEquipment.map((entry) => ({ slot: entry.slot, item: entry.item }));
@@ -270,7 +280,7 @@ export function GameInventoryPanel() {
                         <button
                           type="button"
                           className="pi-chip-btn"
-                          disabled={unequipItem.isPending || !character || !equipped ||
+                          disabled={inventoryMutationPending || !character || !equipped ||
                             !!(character && equipped && validatePlayerAction({
                               action: "unequip",
                               characterId: character.id,
@@ -427,7 +437,7 @@ export function GameInventoryPanel() {
                     <div className="pi-detail-actions">
                       {selectedUse && (
                         <Button
-                          disabled={!!useError || useItem.isPending}
+                          disabled={!!useError || inventoryMutationPending}
                           onClick={() => useItem.mutate(selectedItem.id)}
                         >
                           {useItem.isPending
@@ -456,7 +466,7 @@ export function GameInventoryPanel() {
                       )}
                       <Button
                         variant="outline"
-                        disabled={discardItem.isPending}
+                        disabled={!!discardError || inventoryMutationPending}
                         onClick={() => {
                           if (window.confirm(`Discard one ${selectedItem.item?.name ?? "item"}?`))
                             discardItem.mutate({ id: selectedItem.id, quantity: 1 });
