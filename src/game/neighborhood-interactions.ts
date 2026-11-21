@@ -101,18 +101,29 @@ export type NeighborhoodZoneTag =
 const AUTHORED_ZONES: readonly AuthoredZone[] = [
   {
     id: "zone-fuel-pumps",
-    services: ["market"],
+    services: ["jobs", "market"],
     shopSlug: "fuel-and-go-forecourt",
     zoneTag: "FILLING_STATION",
     category: "filling-station",
     title: "Fuel & Go Forecourt Pumps",
-    subtitle: "Browse sealed 10L petrol jerrycans from the forecourt counter.",
+    subtitle: "Browse sealed 10L petrol jerrycans, or clock in as a station attendant.",
     promptLabel: "Fuel Pumps",
     interactRadius: 88,
     ringRadius: 1.05,
     badgeHeight: 2.35,
     hitSize: [2.2, 2.4, 3.6],
-    actions: [],
+    actions: [
+      {
+        id: "fuel-attendant-shift",
+        label: "Work Attendant Shift",
+        description: "Serve motorists along Left Avenue for quick pocket cash.",
+        walletDelta: 2600,
+        needDeltas: { energy: -16, hunger: -10, social: 6 },
+        xpGain: 28,
+        toastMessage: "Completed a Fuel & Go attendant shift (+₦2,600).",
+        activityKind: "shift",
+      },
+    ],
   },
   {
     id: "zone-mini-mart",

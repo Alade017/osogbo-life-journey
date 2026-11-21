@@ -137,7 +137,7 @@ it("connects both Adire stations to crafting and the same server-owned materials
 
 it("routes forecourt jerrycan purchases to the dedicated server-backed shop catalogue", () => {
   const fuel = findInteractableZone("zone-fuel-pumps")!;
-  expect(fuel.services).toEqual(["market"]);
+  expect(fuel.services).toEqual(["jobs", "market"]);
   expect(fuel.shopSlug).toBe("fuel-and-go-forecourt");
-  expect(fuel.actions).toEqual([]);
+  expect(fuel.actions.map((action) => action.id)).toEqual(["fuel-attendant-shift"]);
 });
