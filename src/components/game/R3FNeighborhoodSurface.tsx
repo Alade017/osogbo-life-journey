@@ -1,3 +1,4 @@
+import { NpcBody } from "@/components/3d/NpcBody";
 import {
   Component,
   Suspense,
@@ -333,38 +334,7 @@ function NeighborhoodNpcActor({
 
   return (
     <group ref={group}>
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <capsuleGeometry args={[0.24, 0.52, 4, 8]} />
-        <WorldMaterial tone="slate" />
-      </mesh>
-      <mesh position={[0, 1.55, 0]} castShadow>
-        <sphereGeometry args={[0.22, 12, 10]} />
-        <WorldMaterial tone="clay" />
-      </mesh>
-      <group ref={leftArm} position={[-0.29, 1.08, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.12, 0.42, 0.13]} />
-          <WorldMaterial tone="clay" />
-        </mesh>
-      </group>
-      <group ref={rightArm} position={[0.29, 1.08, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.12, 0.42, 0.13]} />
-          <WorldMaterial tone="clay" />
-        </mesh>
-      </group>
-      <group ref={leftLeg} position={[-0.12, 0.48, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.14, 0.42, 0.16]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-      </group>
-      <group ref={rightLeg} position={[0.12, 0.48, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.14, 0.42, 0.16]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-      </group>
+      <NpcBody detail="resident" leftArm={leftArm} rightArm={rightArm} leftLeg={leftLeg} rightLeg={rightLeg} />
       <mesh
         position={[0, 0.92, 0]}
         onClick={(event) => {
