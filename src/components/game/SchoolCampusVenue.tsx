@@ -42,7 +42,7 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
       </div>
       <div className="relative h-[55svh] min-h-72 overflow-hidden rounded-lg border border-edge bg-muted">
         {status !== "fallback" && (
-          <VenueSceneBoundary onError={unavailable}>
+          <VenueSceneBoundary resetKey={slug} onError={unavailable}>
             <Canvas shadows frameloop="demand" dpr={[1, 1.25]}
               gl={{ antialias: false, powerPreference: "low-power" }}
               onCreated={() => setStatus("ready")}
