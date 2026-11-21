@@ -846,3 +846,49 @@
     padding-right: 5.25rem;
   }
 }
+
+/* Inventory discovery toolbar: accessible search and responsive result count. */
+.pi-bag-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+.pi-inventory-search {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+.pi-inventory-search:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.pi-inventory-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.pi-inventory-search input::placeholder { color: var(--muted-foreground); }
+.pi-bag-count { color: var(--muted-foreground); font-size: 0.8rem; font-weight: 650; }
+.pi-bag-empty {
+  grid-column: 1 / -1;
+  padding: 2rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
