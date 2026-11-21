@@ -50,7 +50,7 @@ export function ResidentialCompoundVenue({
       </header>
       <div className="relative h-[55svh] min-h-72 overflow-hidden rounded-lg border border-edge bg-muted">
         {status !== "fallback" && (
-          <VenueSceneBoundary onError={unavailable}>
+          <VenueSceneBoundary resetKey={homeTypeId ?? "default"} onError={unavailable}>
             <Canvas
               shadows
               frameloop="demand"
