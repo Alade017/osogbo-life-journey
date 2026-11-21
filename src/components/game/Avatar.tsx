@@ -300,30 +300,6 @@ export function AvatarArtwork({
                   )}
                 </g>
               )}
-              {safe.headwear === 1 && (
-                <path
-                  d="M17 16q4-13 15-13t15 13q-8-4-15-2t-15 2z"
-                  fill={shirt}
-                  stroke={EDGE}
-                  strokeWidth="2"
-                />
-              )}
-              {safe.headwear === 2 && (
-                <path
-                  d="m21 10 3-6h17l3 8q-11-4-23-2z"
-                  fill={shirt}
-                  stroke={EDGE}
-                  strokeWidth="2"
-                />
-              )}
-              {safe.headwear === 3 && (
-                <path
-                  d="M20 14q1-12 12-12t12 12H20zm18-1h10v3H38z"
-                  fill={shirt}
-                  stroke={EDGE}
-                  strokeWidth="2"
-                />
-              )}
               {worn.has("head") && (
                 <path
                   data-equipment-slot="head"
