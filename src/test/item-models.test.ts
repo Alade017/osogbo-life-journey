@@ -1,4 +1,6 @@
 import { describe, expect, it } from "vitest";
+import { createElement } from "react";
+import { BackpackModel, ShirtWorn } from "@/components/3d/world-item-models";
 import { ITEM_MODELS } from "@/components/3d/item-models";
 import { hasItemModel } from "@/components/3d/ItemPreview3D";
 import {
@@ -35,5 +37,15 @@ describe("3D item registries", () => {
     expect(hasItemModel("phone")).toBe(false);
     expect(hasItemModel(null)).toBe(false);
     expect(ITEM_MODELS["phone"]).toBeUndefined();
+  });
+});
+
+
+describe("redesigned starter equipment", () => {
+  it("preserves the backpack and starter shirt component contracts", () => {
+    expect(createElement(BackpackModel, { h: 1 }).type).toBe(BackpackModel);
+    expect(createElement(ShirtWorn, { h: 1 }).type).toBe(ShirtWorn);
+    expect(WORN_ITEM_MODELS.backpack).toBe(BackpackModel);
+    expect(WORN_CLOTHING.basic_outfit).toBe(ShirtWorn);
   });
 });
