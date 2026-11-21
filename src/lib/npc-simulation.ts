@@ -202,7 +202,7 @@ export function interactionOutcome(
       changes: { conflict: 1 },
       message: "It feels too soon for that. Keep building trust and friendship first.",
     };
-  if (action === "invite" && (value.friendship < 40 || value.trust < 25))
+  if (action === "invite" && (value.friendship < 40 || value.trust < 25 || value.conflict >= 50))
     return {
       accepted: false,
       changes: { conflict: 1 },
@@ -285,6 +285,7 @@ export function actionLabel(action: SocialAction) {
 
 export function socialActionsFor(value: Relationship, available: boolean): SocialAction[] {
   if (!available) return [];
+  if (value.conflict >= 70) return ["greet", "end"];
   const actions: SocialAction[] = [
     "greet",
     "work",
@@ -299,4 +300,32 @@ export function socialActionsFor(value: Relationship, available: boolean): Socia
   if (value.friendship >= 40 && value.trust >= 25 && value.conflict < 50) actions.push("invite");
   actions.push("end");
   return actions;
+}
+
+/** Use persisted identity and schedule when available; the catalog supplies presentation metadata. */
+export function npcFromSavedDefinition(
+  base: NpcDefinition,
+  saved: { name: string; role: string; personality: string; home_location_id: string | null; work_location_id: string | null; routine: unknown },
+  slugForId: (id: string) => string | undefined,
+): NpcDefinition {
+  const routine: NpcDefinition["routine"] = [];
+  if (Array.isArray(saved.routine)) {
+    for (const entry of saved.routine) {
+      if (!entry || typeof entry !== "object") continue;
+      const { start, end, place, activity } = entry;
+      if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end > 24 || start >= end ||
+          !["work", "home", "market", "park"].includes(place) || typeof activity !== "string") continue;
+      routine.push({ start, end, destination: place, activity });
+    }
+  }
+  const traits: readonly string[] = ["warm", "reserved", "ambitious", "playful", "thoughtful", "creative"];
+  return {
+    ...base,
+    name: saved.name,
+    role: saved.role,
+    personality: traits.includes(saved.personality) ? saved.personality as NpcTrait : base.personality,
+    homeSlug: (saved.home_location_id && slugForId(saved.home_location_id)) || "",
+    workSlug: (saved.work_location_id && slugForId(saved.work_location_id)) || "",
+    routine,
+  };
 }
