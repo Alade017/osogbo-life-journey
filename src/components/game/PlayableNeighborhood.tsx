@@ -18,8 +18,6 @@ import {
   Landmark,
   Map,
   MessageCircle,
-  Minus,
-  Plus,
   Store,
   Users,
 } from "lucide-react";
@@ -36,6 +34,7 @@ import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { NeighborhoodZoneModal } from "@/components/game/NeighborhoodZoneModal";
+import { FeatureTravelPanel } from "@/components/game/FeatureTravelPanel";
 import { GROUND_ARRIVE_DISTANCE, groundIntent } from "@/game/ground-intent";
 import { commuteNotice } from "@/game/commute-notice";
 import "./commute-banner.css";
@@ -111,12 +110,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function connectionErrorMessage(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
-  return message
-    .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
-    .replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, "[redacted]")
-    .replace(/\s+/g, " ")
-    .trim()
-    .slice(0, 180) || "The game server did not complete the connection.";
+  return (
+    message
+      .replace(/Bearer\s+[^\s]+/gi, "Bearer [redacted]")
+      .replace(/eyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+/g, "[redacted]")
+      .replace(/\s+/g, " ")
+      .trim()
+      .slice(0, 180) || "The game server did not complete the connection."
+  );
 }
 
 function playerViewsFromRoom(room: NeighborhoodRoom): NeighborhoodPlayerView[] | null {
@@ -241,7 +242,9 @@ function useNeighborhoodConnection(
             roomEnded = true;
             roomRef.current = null;
             joinedRoom = null;
-            setConnectionError("The room connected but did not send its initial player state within 10 seconds.");
+            setConnectionError(
+              "The room connected but did not send its initial player state within 10 seconds.",
+            );
             setConnectionState("unavailable");
             scheduleRetry();
             void room
@@ -377,23 +380,24 @@ export function PlayableNeighborhood() {
   const shopItemsQuery = useQuery({ ...q.shopItems(), enabled: !!currentLocation?.id });
   const jobsQuery = useQuery({ ...q.jobs(), enabled: !!currentLocation?.id });
   const [commuting, setCommuting] = useState(false);
-  const { connectionState, connectionError, players, sessionId, roomRef } = useNeighborhoodConnection(
-    currentLocation?.id,
-    currentLocation?.slug,
-    district !== null,
-    connectionAttempt,
-    setConnectionAttempt,
-    (message) => {
-      const notice = commuteNotice(message);
-      if (!notice) return;
-      setCommuting(notice.heading);
-      if (notice.toast) toast[notice.toast.kind](notice.toast.text);
-      if (notice.openWork) {
-        setWorkView("actions");
-        setActivePanel("work");
-      }
-    },
-  );
+  const { connectionState, connectionError, players, sessionId, roomRef } =
+    useNeighborhoodConnection(
+      currentLocation?.id,
+      currentLocation?.slug,
+      district !== null,
+      connectionAttempt,
+      setConnectionAttempt,
+      (message) => {
+        const notice = commuteNotice(message);
+        if (!notice) return;
+        setCommuting(notice.heading);
+        if (notice.toast) toast[notice.toast.kind](notice.toast.text);
+        if (notice.openWork) {
+          setWorkView("actions");
+          setActivePanel("work");
+        }
+      },
+    );
   const [directions, setDirections] = useState<ReadonlySet<MovementDirection>>(() => new Set());
   const [groundTarget, setGroundTarget] = useState<{ x: number; y: number } | null>(null);
   const groundTargetRef = useRef(groundTarget);
@@ -403,6 +407,7 @@ export function PlayableNeighborhood() {
   const [scene, setScene] = useState<NeighborhoodSceneHandle | null>(null);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [zoom, setZoom] = useState<number>(NEIGHBORHOOD_CAMERA.defaultZoom);
+  const [featureLabel, setFeatureLabel] = useState<string | null>(null);
   const directionsRef = useRef(directions);
   directionsRef.current = directions;
   const lastIntentRef = useRef("0:0");
@@ -1111,15 +1116,6 @@ export function PlayableNeighborhood() {
     { action: "work", label: "Ask about work" },
     { action: "interests", label: "Talk about interests" },
   ];
-  const changeZoom = (factor: number) => {
-    setZoom((current) =>
-      Math.min(
-        NEIGHBORHOOD_CAMERA.maxZoom,
-        Math.max(NEIGHBORHOOD_CAMERA.minZoom, current * factor),
-      ),
-    );
-  };
-
   if (characterQuery.isLoading || locationsQuery.isLoading)
     return (
       <section className="neighborhood-page" aria-label="Playable neighborhood">
@@ -1174,7 +1170,7 @@ export function PlayableNeighborhood() {
                 title="Entering the neighbourhood"
                 detail={
                   connectionState === "unavailable"
-                    ? connectionError ?? "Your connection is slow. Reconnecting automatically…"
+                    ? (connectionError ?? "Your connection is slow. Reconnecting automatically…")
                     : "Fetching your neighbourhood and connecting to the game server…"
                 }
                 action={
@@ -1244,32 +1240,48 @@ export function PlayableNeighborhood() {
                         targetedZoneNpcId={zoneState.pendingZoneId}
                         onSelectZone={selectZoneTarget}
                         onSelectZoneNpc={selectZoneTarget}
+                        onSelectFeature={(label) => setFeatureLabel(label)}
                         onHoverZone={(id) => dispatchZone(setHoveredZoneId(id))}
                       />
                     </Suspense>
+                    {featureLabel && (
+                      <div
+                        role="dialog"
+                        aria-label={`${featureLabel} details`}
+                        className="fixed bottom-4 left-4 z-30 max-h-[70dvh] w-72 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border-2 border-edge bg-background/95 p-3 text-sm shadow-lg"
+                      >
+                        <h2 className="font-bold">{featureLabel}</h2>
+                        <p className="mt-1 text-muted-foreground">
+                          {currentLocation?.name ?? "This district"} plans{" "}
+                          {featureLabel.toLowerCase()} here.
+                        </p>
+                        <FeatureTravelPanel
+                          featureLabel={featureLabel}
+                          currentLocationId={currentLocation?.id}
+                          locations={locationsQuery.data ?? []}
+                          character={characterQuery.data}
+                          cash={walletQuery.data?.balance}
+                          navigate={navigate}
+                          queryClient={queryClient}
+                        />
+                        <div className="mt-3 flex items-center justify-end gap-2">
+                          <button
+                            type="button"
+                            className="font-semibold underline"
+                            onClick={() => setFeatureLabel(null)}
+                          >
+                            Close
+                          </button>
+                        </div>
+                      </div>
+                    )}
                     <Link to="/map" className="neighborhood-map-shortcut">
                       <Map size={16} aria-hidden="true" /> Explore 3D map
                     </Link>
                     <div
                       className="neighborhood-zoom-controls"
-                      aria-label="Neighborhood camera controls"
+                      aria-label="Neighborhood map controls"
                     >
-                      <button
-                        type="button"
-                        aria-label="Zoom in"
-                        disabled={zoom >= NEIGHBORHOOD_CAMERA.maxZoom}
-                        onClick={() => changeZoom(1.12)}
-                      >
-                        <Plus size={16} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Zoom out"
-                        disabled={zoom <= NEIGHBORHOOD_CAMERA.minZoom}
-                        onClick={() => changeZoom(1 / 1.12)}
-                      >
-                        <Minus size={16} aria-hidden="true" />
-                      </button>
                       <Link to="/map" aria-label="City map">
                         <Map size={16} aria-hidden="true" />
                       </Link>
@@ -1592,7 +1604,9 @@ export function PlayableNeighborhood() {
                               <LocationVenueScene
                                 slug={currentLocation.slug}
                                 locationName={currentLocation.name}
-                                {...(selectedShopSlug !== undefined ? { shopSlug: selectedShopSlug } : {})}
+                                {...(selectedShopSlug !== undefined
+                                  ? { shopSlug: selectedShopSlug }
+                                  : {})}
                               />
                             </>
                           ) : null}

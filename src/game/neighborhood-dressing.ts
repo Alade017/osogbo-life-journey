@@ -377,8 +377,23 @@ export function streetLightSpots(area: NeighborhoodArea, bounds: DressingBounds)
 }
 
 /** Cars in the lanes of arterials and streets, alternating direction by lane. */
-export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpot[] {
-  const byRoad: CarSpot[][] = [];
+/** A car on a lane: where it is along the road, and which way it drives. */
+export type TrafficCar = {
+  vertical: boolean;
+  /** Fixed street coordinate across the road (x on vertical roads, y on horizontal ones). */
+  across: number;
+  /** Position along the road, in street units. */
+  along: number;
+  /** Lane limits along the road; a car that leaves one end re-enters at the other. */
+  min: number;
+  max: number;
+  /** +1 drives towards larger coordinates, -1 towards smaller. */
+  direction: 1 | -1;
+};
+
+/** Cars in the lanes of arterials and streets, alternating direction by lane. */
+export function trafficCars(area: NeighborhoodArea, bounds: DressingBounds): TrafficCar[] {
+  const byRoad: TrafficCar[][] = [];
   const boxes = occupiedBoxes(area);
   const crossingBoxes: Box[] = pedestrianCrossings(area).map(({ x, y, width, depth }) => ({
     x,
@@ -389,40 +404,68 @@ export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpo
   for (const road of area.roads ?? []) {
     if (road.type === "lane") continue;
     const { start, end, vertical } = roadExtent(road, bounds);
-    const roadSpots: CarSpot[] = [];
+    const roadCars: TrafficCar[] = [];
     for (let along = start + CAR_SPACING / 2; along < end; along += CAR_SPACING)
-      for (const lane of [-1, 1]) {
-        const across = lane * road.width * 0.22;
-        const x = vertical ? road.offset + across : along;
-        const y = vertical ? along : road.offset + across;
+      for (const lane of [-1, 1] as const) {
+        const across = road.offset + lane * road.width * 0.22;
+        const x = vertical ? across : along;
+        const y = vertical ? along : across;
         // Keep parked traffic props out of zebra crossings and their approach space.
         if (insideObstacle(x, y, boxes, 28) || insideObstacle(x, y, crossingBoxes, 24)) continue;
-        const rotation = vertical
-          ? lane === -1
-            ? -Math.PI / 2
-            : Math.PI / 2
-          : lane === -1
-            ? 0
-            : Math.PI;
-        roadSpots.push({ x, y, rotation });
+        roadCars.push({
+          vertical,
+          across,
+          along,
+          min: start,
+          max: end,
+          direction: lane === -1 ? 1 : -1,
+        });
       }
-    if (roadSpots.length) byRoad.push(roadSpots);
+    if (roadCars.length) byRoad.push(roadCars);
   }
 
   // Interleave roads so the visual vehicle cap does not hide every road after the first.
-  const spots: CarSpot[] = [];
-  for (let index = 0; spots.length < MAX_CARS; index += 1) {
+  const cars: TrafficCar[] = [];
+  for (let index = 0; cars.length < MAX_CARS; index += 1) {
     let added = false;
-    for (const roadSpots of byRoad) {
-      const spot = roadSpots[index];
-      if (!spot) continue;
-      spots.push(spot);
+    for (const roadCars of byRoad) {
+      const car = roadCars[index];
+      if (!car) continue;
+      cars.push(car);
       added = true;
-      if (spots.length === MAX_CARS) break;
+      if (cars.length === MAX_CARS) break;
     }
     if (!added) break;
   }
-  return spots;
+  return cars;
+}
+
+/** Street position of a car. */
+export function trafficCarPoint(car: TrafficCar): WorldPoint {
+  return car.vertical ? { x: car.across, y: car.along } : { x: car.along, y: car.across };
+}
+
+/** Heading of a car, in the same rotation convention as the car models. */
+export function trafficCarRotation(car: TrafficCar): number {
+  if (car.vertical) return car.direction === 1 ? -Math.PI / 2 : Math.PI / 2;
+  return car.direction === 1 ? 0 : Math.PI;
+}
+
+/** Drives a car along its lane; a car that reaches a lane end re-enters at the other end. */
+export function advanceTrafficCar(car: TrafficCar, distance: number): TrafficCar {
+  const length = car.max - car.min;
+  if (length <= 0) return car;
+  const travelled = car.along + car.direction * distance - car.min;
+  const wrapped = ((travelled % length) + length) % length;
+  return { ...car, along: car.min + wrapped };
+}
+
+/** Static car spots on the lanes, for scenes that do not animate traffic. */
+export function carSpots(area: NeighborhoodArea, bounds: DressingBounds): CarSpot[] {
+  return trafficCars(area, bounds).map((car) => ({
+    ...trafficCarPoint(car),
+    rotation: trafficCarRotation(car),
+  }));
 }
 
 /** Pedestrians on the sidewalks, alternating sides, spaced along each street. */
