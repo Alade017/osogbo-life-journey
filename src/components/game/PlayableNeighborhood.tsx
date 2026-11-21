@@ -1247,7 +1247,18 @@ export function PlayableNeighborhood() {
                         interactionTargets={interactionTargets}
                         onSelectTarget={selectWorldTarget}
                         onNpcArrive={(id, x, y) =>
-                          setNpcPositionOverrides((current) => ({ ...current, [id]: { x, y } }))
+                          setNpcPositionOverrides((current) => {
+                            const previous = current[id];
+
+                            if (previous?.x === x && previous?.y === y) {
+                              return current;
+                            }
+
+                            return {
+                              ...current,
+                              [id]: { x, y },
+                            };
+                          })
                         }
                         nearbyZoneId={nearbyZoneMatch?.zone.id ?? null}
                         targetedZoneId={zoneState.pendingZoneId}
