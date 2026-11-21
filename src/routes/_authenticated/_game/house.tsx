@@ -1616,6 +1616,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             : 0),
       )
     : 0;
+  const timedRemaining = taskTiming
+    ? Math.max(0, Math.ceil(taskTiming.duration - displayedElapsed))
+    : 0;
+  const timedPercent = taskTiming
+    ? Math.min(100, Math.round((displayedElapsed / Math.max(1, taskTiming.duration)) * 100))
+    : 0;
 
   const selectedAction = selectedPlacement ? homeFurnitureAction(selectedPlacement.item_id) : null;
   const avatarEquipment = (["head", "top", "bottom", "shoes", "accessory"] as const).flatMap(
@@ -2037,6 +2043,36 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             onCollect={(orderId) => void collectPackage(orderId)}
           />
         )}
+        {activeSleep && (
+          <button
+            type="button"
+            className="house-task-status house-task-status-action"
+            aria-label={`Asleep, ${sleepRemaining} seconds left. Tap to cancel sleep.`}
+            disabled={isOffline || !gameTime.ready || gameTime.busy}
+            onClick={() => void cancelSleep()}
+          >
+            <ProgressRing percent={sleepProgress} label={`${sleepRemaining}s`} />
+            <div className="house-task-status-copy">
+              <strong>Asleep</strong>
+              <span>{sleepRemaining}s left · tap to cancel</span>
+            </div>
+          </button>
+        )}
+        {!activeSleep && timedActivity && taskTiming && (
+          <button
+            type="button"
+            className="house-task-status house-task-status-action"
+            aria-label={`${ACTION_CATALOG[timedActivity.actionId].name}, ${timedRemaining} seconds left. Tap to cancel.`}
+            disabled={startingTask || gameTime.busy || cancellingTask}
+            onClick={() => void cancelTask()}
+          >
+            <ProgressRing percent={timedPercent} label={`${timedRemaining}s`} />
+            <div className="house-task-status-copy">
+              <strong>{ACTION_CATALOG[timedActivity.actionId].name}</strong>
+              <span>{timedRemaining}s left · tap to cancel</span>
+            </div>
+          </button>
+        )}
         {(movement.walking ||
           walkingTask ||
           startingTask ||
@@ -2053,15 +2089,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                 >
                   <Sunrise size={16} aria-hidden="true" />
                   Wake up
-                </button>
-
-                <button
-                  type="button"
-                  className="house-task-cancel"
-                  disabled={isOffline || !gameTime.ready || gameTime.busy}
-                  onClick={() => void cancelSleep()}
-                >
-                  Cancel sleep
                 </button>
               </>
             ) : (
