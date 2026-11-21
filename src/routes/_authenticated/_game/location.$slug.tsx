@@ -2,15 +2,12 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useReducer, useRef } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, Briefcase, GraduationCap, MapPin, Store, Utensils } from "lucide-react";
+import { GraduationCap, MapPin, Utensils } from "lucide-react";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
-import { CityBillboards } from "@/components/game/CityBillboards";
 import { pageMeta } from "@/lib/seo";
 import { isPlayableDistrict } from "@/game/playable-district";
 import { Button } from "@/components/ui/button";
-import { Chip, ComingSoon, EmptyState, LoadingState } from "@/components/game/ui";
-import { LOCATION_TONE_BG } from "@/lib/location-theme";
-import { cn } from "@/lib/utils";
+import { EmptyState, LoadingState } from "@/components/game/ui";
 import { TravelPanel } from "@/components/game/TravelPanel";
 import { clearPendingDepartureFromHome, requestDepartureFromHome } from "@/lib/home-departure";
 import { hasConfirmedHomeDeparture } from "@/lib/home-departure-query";
@@ -53,7 +50,6 @@ function LocationPage() {
   const travelPreflight = useRef<object | null>(null);
   const queryClient = useQueryClient();
   const { data: locations, isLoading } = useQuery(q.locations());
-  const { data: visits } = useQuery(q.visits());
   const { data: character } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const { data: places } = useQuery(q.places());
@@ -70,7 +66,6 @@ function LocationPage() {
     enabled: !!character && hasSkillRequirements,
   });
   const loc = locations?.find((l) => l.slug === slug);
-  const isOjaObaMarket = loc?.slug === "oja-oba";
   const availableModes = useMemo(() => (loc ? getAvailableTravelModes(loc.metadata) : []), [loc]);
   const origin = locations?.find((location) => location.id === character?.current_location_id);
   const savedPlayerCoordinates =
@@ -123,7 +118,6 @@ function LocationPage() {
             : null;
   const conditions = travelConditionAdjustment(travelState.mode, gameTime, weather);
   const travelMessage = [routeMessage, conditions.explanation].filter(Boolean).join(" ") || null;
-  const visit = visits?.find((v) => v.location_id === loc?.id);
   const isHere = hasAuthoritativeLocationArrival(character?.current_location_id, loc?.id);
   const meetsLevelRequirement = !!character && !!loc && character.level >= loc.level_required;
   const localPlaces = places?.filter((place) => place.location_id === loc?.id) ?? [];
@@ -314,61 +308,58 @@ function LocationPage() {
     );
   }
 
+  const jobOptions = localJobs
+    .filter((job) => currentJob?.job_id !== job.id)
+    .map((job) => {
+      const requiredCourse = job.required_course_slug
+        ? courses?.find((course) => course.slug === job.required_course_slug)
+        : undefined;
+      const courseCompleted =
+        !job.required_course_slug ||
+        !!myCourses?.some((course) => course.course_id === requiredCourse?.id);
+      const eligibility = checkJobEligibility(
+        job,
+        { level: character.level, skills: playerSkills ?? [] },
+        {
+          required: !!job.required_course_slug,
+          completed: courseCompleted,
+          ...(requiredCourse?.name ? { name: requiredCourse.name } : {}),
+        },
+      );
+      return { job, eligibility };
+    });
+  const hasBankService = localPlaces.some((place) => ["bank", "atm"].includes(place.category));
+  const hasShops = localPlaces.some((place) =>
+    ["market", "supermarket", "food-market", "electronics", "phone-store", "clothing"].includes(
+      place.category,
+    ),
+  );
+
   return (
-    <div
-      className={cn(
-        "-mx-3 space-y-5 px-3 py-5 md:-mx-4 md:px-4 md:py-8",
-        isOjaObaMarket && "oja-oba-market-screen",
-      )}
-    >
-      <Link
-        to="/map"
-        className="oja-oba-back-link inline-flex items-center gap-1 text-sm font-bold"
-      >
-        <ArrowLeft className="h-4 w-4" /> Back to map
-      </Link>
-      <div
-        className={cn("game-panel game-panel-accent p-6 md:p-10", isOjaObaMarket && "oja-oba-hero")}
-      >
-        <span
-          className={cn(
-            "inline-block rounded-lg border-2 border-edge px-3 py-1 font-display text-sm font-bold",
-            isOjaObaMarket && "oja-oba-district-badge",
-            LOCATION_TONE_BG[loc.color],
-          )}
-        >
-          {loc.district_type}
-        </span>
-        <h1 className="mt-3 text-4xl font-bold md:text-5xl">{loc.name}</h1>
-        <p className="mt-1 text-lg font-semibold">{loc.tagline}</p>
-      </div>
-      <div className={cn("game-panel p-5 md:p-6", isOjaObaMarket && "oja-oba-intro")}>
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="max-w-2xl">
-            <p>{loc.description}</p>
-            <p className="mt-2 text-sm text-muted-foreground">
-              {visit
-                ? `Explored ${visit.visit_count} time${visit.visit_count === 1 ? "" : "s"}.`
-                : "Your first visit discovers this district and awards 10 XP."}
-            </p>
+    <div className="-mx-3 space-y-4 px-3 py-4 md:-mx-4 md:px-4">
+      <h1 className="sr-only">{loc.name}</h1>
+      {isHere ? (
+        <LocationVenueScene
+          key={loc.id}
+          slug={loc.slug}
+          locationName={loc.name}
+          locationId={loc.id}
+        />
+      ) : (
+        <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-4">
+          <div>
+            <p className="text-lg font-bold">{loc.name}</p>
+            <p className="text-sm text-muted-foreground">{loc.tagline}</p>
           </div>
-          <span className="oja-oba-presence inline-flex items-center gap-1.5 rounded-full border border-edge bg-card px-3 py-1 text-xs font-bold">
-            <MapPin className="h-3.5 w-3.5" />
-            {isHere ? "You are here" : "Not your current district"}
-          </span>
-        </div>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
-          {!isHere && !meetsLevelRequirement ? (
+          {!meetsLevelRequirement ? (
             <p className="travel-state-error" role="status">
-              Reach level {loc.level_required} to unlock this destination. Earn XP by exploring and
-              completing available activities.
+              Reach level {loc.level_required} to unlock this destination.
             </p>
-          ) : !isHere && availableModes.length === 0 ? (
+          ) : availableModes.length === 0 ? (
             <p className="travel-state-error" role="status">
-              Travel options have not been configured for this destination yet. Return to the city
-              map to explore other places.
+              Travel options have not been configured for this destination yet.
             </p>
-          ) : !isHere ? (
+          ) : (
             <Button
               variant="default"
               className={travelState.status === "idle" ? undefined : "hidden"}
@@ -377,7 +368,34 @@ function LocationPage() {
             >
               Choose destination
             </Button>
-          ) : loc.type !== "bank" ? (
+          )}
+        </section>
+      )}
+
+      {travelState.status !== "idle" && (
+        <TravelPanel
+          state={travelState}
+          currentBalance={wallet?.balance ?? 0}
+          originName={origin?.name ?? "Current player position"}
+          isPending={travel.isPending}
+          isRouteLoading={routeQuery.isFetching}
+          route={routeQuery.data ?? null}
+          routeMessage={travelMessage}
+          onSelect={selectDestination}
+          availableModes={availableModes}
+          onModeChange={changeTravelMode}
+          onStart={startTravel}
+          onCancel={cancelDestination}
+          onReset={() => {
+            travelPreflight.current = null;
+            dispatchTravel({ type: "reset" });
+          }}
+        />
+      )}
+
+      {isHere && (
+        <nav aria-label={`${loc.name} actions`} className="flex flex-wrap gap-2">
+          {loc.type !== "bank" && (
             <Button
               variant="plain"
               onClick={() => visitAction.mutate(loc.id)}
@@ -385,329 +403,85 @@ function LocationPage() {
             >
               <MapPin /> {visitAction.isPending ? "Checking in…" : "Spend time here"}
             </Button>
-          ) : null}
-          {isHere && loc.slug === "student-district" && (
-            <Link
-              to="/education"
-              className="inline-flex items-center gap-2 rounded-md border border-border bg-card px-4 py-2 text-sm font-semibold"
-            >
-              <GraduationCap className="h-4 w-4" />
-              Explore technology courses
-            </Link>
           )}
-        </div>
-        {travelState.status !== "idle" && (
-          <TravelPanel
-            state={travelState}
-            currentBalance={wallet?.balance ?? 0}
-            originName={origin?.name ?? "Current player position"}
-            isPending={travel.isPending}
-            isRouteLoading={routeQuery.isFetching}
-            route={routeQuery.data ?? null}
-            routeMessage={travelMessage}
-            onSelect={selectDestination}
-            availableModes={availableModes}
-            onModeChange={changeTravelMode}
-            onStart={startTravel}
-            onCancel={cancelDestination}
-            onReset={() => {
-              travelPreflight.current = null;
-              dispatchTravel({ type: "reset" });
-            }}
-          />
-        )}
-        <p className="mt-3 text-xs text-muted-foreground">
-          Mode fares and trip times are game estimates based on saved district travel values. The
-          optional car-road distance comes from the configured OSRM routing provider. A confirmed
-          trip is charged once by the server and advances the game clock on arrival.
-        </p>
-      </div>
-
-      {isHere && (
-        <LocationVenueScene
-          key={loc.id}
-          slug={loc.slug}
-          locationName={loc.name}
-          locationId={loc.id}
-        />
-      )}
-
-      {isHere && isPlayableDistrict(loc.slug) && (
-        <Button asChild variant="plain">
-          <Link to="/neighborhood">
-            Walk{" "}
-            {loc.slug === "city-centre"
-              ? "Olaiya"
-              : loc.slug === "oja-oba"
-                ? "Oja-Oba Market"
-                : loc.name}
-          </Link>
-        </Button>
-      )}
-      {isHere && <CityBillboards locationId={loc.id} />}
-      <CityEventParticipation slug={slug} isHere={isHere} />
-      {isHere && (
-        <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-4">
-          <div>
-            <h2 className="font-bold">People around {loc.name}</h2>
-            <p className="text-sm text-muted-foreground">
-              Meet residents on their daily routines or message players in this area.
-            </p>
-          </div>
+          {hasBankService && (
+            <Button asChild variant="plain">
+              <Link to="/bank/$slug" params={{ slug }}>
+                Enter bank lobby
+              </Link>
+            </Button>
+          )}
+          {hasShops && (
+            <Button asChild variant="plain">
+              <Link to="/market">Browse local shops</Link>
+            </Button>
+          )}
+          {loc.slug === "student-district" && (
+            <Button asChild variant="plain">
+              <Link to="/education">
+                <GraduationCap /> Explore technology courses
+              </Link>
+            </Button>
+          )}
+          {isPlayableDistrict(loc.slug) && (
+            <Button asChild variant="plain">
+              <Link to="/neighborhood">
+                Walk{" "}
+                {loc.slug === "city-centre"
+                  ? "Olaiya"
+                  : loc.slug === "oja-oba"
+                    ? "Oja-Oba Market"
+                    : loc.name}
+              </Link>
+            </Button>
+          )}
           <Button asChild variant="outline">
             <Link to="/social" search={{ playerId: undefined }}>
               Meet neighbours
             </Link>
           </Button>
-        </section>
+          {localPlaces
+            .filter((place) => place.meal_price !== null)
+            .map((place) => {
+              const price = place.meal_price ?? 0;
+              return (
+                <Button
+                  key={place.id}
+                  variant="plain"
+                  disabled={eat.isPending || (wallet?.balance ?? 0) < price}
+                  onClick={() => eat.mutate(place.id)}
+                >
+                  <Utensils />
+                  {eat.isPending
+                    ? "Ordering…"
+                    : (wallet?.balance ?? 0) < price
+                      ? `Need ${formatNaira(price)}`
+                      : `Eat at ${place.name} · ${formatNaira(price)}`}
+                </Button>
+              );
+            })}
+          {jobOptions.map(({ job, eligibility }) => (
+            <Button
+              key={job.id}
+              variant="ink"
+              disabled={!eligibility.eligible || selectJob.isPending}
+              onClick={() => selectJob.mutate(job.id)}
+            >
+              {!eligibility.eligible
+                ? (eligibility.reasons[0] ?? "Requirements not met")
+                : selectJob.isPending
+                  ? "Applying…"
+                  : `Apply: ${job.name}`}
+            </Button>
+          ))}
+        </nav>
       )}
+
       {loc.type !== "bank" && (
         <LocationActivities locationId={loc.id} slug={slug} isHere={isHere} />
       )}
+      <CityEventParticipation slug={slug} isHere={isHere} />
       <PartyVenuePanel locationId={loc.id} />
-
-      {isHere && localPlaces.some((place) => ["bank", "atm"].includes(place.category)) && (
-        <div className="flex flex-wrap gap-3">
-          <Link
-            to="/bank/$slug"
-            params={{ slug }}
-            className="inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground"
-          >
-            Enter bank lobby
-          </Link>
-          <Link
-            to="/wallet"
-            className="inline-flex rounded-lg border-2 border-edge bg-card px-4 py-2 font-bold"
-          >
-            Wallet overview
-          </Link>
-        </div>
-      )}
-      {isHere &&
-        localPlaces.some((place) =>
-          [
-            "market",
-            "supermarket",
-            "food-market",
-            "electronics",
-            "phone-store",
-            "clothing",
-          ].includes(place.category),
-        ) && (
-          <Link
-            to="/market"
-            className={cn(
-              "ml-2 inline-flex rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground",
-              isOjaObaMarket && "oja-oba-primary-action",
-            )}
-          >
-            Browse local shops
-          </Link>
-        )}
-
-      <section className={cn("space-y-3", isOjaObaMarket && "oja-oba-section oja-oba-places")}>
-        <div className="flex items-center gap-2">
-          <Store className="h-5 w-5 text-primary" />
-          <h2 className="text-2xl font-bold">Places in {loc.name}</h2>
-        </div>
-        {localPlaces.length ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {localPlaces.map((place) => {
-              const placeJobs = localJobs.filter((job) => job.place_id === place.id);
-              return (
-                <article
-                  key={place.id}
-                  className={cn("game-panel p-4", isOjaObaMarket && "oja-oba-place-card")}
-                >
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <Chip tone="primary">{place.category}</Chip>
-                    <Chip>
-                      {place.origin === "fictional"
-                        ? "Fictional game business"
-                        : "Real-world inspired"}
-                    </Chip>
-                  </div>
-                  <h3 className="mt-3 text-lg font-bold">{place.name}</h3>
-                  <p className="mt-1 text-sm text-muted-foreground">{place.description}</p>
-                  {place.disclosure && (
-                    <p className="mt-2 border-l-2 border-clay pl-2 text-xs text-muted-foreground">
-                      {place.disclosure}
-                    </p>
-                  )}
-                  {place.slug === "elegance-tech-hub" && (
-                    <div className="mt-3 flex flex-wrap gap-1.5 text-xs">
-                      <Chip>Technology training</Chip>
-                      <Chip>Phones & laptops</Chip>
-                      <Chip>Device repairs</Chip>
-                    </div>
-                  )}
-                  {place.slug !== "elegance-tech-hub" && placeJobs.length > 0 && (
-                    <p className="mt-3 text-xs font-semibold text-muted-foreground">
-                      Hiring: {placeJobs.map((job) => job.name).join(" · ")}
-                    </p>
-                  )}
-                  {place.meal_price !== null &&
-                    (isHere ? (
-                      <Button
-                        className="mt-4 w-full"
-                        variant="plain"
-                        disabled={eat.isPending || (wallet?.balance ?? 0) < place.meal_price}
-                        onClick={() => eat.mutate(place.id)}
-                      >
-                        <Utensils />
-                        {eat.isPending
-                          ? "Ordering…"
-                          : (wallet?.balance ?? 0) < place.meal_price
-                            ? `Need ${formatNaira(place.meal_price)}`
-                            : `Eat · ${formatNaira(place.meal_price)}`}
-                      </Button>
-                    ) : (
-                      <p className="mt-4 text-xs font-semibold text-muted-foreground">
-                        Travel here to eat · {formatNaira(place.meal_price)}
-                      </p>
-                    ))}
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="game-panel p-5">
-            <p className="text-sm text-muted-foreground">
-              Venue listings for this district are being added.
-            </p>
-          </div>
-        )}
-      </section>
-
-      <section className={cn("space-y-3", isOjaObaMarket && "oja-oba-section oja-oba-jobs")}>
-        <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-primary" />
-            <h2 className="text-2xl font-bold">Local jobs</h2>
-          </div>
-          <Chip>{localJobs.length} opportunities</Chip>
-        </div>
-        {localJobs.length ? (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {localJobs.map((job) => {
-              const isCurrentJob = currentJob?.job_id === job.id;
-              const place = localPlaces.find((item) => item.id === job.place_id);
-              const requiredCourse = job.required_course_slug
-                ? courses?.find((course) => course.slug === job.required_course_slug)
-                : undefined;
-              const courseCompleted =
-                !job.required_course_slug ||
-                !!myCourses?.some((course) => course.course_id === requiredCourse?.id);
-              const eligibility = checkJobEligibility(
-                job,
-                { level: character.level, skills: playerSkills ?? [] },
-                {
-                  required: !!job.required_course_slug,
-                  completed: courseCompleted,
-                  ...(requiredCourse?.name ? { name: requiredCourse.name } : {}),
-                },
-              );
-              const qualified = eligibility.eligible;
-              return (
-                <article
-                  key={job.id}
-                  className={cn(
-                    "game-panel flex flex-col p-4",
-                    isOjaObaMarket && "oja-oba-job-card",
-                  )}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                        {place?.name ?? loc.name}
-                      </p>
-                      <h3 className="mt-1 text-lg font-bold">{job.name}</h3>
-                    </div>
-                    {isCurrentJob ? (
-                      <Chip tone="primary">Your job</Chip>
-                    ) : (
-                      <Chip tone={qualified ? "leaf" : "plain"}>
-                        {qualified ? "Open" : "Requirements"}
-                      </Chip>
-                    )}
-                  </div>
-                  <p className="mt-2 flex-1 text-sm text-muted-foreground">{job.description}</p>
-                  <p className="mt-3 text-xs font-semibold">
-                    ₦{job.salary.toLocaleString("en-NG")} · {job.energy_cost} energy · +
-                    {job.xp_reward} XP
-                  </p>
-                  <div className="mt-3 rounded-lg border border-border bg-muted/60 p-3 text-xs">
-                    <p className="font-bold">Requirements</p>
-                    {eligibility.reasons.length ? (
-                      <ul className="mt-1 list-inside list-disc text-clay">
-                        {eligibility.reasons.map((reason) => (
-                          <li key={reason}>{reason}</li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="mt-1 text-muted-foreground">
-                        You meet this job’s requirements.
-                      </p>
-                    )}
-                  </div>
-                  {!isCurrentJob && (
-                    <Button
-                      className={cn("mt-3", isOjaObaMarket && "oja-oba-primary-action")}
-                      variant={isOjaObaMarket ? "default" : "ink"}
-                      disabled={!isHere || !qualified || selectJob.isPending}
-                      onClick={() => selectJob.mutate(job.id)}
-                    >
-                      {!isHere
-                        ? "Travel here to apply"
-                        : !qualified
-                          ? (eligibility.reasons[0] ?? "Requirements not met")
-                          : selectJob.isPending
-                            ? "Applying…"
-                            : "Apply for job"}
-                    </Button>
-                  )}
-                </article>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="game-panel p-5">
-            <p className="text-sm text-muted-foreground">
-              No jobs are listed in this district yet.
-            </p>
-          </div>
-        )}
-      </section>
-
-      {loc.planned_features.length > 0 &&
-        (isOjaObaMarket ? (
-          <section className="oja-oba-features">
-            <h2>More district features · {loc.planned_features.length}</h2>
-            <ul>
-              {loc.planned_features.map((feature) => (
-                <li key={feature}>
-                  <span>{feature}</span>
-                  <ComingSoon />
-                </li>
-              ))}
-            </ul>
-          </section>
-        ) : (
-          <div className="game-panel p-5">
-            <h2 className="text-lg font-bold">More district features</h2>
-            <ul className="mt-3 grid gap-2 sm:grid-cols-3">
-              {loc.planned_features.map((feature) => (
-                <li
-                  key={feature}
-                  className="flex items-center justify-between gap-2 rounded-md border border-dashed border-border p-3"
-                >
-                  <span className="text-sm font-semibold">{feature}</span>
-                  <ComingSoon />
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
     </div>
   );
 }

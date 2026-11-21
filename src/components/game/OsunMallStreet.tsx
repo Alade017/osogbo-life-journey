@@ -16,8 +16,9 @@ import {
   rideProgress,
   type OkadaRideStatus,
 } from "@/game/okada-destinations";
-import { canWalkOnStreet, findStreetPath } from "@/game/osun-mall-street-layout";
+import { canWalkOnStreet, findStreetPath, nextRiderTarget } from "@/game/osun-mall-street-layout";
 import { supabase } from "@/integrations/supabase/client";
+import { PRESENCE_HEARTBEAT_MS, reportMallZone } from "@/lib/osun-mall-presence";
 import { formatNaira, q } from "@/lib/game";
 
 type RideRow = {
@@ -86,9 +87,30 @@ export function OsunMallStreet({
   const assignedRideId = rides.find((ride) => ride.status === "assigned")?.id ?? null;
   const [riderTarget, setRiderTarget] = useState<WalkPoint | null>(null);
   useEffect(() => {
-    // A found rider comes to where the visitor is standing, and goes back to the stand afterwards.
-    setRiderTarget(assignedRideId ? [sim.current.player.pos[0], sim.current.player.pos[1]] : null);
+    // A found rider comes to where the visitor is standing, and follows once the visitor stops.
+    // Without a ride, the rider goes back to the stand.
+    if (!assignedRideId) {
+      setRiderTarget(null);
+      return undefined;
+    }
+    const timer = window.setInterval(() => {
+      const visitor = sim.current.player;
+      setRiderTarget((previous) =>
+        nextRiderTarget(previous ?? [visitor.pos[0], visitor.pos[1]], visitor.pos, visitor.moving),
+      );
+    }, 250);
+    return () => window.clearInterval(timer);
   }, [assignedRideId]);
+
+  useEffect(() => {
+    // The visitor is on the street: report it now and then, so the server accepts rides from here.
+    const report = () => {
+      reportMallZone("street").catch(() => undefined);
+    };
+    report();
+    const timer = window.setInterval(report, PRESENCE_HEARTBEAT_MS);
+    return () => window.clearInterval(timer);
+  }, []);
 
   const order = useMutation({
     mutationFn: async () => {

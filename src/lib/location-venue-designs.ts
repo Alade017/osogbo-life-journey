@@ -27,7 +27,7 @@ export type LocationVenueDesign = {
   bankInterior?: BankInteriorVariant;
   transportPark?: boolean;
   sceneBounds?: { width: number; depth: number };
-  scene?: "campus" | "market" | "clinic" | "healthcare" | "residential" | "workplace";
+  scene?: "campus" | "market" | "clinic" | "healthcare" | "residential" | "workplace" | "worship";
   /** Built shopping-gallery interior (RetailInteriorScene). */
   retailInterior?: boolean;
   /** Built food-venue interior (BukaInteriorScene) and its footprint. */
@@ -71,6 +71,61 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     fixtures: compoundFeatures().map((item) =>
       fixture(item.id, item.label, item.detail, "display", item.x, item.z),
     ),
+  },
+
+  "osogbo-central-mosque": {
+    scene: "worship",
+    name: "Osogbo Central Mosque",
+    description: "A prayer hall with rows of mats facing the mihrab, in the Central district.",
+    floorColor: "#d9c9a6",
+    wallColor: "#f3ead4",
+    accentColor: "#1f6f5c",
+    fixtures: [
+      fixture(
+        "prayer-mats",
+        "Prayer mats",
+        "Kneel on a mat and pray facing the mihrab.",
+        "seat",
+        0,
+        2.5,
+      ),
+    ],
+  },
+  "osogbo-grand-mosque": {
+    scene: "worship",
+    name: "Osogbo Grand Mosque",
+    description: "A wide prayer hall with pillared aisles and a gold-trimmed mihrab.",
+    floorColor: "#cfc0a0",
+    wallColor: "#efe5cc",
+    accentColor: "#c9a13b",
+    fixtures: [
+      fixture(
+        "prayer-mats",
+        "Prayer mats",
+        "Kneel on a mat and pray facing the mihrab.",
+        "seat",
+        0,
+        5,
+      ),
+    ],
+  },
+  "oke-fia-community-church": {
+    scene: "worship",
+    name: "Oke-Fia Community Church",
+    description: "A nave with pews on either side of the aisle, facing the altar and cross.",
+    floorColor: "#b89a6f",
+    wallColor: "#f7f3ea",
+    accentColor: "#e8dcc0",
+    fixtures: [
+      fixture(
+        "prayer-aisle",
+        "Prayer in the aisle",
+        "Stand in the aisle and pray facing the altar.",
+        "seat",
+        0,
+        4,
+      ),
+    ],
   },
 
   "student-district": {
@@ -503,7 +558,10 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
   },
   "riverside-food-court": {
     foodInterior: "courtyard",
-    sceneSize: { width: FOOD_VENUE_LAYOUTS.courtyard.width, depth: FOOD_VENUE_LAYOUTS.courtyard.depth },
+    sceneSize: {
+      width: FOOD_VENUE_LAYOUTS.courtyard.width,
+      depth: FOOD_VENUE_LAYOUTS.courtyard.depth,
+    },
     name: "Riverside food court",
     description: "An open-sided dining room with vendor counters and shared tables.",
     floorColor: "#c7b99c",
@@ -561,16 +619,67 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     scene: "workplace",
     sceneSize: { width: WORKPLACE_LAYOUT.cameraWidth, depth: WORKPLACE_LAYOUT.cameraDepth },
     name: "Harvest Tech Hub",
-    description: "A shared workplace with reception, computer workstations, a training area and equipment storage.",
+    description:
+      "A shared workplace with reception, computer workstations, a training area and equipment storage.",
     floorColor: WORLD_PALETTE.tileLight,
     wallColor: WORLD_PALETTE.linen,
     accentColor: WORLD_PALETTE.foliage,
     fixtures: [
-      { ...fixture("tech-worktable", "Worktable", "Shared computer workstations. Open Jobs & shifts for actual work options.", "table", -2.9, 0.3), workplaceFeature: "workstations" },
-      { ...fixture("tech-screen", "Presentation screen", "The training presentation area. Course enrolment and progress stay in the existing education flow.", "screen", 0, -4.8), workplaceFeature: "presentation" },
-      { ...fixture("tech-shelf", "Equipment shelf", "Equipment storage for the workspace. Inspecting it does not grant inventory items.", "shelf", 5.4, 0.4), workplaceFeature: "equipment" },
-      { ...fixture("tech-reception", "Reception desk", "The workplace reception point. Browse current opportunities through Jobs & shifts.", "counter", 2.9, 3.4), workplaceFeature: "reception" },
-      { ...fixture("tech-training-table", "Training table", "Shared training seats beside the presentation area. Open Courses for configured learning activities.", "table", 2.9, -2.6), workplaceFeature: "training" },
+      {
+        ...fixture(
+          "tech-worktable",
+          "Worktable",
+          "Shared computer workstations. Open Jobs & shifts for actual work options.",
+          "table",
+          -2.9,
+          0.3,
+        ),
+        workplaceFeature: "workstations",
+      },
+      {
+        ...fixture(
+          "tech-screen",
+          "Presentation screen",
+          "The training presentation area. Course enrolment and progress stay in the existing education flow.",
+          "screen",
+          0,
+          -4.8,
+        ),
+        workplaceFeature: "presentation",
+      },
+      {
+        ...fixture(
+          "tech-shelf",
+          "Equipment shelf",
+          "Equipment storage for the workspace. Inspecting it does not grant inventory items.",
+          "shelf",
+          5.4,
+          0.4,
+        ),
+        workplaceFeature: "equipment",
+      },
+      {
+        ...fixture(
+          "tech-reception",
+          "Reception desk",
+          "The workplace reception point. Browse current opportunities through Jobs & shifts.",
+          "counter",
+          2.9,
+          3.4,
+        ),
+        workplaceFeature: "reception",
+      },
+      {
+        ...fixture(
+          "tech-training-table",
+          "Training table",
+          "Shared training seats beside the presentation area. Open Courses for configured learning activities.",
+          "table",
+          2.9,
+          -2.6,
+        ),
+        workplaceFeature: "training",
+      },
     ],
   },
   "old-town-library": {
@@ -967,15 +1076,37 @@ export function hasAuthoritativeLocationArrival(
 /** Interior for the existing neighborhood Buka zone, not a fabricated server location. */
 export const BUKA_VENUE_DESIGN: LocationVenueDesign = {
   name: "Buka dining room",
-  description: "A local canteen with a hot-food serving line, shared bench tables and a wash point.",
+  description:
+    "A local canteen with a hot-food serving line, shared bench tables and a wash point.",
   foodInterior: "buka",
   sceneSize: { width: FOOD_VENUE_LAYOUTS.buka.width, depth: FOOD_VENUE_LAYOUTS.buka.depth },
   floorColor: WORLD_PALETTE.ground,
   wallColor: WORLD_PALETTE.wall,
   accentColor: WORLD_PALETTE.clay,
   fixtures: [
-    fixture("buka-serving-counter", "Serving counter", "Covered cooking pots beside the service counter. Browse the current local catalogue for availability.", "counter", 0, -2.6),
-    fixture("buka-shared-table", "Shared dining table", "A shared table with bench seating. Eating uses food already in your bag.", "table", 0, 1.2),
-    fixture("buka-wash-point", "Wash point", "The canteen hand-wash area. Inspecting this feature does not change needs.", "display", -4.2, 0.5),
+    fixture(
+      "buka-serving-counter",
+      "Serving counter",
+      "Covered cooking pots beside the service counter. Browse the current local catalogue for availability.",
+      "counter",
+      0,
+      -2.6,
+    ),
+    fixture(
+      "buka-shared-table",
+      "Shared dining table",
+      "A shared table with bench seating. Eating uses food already in your bag.",
+      "table",
+      0,
+      1.2,
+    ),
+    fixture(
+      "buka-wash-point",
+      "Wash point",
+      "The canteen hand-wash area. Inspecting this feature does not change needs.",
+      "display",
+      -4.2,
+      0.5,
+    ),
   ],
 };
