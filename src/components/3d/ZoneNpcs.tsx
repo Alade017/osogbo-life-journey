@@ -25,15 +25,13 @@ function ZoneNpcActor({
   const headGroupRef = useRef<Group>(null);
   const { invalidate } = useThree();
 
+  const active = isInRange || isTargeted;
   useEffect(() => {
-    const interval = window.setInterval(() => {
-      if (isInRange || isTargeted) invalidate();
-    }, 1000 / 12);
-    return () => window.clearInterval(interval);
-  }, [invalidate, isInRange, isTargeted]);
+    invalidate();
+  }, [invalidate, active]);
 
   useFrame((state) => {
-    const t = state.clock.elapsedTime;
+    const t = active ? state.clock.elapsedTime : 0;
     const arm = rightArmRef.current;
     const head = headGroupRef.current;
     if (arm) {
@@ -129,6 +127,13 @@ export function ZoneNpcs({
   onSelect: (id: string) => void;
   onHoverChange?: (id: string | null) => void;
 }) {
+  const { invalidate } = useThree();
+  const active = npcs.some((npc) => npc.id === nearbyNpcId || npc.id === targetedId);
+  useEffect(() => {
+    if (!active) return;
+    const interval = window.setInterval(invalidate, 1000 / 12);
+    return () => window.clearInterval(interval);
+  }, [active, invalidate]);
   return (
     <group name="neighborhood-zone-npcs">
       {npcs.map((npc) => (
