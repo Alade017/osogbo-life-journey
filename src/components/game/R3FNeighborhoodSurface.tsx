@@ -1,3 +1,4 @@
+import { NpcBody } from "@/components/3d/NpcBody";
 import {
   Component,
   Suspense,
@@ -122,6 +123,24 @@ class NeighborhoodBoundary extends Component<{ children: ReactNode }, { failed: 
   }
 }
 
+function ResidentNpcAnimationScheduler({
+  active,
+}: {
+  active: boolean;
+}) {
+  const { invalidate } = useThree();
+
+  useEffect(() => {
+    if (!active) return;
+
+    const timer = window.setInterval(invalidate, 1000 / 15);
+
+    return () => window.clearInterval(timer);
+  }, [active, invalidate]);
+
+  return null;
+}
+
 function NeighborhoodNpcActor({
   npc,
   start,
@@ -153,9 +172,6 @@ function NeighborhoodNpcActor({
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const { invalidate } = useThree();
-  const animated =
-    !npc.isPaused &&
-    (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
   const targetKey = `${target[0].toFixed(2)}:${target[2].toFixed(2)}`;
   const route = useRef<readonly NpcPoint[]>([]);
   const waypointIndex = useRef(0);
@@ -172,9 +188,13 @@ function NeighborhoodNpcActor({
   const startZ = start[2];
   const rebuildRoute = useCallback(
     (origin: NpcPoint) => {
-      const reservations = [...actorRoutes.current.entries()]
-        .filter(([id, path]) => id !== npc.id && path.length > 1)
-        .map(([, path]) => path);
+      const reservations: (readonly NpcPoint[])[] = [];
+
+      for (const [id, path] of actorRoutes.current) {
+        if (id !== npc.id && path.length > 1) {
+          reservations.push(path);
+        }
+      }
 
       const next = neighborhoodNpcPathWithFallback(
         origin,
@@ -233,13 +253,6 @@ function NeighborhoodNpcActor({
     }
   }, [actorPositions, invalidate, npc.id, rebuildRoute, startX, startY, startZ]);
 
-  useEffect(() => {
-    if (!animated) return;
-
-    const timer = window.setInterval(invalidate, 1000 / 15);
-
-    return () => window.clearInterval(timer);
-  }, [animated, invalidate]);
   useEffect(
     () => () => {
       actorPositions.current.delete(npc.id);
@@ -262,12 +275,17 @@ function NeighborhoodNpcActor({
         distance,
         (1 - Math.exp(-Math.min(delta, 0.1) * 2.8)) * distance,
       );
-      const blockers = [
-        ...[...actorPositions.current.entries()]
-          .filter(([id]) => id !== npc.id)
-          .map(([, position]) => position),
-        ...playerPositions.map((position) => ({ x: position[0], y: position[2] })),
-      ];
+      const blockers: NpcPoint[] = [];
+
+      for (const [id, position] of actorPositions.current) {
+        if (id !== npc.id) {
+          blockers.push(position);
+        }
+      }
+
+      for (const position of playerPositions) {
+        blockers.push({ x: position[0], y: position[2] });
+      }
       const next = neighborhoodNpcAvoidanceStep(
         current,
         waypoint,
@@ -333,38 +351,7 @@ function NeighborhoodNpcActor({
 
   return (
     <group ref={group}>
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <capsuleGeometry args={[0.24, 0.52, 4, 8]} />
-        <WorldMaterial tone="slate" />
-      </mesh>
-      <mesh position={[0, 1.55, 0]} castShadow>
-        <sphereGeometry args={[0.22, 12, 10]} />
-        <WorldMaterial tone="clay" />
-      </mesh>
-      <group ref={leftArm} position={[-0.29, 1.08, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.12, 0.42, 0.13]} />
-          <WorldMaterial tone="clay" />
-        </mesh>
-      </group>
-      <group ref={rightArm} position={[0.29, 1.08, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.12, 0.42, 0.13]} />
-          <WorldMaterial tone="clay" />
-        </mesh>
-      </group>
-      <group ref={leftLeg} position={[-0.12, 0.48, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.14, 0.42, 0.16]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-      </group>
-      <group ref={rightLeg} position={[0.12, 0.48, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.14, 0.42, 0.16]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-      </group>
+      <NpcBody detail="resident" leftArm={leftArm} rightArm={rightArm} leftLeg={leftLeg} rightLeg={rightLeg} />
       <mesh
         position={[0, 0.92, 0]}
         onClick={(event) => {
@@ -964,6 +951,13 @@ export function R3FNeighborhoodSurface({
               />
             );
           })}
+          <ResidentNpcAnimationScheduler
+            active={npcs.some(
+              (npc) =>
+                !npc.isPaused &&
+                (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind)),
+            )}
+          />
           {npcs.map((npc) => (
             <NeighborhoodNpcActor
               key={npc.id}
