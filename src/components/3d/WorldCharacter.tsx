@@ -5,7 +5,7 @@ import { MathUtils, Vector3, type Group } from "three";
 import { normalizeAvatarAppearance, type Appearance } from "@/game/avatar-appearance";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import { WORLD_SCALE } from "./world-theme";
-import { CHARACTER_GROUND, CHARACTER_MOTION, CHARACTER_SOCKETS } from "./character-config";
+import { CHARACTER_GROUND, CHARACTER_MOTION } from "./character-config";
 import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
 import { followStep, measuredSpeed, type Vec3 } from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
@@ -212,7 +212,8 @@ export function WorldCharacter({
             appearance={safe}
             gender={gender}
           />
-          <group name="back_socket" position={[0, h * CHARACTER_SOCKETS.back, 0]}>
+          {/* BackpackModel uses body-relative coordinates; an extra socket offset lifts it above the back. */}
+          <group name="back_socket">
             {AccessoryModel ? <AccessoryModel h={h} /> : null}
           </group>
         </group>
