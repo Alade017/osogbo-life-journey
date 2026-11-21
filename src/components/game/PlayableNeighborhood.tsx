@@ -18,8 +18,6 @@ import {
   Landmark,
   Map,
   MessageCircle,
-  Minus,
-  Plus,
   Store,
   Users,
 } from "lucide-react";
@@ -1118,15 +1116,6 @@ export function PlayableNeighborhood() {
     { action: "work", label: "Ask about work" },
     { action: "interests", label: "Talk about interests" },
   ];
-  const changeZoom = (factor: number) => {
-    setZoom((current) =>
-      Math.min(
-        NEIGHBORHOOD_CAMERA.maxZoom,
-        Math.max(NEIGHBORHOOD_CAMERA.minZoom, current * factor),
-      ),
-    );
-  };
-
   if (characterQuery.isLoading || locationsQuery.isLoading)
     return (
       <section className="neighborhood-page" aria-label="Playable neighborhood">
@@ -1291,24 +1280,8 @@ export function PlayableNeighborhood() {
                     </Link>
                     <div
                       className="neighborhood-zoom-controls"
-                      aria-label="Neighborhood camera controls"
+                      aria-label="Neighborhood map controls"
                     >
-                      <button
-                        type="button"
-                        aria-label="Zoom in"
-                        disabled={zoom >= NEIGHBORHOOD_CAMERA.maxZoom}
-                        onClick={() => changeZoom(1.12)}
-                      >
-                        <Plus size={16} aria-hidden="true" />
-                      </button>
-                      <button
-                        type="button"
-                        aria-label="Zoom out"
-                        disabled={zoom <= NEIGHBORHOOD_CAMERA.minZoom}
-                        onClick={() => changeZoom(1 / 1.12)}
-                      >
-                        <Minus size={16} aria-hidden="true" />
-                      </button>
                       <Link to="/map" aria-label="City map">
                         <Map size={16} aria-hidden="true" />
                       </Link>

@@ -70,3 +70,47 @@ describe("district feature blocks", () => {
     expect(featureLabel("Art gallery")).toBe("Art Gallery");
   });
 });
+
+describe("district houses", () => {
+  it("places several houses beside the roads of every district, clear of other blocks", async () => {
+    const { HOUSE_BLOCK } = await import("@/game/district-streets");
+    for (const slug of DISTRICTS) {
+      const area = streetFor(slug);
+      const houses = (area.obstacles ?? []).filter((o) => o.id.startsWith("district-house-"));
+      expect(houses.length, slug).toBeGreaterThanOrEqual(4);
+      for (const house of houses) {
+        expect(house.kind).toBe("compound");
+        expect(house.width).toBe(HOUSE_BLOCK.width);
+        const footprint = box(house.x, house.y, house.width, house.height);
+        for (const road of area.roads ?? []) {
+          const strip =
+            road.axis === "vertical"
+              ? box2(
+                  road.offset - road.width / 2,
+                  0,
+                  road.offset + road.width / 2,
+                  STREET_SIZE.height,
+                )
+              : box2(
+                  0,
+                  road.offset - road.width / 2,
+                  STREET_SIZE.width,
+                  road.offset + road.width / 2,
+                );
+          expect(overlapsBox(footprint, strip), `${slug} ${house.id} on road`).toBe(false);
+        }
+      }
+    }
+  });
+});
+
+function box2(left: number, top: number, right: number, bottom: number) {
+  return { left, top, right, bottom };
+}
+
+function overlapsBox(
+  a: { left: number; top: number; right: number; bottom: number },
+  b: { left: number; top: number; right: number; bottom: number },
+) {
+  return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+}

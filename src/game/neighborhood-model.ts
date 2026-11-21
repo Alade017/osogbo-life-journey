@@ -1,6 +1,6 @@
 import { OSOGBO_WORLD_NODES, type WorldMapCategory } from "../lib/city-world.ts";
 import { DISTRICT_FEATURES } from "./district-features";
-import { addFeatureBlocks } from "./district-streets";
+import { addFeatureBlocks, addHouseBlocks } from "./district-streets";
 import { townAnchorForSlug, townNeighborhoodArea } from "./town-neighborhood.ts";
 
 export type WorldPoint = { x: number; y: number };
@@ -587,7 +587,7 @@ function generatedNeighborhoodArea(
     ],
     style: AREA_STYLE_BY_CATEGORY[category],
   };
-  return addFeatureBlocks(addPerimeter(area, seed), DISTRICT_FEATURES[slug] ?? []);
+  return addHouseBlocks(addFeatureBlocks(addPerimeter(area, seed), DISTRICT_FEATURES[slug] ?? []));
 }
 
 /**

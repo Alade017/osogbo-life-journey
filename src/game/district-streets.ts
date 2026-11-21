@@ -129,3 +129,72 @@ export function addFeatureBlocks(
 
   return { ...area, obstacles: [...(area.obstacles ?? []), ...placed] };
 }
+
+/** Size of one house on the street, in street units. */
+export const HOUSE_BLOCK = { width: 48, height: 38 } as const;
+/** Houses stand this close to a road: near enough to read as a street, clear of the kerb. */
+const HOUSE_ROAD_REACH = 72;
+const HOUSE_SPACING = 80;
+const MAX_HOUSES = 6;
+
+/**
+ * Places residential compounds beside the roads, clear of everything else. Houses prefer the
+ * spacing between each other, so a street shows several homes rather than one cluster.
+ */
+export function addHouseBlocks(area: NeighborhoodArea): NeighborhoodArea {
+  const blocked = blockedBoxes(area);
+  const roadStrips: Box[] = (area.roads ?? []).map((road) =>
+    road.axis === "vertical"
+      ? {
+          left: road.offset - road.width / 2,
+          top: 0,
+          right: road.offset + road.width / 2,
+          bottom: STREET_SIZE.height,
+        }
+      : {
+          left: 0,
+          top: road.offset - road.width / 2,
+          right: STREET_SIZE.width,
+          bottom: road.offset + road.width / 2,
+        },
+  );
+  const beside = (box: Box, reach: number) =>
+    roadStrips.some((strip) => overlaps(box, expand(strip, reach)));
+  const placed: NeighborhoodObstacle[] = [];
+
+  for (let index = 0; index < MAX_HOUSES; index += 1) {
+    const find = (spacing: number, reach: number) => {
+      let best: { x: number; y: number; score: number } | null = null;
+      for (let x = MARGIN; x <= STREET_SIZE.width - MARGIN; x += STEP) {
+        for (let y = MARGIN; y <= STREET_SIZE.height - MARGIN; y += STEP) {
+          const box = boxAround(x, y, HOUSE_BLOCK.width, HOUSE_BLOCK.height);
+          if (blocked.some((other) => overlaps(box, other))) continue;
+          if (!beside(box, reach)) continue;
+          if (placed.some((house) => Math.hypot(house.x - x, house.y - y) < spacing)) continue;
+          const score = distanceToNearest(x, y, placed);
+          if (!best || score > best.score) best = { x, y, score };
+        }
+      }
+      return best;
+    };
+    // Preferred: spaced houses right beside a road. Crowded streets fall back to closer or wider spots.
+    const best =
+      find(HOUSE_SPACING, HOUSE_ROAD_REACH) ??
+      find(0, HOUSE_ROAD_REACH) ??
+      find(0, HOUSE_ROAD_REACH * 2);
+    if (!best) break;
+    placed.push({
+      id: `district-house-${index}`,
+      kind: "compound",
+      x: best.x,
+      y: best.y,
+      width: HOUSE_BLOCK.width,
+      height: HOUSE_BLOCK.height,
+    });
+    blocked.push(
+      expand(boxAround(best.x, best.y, HOUSE_BLOCK.width, HOUSE_BLOCK.height), CLEARANCE),
+    );
+  }
+
+  return { ...area, obstacles: [...(area.obstacles ?? []), ...placed] };
+}
