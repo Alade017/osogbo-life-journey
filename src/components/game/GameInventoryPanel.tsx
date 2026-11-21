@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Backpack, GlassWater, Package, Search, Shirt, Smartphone, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { q, rpc, useGameAction } from "@/lib/game";
@@ -61,6 +61,7 @@ export function GameInventoryPanel() {
   const [activeCategory, setActiveCategory] = useState<InventoryCategory | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const detailRef = useRef<HTMLElement>(null);
   const [requestedSlot, setRequestedSlot] = useState<EquipmentSlot | null>(null);
   const useItem = useGameAction(rpc.useInventoryItem, {
     onSuccess: () => toast.success("Item used. Your needs and game time were updated."),
@@ -346,7 +347,14 @@ export function GameInventoryPanel() {
                     type="button"
                     className="pi-tile"
                     aria-pressed={selectedId === item.id}
-                    onClick={() => setSelectedId(item.id)}
+                    onClick={() => {
+                      setSelectedId(item.id);
+                      if (window.matchMedia("(max-width: 760px)").matches) {
+                        window.requestAnimationFrame(() =>
+                          detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+                        );
+                      }
+                    }}
                   >
                     <span className="pi-tile-art" aria-hidden="true">
                       <InventoryTileArt slug={item.item?.slug} Icon={Icon} />
@@ -361,7 +369,7 @@ export function GameInventoryPanel() {
               })}
             </div>
 
-            <aside className="pi-detail" aria-live="polite" aria-label="Selected item details">
+            <aside ref={detailRef} className="pi-detail" aria-live="polite" aria-label="Selected item details">
               {selectedItem ? (
                 <>
                   {hasItemModel(selectedItem.item?.slug) && (
