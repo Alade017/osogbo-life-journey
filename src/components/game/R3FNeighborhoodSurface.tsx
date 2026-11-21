@@ -123,6 +123,24 @@ class NeighborhoodBoundary extends Component<{ children: ReactNode }, { failed: 
   }
 }
 
+function ResidentNpcAnimationScheduler({
+  active,
+}: {
+  active: boolean;
+}) {
+  const { invalidate } = useThree();
+
+  useEffect(() => {
+    if (!active) return;
+
+    const timer = window.setInterval(invalidate, 1000 / 15);
+
+    return () => window.clearInterval(timer);
+  }, [active, invalidate]);
+
+  return null;
+}
+
 function NeighborhoodNpcActor({
   npc,
   start,
@@ -154,9 +172,6 @@ function NeighborhoodNpcActor({
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const { invalidate } = useThree();
-  const animated =
-    !npc.isPaused &&
-    (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
   const targetKey = `${target[0].toFixed(2)}:${target[2].toFixed(2)}`;
   const route = useRef<readonly NpcPoint[]>([]);
   const waypointIndex = useRef(0);
@@ -173,9 +188,13 @@ function NeighborhoodNpcActor({
   const startZ = start[2];
   const rebuildRoute = useCallback(
     (origin: NpcPoint) => {
-      const reservations = [...actorRoutes.current.entries()]
-        .filter(([id, path]) => id !== npc.id && path.length > 1)
-        .map(([, path]) => path);
+      const reservations: (readonly NpcPoint[])[] = [];
+
+      for (const [id, path] of actorRoutes.current) {
+        if (id !== npc.id && path.length > 1) {
+          reservations.push(path);
+        }
+      }
 
       const next = neighborhoodNpcPathWithFallback(
         origin,
@@ -234,13 +253,6 @@ function NeighborhoodNpcActor({
     }
   }, [actorPositions, invalidate, npc.id, rebuildRoute, startX, startY, startZ]);
 
-  useEffect(() => {
-    if (!animated) return;
-
-    const timer = window.setInterval(invalidate, 1000 / 15);
-
-    return () => window.clearInterval(timer);
-  }, [animated, invalidate]);
   useEffect(
     () => () => {
       actorPositions.current.delete(npc.id);
@@ -263,12 +275,17 @@ function NeighborhoodNpcActor({
         distance,
         (1 - Math.exp(-Math.min(delta, 0.1) * 2.8)) * distance,
       );
-      const blockers = [
-        ...[...actorPositions.current.entries()]
-          .filter(([id]) => id !== npc.id)
-          .map(([, position]) => position),
-        ...playerPositions.map((position) => ({ x: position[0], y: position[2] })),
-      ];
+      const blockers: NpcPoint[] = [];
+
+      for (const [id, position] of actorPositions.current) {
+        if (id !== npc.id) {
+          blockers.push(position);
+        }
+      }
+
+      for (const position of playerPositions) {
+        blockers.push({ x: position[0], y: position[2] });
+      }
       const next = neighborhoodNpcAvoidanceStep(
         current,
         waypoint,
@@ -934,6 +951,13 @@ export function R3FNeighborhoodSurface({
               />
             );
           })}
+          <ResidentNpcAnimationScheduler
+            active={npcs.some(
+              (npc) =>
+                !npc.isPaused &&
+                (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind)),
+            )}
+          />
           {npcs.map((npc) => (
             <NeighborhoodNpcActor
               key={npc.id}
