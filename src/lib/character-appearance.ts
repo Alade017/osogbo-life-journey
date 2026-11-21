@@ -3,7 +3,6 @@ import {
   HAIR_STYLES_BY_GENDER,
   BODY_BUILDS,
   BODY_HEIGHTS,
-  HEADWEAR,
   OUTFITS,
   SHOE_COLORS,
   SKIN_TONES,
@@ -14,7 +13,7 @@ import {
 export type CharacterAppearance = Required<Appearance>;
 
 export const DEFAULT_CHARACTER_APPEARANCE: CharacterAppearance = {
-  clothed: false,
+  clothed: true,
   skin: 1,
   hair: 1,
   hairColor: 0,
@@ -33,7 +32,7 @@ export function appearanceForGender(
   const styles = HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["nonbinary"] ?? [];
   return {
     ...appearance,
-    clothed: gender !== "female",
+    clothed: appearance.clothed,
     hair: Math.min(Math.max(appearance.hair, 0), Math.max(styles.length - 1, 0)),
   };
 }
@@ -49,14 +48,14 @@ export function randomizeCharacterAppearance(
 ): CharacterAppearance {
   const hairStyles = HAIR_STYLES_BY_GENDER[gender] ?? HAIR_STYLES_BY_GENDER["nonbinary"] ?? [];
   return {
-    clothed: gender !== "female",
+    clothed: true,
     skin: chooseIndex(SKIN_TONES.length, random),
     hair: chooseIndex(hairStyles.length, random),
     hairColor: chooseIndex(HAIR_COLORS.length, random),
     outfit: chooseIndex(OUTFITS.length, random),
     bottoms: chooseIndex(TROUSERS.length, random),
     shoes: chooseIndex(SHOE_COLORS.length, random),
-    headwear: chooseIndex(HEADWEAR.length, random),
+    headwear: 0,
     stature: chooseIndex(BODY_HEIGHTS.length, random),
     build: chooseIndex(BODY_BUILDS.length, random),
   };

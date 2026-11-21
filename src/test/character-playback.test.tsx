@@ -8,13 +8,17 @@ const runtime = vi.hoisted(() => ({
   frame: null as null | ((state: { clock: { elapsedTime: number } }, delta: number) => void),
   invalidate: vi.fn(),
   rigs: [] as Humanoid[],
+  portals: [] as unknown[],
 }));
 vi.mock("@react-three/fiber", () => ({
   useFrame: (fn: typeof runtime.frame) => {
     runtime.frame = fn;
   },
   useThree: () => ({ invalidate: runtime.invalidate }),
-  createPortal: () => null,
+  createPortal: (_children: unknown, target: unknown) => {
+    runtime.portals.push(target);
+    return null;
+  },
 }));
 vi.mock("@/components/3d/CharacterWardrobe", () => ({ CharacterWardrobe: () => null }));
 vi.mock("@/components/3d/ProceduralHeadwear", () => ({ ProceduralHeadwear: () => null }));
@@ -31,6 +35,7 @@ vi.mock("@/components/3d/humanoid-rig", async (importOriginal) => {
 });
 beforeEach(() => {
   runtime.rigs.length = 0;
+  runtime.portals.length = 0;
   runtime.frame = null;
   runtime.invalidate.mockClear();
   vi.spyOn(console, "error").mockImplementation(() => {});
@@ -158,4 +163,18 @@ it("holds a still dance pose with reduced motion", () => {
   rig.root.updateMatrixWorld(true);
   expect(runtime.invalidate).not.toHaveBeenCalled();
   expect(point(rig, BONE.rHand).distanceTo(hand)).toBeLessThan(0.001);
+});
+
+
+it("attaches worn back accessories to the animated upper spine", () => {
+  render(
+    <CharacterBody
+      variant="male"
+      height={1}
+      motion="Walk"
+      backAccessory={<group name="test-backpack" />}
+    />,
+  );
+  const rig = runtime.rigs[0]!;
+  expect(runtime.portals).toContain(rig.byName.get(BONE.spine2));
 });

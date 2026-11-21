@@ -1,13 +1,19 @@
--- Ludo multiplayer: player profiles with win counts, and a record of each finished match.
+-- Ludo multiplayer: a win counter on each player's profile, and a record of each finished match.
 -- Clients can read public names and their own matches. Only the server (service role) writes results,
--- through record_ludo_match. NOT APPLIED: review and apply separately.
+-- through record_ludo_match. Every auth user already gets a profiles row from on_auth_user_created, and
+-- profiles already has public read and own-row insert/update policies, so only the new column and
+-- matches table are added here.
 
-create table if not exists public.profiles (
-  id uuid primary key references auth.users (id) on delete cascade,
-  display_name text not null default 'Player' check (char_length(display_name) between 1 and 24),
-  ludo_wins integer not null default 0 check (ludo_wins >= 0),
-  created_at timestamptz not null default now()
-);
+alter table public.profiles add column if not exists ludo_wins integer not null default 0 check (ludo_wins >= 0);
+
+-- Supabase grants table-level INSERT and UPDATE on profiles to anon and authenticated, which would let a
+-- player write their own ludo_wins through the existing own-row policies. Take those grants back and
+-- re-grant every other column, so only the service role can change ludo_wins.
+revoke insert, update on public.profiles from anon, authenticated;
+grant insert (id, display_name, reduced_motion, sound_enabled, created_at, updated_at, username, dashboard_pins, music_enabled, effects_enabled, app_tile_style)
+  on public.profiles to anon, authenticated;
+grant update (id, display_name, reduced_motion, sound_enabled, created_at, updated_at, username, dashboard_pins, music_enabled, effects_enabled, app_tile_style)
+  on public.profiles to anon, authenticated;
 
 create table if not exists public.matches (
   id uuid primary key default gen_random_uuid(),
@@ -19,23 +25,15 @@ create table if not exists public.matches (
 
 create index if not exists matches_player_ids_idx on public.matches using gin (player_ids);
 
-alter table public.profiles enable row level security;
 alter table public.matches enable row level security;
-
-create policy "Profiles are readable by signed-in players"
-  on public.profiles for select to authenticated using (true);
-
-create policy "Players update only their own profile"
-  on public.profiles for update to authenticated
-  using (id = auth.uid()) with check (id = auth.uid());
-
-create policy "Players insert only their own profile"
-  on public.profiles for insert to authenticated with check (id = auth.uid());
+revoke all on public.matches from public, anon, authenticated;
+grant select on public.matches to authenticated;
+grant all on public.matches to service_role;
 
 create policy "Players read matches they were in"
   on public.matches for select to authenticated using (auth.uid() = any (player_ids));
 
--- No insert, update or delete policies on matches or on profiles.ludo_wins: only the service role writes.
+-- No insert, update or delete policies on matches: only the service role writes.
 
 create or replace function public.record_ludo_match(p_winner uuid, p_players uuid[])
 returns uuid
@@ -64,3 +62,5 @@ $$;
 
 revoke all on function public.record_ludo_match(uuid, uuid[]) from public, anon, authenticated;
 grant execute on function public.record_ludo_match(uuid, uuid[]) to service_role;
+
+notify pgrst, 'reload schema';
