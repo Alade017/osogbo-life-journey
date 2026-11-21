@@ -80,6 +80,7 @@ export function CharacterBody({
   motion,
   animated = true,
   held = null,
+  backAccessory = null,
   appearance = {},
   gender = "nonbinary",
   outfit,
@@ -89,6 +90,7 @@ export function CharacterBody({
   motion: PoseMotion;
   animated?: boolean;
   held?: ReactNode;
+  backAccessory?: ReactNode;
   appearance?: Appearance;
   gender?: string;
   outfit?: WornOutfit;
@@ -124,6 +126,7 @@ export function CharacterBody({
   );
   const hand = rig.byName.get(BONE.rHand) ?? null;
   const head = rig.byName.get(BONE.head) ?? null;
+  const upperSpine = rig.byName.get(BONE.spine2) ?? null;
 
   useEffect(() => {
     return () => {
@@ -173,6 +176,14 @@ export function CharacterBody({
               />
             </group>,
             head,
+          )
+        : null}
+      {backAccessory && upperSpine
+        ? createPortal(
+            // Existing accessory meshes use absolute body-height coordinates.
+            // Convert them into spine-local coordinates without changing the models.
+            <group position={[0, -0.7, 0]}>{backAccessory}</group>,
+            upperSpine,
           )
         : null}
       {held && hand ? createPortal(<group scale={1 / height}>{held}</group>, hand) : null}
