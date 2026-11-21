@@ -1021,6 +1021,7 @@
   .pi-inventory > .pi-bag-toolbar,
   .pi-inventory > .pi-filters,
   .pi-inventory > .pi-banner { grid-column: 2 / -1; }
+  .pi-inventory > :not(.pi-inventory-masthead):not(.pi-hero) { grid-column: 2 / -1; }
   .pi-inventory > .pi-bag-layout {
     grid-column: 2 / -1;
     display: grid;
@@ -1108,4 +1109,38 @@
   background: var(--color-primary-soft);
   border-color: var(--brand-royal);
   color: var(--brand-royal-deep);
+}
+
+/* Keep the inventory usable on compact devices and short landscape screens. */
+.pi-inventory :is(.pi-slot-item, .pi-tile strong, .pi-detail h2, .pi-detail dd) {
+  overflow-wrap: anywhere;
+}
+.pi-inventory .pi-chip-btn { min-height: 44px; }
+.pi-inventory .pi-filters { min-width: 0; max-width: 100%; }
+.pi-inventory .pi-stage-foot { flex-wrap: wrap; }
+.pi-inventory .pi-stage-foot > div { min-width: 0; }
+.pi-inventory .pi-outfit-state { white-space: normal; }
+@media (max-width: 760px) {
+  .pi-inventory .pi-detail { position: static; }
+  .pi-inventory .pi-bag-layout { grid-template-columns: minmax(0, 1fr); }
+  .pi-inventory .pi-inventory-search input { font-size: 1rem; }
+}
+@media (max-width: 640px) {
+  .inventory-dialog-scroll {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    scrollbar-gutter: auto;
+  }
+  .inventory-dialog-cancel {
+    top: max(8px, env(safe-area-inset-top, 0px));
+    right: max(8px, env(safe-area-inset-right, 0px));
+    min-height: 44px;
+  }
+  .pi-inventory { padding-top: max(0.75rem, env(safe-area-inset-top, 0px)); }
+}
+@container (max-width: 320px) {
+  .pi-inventory .pi-bag { grid-template-columns: minmax(0, 1fr); }
+  .pi-inventory .pi-detail-actions > button { flex-basis: 100%; }
+}
+@media (max-height: 520px) and (orientation: landscape) {
+  .pi-inventory .pi-canvas { height: clamp(180px, 48dvh, 260px); }
 }
