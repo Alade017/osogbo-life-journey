@@ -1,12 +1,37 @@
 import { Component, type ReactNode } from "react";
 
-export class VenueSceneBoundary extends Component<
-  { children: ReactNode; onError: () => void },
-  { failed: boolean }
-> {
-  override state = { failed: false };
+type VenueSceneBoundaryProps = {
+  children: ReactNode;
+  onError: () => void;
+  /** Change when the destination scene changes so a prior failure cannot poison the next scene. */
+  resetKey?: string | number;
+};
 
-  static getDerivedStateFromError() {
+type VenueSceneBoundaryState = {
+  failed: boolean;
+  resetKey: string | number | undefined;
+};
+
+export class VenueSceneBoundary extends Component<
+  VenueSceneBoundaryProps,
+  VenueSceneBoundaryState
+> {
+  override state: VenueSceneBoundaryState = {
+    failed: false,
+    resetKey: this.props.resetKey,
+  };
+
+  static getDerivedStateFromProps(
+    props: VenueSceneBoundaryProps,
+    state: VenueSceneBoundaryState,
+  ): Partial<VenueSceneBoundaryState> | null {
+    if (props.resetKey !== state.resetKey) {
+      return { failed: false, resetKey: props.resetKey };
+    }
+    return null;
+  }
+
+  static getDerivedStateFromError(): Partial<VenueSceneBoundaryState> {
     return { failed: true };
   }
 
@@ -18,4 +43,3 @@ export class VenueSceneBoundary extends Component<
     return this.state.failed ? null : this.props.children;
   }
 }
-
