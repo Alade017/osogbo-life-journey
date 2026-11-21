@@ -40,12 +40,11 @@ describe("3D item registries", () => {
   });
 });
 
-
 describe("redesigned starter equipment", () => {
   it("preserves the backpack and starter shirt component contracts", () => {
     expect(createElement(BackpackModel, { h: 1 }).type).toBe(BackpackModel);
     expect(createElement(ShirtWorn, { h: 1 }).type).toBe(ShirtWorn);
-    expect(WORN_ITEM_MODELS.backpack).toBe(BackpackModel);
-    expect(WORN_CLOTHING.basic_outfit).toBe(ShirtWorn);
+    expect(WORN_ITEM_MODELS["backpack"]).toBe(BackpackModel);
+    expect(WORN_CLOTHING["basic_outfit"]).toBe(ShirtWorn);
   });
 });
