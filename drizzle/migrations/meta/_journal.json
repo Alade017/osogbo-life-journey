@@ -771,13 +771,6 @@
       "when": 1795026600000,
       "tag": "0109_wearable_outfits",
       "breakpoints": true
-    },
-    {
-      "idx": 110,
-      "version": "7",
-      "when": 1795018200000,
-      "tag": "0110_stall_stock_receipts",
-      "breakpoints": true
     }
   ]
 }
