@@ -78,7 +78,7 @@ import {
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { MovementDirection } from "@/lib/player-movement";
-import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
+import { NPC_CATALOG, npcActivityAt, npcFromSavedDefinition, type SocialAction } from "@/lib/npc-simulation";
 import { hasBuildingVenueInterior, hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
@@ -488,10 +488,12 @@ export function PlayableNeighborhood() {
   useEffect(() => setNpcPositionOverrides({}), [currentLocation?.id]);
   const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
     if (!currentLocation || !npcQuery.data || !locationsQuery.data) return [];
-    const savedNpcIds = new Set(npcQuery.data.map((npc) => npc.id));
+    const savedNpcs = new Map(npcQuery.data.map((npc) => [npc.id, npc]));
     const slots = area.objects.filter((object) => object.kind === "npc");
-    const scheduled = NPC_CATALOG.flatMap((npc) => {
-      if (!savedNpcIds.has(npc.id)) return [];
+    const scheduled = NPC_CATALOG.flatMap((base) => {
+      const saved = savedNpcs.get(base.id);
+      if (!saved) return [];
+      const npc = npcFromSavedDefinition(base, saved, (id) => locationsQuery.data?.find((location) => location.id === id)?.slug);
       const activity = npcActivityAt(
         npc,
         simulation.gameTime,
