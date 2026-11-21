@@ -1,3 +1,4 @@
+import { NpcBody } from "@/components/3d/NpcBody";
 import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
@@ -58,55 +59,7 @@ function ZoneNpcActor({
       {...(onHoverChange ? { onHoverChange } : {})}
     >
       <group name={`zone-npc-body-${npc.id}`} raycast={() => null}>
-        {/* Ground contact shadow */}
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.06, 0]}>
-          <circleGeometry args={[0.32, 16]} />
-          <meshBasicMaterial color="#0f172a" transparent opacity={0.22} depthWrite={false} />
-        </mesh>
-
-        {/* Torso / uniform shirt */}
-        <mesh position={[0, 0.92, 0]} castShadow>
-          <capsuleGeometry args={[0.21, 0.46, 4, 8]} />
-          <meshStandardMaterial color={npc.shirtColor} roughness={0.75} />
-        </mesh>
-
-        {/* Accent collar / badge */}
-        <mesh position={[0, 1.16, 0.14]} castShadow>
-          <boxGeometry args={[0.18, 0.12, 0.12]} />
-          <meshStandardMaterial color={npc.accentColor} roughness={0.5} />
-        </mesh>
-
-        {/* Head */}
-        <group ref={headGroupRef} position={[0, 1.5, 0]}>
-          <mesh castShadow>
-            <sphereGeometry args={[0.2, 12, 10]} />
-            <meshStandardMaterial color="#8c583a" roughness={0.8} />
-          </mesh>
-          <mesh position={[0, 0.13, 0]}>
-            <cylinderGeometry args={[0.18, 0.2, 0.1, 10]} />
-            <meshStandardMaterial color={npc.accentColor} roughness={0.65} />
-          </mesh>
-        </group>
-
-        {/* Arms */}
-        <mesh position={[-0.27, 0.94, 0]} castShadow>
-          <boxGeometry args={[0.11, 0.42, 0.12]} />
-          <meshStandardMaterial color="#8c583a" roughness={0.8} />
-        </mesh>
-        <group ref={rightArmRef} position={[0.27, 1.08, 0]}>
-          <mesh position={[0, -0.16, 0]} castShadow>
-            <boxGeometry args={[0.11, 0.42, 0.12]} />
-            <meshStandardMaterial color="#8c583a" roughness={0.8} />
-          </mesh>
-        </group>
-
-        {/* Legs */}
-        {[-0.1, 0.1].map((lx) => (
-          <mesh key={lx} position={[lx, 0.34, 0]} castShadow>
-            <boxGeometry args={[0.13, 0.44, 0.14]} />
-            <meshStandardMaterial color={npc.trouserColor} roughness={0.85} />
-          </mesh>
-        ))}
+        <NpcBody detail="zone" shirtColor={npc.shirtColor} accentColor={npc.accentColor} trouserColor={npc.trouserColor} rightArmRef={rightArmRef} headGroupRef={headGroupRef} />
       </group>
     </InteractableZone>
   );
