@@ -312,10 +312,11 @@ export function npcFromSavedDefinition(
   if (Array.isArray(saved.routine)) {
     for (const entry of saved.routine) {
       if (!entry || typeof entry !== "object") continue;
-      const { start, end, place, activity } = entry;
+      const { start, end, place, activity, weekdays } = entry;
       if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end > 24 || start >= end ||
           !["work", "home", "market", "park"].includes(place) || typeof activity !== "string") continue;
-      routine.push({ start, end, destination: place, activity });
+      if (weekdays !== undefined && (!Array.isArray(weekdays) || weekdays.length === 0 || !weekdays.every((day: unknown) => typeof day === "number" && Number.isInteger(day) && day >= 0 && day <= 6))) continue;
+      routine.push({ start, end, destination: place, activity, ...(weekdays === undefined ? {} : { weekdays }) });
     }
   }
   const traits: readonly string[] = ["warm", "reserved", "ambitious", "playful", "thoughtful", "creative"];
