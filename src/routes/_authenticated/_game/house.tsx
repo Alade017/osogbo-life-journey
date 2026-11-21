@@ -1616,6 +1616,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             : 0),
       )
     : 0;
+  /** A timed task with a time left shows its pill, which also cancels it on tap. */
+  const timedPillShown = !activeSleep && !!timedActivity && !!taskTiming;
   const timedRemaining = taskTiming
     ? Math.max(0, Math.ceil(taskTiming.duration - displayedElapsed))
     : 0;
@@ -2058,7 +2060,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             </div>
           </button>
         )}
-        {!activeSleep && timedActivity && taskTiming && (
+        {timedPillShown && (
           <button
             type="button"
             className="house-task-status house-task-status-action"
@@ -2073,11 +2075,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             </div>
           </button>
         )}
-        {(movement.walking ||
-          walkingTask ||
-          startingTask ||
-          (timedActivity && !activeSleep) ||
-          activeSleep) && (
+        {(activeSleep ||
+          (!timedPillShown &&
+            (movement.walking || walkingTask || startingTask || timedActivity))) && (
           <div className="house-task-actions" role="group" aria-label="Task controls">
             {activeSleep ? (
               <>
@@ -2092,6 +2092,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                 </button>
               </>
             ) : (
+              // Walking or a task without a pill: the Cancel button is the only way to stop it.
               <button
                 type="button"
                 className="house-task-cancel"
