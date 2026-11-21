@@ -227,7 +227,7 @@ export type StallStockOperation = Omit<StallStockRequest, "requestId">;
 
 export async function manageMyStallStock(input: StallStockRequest) {
   const request = stallStockRequestSchema.parse(input);
-  const response = await callRpc("manage_my_stall_stock", {
+  const response = await callRpc("manage_my_stall_stock_request", {
     p_action: request.action,
     p_item_id: request.itemId,
     p_quantity: request.quantity ?? null,

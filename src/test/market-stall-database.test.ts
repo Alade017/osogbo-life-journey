@@ -326,7 +326,7 @@ it("replays stock transfers exactly once and rejects reuse with different inputs
   const item = await call<string>("(select id from inventory_items where slug='meat_pie')");
   const transfer = () =>
     call<{ quantity: number; duplicate: boolean }>(
-      "public.manage_my_stall_stock('add',$1::uuid,1,1400,$2::uuid)",
+      "public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)",
       [item, requestId(102)],
     );
   const [first, second] = await Promise.all([transfer(), transfer()]);
@@ -339,15 +339,15 @@ it("replays stock transfers exactly once and rejects reuse with different inputs
     ]),
   ).toBe(2);
   await deny(
-    "select public.manage_my_stall_stock('add',$1::uuid,2,1400,$2::uuid)",
+    "select public.manage_my_stall_stock_request('add',$1::uuid,2,1400,$2::uuid)",
     [item, requestId(102)],
     "IDEMPOTENCY_CONFLICT",
   );
   await db.exec("set role authenticated");
   await deny(
-    "select public.manage_my_stall_stock('add',$1::uuid,1,1400)",
+    "select public.manage_my_stall_stock_request('add',$1::uuid,1,1400,null)",
     [item],
-    "permission denied",
+    "REQUEST_ID_REQUIRED",
   );
   await db.exec("reset role");
 });
@@ -356,22 +356,22 @@ it("retains empty owner listings, permits restocking, and makes removal retryabl
   await call("public.rent_market_stall($1::uuid)", [requestId(103)]);
   const item = await call<string>("(select id from inventory_items where slug='meat_pie')");
   const stock = await call<{ id: string }>(
-    "public.manage_my_stall_stock('add',$1::uuid,1,1400,$2::uuid)",
+    "public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)",
     [item, requestId(104)],
   );
-  await call("public.manage_my_stall_stock('set_quantity',$1::uuid,0,null,$2::uuid)", [
+  await call("public.manage_my_stall_stock_request('set_quantity',$1::uuid,0,null,$2::uuid)", [
     stock.id,
     requestId(105),
   ]);
   expect(await call("public.get_my_stall_stock()")).toEqual([
     expect.objectContaining({ id: stock.id, quantity: 0 }),
   ]);
-  await call("public.manage_my_stall_stock('add',$1::uuid,1,1400,$2::uuid)", [
+  await call("public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)", [
     item,
     requestId(106),
   ]);
   const remove = () =>
-    call("public.manage_my_stall_stock('remove',$1::uuid,null,null,$2::uuid)", [
+    call("public.manage_my_stall_stock_request('remove',$1::uuid,null,null,$2::uuid)", [
       stock.id,
       requestId(107),
     ]);
@@ -392,7 +392,7 @@ it("rolls stock and inventory back if saving the stock receipt fails", async () 
     "alter table economy_request_results add constraint deny_test_stock_receipt check(operation<>'market_stall_stock')",
   );
   await deny(
-    "select public.manage_my_stall_stock('add',$1::uuid,1,1400,$2::uuid)",
+    "select public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)",
     [item, requestId(109)],
     "deny_test_stock_receipt",
   );
@@ -408,13 +408,13 @@ it("rolls stock and inventory back if saving the stock receipt fails", async () 
 it("keeps stock request receipts private to the owning character", async () => {
   await call("public.rent_market_stall($1::uuid)", [requestId(110)]);
   const item = await call<string>("(select id from inventory_items where slug='meat_pie')");
-  await call("public.manage_my_stall_stock('add',$1::uuid,1,1400,$2::uuid)", [
+  await call("public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)", [
     item,
     requestId(111),
   ]);
   await asUser(buyer);
   await deny(
-    "select public.manage_my_stall_stock('add',$1::uuid,1,1400,$2::uuid)",
+    "select public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)",
     [item, requestId(111)],
     "RENT_A_CURRENT_STALL",
   );

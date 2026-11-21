@@ -1,12 +1,6 @@
--- Keep the existing inventory-transfer implementation private. Browser requests
--- must include a durable request ID so retries cannot move stock twice.
-do $$ begin
- if to_regprocedure('public.manage_my_stall_stock(text,uuid,integer,bigint)') is not null then
-  revoke all on function public.manage_my_stall_stock(text,uuid,integer,bigint) from public,anon,authenticated;
- end if;
-end $$;
-
-create or replace function public.manage_my_stall_stock(
+-- Adds a request-ID wrapper. The old four-argument function stays callable until the client
+-- that sends request IDs is deployed; revoke it in a follow-up migration after that.
+create or replace function public.manage_my_stall_stock_request(
  p_action text,p_item_id uuid,p_quantity integer,p_price_minor bigint,p_request_id uuid
 ) returns jsonb language plpgsql security definer set search_path='' as $$
 declare
@@ -32,6 +26,6 @@ begin
  values(cid,p_request_id,'market_stall_stock',jsonb_build_object('input',payload,'result',result));
  return result||jsonb_build_object('duplicate',false);
 end $$;
-revoke all on function public.manage_my_stall_stock(text,uuid,integer,bigint,uuid) from public,anon;
-grant execute on function public.manage_my_stall_stock(text,uuid,integer,bigint,uuid) to authenticated;
+revoke all on function public.manage_my_stall_stock_request(text,uuid,integer,bigint,uuid) from public,anon;
+grant execute on function public.manage_my_stall_stock_request(text,uuid,integer,bigint,uuid) to authenticated;
 notify pgrst,'reload schema';

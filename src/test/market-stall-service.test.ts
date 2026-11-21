@@ -29,7 +29,7 @@ it("accepts sold-out owner stock but rejects zero quantities in public listings"
 it("always sends the saved stock nonce and explicit nullable arguments", async () => {
   rpc.mockResolvedValue({ data: { ok: true, action: "remove", id, quantity: 0 }, error: null });
   await manageMyStallStock({ action: "remove", itemId: id, requestId });
-  expect(rpc).toHaveBeenCalledWith("manage_my_stall_stock", {
+  expect(rpc).toHaveBeenCalledWith("manage_my_stall_stock_request", {
     p_action: "remove",
     p_item_id: id,
     p_request_id: requestId,
