@@ -1000,7 +1000,7 @@
 .pi-inventory .pi-detail { min-width: 0; }
 .pi-inventory .pi-detail-actions { flex-wrap: wrap; }
 .pi-inventory .pi-detail-actions > button { min-height: 44px; }
-@container (min-width: 1050px) {
+@media (min-width: 1200px) {
   .pi-inventory {
     display: grid;
     grid-template-columns: minmax(240px, 0.9fr) minmax(0, 1.2fr) minmax(260px, 0.95fr);
@@ -1016,7 +1016,7 @@
     grid-template-columns: minmax(0, 1fr);
     align-content: start;
   }
-  .pi-inventory .pi-canvas { height: clamp(300px, 33cqi, 460px); }
+  .pi-inventory .pi-canvas { height: clamp(300px, 31vw, 460px); }
   .pi-inventory > .pi-section-heading,
   .pi-inventory > .pi-bag-toolbar,
   .pi-inventory > .pi-filters,
@@ -1030,10 +1030,10 @@
   .pi-inventory .pi-detail { position: sticky; top: 0.75rem; }
   .pi-inventory .pi-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
-@container (max-width: 1049px) {
+@media (min-width: 620px) and (max-width: 1199px) {
   .pi-inventory > .pi-hero { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 }
-@container (max-width: 619px) {
+@media (max-width: 619px) {
   .pi-inventory > .pi-hero { grid-template-columns: minmax(0, 1fr); }
   .pi-inventory .pi-bag { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .pi-inventory .pi-tile { min-height: 125px; }
