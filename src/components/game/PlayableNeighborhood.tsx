@@ -1265,13 +1265,26 @@ export function PlayableNeighborhood() {
                           {currentLocation?.name ?? "This district"} plans{" "}
                           {featureLabel.toLowerCase()} here.
                         </p>
-                        <button
-                          type="button"
-                          className="mt-2 font-semibold underline"
-                          onClick={() => setFeatureLabel(null)}
-                        >
-                          Close
-                        </button>
+                        <div className="mt-3 flex items-center justify-between gap-2">
+                          {currentLocation?.slug ? (
+                            <Link
+                              to="/location/$slug"
+                              params={{ slug: currentLocation.slug }}
+                              className="rounded-md border-2 border-edge px-3 py-1 font-bold"
+                            >
+                              Travel to {currentLocation.name}
+                            </Link>
+                          ) : (
+                            <span />
+                          )}
+                          <button
+                            type="button"
+                            className="font-semibold underline"
+                            onClick={() => setFeatureLabel(null)}
+                          >
+                            Close
+                          </button>
+                        </div>
                       </div>
                     )}
                     <Link to="/map" className="neighborhood-map-shortcut">
