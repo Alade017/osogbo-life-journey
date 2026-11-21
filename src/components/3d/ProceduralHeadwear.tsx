@@ -2,12 +2,13 @@ type HeadwearStyle = 0 | 1 | 2 | 3;
 
 /**
  * Lightweight procedural Yoruba and everyday headwear.
- * Coordinates are local to the existing head bone; no rig changes are required.
+ * Coordinates are local to the head bone (rest Y 0.84). The brim sits near
+ * the upper scalp (body-space Y 0.945), not above the crown.
  */
 export function ProceduralHeadwear({ style, color }: { style: HeadwearStyle; color: string }) {
   const trim = "#e9dfc8";
   return (
-    <group position={[0, 0.19, 0]} scale={[0.8, 0.9, 0.8]} name="procedural-headwear">
+    <group position={[0, 0.105, -0.004]} scale={[0.8, 0.9, 0.8]} name="procedural-headwear">
       {style === 1 ? (
         <group name="yoruba-gele" rotation={[0.04, 0, -0.025]}>
           <mesh position={[0, 0.018, -0.006]} scale={[1.04, 0.78, 0.88]} castShadow>

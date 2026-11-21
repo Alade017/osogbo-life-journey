@@ -743,9 +743,9 @@
   z-index: var(--game-dialog-layer);
   inset: 50% auto auto 50%;
   display: flex;
-  width: min(80vw, 1180px);
-  height: 80dvh;
-  max-height: 80dvh;
+  width: min(calc(100vw - 2rem), 1180px);
+  height: min(88dvh, 920px);
+  max-height: 88dvh;
   max-width: none;
   min-width: 0;
   flex-direction: column;
@@ -814,10 +814,11 @@
 
 @media (max-width: 640px) {
   .inventory-dialog-shell {
-    width: min(80vw, 1180px);
-    height: 80dvh;
-    max-height: 80dvh;
-    border-radius: 20px;
+    width: 100vw;
+    height: 100dvh;
+    max-height: 100dvh;
+    border-radius: 0;
+    border: 0;
   }
 
   .inventory-dialog-cancel {
@@ -845,4 +846,109 @@
   .inventory-dialog-scroll .pi-inventory-masthead {
     padding-right: 5.25rem;
   }
+}
+
+/* Inventory discovery toolbar: accessible search and responsive result count. */
+.pi-bag-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.65rem;
+}
+.pi-inventory-search {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: 0.6rem;
+  min-width: 0;
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+.pi-inventory-search:focus-within {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.pi-inventory-search input {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.9rem;
+}
+.pi-inventory-search input::placeholder { color: var(--muted-foreground); }
+.pi-bag-count { color: var(--muted-foreground); font-size: 0.8rem; font-weight: 650; }
+.pi-bag-empty {
+  grid-column: 1 / -1;
+  padding: 2rem 1rem;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+
+/* Compact equipment and selection panels without sacrificing touch targets. */
+.pi-inventory .pi-slots { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.pi-inventory .pi-slot { align-content: start; grid-template-columns: minmax(0, 1fr); gap: 0.55rem; }
+.pi-inventory .pi-slot-name { grid-column: 1; }
+.pi-inventory .pi-slot-actions { justify-content: flex-start; margin-top: auto; }
+.pi-inventory .pi-chip-btn { min-height: 40px; }
+.pi-detail-placeholder {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.7rem;
+  min-height: 190px;
+  padding: 1rem;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+.pi-detail-placeholder strong { color: var(--foreground); font-size: 1rem; }
+.pi-detail-placeholder .pi-note { max-width: 32ch; line-height: 1.5; }
+@container (max-width: 620px) {
+  .pi-inventory .pi-hero { gap: 0.75rem; }
+  .pi-inventory .pi-canvas { height: clamp(210px, 55cqi, 300px); }
+  .pi-inventory .pi-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pi-inventory .pi-slot { padding: 0.7rem; }
+  .pi-inventory .pi-slot-actions { flex-direction: column; align-items: stretch; }
+}
+@container (max-width: 340px) {
+  .pi-inventory .pi-slots { grid-template-columns: 1fr; }
+}
+
+/* Keep selected details discoverable on touch screens and reduce motion when requested. */
+.pi-inventory .pi-detail { scroll-margin-block: 1rem; }
+@container (max-width: 620px) {
+  .pi-inventory .pi-bag-layout { gap: 0.75rem; }
+  .pi-inventory .pi-detail { padding: 0.85rem; }
+  .pi-inventory .pi-detail-actions > button { flex: 1 1 120px; min-height: 44px; }
+}
+
+/* Visually separate a temporary try-on from persisted equipment. */
+.pi-outfit-state {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.72rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.pi-outfit-state.is-preview {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  color: var(--primary);
+}
+@container (max-width: 380px) {
+  .pi-outfit-state { align-self: flex-start; }
 }

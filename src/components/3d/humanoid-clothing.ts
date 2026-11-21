@@ -108,10 +108,14 @@ export function createFittedClothing(
     for (let group = 0; group < groups.length; group++) {
       for (const v of groups[group]!) {
         const normal = new Vector3(...(v.n as [number, number, number])).normalize();
+        // Give the basic outfit a fabric silhouette rather than skin-tight paint.
+        // Keep the clearance small enough for the shared skeleton and mobile camera.
+        const ease = group === 0 ? 0.012 : group === 1 ? 0.009 : 0.006;
+        const hemFlare = group === 0 && v.p[1]! < 0.56 ? 0.004 : 0;
         positions.push(
-          v.p[0]! + normal.x * 0.004,
-          v.p[1]! + normal.y * 0.004,
-          v.p[2]! + normal.z * 0.004,
+          v.p[0]! + normal.x * (ease + hemFlare),
+          v.p[1]! + normal.y * ease,
+          v.p[2]! + normal.z * (ease + hemFlare),
         );
         normals.push(...normal.toArray());
         uvs.push(...v.uv);
@@ -140,7 +144,7 @@ export function createFittedClothing(
     (color, i) =>
       new MeshStandardMaterial({
         color,
-        roughness: 0.93,
+        roughness: i === 2 ? 0.72 : 0.96,
         side: 2,
         map: i === 0 && patterned ? adireTexture() : null,
       }),

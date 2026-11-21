@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { Backpack, GlassWater, Package, Shirt, Smartphone, type LucideIcon } from "lucide-react";
+import { useRef, useState } from "react";
+import { Backpack, GlassWater, Package, Search, Shirt, Smartphone, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { EmptyState } from "@/components/game/ui";
@@ -60,6 +60,8 @@ export function GameInventoryPanel() {
   } = useQuery(q.equipment());
   const [activeCategory, setActiveCategory] = useState<InventoryCategory | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const detailRef = useRef<HTMLElement>(null);
   const [requestedSlot, setRequestedSlot] = useState<EquipmentSlot | null>(null);
   const useItem = useGameAction(rpc.useInventoryItem, {
     onSuccess: () => toast.success("Item used. Your needs and game time were updated."),
@@ -105,10 +107,17 @@ export function GameInventoryPanel() {
 
   const inventory = items ?? [];
   const visibleItems = filterInventory(inventory, activeCategory);
-  const compatibleItems = requestedSlot
+  const slotItems = requestedSlot
     ? filterEquippableInventoryForSlot(visibleItems, requestedSlot)
     : visibleItems;
-  const selectedItem = items?.find((item) => item.id === selectedId);
+  const query = search.trim().toLocaleLowerCase();
+  const compatibleItems = query
+    ? slotItems.filter((entry) =>
+        [entry.item?.name, entry.item?.description, entry.item?.slug]
+          .some((value) => value?.toLocaleLowerCase().includes(query)),
+      )
+    : slotItems;
+  const selectedItem = compatibleItems.find((item) => item.id === selectedId);
   const itemActionsAvailable = typeof selectedItem?.item?.usable === "boolean";
   const selectedUse = selectedItem ? itemUseEffect(selectedItem.item) : null;
   const selectedSlot = selectedItem?.item?.equipment_slot as EquipmentSlot | null | undefined;
@@ -133,14 +142,14 @@ export function GameInventoryPanel() {
   const normalizedEquipment = normalizeEquippedItems(equipment);
   const wornNow = normalizedEquipment.map((entry) => ({ slot: entry.slot, item: entry.item }));
   // Trying an item on: the stage shows the selected item in its slot, so 3D models appear live.
+  const canTryOn = !equipmentLoading && !equipmentError && !!selectedSlot && !equipError;
   const previewEquipment =
-    selectedSlot && selectedItem
+    canTryOn && selectedSlot && selectedItem
       ? [
           ...wornNow.filter((entry) => entry.slot !== selectedSlot),
           { slot: selectedSlot, item: selectedItem.item },
         ]
       : wornNow;
-  const canTryOn = !!selectedSlot && !equipError;
 
   return (
     <div className="pi-page pi-inventory">
@@ -177,13 +186,20 @@ export function GameInventoryPanel() {
           />
           <div className="pi-stage-foot">
             <div>
-              <strong>{selectedItem?.item?.name ?? "Your look"}</strong>
+              <strong>{canTryOn ? `Trying on: ${selectedItem?.item?.name ?? "Item"}` : "Saved outfit"}</strong>
               <span>
                 {selectedItem && canTryOn
                   ? "Try-on preview — choose Wear to save"
-                  : "Choose an item to try it on"}
+                  : equipmentLoading
+                    ? "Loading your saved equipment…"
+                    : equipmentError
+                      ? "Saved equipment is unavailable; retry to preview outfits"
+                      : "Select a wearable item to preview changes"}
               </span>
             </div>
+            <span className={`pi-outfit-state ${canTryOn ? "is-preview" : ""}`} role="status">
+              {canTryOn ? "Unsaved preview" : "Saved appearance"}
+            </span>
           </div>
         </section>
 
@@ -216,7 +232,7 @@ export function GameInventoryPanel() {
             </div>
             <ul className="pi-slots" aria-label="Equipment slots">
               {EQUIPMENT_SLOTS.map((slot) => {
-                const equipped = equipment?.find((entry) => entry.slot === slot);
+                const equipped = normalizedEquipment.find((entry) => entry.slot === slot);
                 return (
                   <li
                     key={slot}
@@ -226,7 +242,7 @@ export function GameInventoryPanel() {
                     {equipped ? (
                       <strong className="pi-slot-item">{equipped.item?.name ?? "Equipped"}</strong>
                     ) : (
-                      <span className="pi-slot-empty">Nothing on</span>
+                      <span className="pi-slot-empty">No inventory item</span>
                     )}
                     <div className="pi-slot-actions">
                       <button
@@ -240,7 +256,7 @@ export function GameInventoryPanel() {
                           window.requestAnimationFrame(() =>
                             document.getElementById("inventory-items")?.scrollIntoView({
                               behavior: "smooth",
-                              block: "start",
+                              block: "nearest",
                             }),
                           );
                         }}
@@ -251,8 +267,27 @@ export function GameInventoryPanel() {
                         <button
                           type="button"
                           className="pi-chip-btn"
-                          disabled={unequipItem.isPending}
-                          onClick={() => unequipItem.mutate(slot)}
+                          disabled={unequipItem.isPending || !character || !equipped ||
+                            !!(character && equipped && validatePlayerAction({
+                              action: "unequip",
+                              characterId: character.id,
+                              equippedItem: equipped,
+                              slot,
+                            }))}
+                          onClick={() => {
+                            if (!character || !equipped) return;
+                            const validationError = validatePlayerAction({
+                              action: "unequip",
+                              characterId: character.id,
+                              equippedItem: equipped,
+                              slot,
+                            });
+                            if (validationError) {
+                              toast.error(validationError);
+                              return;
+                            }
+                            unequipItem.mutate(slot);
+                          }}
                         >
                           Remove
                         </button>
@@ -280,6 +315,20 @@ export function GameInventoryPanel() {
             </div>
             <span>{compatibleItems.length} shown</span>
           </div>
+          <div className="pi-bag-toolbar">
+            <label className="pi-inventory-search">
+              <Search size={18} aria-hidden="true" />
+              <span className="sr-only">Search inventory</span>
+              <input
+                type="search"
+                value={search}
+                onChange={(event) => setSearch(event.target.value)}
+                placeholder="Search your items"
+                aria-label="Search inventory"
+              />
+            </label>
+            <span className="pi-bag-count">{compatibleItems.length} of {inventory.length} stacks</span>
+          </div>
           <div className="pi-filters" role="group" aria-label="Filter bag by category">
             {categoryFilters.map((category) => (
               <button
@@ -302,7 +351,7 @@ export function GameInventoryPanel() {
               </button>
             </p>
           )}
-          {requestedSlot && compatibleItems.length === 0 && (
+          {requestedSlot && slotItems.length === 0 && (
             <p className="pi-banner" role="status">
               You do not have any {requestedSlot} equipment in your bag yet. Visit the market to
               look for some.
@@ -311,6 +360,11 @@ export function GameInventoryPanel() {
 
           <div className="pi-bag-layout">
             <div className="pi-bag" id="inventory-items">
+              {compatibleItems.length === 0 && (
+                <p className="pi-bag-empty" role="status">
+                  {query ? "No items match your search." : "No items in this category."}
+                </p>
+              )}
               {compatibleItems.map((item) => {
                 const Icon = ICONS[item.item?.icon ?? ""] ?? Package;
                 return (
@@ -319,7 +373,14 @@ export function GameInventoryPanel() {
                     type="button"
                     className="pi-tile"
                     aria-pressed={selectedId === item.id}
-                    onClick={() => setSelectedId(item.id)}
+                    onClick={() => {
+                      setSelectedId(item.id);
+                      if (window.matchMedia("(max-width: 760px)").matches) {
+                        window.requestAnimationFrame(() =>
+                          detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+                        );
+                      }
+                    }}
                   >
                     <span className="pi-tile-art" aria-hidden="true">
                       <InventoryTileArt slug={item.item?.slug} Icon={Icon} />
@@ -334,7 +395,7 @@ export function GameInventoryPanel() {
               })}
             </div>
 
-            <aside className="pi-detail" aria-live="polite">
+            <aside ref={detailRef} className="pi-detail" aria-live="polite" aria-label="Selected item details">
               {selectedItem ? (
                 <>
                   {hasItemModel(selectedItem.item?.slug) && (
@@ -411,7 +472,11 @@ export function GameInventoryPanel() {
                   )}
                 </>
               ) : (
-                <p className="pi-note">Select an item to try it on and see its details.</p>
+                <div className="pi-detail-placeholder">
+                  <Package size={32} aria-hidden="true" />
+                  <strong>Choose an item</strong>
+                  <p className="pi-note">Select an item from your bag to preview it, check its details, or use it.</p>
+                </div>
               )}
             </aside>
           </div>

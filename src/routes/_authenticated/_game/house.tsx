@@ -911,6 +911,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     if (outside.kind !== "entering" || !isInsideHome || !serverState?.house || enteringRan.current)
       return;
     enteringRan.current = true;
+    doorSequenceLock.current = true;
+    setDoorSequence(true);
     const [doorX, doorY, doorZ] = houseDoorThreshold(
       serverState.house.house_type_id,
       roomWidth,
@@ -926,32 +928,40 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     movement.place(exterior);
     setDoorOpen(true);
     void (async () => {
-      await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
-      setDoorInteracting(false);
-      completeTransitionStep("Walking in");
-      const path = findRoomPath(
-        [doorX, doorY, doorZ],
-        start,
-        roomWidth,
-        roomDepth,
-        roomObstacles(
-          serverState.house!.house_type_id,
+      try {
+        await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+        setDoorInteracting(false);
+        completeTransitionStep("Walking in");
+        const path = findRoomPath(
+          [doorX, doorY, doorZ],
+          start,
           roomWidth,
           roomDepth,
-          placements.filter((item) => (item.floor ?? 0) === 0),
-          slots,
-          0,
-        ),
-      );
-      if (path) await movement.walk([exterior, [doorX, doorY, doorZ], ...path]);
-      else {
-        movement.place([doorX, doorY, doorZ]);
-        toast.error("The entrance is blocked. Rearrange your furniture to clear the way.");
+          roomObstacles(
+            serverState.house!.house_type_id,
+            roomWidth,
+            roomDepth,
+            placements.filter((item) => (item.floor ?? 0) === 0),
+            slots,
+            0,
+          ),
+        );
+        if (path) {
+          const arrived = await movement.walk([exterior, [doorX, doorY, doorZ], ...path]);
+          if (!arrived) movement.place([doorX, doorY, doorZ]);
+        }
+        else {
+          movement.place([doorX, doorY, doorZ]);
+          toast.error("The entrance is blocked. Rearrange your furniture to clear the way.");
+        }
+      } finally {
+        setDoorOpen(false);
+        setDoorInteracting(false);
+        setDoorSequence(false);
+        doorSequenceLock.current = false;
+        endTransition();
+        enteringRan.current = false;
       }
-      setDoorOpen(false);
-      setDoorInteracting(false);
-      endTransition();
-      enteringRan.current = false;
     })();
     // The room is ready once its house data is loaded; the sequence runs once per arrival.
     // eslint-disable-next-line react-hooks/exhaustive-deps
