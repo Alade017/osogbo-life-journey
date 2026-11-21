@@ -100,7 +100,10 @@ export function CharacterBody({
     safe.hair
   ];
   const hairShape = hairStyle ? hairShapeFor(hairStyle) : null;
-  const hairColor = hairShape ? (HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!) : null;
+  // Keep the saved hairstyle intact, but hide its geometry under fitted headwear.
+  // Restoring headwear to None restores the original hairstyle automatically.
+  const visibleHairShape = safe.headwear > 0 ? null : hairShape;
+  const hairColor = visibleHairShape ? (HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!) : null;
 
   const rig = useMemo(
     () =>
@@ -108,10 +111,10 @@ export function CharacterBody({
         variant,
         skinColor,
         hairColor,
-        hairShape: hairShape ?? "cap",
+        hairShape: visibleHairShape ?? "cap",
         build: safe.build,
       }),
-    [variant, skinColor, hairColor, hairShape, safe.build],
+    [variant, skinColor, hairColor, visibleHairShape, safe.build],
   );
   const clothed = safe.clothed;
   const cut = outfit?.topCut ?? "tee";
