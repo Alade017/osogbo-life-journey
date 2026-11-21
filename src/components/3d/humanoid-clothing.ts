@@ -26,6 +26,12 @@ function collarBoundary(x: number): number {
   return GARMENT_FIT.collar + GARMENT_FIT.collarSlope * Math.abs(x);
 }
 
+const armBones = new Set<string>([
+  BONE.lUpperArm, BONE.rUpperArm, BONE.lForearm,
+  BONE.rForearm, BONE.lHand, BONE.rHand,
+]);
+const ARM_WEIGHT_THRESHOLD = 0.25;
+
 const cache = new WeakMap<BufferGeometry, Map<TopCut, BufferGeometry>>();
 type Vertex = { p: number[]; n: number[]; uv: number[]; bones: Map<number, number> };
 function interpolate(a: Vertex, b: Vertex, t: number): Vertex {
@@ -64,19 +70,15 @@ export function createFittedClothing(
       skin = source.getAttribute("skinIndex"),
       weights = source.getAttribute("skinWeight");
     const groups: Vertex[][] = [[], [], []];
-    const armBones = new Set([
-      BONE.lUpperArm,
-      BONE.rUpperArm,
-      BONE.lForearm,
-      BONE.rForearm,
-      BONE.lHand,
-      BONE.rHand,
-    ] as string[]);
+
     const vertex = (i: number): Vertex => {
       const bones = new Map<number, number>();
-      for (let j = 0; j < 4; j++)
-        if (weights.getComponent(i, j) > 0)
-          bones.set(skin.getComponent(i, j), weights.getComponent(i, j));
+      for (let j = 0; j < 4; j++) {
+        const bone = skin.getComponent(i, j), weight = weights.getComponent(i, j);
+        if (Number.isInteger(bone) && bone >= 0 && bone < body.skeleton.bones.length &&
+            Number.isFinite(weight) && weight > 0)
+          bones.set(bone, (bones.get(bone) ?? 0) + weight);
+      }
       return {
         p: [p.getX(i), p.getY(i), p.getZ(i)],
         n: [n.getX(i), n.getY(i), n.getZ(i)],
@@ -93,8 +95,8 @@ export function createFittedClothing(
       let armWeight = 0;
       for (const v of tri)
         for (const [bone, w] of v.bones)
-          if (armBones.has(body.skeleton.bones[bone]!.name)) armWeight += w / 3;
-      const arm = armWeight > 0.25;
+          if (armBones.has(body.skeleton.bones[bone]?.name ?? "")) armWeight += w / 3;
+      const arm = armWeight > ARM_WEIGHT_THRESHOLD;
       let shirt = clip(
         tri,
         (v) => v.p[1]! - shirtLowerBoundary(arm, cut),
@@ -140,7 +142,7 @@ export function createFittedClothing(
           total = influence.reduce((sum, [, w]) => sum + w, 0);
         const validWeights = Number.isFinite(total) && total > 0;
         for (let j = 0; j < 4; j++) {
-          indices.push(influence[j]?.[0] ?? 0);
+          indices.push(validWeights ? (influence[j]?.[0] ?? 0) : 0);
           skinWeights.push(validWeights ? (influence[j]?.[1] ?? 0) / total : j === 0 ? 1 : 0);
         }
       }
@@ -185,21 +187,16 @@ export function createVisibleSkin(body: SkinnedMesh, cut: TopCut = "tee") {
       skin = source.getAttribute("skinIndex"),
       weights = source.getAttribute("skinWeight"),
       indices: number[] = [];
-    const armBones = new Set([
-      BONE.lUpperArm,
-      BONE.rUpperArm,
-      BONE.lForearm,
-      BONE.rForearm,
-      BONE.lHand,
-      BONE.rHand,
-    ] as string[]);
+
     for (let i = 0; i < p.count; i += 3) {
       let armWeight = 0;
       for (let v = i; v < i + 3; v++)
         for (let j = 0; j < 4; j++)
-          if (armBones.has(body.skeleton.bones[skin.getComponent(v, j)]!.name))
-            armWeight += weights.getComponent(v, j) / 3;
-      const arm = armWeight > 0.25;
+          if (armBones.has(body.skeleton.bones[skin.getComponent(v, j)]?.name ?? "")) {
+            const weight = weights.getComponent(v, j);
+            if (Number.isFinite(weight) && weight > 0) armWeight += weight / 3;
+          }
+      const arm = armWeight > ARM_WEIGHT_THRESHOLD;
       const covered = [i, i + 1, i + 2].every((v) => {
         const y = p.getY(v),
           x = p.getX(v);
