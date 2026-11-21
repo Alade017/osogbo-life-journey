@@ -209,13 +209,10 @@ export function WorldCharacter({
             motion={motion}
             animated={!reduced}
             held={held}
+            backAccessory={AccessoryModel ? <AccessoryModel h={1} /> : null}
             appearance={safe}
             gender={gender}
           />
-          {/* BackpackModel uses body-relative coordinates; an extra socket offset lifts it above the back. */}
-          <group name="back_socket">
-            {AccessoryModel ? <AccessoryModel h={h} /> : null}
-          </group>
         </group>
       </group>
     </group>
