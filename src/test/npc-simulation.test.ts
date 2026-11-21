@@ -4,6 +4,7 @@ import {
   interactionOutcome,
   NPC_CATALOG,
   npcActivityAt,
+  npcFromSavedDefinition,
   relationshipTier,
   socialActionsFor,
   type Relationship,
@@ -117,5 +118,35 @@ describe("NPC routine and social simulation", () => {
       "Close friend",
     );
     expect(socialActionsFor(newRelationship, false)).toEqual([]);
+  });
+});
+
+describe("NPC schedule consistency", () => {
+  const base = NPC_CATALOG[0]!;
+  const time = { ...INITIAL_GAME_TIME, hour: 10 };
+  it("uses a consistent home fallback for missing work venues", () => {
+    expect(npcActivityAt(base, time, slug => slug === base.homeSlug ? slug : null))
+      .toMatchObject({ destination: "home", destinationSlug: base.homeSlug, label: "resting at home", available: true });
+    expect(npcActivityAt(base, time, () => null).available).toBe(false);
+  });
+  it("prioritizes matching weekday overrides over daily defaults", () => {
+    const npc = { ...base, routine: [...base.routine, { start: 9, end: 12, destination: "home" as const, activity: "weekend rest", weekdays: [5, 6] }] };
+    expect(npcActivityAt(npc, { ...time, weekday: 5 }, slug => slug).label).toBe("weekend rest");
+    expect(npcActivityAt(npc, { ...time, weekday: 0 }, slug => slug).destination).toBe("work");
+  });
+  it("uses persisted venue IDs and validated schedule entries", () => {
+    const npc = npcFromSavedDefinition(base, {
+      name: base.name, role: base.role, personality: base.personality,
+      home_location_id: "home-id", work_location_id: "work-id",
+      routine: [{ start: 8, end: 16, place: "work", activity: "working" }, { start: -1, end: 25, place: "park", activity: "invalid" }],
+    }, id => id === "home-id" ? "residential" : "old-garage");
+    expect(npc.routine).toHaveLength(1);
+    expect(npcActivityAt(npc, time, slug => slug).destinationSlug).toBe("old-garage");
+  });
+  it("rejects invitations at the server conflict threshold", () => {
+    const strained = { ...newRelationship, friendship: 80, trust: 80, conflict: 50 };
+    expect(interactionOutcome("invite", base, strained).accepted).toBe(false);
+    expect(socialActionsFor(strained, true)).not.toContain("invite");
+    expect(socialActionsFor({ ...strained, conflict: 70 }, true)).toEqual(["greet", "end"]);
   });
 });
