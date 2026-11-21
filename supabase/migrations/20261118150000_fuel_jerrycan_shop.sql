@@ -6,7 +6,7 @@ insert into public.inventory_items (
   'fuel_jerrycan_10l',
   '10L Petrol Jerrycan',
   'A sealed yellow 10L petrol container for generator and emergency use.',
-  'utility','fuel',3200,true,5,false,false,null,'{}',3200,1600,true
+  'miscellaneous','fuel',3200,true,5,false,false,null,'{}',3200,1600,true
 )
 on conflict (slug) do update set
   name=excluded.name,
