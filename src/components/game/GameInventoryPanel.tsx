@@ -118,7 +118,6 @@ export function GameInventoryPanel() {
       )
     : slotItems;
   const selectedItem = compatibleItems.find((item) => item.id === selectedId);
-  const itemActionsAvailable = typeof selectedItem?.item?.usable === "boolean";
   const selectedUse = selectedItem ? itemUseEffect(selectedItem.item) : null;
   const selectedSlot = selectedItem?.item?.equipment_slot as EquipmentSlot | null | undefined;
   const useError =
@@ -143,8 +142,12 @@ export function GameInventoryPanel() {
   const wornNow = normalizedEquipment.map((entry) => ({ slot: entry.slot, item: entry.item }));
   // Trying an item on: the stage shows the selected item in its slot, so 3D models appear live.
   const canTryOn = !equipmentLoading && !equipmentError && !!selectedSlot && !equipError;
+  const isAlreadyWorn = !!selectedSlot && wornNow.some(
+    (entry) => entry.slot === selectedSlot && entry.item?.id === selectedItem?.item?.id,
+  );
+  const hasUnsavedPreview = canTryOn && !isAlreadyWorn;
   const previewEquipment =
-    canTryOn && selectedSlot && selectedItem
+    hasUnsavedPreview && selectedSlot && selectedItem
       ? [
           ...wornNow.filter((entry) => entry.slot !== selectedSlot),
           { slot: selectedSlot, item: selectedItem.item },
@@ -179,16 +182,16 @@ export function GameInventoryPanel() {
             interactive
             equipment={previewEquipment}
             label={
-              canTryOn
+              hasUnsavedPreview
                 ? "Outfit try-on preview; choose Wear to save"
                 : "Your character wearing the saved outfit"
             }
           />
           <div className="pi-stage-foot">
             <div>
-              <strong>{canTryOn ? `Trying on: ${selectedItem?.item?.name ?? "Item"}` : "Saved outfit"}</strong>
+              <strong>{hasUnsavedPreview ? `Trying on: ${selectedItem?.item?.name ?? "Item"}` : "Saved outfit"}</strong>
               <span>
-                {selectedItem && canTryOn
+                {selectedItem && hasUnsavedPreview
                   ? "Try-on preview — choose Wear to save"
                   : equipmentLoading
                     ? "Loading your saved equipment…"
@@ -197,8 +200,8 @@ export function GameInventoryPanel() {
                       : "Select a wearable item to preview changes"}
               </span>
             </div>
-            <span className={`pi-outfit-state ${canTryOn ? "is-preview" : ""}`} role="status">
-              {canTryOn ? "Unsaved preview" : "Saved appearance"}
+            <span className={`pi-outfit-state ${hasUnsavedPreview ? "is-preview" : ""}`} role="status">
+              {equipmentError ? "Equipment unavailable" : equipmentLoading ? "Loading equipment" : hasUnsavedPreview ? "Unsaved preview" : "Saved appearance"}
             </span>
           </div>
         </section>
@@ -420,7 +423,7 @@ export function GameInventoryPanel() {
                       <dd>×{selectedItem.quantity}</dd>
                     </div>
                   </dl>
-                  {itemActionsAvailable ? (
+                  {selectedItem.item ? (
                     <div className="pi-detail-actions">
                       {selectedUse && (
                         <Button
