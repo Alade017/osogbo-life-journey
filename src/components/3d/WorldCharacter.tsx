@@ -56,10 +56,10 @@ export function WorldCharacter({
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
   const outfit = resolveWornOutfit(safe, gender, equipment);
-  // An equipped head item takes visual precedence over character-creation cosmetics.
-  // The saved appearance is normalized locally and is never mutated on the server.
+  // Headwear is equipment-only; ignore legacy character-creation cosmetics.
+  // Keep saved appearance unchanged for backward compatibility.
   const equippedHead = equipment.find((entry) => entry.slot === "head" && entry.item?.slug);
-  if (equippedHead) safe.headwear = 3;
+  safe.headwear = equippedHead ? 3 : 0;
   if (outfit.hasWearables) safe.clothed = true;
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
   const variant = body ?? bodyVariantFor(gender);
