@@ -487,32 +487,59 @@ export function PlayableNeighborhood() {
     [actionAnimation, players, sessionId],
   );
   useEffect(() => setNpcPositionOverrides({}), [currentLocation?.id]);
-  const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
-    if (!currentLocation || !npcQuery.data || !locationsQuery.data) return [];
+  const locationIndexes = useMemo(() => {
+    const slugById = new Map<string, string>();
+    const idBySlug = new Map<string, string>();
+
+    for (const location of locationsQuery.data ?? []) {
+      if (!slugById.has(location.id)) {
+        slugById.set(location.id, location.slug);
+      }
+      if (!idBySlug.has(location.slug)) {
+        idBySlug.set(location.slug, location.id);
+      }
+    }
+
+    return { slugById, idBySlug };
+  }, [locationsQuery.data]);
+
+  const npcDefinitions = useMemo(() => {
+    if (!npcQuery.data || !locationsQuery.data) return [];
     const savedNpcs = new Map(npcQuery.data.map((npc) => [npc.id, npc]));
-    const slots = area.objects.filter((object) => object.kind === "npc");
-    const scheduled = NPC_CATALOG.flatMap((base) => {
+    return NPC_CATALOG.flatMap((base) => {
       const saved = savedNpcs.get(base.id);
       if (!saved) return [];
-      const npc = npcFromSavedDefinition(base, saved, (id) => locationsQuery.data?.find((location) => location.id === id)?.slug);
+      return [npcFromSavedDefinition(base, saved, (id) => locationIndexes.slugById.get(id))];
+    });
+  }, [npcQuery.data, locationsQuery.data, locationIndexes]);
+
+  const scheduledNpcs = useMemo(() => {
+    if (!currentLocation) return [];
+    return npcDefinitions.flatMap((npc) => {
       const activity = npcActivityAt(
         npc,
         simulation.gameTime,
-        (slug) => locationsQuery.data?.find((location) => location.slug === slug)?.id ?? null,
+        (slug) => locationIndexes.idBySlug.get(slug) ?? null,
       );
       return activity.destinationSlug === currentLocation.slug ? [{ npc, activity }] : [];
-    }).slice(0, slots.length);
+    });
+  }, [currentLocation, npcDefinitions, simulation.gameTime, locationIndexes]);
+
+  const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
+    const slots = area.objects.filter((object) => object.kind === "npc");
+    const scheduled = scheduledNpcs.slice(0, slots.length);
+    const destinations = {
+      home: area.objects.find((object) => object.kind === "home"),
+      work: area.objects.find((object) => object.kind === "work"),
+      market: area.objects.find((object) => object.kind === "market"),
+    };
+    const parkDestination =
+      area.obstacles?.find((obstacle) => obstacle.kind === "bench") ?? destinations.market;
+
     return scheduled.map(({ npc, activity }, index) => {
       const slot = slots[index]!;
       const destinationObject =
-        activity.destination === "home"
-          ? area.objects.find((object) => object.kind === "home")
-          : activity.destination === "work"
-            ? area.objects.find((object) => object.kind === "work")
-            : activity.destination === "market"
-              ? area.objects.find((object) => object.kind === "market")
-              : (area.obstacles?.find((obstacle) => obstacle.kind === "bench") ??
-                area.objects.find((object) => object.kind === "market"));
+        activity.destination === "park" ? parkDestination : destinations[activity.destination];
       const spread = (index - (scheduled.length - 1) / 2) * 34;
       const targetX = (destinationObject?.x ?? slot.x) + spread;
       const targetY = (destinationObject?.y ?? slot.y) + (index % 2 === 0 ? 34 : -34);
@@ -548,11 +575,8 @@ export function PlayableNeighborhood() {
   }, [
     area.objects,
     area.obstacles,
-    currentLocation,
-    locationsQuery.data,
+    scheduledNpcs,
     npcPositionOverrides,
-    npcQuery.data,
-    simulation.gameTime,
     simulation.paused,
   ]);
   const localPlaces =
