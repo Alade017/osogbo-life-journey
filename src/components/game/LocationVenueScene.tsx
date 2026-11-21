@@ -400,7 +400,11 @@ export function LocationVenueScene(props: {
           <WorldLoadingIndicator title="Entering the mall" detail="Opening the shopping hall…" />
         }
       >
-        <OsunMallVenue key={props.locationId} locationId={props.locationId} locationName={props.locationName} />
+        <OsunMallVenue
+          key={props.locationId}
+          locationId={props.locationId}
+          locationName={props.locationName}
+        />
       </Suspense>
     );
   const venue = props.design ?? getLocationVenueDesign(props.slug, props.locationName);
