@@ -893,3 +893,32 @@
   color: var(--muted-foreground);
   text-align: center;
 }
+
+/* Compact equipment and selection panels without sacrificing touch targets. */
+.pi-inventory .pi-slots { grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); }
+.pi-inventory .pi-slot { align-content: start; grid-template-columns: minmax(0, 1fr); gap: 0.55rem; }
+.pi-inventory .pi-slot-name { grid-column: 1; }
+.pi-inventory .pi-slot-actions { justify-content: flex-start; margin-top: auto; }
+.pi-inventory .pi-chip-btn { min-height: 40px; }
+.pi-detail-placeholder {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 0.7rem;
+  min-height: 190px;
+  padding: 1rem;
+  color: var(--muted-foreground);
+  text-align: center;
+}
+.pi-detail-placeholder strong { color: var(--foreground); font-size: 1rem; }
+.pi-detail-placeholder .pi-note { max-width: 32ch; line-height: 1.5; }
+@container (max-width: 620px) {
+  .pi-inventory .pi-hero { gap: 0.75rem; }
+  .pi-inventory .pi-canvas { height: clamp(210px, 55cqi, 300px); }
+  .pi-inventory .pi-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pi-inventory .pi-slot { padding: 0.7rem; }
+  .pi-inventory .pi-slot-actions { flex-direction: column; align-items: stretch; }
+}
+@container (max-width: 340px) {
+  .pi-inventory .pi-slots { grid-template-columns: 1fr; }
+}
