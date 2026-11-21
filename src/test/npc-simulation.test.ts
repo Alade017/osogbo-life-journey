@@ -150,3 +150,25 @@ describe("NPC schedule consistency", () => {
     expect(socialActionsFor({ ...strained, conflict: 70 }, true)).toEqual(["greet", "end"]);
   });
 });
+
+it("preserves daily schedules and resolves persisted weekend overrides", () => {
+  const base = NPC_CATALOG.find(npc => npc.id === "npc-morenike")!;
+  const npc = npcFromSavedDefinition(base, {
+    name: base.name,
+    role: base.role,
+    personality: base.personality,
+    home_location_id: "home-id",
+    work_location_id: "work-id",
+    routine: [
+      { start: 7, end: 15, place: "work", activity: "teaching a class" },
+      { start: 7, end: 17, place: "home", activity: "preparing lessons", weekdays: [6] },
+    ],
+  }, id => id === "home-id" ? "residential" : "student-district");
+  const lookup = (slug: string) => slug;
+  expect(npcActivityAt(npc, {
+    ...INITIAL_GAME_TIME, weekday: 0, hour: 10,
+  }, lookup).destination).toBe("work");
+  expect(npcActivityAt(npc, {
+    ...INITIAL_GAME_TIME, weekday: 6, hour: 10,
+  }, lookup).destination).toBe("home");
+});
