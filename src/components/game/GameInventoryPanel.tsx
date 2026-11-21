@@ -6,6 +6,7 @@ import { q, rpc, useGameAction } from "@/lib/game";
 import { EmptyState } from "@/components/game/ui";
 import { CardListSkeleton } from "@/components/game/loading-skeletons";
 import { Button } from "@/components/ui/button";
+import * as AlertDialog from "@radix-ui/react-alert-dialog";
 import {
   countInventoryUnits,
   filterInventory,
@@ -61,6 +62,7 @@ export function GameInventoryPanel() {
   const [activeCategory, setActiveCategory] = useState<InventoryCategory | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
+  const [discardId, setDiscardId] = useState<string | null>(null);
   const detailRef = useRef<HTMLElement>(null);
   const [requestedSlot, setRequestedSlot] = useState<EquipmentSlot | null>(null);
   const useItem = useGameAction(rpc.useInventoryItem, {
@@ -144,6 +146,10 @@ export function GameInventoryPanel() {
         inventoryEntry: selectedItem,
         quantity: 1,
       })
+    : "Player data is not available.";
+  const discardTarget = inventory.find((entry) => entry.id === discardId);
+  const confirmationError = character
+    ? validatePlayerAction({ action: "discard", characterId: character.id, inventoryEntry: discardTarget, quantity: 1 })
     : "Player data is not available.";
   const inventoryMutationPending =
     useItem.isPending || equipItem.isPending || unequipItem.isPending || discardItem.isPending;
@@ -454,7 +460,7 @@ export function GameInventoryPanel() {
                           variant="secondary"
                           disabled={
                             !!equipError ||
-                            equipItem.isPending ||
+                            inventoryMutationPending ||
                             (!!requestedSlot && selectedSlot !== requestedSlot)
                           }
                           onClick={() =>
@@ -467,10 +473,7 @@ export function GameInventoryPanel() {
                       <Button
                         variant="outline"
                         disabled={!!discardError || inventoryMutationPending}
-                        onClick={() => {
-                          if (window.confirm(`Discard one ${selectedItem.item?.name ?? "item"}?`))
-                            discardItem.mutate({ id: selectedItem.id, quantity: 1 });
-                        }}
+                        onClick={() => setDiscardId(selectedItem.id)}
                       >
                         Discard one
                       </Button>
@@ -495,6 +498,33 @@ export function GameInventoryPanel() {
           </div>
         </>
       )}
+      <AlertDialog.Root open={discardId !== null} onOpenChange={(open) => { if (!open) setDiscardId(null); }}>
+        <AlertDialog.Portal>
+          <AlertDialog.Overlay className="fixed inset-0 bg-foreground/40" style={{ zIndex: "calc(var(--game-dialog-layer) + 1)" }} />
+          <AlertDialog.Content
+            className="fixed left-1/2 top-1/2 grid w-[calc(100%-2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-lg"
+            style={{ zIndex: "calc(var(--game-dialog-layer) + 2)" }}
+          >
+            <AlertDialog.Title className="text-lg font-bold">Discard item?</AlertDialog.Title>
+            <AlertDialog.Description className="text-sm text-muted-foreground">
+              {discardTarget ? `Remove one ${discardTarget.item?.name ?? "item"} from your inventory? This cannot be undone.` : "This item is no longer available."}
+            </AlertDialog.Description>
+            {confirmationError && <p className="text-sm text-destructive" role="status">{confirmationError}</p>}
+            <div className="flex flex-wrap justify-end gap-2">
+              <AlertDialog.Cancel asChild><Button variant="outline">Keep item</Button></AlertDialog.Cancel>
+              <AlertDialog.Action asChild>
+                <Button variant="destructive" disabled={!!confirmationError || inventoryMutationPending || !discardTarget}
+                  onClick={() => {
+                    if (!confirmationError && !inventoryMutationPending && discardTarget) {
+                      discardItem.mutate({ id: discardTarget.id, quantity: 1 });
+                    }
+                  }}
+                >Discard one</Button>
+              </AlertDialog.Action>
+            </div>
+          </AlertDialog.Content>
+        </AlertDialog.Portal>
+      </AlertDialog.Root>
     </div>
   );
 }
