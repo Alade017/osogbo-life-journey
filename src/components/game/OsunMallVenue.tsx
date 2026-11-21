@@ -29,6 +29,7 @@ import {
 } from "@/game/osun-mall-layout";
 import { q } from "@/lib/game";
 import { joinMallRoom } from "@/lib/multiplayer-service";
+import { reportMallZone } from "@/lib/osun-mall-presence";
 
 type MallRoomHandle = Awaited<ReturnType<typeof joinMallRoom>>;
 
@@ -119,6 +120,12 @@ export function OsunMallVenue({
     }, 250);
     return () => window.clearInterval(timer);
   }, []);
+
+  // Inside the mall, the server should not accept rides from the street until the visitor leaves.
+  useEffect(() => {
+    if (outside) return;
+    reportMallZone("mall").catch(() => undefined);
+  }, [outside]);
 
   /** Shows one line in a speech bubble above the character it belongs to. */
   const say = (targetId: string, text: string) => {

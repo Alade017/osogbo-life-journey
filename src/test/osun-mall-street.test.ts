@@ -6,6 +6,7 @@ import {
   STREET_RIDER_SPOT,
   canWalkOnStreet,
   findStreetPath,
+  nextRiderTarget,
 } from "@/game/osun-mall-street-layout";
 import {
   OKADA_DESTINATIONS,
@@ -62,5 +63,23 @@ describe("okada rides", () => {
     });
     expect(rideProgress("completed", 0, 999_999).label).toBe("You have arrived.");
     expect(OKADA_RIDE_SECONDS).toBe(180);
+  });
+});
+
+describe("nextRiderTarget", () => {
+  it("does nothing when no ride is assigned", () => {
+    expect(nextRiderTarget(null, [1, 1], false)).toBeNull();
+  });
+
+  it("keeps the old target while the visitor is still walking", () => {
+    expect(nextRiderTarget([0, 0], [3, 3], true)).toEqual([0, 0]);
+  });
+
+  it("moves the target to the visitor once they stop", () => {
+    expect(nextRiderTarget([0, 0], [3, 3], false)).toEqual([3, 3]);
+  });
+
+  it("ignores small moves so the rider does not restart its walk", () => {
+    expect(nextRiderTarget([0, 0], [0.1, 0.1], false)).toEqual([0, 0]);
   });
 });

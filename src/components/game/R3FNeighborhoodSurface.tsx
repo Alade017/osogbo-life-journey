@@ -59,6 +59,7 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { ZoneNpcs } from "@/components/3d/ZoneNpcs";
+import { StreetLife } from "@/components/3d/StreetLife";
 import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
 import { ProceduralProp } from "@/components/3d/props/ProceduralProp";
@@ -72,7 +73,9 @@ import type { NeighborhoodArea, WorldPoint } from "@/game/neighborhood-model";
 import { dressingPartsFor } from "@/components/3d/props/dressing";
 import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
-  carSpots,
+  trafficCarPoint,
+  trafficCarRotation,
+  trafficCars,
   pedestrianCrossings,
   pedestrianCrossingStripes,
   pedestrianSpots,
@@ -442,6 +445,7 @@ export function R3FNeighborhoodSurface({
   targetedZoneNpcId = null,
   onSelectZone,
   onSelectZoneNpc,
+  onSelectFeature,
   onHoverZone,
   overview,
 }: {
@@ -467,6 +471,8 @@ export function R3FNeighborhoodSurface({
   targetedZoneNpcId?: string | null;
   onSelectZone?: (zoneId: string) => void;
   onSelectZoneNpc?: (npcId: string) => void;
+  /** A district feature block was clicked; receives the feature's label. */
+  onSelectFeature?: (label: string) => void;
   onHoverZone?: (zoneId: string | null) => void;
   /** Reuse the playable world's geometry for the map without a second world definition. */
   overview?: { camera: ReactNode; markers: ReactNode };
@@ -534,12 +540,14 @@ export function R3FNeighborhoodSurface({
       crossings,
       crossingStripes: pedestrianCrossingStripes(crossings),
       lights: streetLightSpots(area, bounds),
-      cars: carSpots(area, bounds),
+      cars: trafficCars(area, bounds),
       people: pedestrianSpots(area, bounds),
       vendors: vendorSpots(area),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area, bounds.left, bounds.top, bounds.width, bounds.height]);
+  // Cars after the parked bus and tuk-tuk. Memoised so re-renders do not restart their journeys.
+  const movingCars = useMemo(() => dressing.cars.slice(2), [dressing]);
   const street = useMemo(() => {
     const flat = (rects: readonly DressingRect[], y: number, height: number): WorldInstance[] =>
       rects.map((rect) => {
@@ -560,10 +568,6 @@ export function R3FNeighborhoodSurface({
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
-      cars: dressing.cars.slice(2).map((spot) => {
-        const p = point(spot.x, spot.y);
-        return [p[0], p[2], spot.rotation] as [number, number, number];
-      }),
       people: onGround(dressing.people),
       vendors: onGround(dressing.vendors),
     };
@@ -575,12 +579,15 @@ export function R3FNeighborhoodSurface({
   const tukTukModel = useMemo(() => tukTukParts({ length: 2.4, width: 1.2 }), []);
   const vehicles = useMemo(
     () =>
-      dressing.cars.slice(0, 2).map((spot, index) => ({
-        id: `vehicle-${index}`,
-        parts: index === 0 ? busModel : tukTukModel,
-        position: point(spot.x, spot.y),
-        rotation: spot.rotation,
-      })),
+      dressing.cars.slice(0, 2).map((car, index) => {
+        const spot = trafficCarPoint(car);
+        return {
+          id: `vehicle-${index}`,
+          parts: index === 0 ? busModel : tukTukModel,
+          position: point(spot.x, spot.y),
+          rotation: trafficCarRotation(car),
+        };
+      }),
     [dressing, point, busModel, tukTukModel],
   );
   const scenePoints = useMemo(
@@ -750,7 +757,12 @@ export function R3FNeighborhoodSurface({
           <WorldPedestrianCrossings items={street.crossings} />
           <WorldSidewalks sidewalks={street.sidewalks} curbs={street.curbs} />
           <WorldStreetLights positions={street.lights} size={streetSize} />
-          <WorldCars positions={street.cars} size={streetSize} />
+          <StreetLife
+            cars={movingCars}
+            people={dressing.people}
+            toWorld={(x, z) => point(x, z)}
+            carSize={streetSize}
+          />
           {vehicles.map((vehicle) => (
             <ProceduralProp
               key={vehicle.id}
@@ -760,7 +772,6 @@ export function R3FNeighborhoodSurface({
             />
           ))}
           <WorldStreetVendors positions={street.vendors} size={streetSize} />
-          <WorldPeople positions={street.people} />
           {area.paths?.map((path) => {
             const p = point((path.from.x + path.to.x) / 2, (path.from.y + path.to.y) / 2);
             return (
@@ -858,6 +869,25 @@ export function R3FNeighborhoodSurface({
                 ...(o.label !== undefined ? { label: o.label } : {}),
               }))}
           />
+          {!overview &&
+            (area.obstacles ?? [])
+              .filter((obstacle) => obstacle.id.startsWith("district-feature-") && obstacle.label)
+              .map((block) => {
+                const p = point(block.x, block.y);
+                return (
+                  <mesh
+                    key={`feature-hit-${block.id}`}
+                    position={[p[0], 1.1, p[2]]}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onSelectFeature?.(block.label ?? "");
+                    }}
+                  >
+                    <boxGeometry args={[block.width * unit, 2.2, block.height * unit]} />
+                    <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+                  </mesh>
+                );
+              })}
           {!overview &&
             area.obstacles
               ?.filter((obstacle) => obstacle.kind === "landmark" && obstacle.label)
