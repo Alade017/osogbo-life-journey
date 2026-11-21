@@ -9,6 +9,23 @@ import {
 } from "three";
 import { BONE } from "./humanoid-pose";
 import { adireTexture } from "./cloth-patterns";
+const GARMENT_FIT = {
+  waist: 0.515,
+  collar: 0.814,
+  collarSlope: 0.08,
+  shoeTop: 0.067,
+  sleeves: { tee: 0.657, "long-sleeve": 0.482 },
+  clearance: { top: 0.012, bottom: 0.009, shoes: 0.006 },
+} as const;
+
+function shirtLowerBoundary(arm: boolean, cut: TopCut): number {
+  return arm ? GARMENT_FIT.sleeves[cut] : GARMENT_FIT.waist;
+}
+
+function collarBoundary(x: number): number {
+  return GARMENT_FIT.collar + GARMENT_FIT.collarSlope * Math.abs(x);
+}
+
 const cache = new WeakMap<BufferGeometry, Map<TopCut, BufferGeometry>>();
 type Vertex = { p: number[]; n: number[]; uv: number[]; bones: Map<number, number> };
 function interpolate(a: Vertex, b: Vertex, t: number): Vertex {
@@ -80,20 +97,20 @@ export function createFittedClothing(
       const arm = armWeight > 0.25;
       let shirt = clip(
         tri,
-        (v) => v.p[1]! - (arm ? (cut === "long-sleeve" ? 0.482 : 0.657) : 0.515),
+        (v) => v.p[1]! - shirtLowerBoundary(arm, cut),
       );
-      shirt = clip(shirt, (v) => 0.814 + 0.08 * Math.abs(v.p[0]!) - v.p[1]!);
+      shirt = clip(shirt, (v) => collarBoundary(v.p[0]!) - v.p[1]!);
       add(shirt, 0);
       if (!arm) {
         add(
           clip(
-            clip(tri, (v) => 0.515 - v.p[1]!),
-            (v) => v.p[1]! - 0.067,
+            clip(tri, (v) => GARMENT_FIT.waist - v.p[1]!),
+            (v) => v.p[1]! - GARMENT_FIT.shoeTop,
           ),
           1,
         );
         add(
-          clip(tri, (v) => 0.067 - v.p[1]!),
+          clip(tri, (v) => GARMENT_FIT.shoeTop - v.p[1]!),
           2,
         );
       }
@@ -110,7 +127,7 @@ export function createFittedClothing(
         const normal = new Vector3(...(v.n as [number, number, number])).normalize();
         // Give the basic outfit a fabric silhouette rather than skin-tight paint.
         // Keep the clearance small enough for the shared skeleton and mobile camera.
-        const ease = group === 0 ? 0.012 : group === 1 ? 0.009 : 0.006;
+        const ease = group === 0 ? GARMENT_FIT.clearance.top : group === 1 ? GARMENT_FIT.clearance.bottom : GARMENT_FIT.clearance.shoes;
         const hemFlare = group === 0 && v.p[1]! < 0.56 ? 0.004 : 0;
         positions.push(
           v.p[0]! + normal.x * (ease + hemFlare),
@@ -121,9 +138,10 @@ export function createFittedClothing(
         uvs.push(...v.uv);
         const influence = [...v.bones].sort((a, b) => b[1] - a[1]).slice(0, 4),
           total = influence.reduce((sum, [, w]) => sum + w, 0);
+        const validWeights = Number.isFinite(total) && total > 0;
         for (let j = 0; j < 4; j++) {
           indices.push(influence[j]?.[0] ?? 0);
-          skinWeights.push((influence[j]?.[1] ?? 0) / total);
+          skinWeights.push(validWeights ? (influence[j]?.[1] ?? 0) / total : j === 0 ? 1 : 0);
         }
       }
       geometry.addGroup(start, groups[group]!.length, group);
@@ -186,9 +204,9 @@ export function createVisibleSkin(body: SkinnedMesh, cut: TopCut = "tee") {
         const y = p.getY(v),
           x = p.getX(v);
         return (
-          (!arm && y <= 0.515) ||
-          (y >= (arm ? (cut === "long-sleeve" ? 0.482 : 0.657) : 0.515) &&
-            y <= 0.814 + 0.08 * Math.abs(x))
+          (!arm && y <= GARMENT_FIT.waist) ||
+          (y >= shirtLowerBoundary(arm, cut) &&
+            y <= collarBoundary(x))
         );
       });
       if (!covered) indices.push(i, i + 1, i + 2);
