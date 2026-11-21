@@ -930,3 +930,25 @@
   .pi-inventory .pi-detail { padding: 0.85rem; }
   .pi-inventory .pi-detail-actions > button { flex: 1 1 120px; min-height: 44px; }
 }
+
+/* Visually separate a temporary try-on from persisted equipment. */
+.pi-outfit-state {
+  flex: 0 0 auto;
+  align-self: center;
+  padding: 0.35rem 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.72rem;
+  font-weight: 750;
+  white-space: nowrap;
+}
+.pi-outfit-state.is-preview {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 12%, var(--card));
+  color: var(--primary);
+}
+@container (max-width: 380px) {
+  .pi-outfit-state { align-self: flex-start; }
+}
