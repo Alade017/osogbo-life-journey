@@ -3081,7 +3081,7 @@
   align-items: center;
   gap: 0.6rem;
   min-height: 42px;
-  max-width: min(280px, calc(100% - 24px));
+  max-width: min(260px, calc(100% - 24px));
   box-sizing: border-box;
   padding: 0.3rem 0.8rem 0.3rem 0.4rem;
   border: 1px solid var(--border);
@@ -3166,12 +3166,12 @@ button.house-task-status-action:disabled {
   font-variant-numeric: tabular-nums;
 }
 
-/* Wake up and Cancel sit at the bottom right, above the navigation bar. */
+/* Wake up and Cancel sit under the task pill, top-left, clear of the navigation bar and needs rail. */
 .house-task-actions {
   position: absolute;
   z-index: 3;
-  right: max(14px, env(safe-area-inset-right));
-  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 28px);
+  top: calc(max(12px, env(safe-area-inset-top)) + 106px);
+  left: max(12px, env(safe-area-inset-left));
   display: flex;
   align-items: center;
   gap: 8px;

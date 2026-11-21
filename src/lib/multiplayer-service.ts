@@ -46,10 +46,19 @@ export type PartyDanceEvent =
 // before accepting the connection. Dance messages are cosmetic: money and mood never
 // change through this room.
 export async function joinPartyRoom(locationId: string) {
+  return joinGameRoom("party", locationId, "Sign in again to join the party.");
+}
+
+// Joins the mall room for one mall location. The server checks the character is in that mall.
+export async function joinMallRoom(locationId: string) {
+  return joinGameRoom("mall", locationId, "Sign in again to enter the mall.");
+}
+
+async function joinGameRoom(roomName: "party" | "mall", locationId: string, signInMessage: string) {
   const { data, error } = await supabase.auth.getSession();
   if (error) throw error;
   const accessToken = data.session?.access_token;
-  if (!accessToken) throw new Error("Sign in again to join the party.");
+  if (!accessToken) throw new Error(signInMessage);
 
   const configuredEndpoints = import.meta.env["VITE_MULTIPLAYER_URL"]
     ?.split(",")
@@ -64,7 +73,7 @@ export async function joinPartyRoom(locationId: string) {
     if (!endpoint) continue;
     try {
       const client = new Client(endpoint);
-      return await client.joinOrCreate("party", { locationId, accessToken });
+      return await client.joinOrCreate(roomName, { locationId, accessToken });
     } catch (error) {
       lastError = error;
     }

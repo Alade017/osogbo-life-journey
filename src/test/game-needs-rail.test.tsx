@@ -26,7 +26,7 @@ describe("player needs panel", () => {
     expect(
       screen.getByRole("button", { name: /Expand needs panel, 1 critical need/ }),
     ).toHaveAttribute("aria-expanded", "false");
-    expect(screen.getByText("Social 10%")).toBeVisible();
+    expect(screen.getByText("Social · 10%")).toBeVisible();
     expect(screen.queryByRole("region", { name: "Character wellbeing" })).toBeNull();
   });
   it("shows all six labels and exact accessible meter values when expanded", () => {

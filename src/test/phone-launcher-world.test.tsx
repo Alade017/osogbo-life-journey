@@ -86,7 +86,7 @@ it("groups launcher apps into pages of sixteen and includes optional Shortcuts",
 
   const pages = document.querySelectorAll(".phone-app-grid");
   expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([
-    16, 13,
+    16, 12,
   ]);
   expect(pages[0]?.querySelector('[aria-label="Open Shortcuts"]')).not.toBeNull();
   expect(screen.getAllByRole("button", { name: /Go to app page/ })).toHaveLength(pages.length);

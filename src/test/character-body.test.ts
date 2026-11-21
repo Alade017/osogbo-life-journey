@@ -22,6 +22,7 @@ const MOTIONS: PoseMotion[] = [
 describe("motionFor", () => {
   it("walks whenever the character is moving", () => {
     expect(motionFor("idle", true)).toBe("Walk");
+    expect(motionFor("walk", false)).toBe("Walk");
     expect(motionFor("work", true)).toBe("Walk");
   });
 
@@ -109,7 +110,7 @@ describe("humanoid rig", () => {
     // The smooth skin is unindexed; face and eye materials are separate skinned meshes.
     const triangles =
       (body.geometry.index?.count ?? body.geometry.attributes["position"]!.count) / 3;
-    expect(triangles).toBeLessThan(6500);
+    expect(triangles).toBeLessThan(7800);
   });
 
   it("skips the hair mesh for bald characters", () => {

@@ -3,54 +3,50 @@ import { WorldMaterial } from "./WorldScene";
 
 type ItemModelProps = { h: number };
 
-/** A worn everyday backpack with a flap, carry handle, pocket and shoulder straps. */
+/** Compact, tapered commuter backpack. Coordinates are normalized to character height. */
 export function BackpackModel({
   h,
-  bodyColor = "#5a3b22",
-  trimColor = "#7a5233",
-  hardwareColor = "#c49a55",
+  bodyColor = "#34495e",
+  trimColor = "#223447",
+  hardwareColor = "#c8a66a",
 }: ItemModelProps & { bodyColor?: string; trimColor?: string; hardwareColor?: string }) {
   return (
-    <group>
-      {/* Main soft-sided bag body and reinforced base. */}
-      <mesh position={[0, h * 0.6, -h * 0.13]} castShadow>
-        <boxGeometry args={[h * 0.26, h * 0.3, h * 0.12]} />
+    <group name="commuter-backpack">
+      {/* Rounded silhouette made from low-sided cylinders rather than a square box. */}
+      <mesh position={[0, h * 0.59, -h * 0.16]} scale={[1, 1, 0.58]} castShadow>
+        <cylinderGeometry args={[h * 0.135, h * 0.15, h * 0.28, 8, 1]} />
         <WorldMaterial color={bodyColor} />
       </mesh>
-      <mesh position={[0, h * 0.455, -h * 0.13]}>
-        <boxGeometry args={[h * 0.25, h * 0.035, h * 0.125]} />
+      <mesh position={[0, h * 0.74, -h * 0.16]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+        <sphereGeometry args={[h * 0.13, 8, 5, 0, Math.PI * 2, 0, Math.PI / 2]} />
         <WorldMaterial color={trimColor} />
       </mesh>
-      {/* Front pocket and curved-looking top flap, kept low-poly for mobile rendering. */}
-      <mesh position={[0, h * 0.5, -h * 0.2]} castShadow>
-        <boxGeometry args={[h * 0.22, h * 0.14, h * 0.05]} />
+      {/* External pocket and contrasting zipper strip. */}
+      <mesh position={[0, h * 0.51, -h * 0.246]} castShadow>
+        <boxGeometry args={[h * 0.215, h * 0.13, h * 0.024]} />
         <WorldMaterial color={trimColor} />
       </mesh>
-      <mesh position={[0, h * 0.735, -h * 0.13]}>
-        <boxGeometry args={[h * 0.27, h * 0.07, h * 0.13]} />
-        <WorldMaterial color={trimColor} />
-      </mesh>
-      <mesh position={[0, h * 0.69, -h * 0.205]}>
-        <boxGeometry args={[h * 0.045, h * 0.06, h * 0.018]} />
+      <mesh position={[0, h * 0.585, -h * 0.264]}>
+        <boxGeometry args={[h * 0.19, h * 0.009, h * 0.009]} />
         <WorldMaterial color={hardwareColor} />
       </mesh>
-      {/* Top carry loop and paired adjustable shoulder straps. */}
-      <mesh position={[0, h * 0.79, -h * 0.13]}>
-        <boxGeometry args={[h * 0.09, h * 0.035, h * 0.035]} />
-        <WorldMaterial color={bodyColor} />
+      <mesh position={[0, h * 0.79, -h * 0.155]}>
+        <torusGeometry args={[h * 0.035, h * 0.012, 4, 8, Math.PI]} />
+        <WorldMaterial color={trimColor} />
       </mesh>
       {[-1, 1].map((side) => (
         <group key={side}>
-          <mesh position={[side * h * 0.1, h * 0.68, h * 0.075]} castShadow>
-            <boxGeometry args={[h * 0.04, h * 0.2, h * 0.03]} />
+          {/* Shoulder straps curve over the shoulder toward the bag base. */}
+          <mesh position={[side * h * 0.112, h * 0.665, h * 0.005]} rotation={[0.18, 0, side * 0.16]}>
+            <boxGeometry args={[h * 0.043, h * 0.23, h * 0.027]} />
             <WorldMaterial color={trimColor} />
           </mesh>
-          <mesh position={[side * h * 0.145, h * 0.56, -h * 0.13]}>
-            <boxGeometry args={[h * 0.045, h * 0.12, h * 0.1]} />
-            <WorldMaterial color={bodyColor} />
+          <mesh position={[side * h * 0.132, h * 0.535, -h * 0.065]} rotation={[-0.52, 0, side * 0.12]}>
+            <boxGeometry args={[h * 0.037, h * 0.16, h * 0.024]} />
+            <WorldMaterial color={trimColor} />
           </mesh>
-          <mesh position={[side * h * 0.145, h * 0.5, -h * 0.13]}>
-            <boxGeometry args={[h * 0.05, h * 0.018, h * 0.105]} />
+          <mesh position={[side * h * 0.12, h * 0.61, h * 0.023]}>
+            <boxGeometry args={[h * 0.05, h * 0.022, h * 0.033]} />
             <WorldMaterial color={hardwareColor} />
           </mesh>
         </group>

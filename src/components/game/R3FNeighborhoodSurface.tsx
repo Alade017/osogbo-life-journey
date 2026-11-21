@@ -1,3 +1,4 @@
+import { NpcBody } from "@/components/3d/NpcBody";
 import {
   Component,
   Suspense,
@@ -59,6 +60,7 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { ZoneNpcs } from "@/components/3d/ZoneNpcs";
+import { StreetLife } from "@/components/3d/StreetLife";
 import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
 import { ProceduralProp } from "@/components/3d/props/ProceduralProp";
@@ -72,7 +74,9 @@ import type { NeighborhoodArea, WorldPoint } from "@/game/neighborhood-model";
 import { dressingPartsFor } from "@/components/3d/props/dressing";
 import { NEIGHBORHOOD_CAMERA, WORLD_PALETTE, WORLD_SCALE } from "../3d/world-theme";
 import {
-  carSpots,
+  trafficCarPoint,
+  trafficCarRotation,
+  trafficCars,
   pedestrianCrossings,
   pedestrianCrossingStripes,
   pedestrianSpots,
@@ -119,6 +123,24 @@ class NeighborhoodBoundary extends Component<{ children: ReactNode }, { failed: 
   }
 }
 
+function ResidentNpcAnimationScheduler({
+  active,
+}: {
+  active: boolean;
+}) {
+  const { invalidate } = useThree();
+
+  useEffect(() => {
+    if (!active) return;
+
+    const timer = window.setInterval(invalidate, 1000 / 15);
+
+    return () => window.clearInterval(timer);
+  }, [active, invalidate]);
+
+  return null;
+}
+
 function NeighborhoodNpcActor({
   npc,
   start,
@@ -150,9 +172,6 @@ function NeighborhoodNpcActor({
   const leftLeg = useRef<Group>(null);
   const rightLeg = useRef<Group>(null);
   const { invalidate } = useThree();
-  const animated =
-    !npc.isPaused &&
-    (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind));
   const targetKey = `${target[0].toFixed(2)}:${target[2].toFixed(2)}`;
   const route = useRef<readonly NpcPoint[]>([]);
   const waypointIndex = useRef(0);
@@ -169,9 +188,13 @@ function NeighborhoodNpcActor({
   const startZ = start[2];
   const rebuildRoute = useCallback(
     (origin: NpcPoint) => {
-      const reservations = [...actorRoutes.current.entries()]
-        .filter(([id, path]) => id !== npc.id && path.length > 1)
-        .map(([, path]) => path);
+      const reservations: (readonly NpcPoint[])[] = [];
+
+      for (const [id, path] of actorRoutes.current) {
+        if (id !== npc.id && path.length > 1) {
+          reservations.push(path);
+        }
+      }
 
       const next = neighborhoodNpcPathWithFallback(
         origin,
@@ -230,13 +253,6 @@ function NeighborhoodNpcActor({
     }
   }, [actorPositions, invalidate, npc.id, rebuildRoute, startX, startY, startZ]);
 
-  useEffect(() => {
-    if (!animated) return;
-
-    const timer = window.setInterval(invalidate, 1000 / 15);
-
-    return () => window.clearInterval(timer);
-  }, [animated, invalidate]);
   useEffect(
     () => () => {
       actorPositions.current.delete(npc.id);
@@ -259,12 +275,17 @@ function NeighborhoodNpcActor({
         distance,
         (1 - Math.exp(-Math.min(delta, 0.1) * 2.8)) * distance,
       );
-      const blockers = [
-        ...[...actorPositions.current.entries()]
-          .filter(([id]) => id !== npc.id)
-          .map(([, position]) => position),
-        ...playerPositions.map((position) => ({ x: position[0], y: position[2] })),
-      ];
+      const blockers: NpcPoint[] = [];
+
+      for (const [id, position] of actorPositions.current) {
+        if (id !== npc.id) {
+          blockers.push(position);
+        }
+      }
+
+      for (const position of playerPositions) {
+        blockers.push({ x: position[0], y: position[2] });
+      }
       const next = neighborhoodNpcAvoidanceStep(
         current,
         waypoint,
@@ -330,38 +351,7 @@ function NeighborhoodNpcActor({
 
   return (
     <group ref={group}>
-      <mesh position={[0, 0.9, 0]} castShadow>
-        <capsuleGeometry args={[0.24, 0.52, 4, 8]} />
-        <WorldMaterial tone="slate" />
-      </mesh>
-      <mesh position={[0, 1.55, 0]} castShadow>
-        <sphereGeometry args={[0.22, 12, 10]} />
-        <WorldMaterial tone="clay" />
-      </mesh>
-      <group ref={leftArm} position={[-0.29, 1.08, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.12, 0.42, 0.13]} />
-          <WorldMaterial tone="clay" />
-        </mesh>
-      </group>
-      <group ref={rightArm} position={[0.29, 1.08, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.12, 0.42, 0.13]} />
-          <WorldMaterial tone="clay" />
-        </mesh>
-      </group>
-      <group ref={leftLeg} position={[-0.12, 0.48, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.14, 0.42, 0.16]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-      </group>
-      <group ref={rightLeg} position={[0.12, 0.48, 0]}>
-        <mesh position={[0, -0.19, 0]} castShadow>
-          <boxGeometry args={[0.14, 0.42, 0.16]} />
-          <WorldMaterial tone="timber" />
-        </mesh>
-      </group>
+      <NpcBody detail="resident" leftArm={leftArm} rightArm={rightArm} leftLeg={leftLeg} rightLeg={rightLeg} />
       <mesh
         position={[0, 0.92, 0]}
         onClick={(event) => {
@@ -442,6 +432,7 @@ export function R3FNeighborhoodSurface({
   targetedZoneNpcId = null,
   onSelectZone,
   onSelectZoneNpc,
+  onSelectFeature,
   onHoverZone,
   overview,
 }: {
@@ -467,6 +458,8 @@ export function R3FNeighborhoodSurface({
   targetedZoneNpcId?: string | null;
   onSelectZone?: (zoneId: string) => void;
   onSelectZoneNpc?: (npcId: string) => void;
+  /** A district feature block was clicked; receives the feature's label. */
+  onSelectFeature?: (label: string) => void;
   onHoverZone?: (zoneId: string | null) => void;
   /** Reuse the playable world's geometry for the map without a second world definition. */
   overview?: { camera: ReactNode; markers: ReactNode };
@@ -534,12 +527,14 @@ export function R3FNeighborhoodSurface({
       crossings,
       crossingStripes: pedestrianCrossingStripes(crossings),
       lights: streetLightSpots(area, bounds),
-      cars: carSpots(area, bounds),
+      cars: trafficCars(area, bounds),
       people: pedestrianSpots(area, bounds),
       vendors: vendorSpots(area),
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area, bounds.left, bounds.top, bounds.width, bounds.height]);
+  // Cars after the parked bus and tuk-tuk. Memoised so re-renders do not restart their journeys.
+  const movingCars = useMemo(() => dressing.cars.slice(2), [dressing]);
   const street = useMemo(() => {
     const flat = (rects: readonly DressingRect[], y: number, height: number): WorldInstance[] =>
       rects.map((rect) => {
@@ -560,10 +555,6 @@ export function R3FNeighborhoodSurface({
       sidewalks: flat(dressing.sidewalks, 0.05, 0.1),
       curbs: flat(dressing.curbs, 0.09, 0.14),
       lights: onGround(dressing.lights),
-      cars: dressing.cars.slice(2).map((spot) => {
-        const p = point(spot.x, spot.y);
-        return [p[0], p[2], spot.rotation] as [number, number, number];
-      }),
       people: onGround(dressing.people),
       vendors: onGround(dressing.vendors),
     };
@@ -575,12 +566,15 @@ export function R3FNeighborhoodSurface({
   const tukTukModel = useMemo(() => tukTukParts({ length: 2.4, width: 1.2 }), []);
   const vehicles = useMemo(
     () =>
-      dressing.cars.slice(0, 2).map((spot, index) => ({
-        id: `vehicle-${index}`,
-        parts: index === 0 ? busModel : tukTukModel,
-        position: point(spot.x, spot.y),
-        rotation: spot.rotation,
-      })),
+      dressing.cars.slice(0, 2).map((car, index) => {
+        const spot = trafficCarPoint(car);
+        return {
+          id: `vehicle-${index}`,
+          parts: index === 0 ? busModel : tukTukModel,
+          position: point(spot.x, spot.y),
+          rotation: trafficCarRotation(car),
+        };
+      }),
     [dressing, point, busModel, tukTukModel],
   );
   const scenePoints = useMemo(
@@ -750,7 +744,12 @@ export function R3FNeighborhoodSurface({
           <WorldPedestrianCrossings items={street.crossings} />
           <WorldSidewalks sidewalks={street.sidewalks} curbs={street.curbs} />
           <WorldStreetLights positions={street.lights} size={streetSize} />
-          <WorldCars positions={street.cars} size={streetSize} />
+          <StreetLife
+            cars={movingCars}
+            people={dressing.people}
+            toWorld={(x, z) => point(x, z)}
+            carSize={streetSize}
+          />
           {vehicles.map((vehicle) => (
             <ProceduralProp
               key={vehicle.id}
@@ -760,7 +759,6 @@ export function R3FNeighborhoodSurface({
             />
           ))}
           <WorldStreetVendors positions={street.vendors} size={streetSize} />
-          <WorldPeople positions={street.people} />
           {area.paths?.map((path) => {
             const p = point((path.from.x + path.to.x) / 2, (path.from.y + path.to.y) / 2);
             return (
@@ -859,6 +857,25 @@ export function R3FNeighborhoodSurface({
               }))}
           />
           {!overview &&
+            (area.obstacles ?? [])
+              .filter((obstacle) => obstacle.id.startsWith("district-feature-") && obstacle.label)
+              .map((block) => {
+                const p = point(block.x, block.y);
+                return (
+                  <mesh
+                    key={`feature-hit-${block.id}`}
+                    position={[p[0], 1.1, p[2]]}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onSelectFeature?.(block.label ?? "");
+                    }}
+                  >
+                    <boxGeometry args={[block.width * unit, 2.2, block.height * unit]} />
+                    <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+                  </mesh>
+                );
+              })}
+          {!overview &&
             area.obstacles
               ?.filter((obstacle) => obstacle.kind === "landmark" && obstacle.label)
               .map((landmark) => {
@@ -934,6 +951,13 @@ export function R3FNeighborhoodSurface({
               />
             );
           })}
+          <ResidentNpcAnimationScheduler
+            active={npcs.some(
+              (npc) =>
+                !npc.isPaused &&
+                (npc.isMoving || ["working", "shopping", "socializing"].includes(npc.activityKind)),
+            )}
+          />
           {npcs.map((npc) => (
             <NeighborhoodNpcActor
               key={npc.id}

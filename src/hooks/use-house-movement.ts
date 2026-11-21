@@ -50,15 +50,17 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
               dz = to[2] - from[2],
               dy = to[1] - from[1],
               distance = Math.hypot(dx, dy, dz);
+            if (Math.hypot(dx, dz) > 0.001) {
+              setFacing(
+              Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? "east" : "west") : dz > 0 ? "south" : "north",
+            );
+            }
             if (distance <= remaining || reduced) {
               current.current = to;
               remaining -= distance;
               segment++;
               continue;
             }
-            setFacing(
-              Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? "east" : "west") : dz > 0 ? "south" : "north",
-            );
             current.current = [
               from[0] + (dx / distance) * remaining,
               from[1] + (dy / distance) * remaining,

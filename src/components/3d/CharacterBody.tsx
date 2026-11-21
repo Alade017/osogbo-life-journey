@@ -1,6 +1,8 @@
+import { createVisibleSkin } from "./humanoid-clothing";
+import type { WornOutfit } from "@/game/wearable-outfits";
 import { createPortal, useFrame, useThree } from "@react-three/fiber";
-import { useEffect, useMemo, type ReactNode } from "react";
-import { Euler, Quaternion, type Material } from "three";
+import { useEffect, useMemo, useRef, type ReactNode } from "react";
+import { Euler, Quaternion, Vector3, type Material } from "three";
 import {
   HAIR_COLORS,
   HAIR_STYLES_BY_GENDER,
@@ -45,7 +47,7 @@ export function bodyVariantFor(gender: string): BodyVariant {
 export function motionFor(animation: string, walking: boolean, taskPose?: string): PoseMotion {
   const task = taskPose ? TASK_MOTIONS[taskPose] : undefined;
   if (task) return task;
-  if (walking) return "Walk";
+  if (walking || animation === "walk") return "Walk";
   if (animation === "work") return "Work";
   if (animation === "interact") return "Interact";
   if (animation === "talk") return "Talk";
@@ -57,7 +59,6 @@ const scratchEuler = new Euler();
 const scratchQuat = new Quaternion();
 const identity = new Quaternion();
 const LOOPING_MOTIONS = new Set<PoseMotion>([
-  "Idle",
   "Walk",
   "Talk",
   "Wash",
@@ -77,17 +78,23 @@ export function CharacterBody({
   height,
   motion,
   animated = true,
+  walkCadence,
   held = null,
+  backAccessory = null,
   appearance = {},
   gender = "nonbinary",
+  outfit,
 }: {
   variant: BodyVariant;
   height: number;
   motion: PoseMotion;
   animated?: boolean;
+  walkCadence?: { readonly current: number };
   held?: ReactNode;
+  backAccessory?: ReactNode;
   appearance?: Appearance;
   gender?: string;
+  outfit?: WornOutfit;
 }) {
   const { invalidate } = useThree();
   const safe = normalizeAvatarAppearance(appearance, gender);
@@ -96,7 +103,10 @@ export function CharacterBody({
     safe.hair
   ];
   const hairShape = hairStyle ? hairShapeFor(hairStyle) : null;
-  const hairColor = hairShape ? (HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!) : null;
+  // Keep the saved hairstyle intact, but hide its geometry under fitted headwear.
+  // Restoring headwear to None restores the original hairstyle automatically.
+  const visibleHairShape = safe.headwear > 0 ? null : hairShape;
+  const hairColor = visibleHairShape ? (HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!) : null;
 
   const rig = useMemo(
     () =>
@@ -104,13 +114,28 @@ export function CharacterBody({
         variant,
         skinColor,
         hairColor,
-        hairShape: hairShape ?? "cap",
+        hairShape: visibleHairShape ?? "cap",
         build: safe.build,
       }),
-    [variant, skinColor, hairColor, hairShape, safe.build],
+    [variant, skinColor, hairColor, visibleHairShape, safe.build],
+  );
+  const clothed = safe.clothed;
+  const cut = outfit?.topCut ?? "tee";
+  const visibleBody = useMemo(
+    () => (clothed ? createVisibleSkin(rig.meshes[0]!, cut) : rig.meshes[0]!),
+    [rig, clothed, cut],
   );
   const hand = rig.byName.get(BONE.rHand) ?? null;
   const head = rig.byName.get(BONE.head) ?? null;
+  const upperSpine = rig.byName.get(BONE.spine2) ?? null;
+
+  const backOffset = useMemo(() => {
+    const index = upperSpine ? rig.bones.indexOf(upperSpine) : -1;
+    const inverse = rig.meshes[0]?.skeleton.boneInverses[index];
+    return inverse ? new Vector3().setFromMatrixPosition(inverse.clone().invert()).negate() : new Vector3();
+  }, [rig, upperSpine]);
+  const phase = useRef({ motion, elapsed: 0 });
+  useEffect(() => { invalidate(); }, [rig, motion, animated, invalidate]);
 
   useEffect(() => {
     return () => {
@@ -119,11 +144,17 @@ export function CharacterBody({
           (material as Material).dispose();
         }
       }
+      rig.meshes[0]?.skeleton.dispose();
     };
   }, [rig]);
 
-  useFrame((state, delta) => {
-    const pose = poseFor(motion, animated ? state.clock.elapsedTime : 0, POSE_STYLE[variant]);
+  useFrame((_state, delta) => {
+    if (phase.current.motion !== motion) phase.current = { motion, elapsed: 0 };
+    else if (animated && motion !== "Idle") {
+      const rate = motion === "Walk" ? (walkCadence?.current ?? 1) : 1;
+      phase.current.elapsed += Math.max(0, delta) * rate;
+    }
+    const pose = poseFor(motion, animated ? phase.current.elapsed : 0, POSE_STYLE[variant]);
     const blend = 1 - Math.exp(-CHARACTER_MOTION.fadeRate * delta);
     let moving = false;
     for (const bone of rig.bones) {
@@ -147,16 +178,26 @@ export function CharacterBody({
     <group scale={height}>
       <primitive object={rig.root} />
       {rig.meshes.map((mesh, index) => (
-        <primitive key={index} object={mesh} />
+        <primitive key={index} object={index === 0 ? visibleBody : mesh} dispose={null} />
       ))}
-      <CharacterWardrobe rig={rig.root} appearance={safe} gender={gender} />
+      <CharacterWardrobe body={rig.meshes[0]!} appearance={safe} outfit={outfit} />
       {head && safe.headwear > 0
         ? createPortal(
-            <ProceduralHeadwear
-              style={safe.headwear as 1 | 2 | 3}
-              color={HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!}
-            />,
+            <group scale={[0.7, 1, 0.82]}>
+              <ProceduralHeadwear
+                style={safe.headwear as 1 | 2 | 3}
+                color={HAIR_COLORS[safe.hairColor] ?? HAIR_COLORS[0]!}
+              />
+            </group>,
             head,
+          )
+        : null}
+      {backAccessory && upperSpine
+        ? createPortal(
+            // Existing accessory meshes use absolute body-height coordinates.
+            // Convert them into spine-local coordinates without changing the models.
+            <group position={backOffset}>{backAccessory}</group>,
+            upperSpine,
           )
         : null}
       {held && hand ? createPortal(<group scale={1 / height}>{held}</group>, hand) : null}
