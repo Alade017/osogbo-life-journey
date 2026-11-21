@@ -1,4 +1,4 @@
-import { resolveWornOutfit } from "@/game/wearable-outfits";
+import { resolveEquippedHeadwear, resolveWornOutfit } from "@/game/wearable-outfits";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, Vector3, type Group } from "three";
@@ -56,18 +56,8 @@ export function WorldCharacter({
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
   const outfit = resolveWornOutfit(safe, gender, equipment);
-  // Headwear is equipment-only; ignore legacy character-creation cosmetics.
-  // Keep saved appearance unchanged for backward compatibility.
-  const equippedHead = equipment.find((entry) => entry.slot === "head" && entry.item?.slug);
-  // Use only recognized headwear identities; unknown items retain the neutral cap model.
-  // This avoids inventing styles from arbitrary item names or untrusted metadata.
-  const headwearStyles: Readonly<Record<string, 1 | 2 | 3>> = {
-    gele: 1,
-    fila: 2,
-    cap: 3,
-  };
-  const headSlug = equippedHead?.item?.slug;
-  safe.headwear = headSlug ? (headwearStyles[headSlug] ?? 3) : 0;
+  // Only inventory items with a supported 3D headwear model render on the rig.
+  safe.headwear = resolveEquippedHeadwear(equipment);
   if (outfit.hasWearables) safe.clothed = true;
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
   const variant = body ?? bodyVariantFor(gender);
