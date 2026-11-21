@@ -7,7 +7,7 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WORLD_SCALE } from "./world-theme";
 import { CHARACTER_GROUND, CHARACTER_MOTION } from "./character-config";
 import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
-import { followStep, measuredSpeed, type Vec3 } from "./character-follow";
+import { followStep, measuredSpeed, walkingCadence, type Vec3 } from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -65,8 +65,8 @@ export function WorldCharacter({
   const { invalidate } = useThree();
   const [reduced, setReduced] = useState(false);
   const [walking, setWalking] = useState(false);
-  const last = useRef(position);
-  const walkUntil = useRef(0);
+  const cadence = useRef(1);
+  const walkingRef = useRef(false);
   // The root glides toward `position` each frame, so a new spot is walked to rather than jumped to.
   const root = useRef<Group>(null);
   const goal = useRef(new Vector3(...position));
@@ -101,32 +101,12 @@ export function WorldCharacter({
     invalidate();
   }, [lookKey, invalidate]);
   useEffect(() => {
-    const moved = Math.hypot(x - last.current[0], z - last.current[2]) > 0.001;
-    last.current = [x, y, z];
-    if (moved) {
-      walkUntil.current = performance.now() + 350;
-      setWalking(true);
+    if (reduced && walkingRef.current) {
+      walkingRef.current = false;
+      setWalking(false);
     }
-    if (reduced) return;
-    const continuous =
-      animation === "walk" ||
-      animation === "work" ||
-      animation === "talk" ||
-      animation === "dance" ||
-      animation === "interact" ||
-      !!taskPose;
-    if (!moved && !continuous && !walking) return;
-    const settleUntil = performance.now() + CHARACTER_MOTION.settleSeconds * 1000;
-    const timer = window.setInterval(() => {
-      invalidate();
-      const here = root.current?.position;
-      const travelling = !!here && Math.hypot(here.x - goal.current.x, here.z - goal.current.z) > 0.001;
-      if (!travelling && performance.now() >= walkUntil.current) setWalking(false);
-      const active = continuous || travelling || performance.now() < Math.max(walkUntil.current, settleUntil);
-      if (!active) window.clearInterval(timer);
-    }, 1000 / 15);
-    return () => window.clearInterval(timer);
-  }, [x, y, z, animation, taskPose, reduced, invalidate, walking]);
+    invalidate();
+  }, [x, y, z, animation, taskPose, reduced, invalidate]);
   const yaw = FACING_YAW[facing] ?? 0;
   const initialYaw = useRef(yaw);
   useEffect(() => { invalidate(); }, [yaw, invalidate]);
@@ -139,6 +119,7 @@ export function WorldCharacter({
         invalidate();
       } else rootGroup.rotation.y = yaw;
     }
+    let travelled = 0;
     if (rootGroup && rootGroup.position.distanceTo(goal.current) > 0.001) {
       const here = rootGroup.position;
       const [nx, ny, nz] = followStep(
@@ -148,7 +129,15 @@ export function WorldCharacter({
         speed.current,
         CHARACTER_MOTION.glideRate,
       );
+      travelled = Math.hypot(nx - here.x, nz - here.z);
       rootGroup.position.set(nx, ny, nz);
+      invalidate();
+    }
+    const travelling = !reduced && travelled > 0;
+    cadence.current = travelling ? walkingCadence(travelled, delta, h) : animation === "walk" ? 1 : 0;
+    if (walkingRef.current !== travelling) {
+      walkingRef.current = travelling;
+      setWalking(travelling);
       invalidate();
     }
     const group = bodyRef.current;
@@ -174,7 +163,7 @@ export function WorldCharacter({
     }
   });
   const moving = walking && !reduced && !taskPose;
-  const motion = motionFor(animation, moving, taskPose);
+  const motion = motionFor(reduced && animation === "walk" ? "idle" : animation, moving, taskPose);
   const wornAccessory = equipment.find((item) => item.slot === "accessory") as
     { item?: { slug?: string } | null } | undefined;
   const AccessoryModel = wornAccessory?.item?.slug
@@ -208,6 +197,7 @@ export function WorldCharacter({
             height={h}
             motion={motion}
             animated={!reduced}
+            walkCadence={cadence}
             held={held}
             backAccessory={AccessoryModel ? <AccessoryModel h={1} /> : null}
             appearance={safe}

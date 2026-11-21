@@ -78,7 +78,7 @@ import {
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { MovementDirection } from "@/lib/player-movement";
-import { NPC_CATALOG, npcActivityAt, type SocialAction } from "@/lib/npc-simulation";
+import { NPC_CATALOG, npcActivityAt, npcFromSavedDefinition, socialActionsFor, type SocialAction } from "@/lib/npc-simulation";
 import { hasBuildingVenueInterior, hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
@@ -376,6 +376,7 @@ export function PlayableNeighborhood() {
   });
   const homeTypeId = district?.personalHome ? homeTypeFromRecord(homeQuery.data) : null;
   const npcQuery = useQuery({ ...q.npcs(), enabled: !!currentLocation?.id });
+  const npcRelationships = useQuery({ ...q.npcRelationships(), enabled: !!currentLocation?.id });
   const placesQuery = useQuery({ ...q.places(), enabled: !!currentLocation?.id });
   const shopItemsQuery = useQuery({ ...q.shopItems(), enabled: !!currentLocation?.id });
   const jobsQuery = useQuery({ ...q.jobs(), enabled: !!currentLocation?.id });
@@ -486,30 +487,59 @@ export function PlayableNeighborhood() {
     [actionAnimation, players, sessionId],
   );
   useEffect(() => setNpcPositionOverrides({}), [currentLocation?.id]);
-  const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
-    if (!currentLocation || !npcQuery.data || !locationsQuery.data) return [];
-    const savedNpcIds = new Set(npcQuery.data.map((npc) => npc.id));
-    const slots = area.objects.filter((object) => object.kind === "npc");
-    const scheduled = NPC_CATALOG.flatMap((npc) => {
-      if (!savedNpcIds.has(npc.id)) return [];
+  const locationIndexes = useMemo(() => {
+    const slugById = new Map<string, string>();
+    const idBySlug = new Map<string, string>();
+
+    for (const location of locationsQuery.data ?? []) {
+      if (!slugById.has(location.id)) {
+        slugById.set(location.id, location.slug);
+      }
+      if (!idBySlug.has(location.slug)) {
+        idBySlug.set(location.slug, location.id);
+      }
+    }
+
+    return { slugById, idBySlug };
+  }, [locationsQuery.data]);
+
+  const npcDefinitions = useMemo(() => {
+    if (!npcQuery.data || !locationsQuery.data) return [];
+    const savedNpcs = new Map(npcQuery.data.map((npc) => [npc.id, npc]));
+    return NPC_CATALOG.flatMap((base) => {
+      const saved = savedNpcs.get(base.id);
+      if (!saved) return [];
+      return [npcFromSavedDefinition(base, saved, (id) => locationIndexes.slugById.get(id))];
+    });
+  }, [npcQuery.data, locationsQuery.data, locationIndexes]);
+
+  const scheduledNpcs = useMemo(() => {
+    if (!currentLocation) return [];
+    return npcDefinitions.flatMap((npc) => {
       const activity = npcActivityAt(
         npc,
         simulation.gameTime,
-        (slug) => locationsQuery.data?.find((location) => location.slug === slug)?.id ?? null,
+        (slug) => locationIndexes.idBySlug.get(slug) ?? null,
       );
       return activity.destinationSlug === currentLocation.slug ? [{ npc, activity }] : [];
-    }).slice(0, slots.length);
+    });
+  }, [currentLocation, npcDefinitions, simulation.gameTime, locationIndexes]);
+
+  const activeNpcs = useMemo((): NeighborhoodNpcView[] => {
+    const slots = area.objects.filter((object) => object.kind === "npc");
+    const scheduled = scheduledNpcs.slice(0, slots.length);
+    const destinations = {
+      home: area.objects.find((object) => object.kind === "home"),
+      work: area.objects.find((object) => object.kind === "work"),
+      market: area.objects.find((object) => object.kind === "market"),
+    };
+    const parkDestination =
+      area.obstacles?.find((obstacle) => obstacle.kind === "bench") ?? destinations.market;
+
     return scheduled.map(({ npc, activity }, index) => {
       const slot = slots[index]!;
       const destinationObject =
-        activity.destination === "home"
-          ? area.objects.find((object) => object.kind === "home")
-          : activity.destination === "work"
-            ? area.objects.find((object) => object.kind === "work")
-            : activity.destination === "market"
-              ? area.objects.find((object) => object.kind === "market")
-              : (area.obstacles?.find((obstacle) => obstacle.kind === "bench") ??
-                area.objects.find((object) => object.kind === "market"));
+        activity.destination === "park" ? parkDestination : destinations[activity.destination];
       const spread = (index - (scheduled.length - 1) / 2) * 34;
       const targetX = (destinationObject?.x ?? slot.x) + spread;
       const targetY = (destinationObject?.y ?? slot.y) + (index % 2 === 0 ? 34 : -34);
@@ -545,11 +575,8 @@ export function PlayableNeighborhood() {
   }, [
     area.objects,
     area.obstacles,
-    currentLocation,
-    locationsQuery.data,
+    scheduledNpcs,
     npcPositionOverrides,
-    npcQuery.data,
-    simulation.gameTime,
     simulation.paused,
   ]);
   const localPlaces =
@@ -644,9 +671,10 @@ export function PlayableNeighborhood() {
     nearbyObject?.kind === "npc"
       ? (activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null)
       : null;
-  const selectedNpc = activeNpcs.find((npc) => npc.id === selectedNpcId) ?? nearbyNpc;
+  const selectedNpc = selectedNpcId ? activeNpcs.find((npc) => npc.id === selectedNpcId) ?? null : nearbyNpc;
   const npcInteraction = useGameAction(rpc.interactWithNpc, {
     onSuccess: (result) => {
+      void queryClient.invalidateQueries({ queryKey: q.npcRelationships().queryKey });
       setNpcDialogue(result.message);
       toast[result.accepted ? "success" : "message"](result.message);
     },
@@ -1111,6 +1139,18 @@ export function PlayableNeighborhood() {
     setSelectedShopSlug(undefined);
     setSelectedNpcId(null);
   };
+  const relationship = npcRelationships.data?.find((row) => row.npc_id === selectedNpc?.id);
+  const canInteractWithNpc = !!selectedNpc && selectedNpc.available && !selectedNpc.isMoving &&
+    nearbyNpc?.id === selectedNpc.id && npcRelationships.isSuccess;
+  const eligibleNpcActions = socialActionsFor({
+    friendship: relationship?.friendship ?? 0,
+    romance: relationship?.romance ?? 0,
+    trust: relationship?.trust ?? 0,
+    conflict: relationship?.conflict ?? 0,
+    meetings: relationship?.meetings ?? 0,
+    lastInteractionDay: relationship?.last_interaction_day ?? null,
+    lastInteractionText: relationship?.last_interaction_text ?? null,
+  }, canInteractWithNpc);
   const npcActions: readonly { action: SocialAction; label: string }[] = [
     { action: "greet", label: "Say hello" },
     { action: "work", label: "Ask about work" },
@@ -1231,7 +1271,18 @@ export function PlayableNeighborhood() {
                         interactionTargets={interactionTargets}
                         onSelectTarget={selectWorldTarget}
                         onNpcArrive={(id, x, y) =>
-                          setNpcPositionOverrides((current) => ({ ...current, [id]: { x, y } }))
+                          setNpcPositionOverrides((current) => {
+                            const previous = current[id];
+
+                            if (previous?.x === x && previous?.y === y) {
+                              return current;
+                            }
+
+                            return {
+                              ...current,
+                              [id]: { x, y },
+                            };
+                          })
                         }
                         nearbyZoneId={nearbyZoneMatch?.zone.id ?? null}
                         targetedZoneId={zoneState.pendingZoneId}
@@ -1619,19 +1670,20 @@ export function PlayableNeighborhood() {
                             by the game server for this location and time.
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {npcActions.map(({ action, label }) => (
+                            {npcActions.filter(({ action }) => eligibleNpcActions.includes(action)).map(({ action, label }) => (
                               <button
                                 key={action}
                                 type="button"
                                 className="neighborhood-action-card"
-                                disabled={npcInteraction.isPending}
-                                onClick={() =>
+                                disabled={npcInteraction.isPending || !canInteractWithNpc}
+                                onClick={() => {
+                                  if (!canInteractWithNpc || npcInteraction.isPending || !eligibleNpcActions.includes(action)) return;
                                   npcInteraction.mutate({
                                     npcId: selectedNpc.id,
                                     action,
                                     requestId: crypto.randomUUID(),
-                                  })
-                                }
+                                  });
+                                }}
                               >
                                 <MessageCircle size={17} aria-hidden="true" />
                                 {npcInteraction.isPending ? "Speaking..." : label}
