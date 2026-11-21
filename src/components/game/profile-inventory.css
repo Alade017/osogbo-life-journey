@@ -1045,3 +1045,67 @@
   .pi-inventory .pi-tile,
   .pi-inventory .pi-slot { transition: none; }
 }
+
+/* Match the established Osogbo Life light-first brand palette, not the purple concept.
+   Tokens come from src/styles.css; this stylesheet does not redefine global colors. */
+.inventory-dialog-shell {
+  border-color: var(--brand-mist);
+  background: var(--brand-porcelain);
+  box-shadow: var(--elevation-lift);
+}
+.pi-inventory {
+  --inventory-panel: var(--brand-cream);
+  --inventory-stroke: var(--brand-mist);
+  color: var(--brand-ink);
+  font-family: var(--typeface-body);
+}
+.pi-inventory :is(h1, h2, .pi-section-heading, .pi-detail strong) {
+  font-family: var(--typeface-display);
+  color: var(--brand-ink);
+}
+.pi-inventory .pi-inventory-masthead {
+  background: var(--brand-cream);
+  border-color: var(--brand-mist);
+  box-shadow: var(--elevation-rest);
+}
+.pi-inventory .pi-stage {
+  background: radial-gradient(circle at 50% 30%, var(--brand-cream), var(--brand-porcelain));
+  border-color: var(--brand-mist);
+}
+.pi-inventory .pi-slot,
+.pi-inventory .pi-tile,
+.pi-inventory .pi-detail {
+  background: var(--brand-cream);
+  border-color: var(--brand-mist);
+  box-shadow: var(--elevation-rest);
+}
+.pi-inventory .pi-tile[aria-pressed="true"],
+.pi-inventory .pi-slot.is-selected {
+  border-color: var(--brand-royal);
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+.pi-inventory .pi-eyebrow,
+.pi-inventory .pi-inventory-total strong,
+.pi-inventory .pi-inventory-mark { color: var(--brand-royal); }
+.pi-inventory .pi-inventory-mark {
+  background: var(--color-primary-soft);
+  border-color: var(--brand-mist);
+}
+.pi-inventory .pi-filters button[aria-pressed="true"],
+.pi-inventory .pi-chip-btn-primary {
+  background: var(--brand-royal);
+  border-color: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+.pi-inventory .pi-inventory-search {
+  background: var(--popover);
+  border-color: var(--brand-mist);
+}
+.pi-inventory :is(.pi-sub, .pi-note, .pi-bag-count, .pi-slot-empty) {
+  color: var(--brand-slate);
+}
+.pi-inventory .pi-outfit-state.is-preview {
+  background: var(--color-primary-soft);
+  border-color: var(--brand-royal);
+  color: var(--brand-royal-deep);
+}
