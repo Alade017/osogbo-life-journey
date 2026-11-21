@@ -1,4 +1,4 @@
-import { resolveWornOutfit, type WearableEquipment } from "@/game/wearable-outfits";
+import { resolveEquippedHeadwear, resolveWornOutfit, type WearableEquipment } from "@/game/wearable-outfits";
 import type { ReactNode } from "react";
 import {
   BODY_BUILDS,
@@ -91,6 +91,7 @@ export function AvatarArtwork({
   const isFemale = gender === "female";
   const isMale = gender === "male";
   const worn = new Set(equipment.map((item) => item.slot));
+  const headwearStyle = resolveEquippedHeadwear(equipment);
   const pose = poseFor(animationState, animationFrame);
   const mirrored = facing === "west";
   const directionTransform = mirrored ? "translate(64 0) scale(-1 1)" : undefined;
@@ -300,7 +301,7 @@ export function AvatarArtwork({
                   )}
                 </g>
               )}
-              {worn.has("head") && (
+              {headwearStyle > 0 && (
                 <path
                   data-equipment-slot="head"
                   d="M19 14q2-10 13-10t13 10q-13-4-26 0z"
