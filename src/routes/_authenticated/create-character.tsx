@@ -19,7 +19,6 @@ import {
   BODY_HEIGHTS,
   HAIR_COLORS,
   HAIR_STYLES_BY_GENDER,
-  HEADWEAR,
   OUTFITS,
   SHOE_COLORS,
   SKIN_TONES,
@@ -153,7 +152,7 @@ export function CreateCharacter() {
       const { error } = await supabase.rpc("create_character", {
         p_name: cleanName,
         p_gender: gender,
-        p_appearance: appearance,
+        p_appearance: { ...appearance, headwear: 0 },
         p_age: ageNumber,
         p_personality: personality,
         p_occupation: occupation || null,
@@ -366,12 +365,6 @@ export function CreateCharacter() {
                     value={appearance.hairColor}
                     onChange={(n) => update("hairColor", n)}
                     swatches
-                  />
-                  <Picker
-                    label="Headwear"
-                    options={HEADWEAR}
-                    value={appearance.headwear}
-                    onChange={(n) => update("headwear", n)}
                   />
                   <div className="cs-divider" />
                   <div className="cs-section-heading">
