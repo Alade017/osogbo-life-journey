@@ -48,6 +48,8 @@ export function WorldLighting({
   dimmed = false,
   animateFoliage = false,
   refined = false,
+  shadowMapSize,
+  contactShadows = true,
 }: {
   size?: number;
   dimmed?: boolean;
@@ -55,6 +57,8 @@ export function WorldLighting({
   animateFoliage?: boolean;
   /** Sky-and-ground fill and higher-quality sun shadows, for the neighbourhood view. */
   refined?: boolean;
+  shadowMapSize?: number;
+  contactShadows?: boolean;
 }) {
   const { invalidate } = useThree();
   useEffect(() => {
@@ -75,6 +79,7 @@ export function WorldLighting({
   useFrame(({ clock }) => {
     if (animateFoliage) FOLIAGE_SWAY.time.value = clock.elapsedTime;
   });
+  const shadowResolution = shadowMapSize ?? (refined ? 2048 : 1024);
   return (
     <>
       <color attach="background" args={[WORLD_PALETTE.ground]} />
@@ -88,7 +93,7 @@ export function WorldLighting({
         intensity={refined ? 2.4 : dimmed ? 0.7 : 2}
         {...(refined ? { color: WORLD_LIGHT.sun } : {})}
         castShadow
-        shadow-mapSize={refined ? [2048, 2048] : [1024, 1024]}
+        shadow-mapSize={[shadowResolution, shadowResolution]}
         shadow-radius={refined ? 4 : 1}
         shadow-bias={-0.001}
         shadow-normalBias={0.04}
@@ -98,16 +103,18 @@ export function WorldLighting({
         shadow-camera-bottom={-size}
         shadow-camera-far={size * 3}
       />
-      <ContactShadows
-        position={[0, 0.015, 0]}
-        scale={size * 2}
-        opacity={0.28}
-        blur={2.5}
-        far={8}
-        resolution={256}
-        frames={Infinity}
-        color={WORLD_PALETTE.timber}
-      />
+      {contactShadows && (
+        <ContactShadows
+          position={[0, 0.015, 0]}
+          scale={size * 2}
+          opacity={0.28}
+          blur={2.5}
+          far={8}
+          resolution={256}
+          frames={Infinity}
+          color={WORLD_PALETTE.timber}
+        />
+      )}
     </>
   );
 }

@@ -1,4 +1,6 @@
 import { NpcBody } from "@/components/3d/NpcBody";
+import { useRenderQuality } from "@/hooks/use-render-quality";
+import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
 import {
   Component,
   Suspense,
@@ -464,6 +466,8 @@ export function R3FNeighborhoodSurface({
   /** Reuse the playable world's geometry for the map without a second world definition. */
   overview?: { camera: ReactNode; markers: ReactNode };
 }) {
+  const renderQuality = useRenderQuality();
+  const quality = WORLD_RENDER_QUALITY[renderQuality];
   const overlayHost = useRef<HTMLDivElement>(null!);
   const [follow, setFollow] = useState(true);
   const zoomRef = useRef(zoom);
@@ -686,7 +690,7 @@ export function R3FNeighborhoodSurface({
           orthographic={Boolean(overview)}
           shadows="soft"
           frameloop="demand"
-          dpr={[1, 1.5]}
+          dpr={[1, quality.maxDpr]}
           gl={{
             antialias: false,
             powerPreference: "low-power",
@@ -711,8 +715,10 @@ export function R3FNeighborhoodSurface({
             size={Math.max(bounds.width, bounds.height) * unit}
             animateFoliage={!overview}
             refined
+            shadowMapSize={quality.shadowMapSize}
+            contactShadows={quality.contactShadows}
           />
-          {!overview && (
+          {!overview && quality.postProcessing && (
             <EffectComposer multisampling={0}>
               <Vignette eskil={false} offset={0.28} darkness={0.42} />
             </EffectComposer>
