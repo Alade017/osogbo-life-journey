@@ -142,7 +142,7 @@ export function GameInventoryPanel() {
   const normalizedEquipment = normalizeEquippedItems(equipment);
   const wornNow = normalizedEquipment.map((entry) => ({ slot: entry.slot, item: entry.item }));
   // Trying an item on: the stage shows the selected item in its slot, so 3D models appear live.
-  const canTryOn = !!selectedSlot && !equipError;
+  const canTryOn = !equipmentLoading && !equipmentError && !!selectedSlot && !equipError;
   const previewEquipment =
     canTryOn && selectedSlot && selectedItem
       ? [
@@ -186,13 +186,20 @@ export function GameInventoryPanel() {
           />
           <div className="pi-stage-foot">
             <div>
-              <strong>{selectedItem?.item?.name ?? "Your look"}</strong>
+              <strong>{canTryOn ? `Trying on: ${selectedItem?.item?.name ?? "Item"}` : "Saved outfit"}</strong>
               <span>
                 {selectedItem && canTryOn
                   ? "Try-on preview — choose Wear to save"
-                  : "Choose an item to try it on"}
+                  : equipmentLoading
+                    ? "Loading your saved equipment…"
+                    : equipmentError
+                      ? "Saved equipment is unavailable; retry to preview outfits"
+                      : "Select a wearable item to preview changes"}
               </span>
             </div>
+            <span className={`pi-outfit-state ${canTryOn ? "is-preview" : ""}`} role="status">
+              {canTryOn ? "Unsaved preview" : "Saved appearance"}
+            </span>
           </div>
         </section>
 
@@ -260,8 +267,27 @@ export function GameInventoryPanel() {
                         <button
                           type="button"
                           className="pi-chip-btn"
-                          disabled={unequipItem.isPending}
-                          onClick={() => unequipItem.mutate(slot)}
+                          disabled={unequipItem.isPending || !character || !equipped ||
+                            !!(character && equipped && validatePlayerAction({
+                              action: "unequip",
+                              characterId: character.id,
+                              equippedItem: equipped,
+                              slot,
+                            }))}
+                          onClick={() => {
+                            if (!character || !equipped) return;
+                            const validationError = validatePlayerAction({
+                              action: "unequip",
+                              characterId: character.id,
+                              equippedItem: equipped,
+                              slot,
+                            });
+                            if (validationError) {
+                              toast.error(validationError);
+                              return;
+                            }
+                            unequipItem.mutate(slot);
+                          }}
                         >
                           Remove
                         </button>
