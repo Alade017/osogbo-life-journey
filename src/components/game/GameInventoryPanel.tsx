@@ -116,7 +116,7 @@ export function GameInventoryPanel() {
           .some((value) => value?.toLocaleLowerCase().includes(query)),
       )
     : slotItems;
-  const selectedItem = items?.find((item) => item.id === selectedId);
+  const selectedItem = compatibleItems.find((item) => item.id === selectedId);
   const itemActionsAvailable = typeof selectedItem?.item?.usable === "boolean";
   const selectedUse = selectedItem ? itemUseEffect(selectedItem.item) : null;
   const selectedSlot = selectedItem?.item?.equipment_slot as EquipmentSlot | null | undefined;
@@ -248,7 +248,7 @@ export function GameInventoryPanel() {
                           window.requestAnimationFrame(() =>
                             document.getElementById("inventory-items")?.scrollIntoView({
                               behavior: "smooth",
-                              block: "start",
+                              block: "nearest",
                             }),
                           );
                         }}
@@ -361,7 +361,7 @@ export function GameInventoryPanel() {
               })}
             </div>
 
-            <aside className="pi-detail" aria-live="polite">
+            <aside className="pi-detail" aria-live="polite" aria-label="Selected item details">
               {selectedItem ? (
                 <>
                   {hasItemModel(selectedItem.item?.slug) && (
@@ -438,7 +438,11 @@ export function GameInventoryPanel() {
                   )}
                 </>
               ) : (
-                <p className="pi-note">Select an item to try it on and see its details.</p>
+                <div className="pi-detail-placeholder">
+                  <Package size={32} aria-hidden="true" />
+                  <strong>Choose an item</strong>
+                  <p className="pi-note">Select an item from your bag to preview it, check its details, or use it.</p>
+                </div>
               )}
             </aside>
           </div>
