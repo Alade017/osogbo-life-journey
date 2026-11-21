@@ -922,3 +922,11 @@
 @container (max-width: 340px) {
   .pi-inventory .pi-slots { grid-template-columns: 1fr; }
 }
+
+/* Keep selected details discoverable on touch screens and reduce motion when requested. */
+.pi-inventory .pi-detail { scroll-margin-block: 1rem; }
+@container (max-width: 620px) {
+  .pi-inventory .pi-bag-layout { gap: 0.75rem; }
+  .pi-inventory .pi-detail { padding: 0.85rem; }
+  .pi-inventory .pi-detail-actions > button { flex: 1 1 120px; min-height: 44px; }
+}
