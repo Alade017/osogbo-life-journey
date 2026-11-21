@@ -87,7 +87,11 @@ export function StreetLife({
           }}
           position={carOrigins[index] ?? [0, 0, 0]}
         >
-          <WorldCars positions={[[0, 0, trafficCarRotation(car)]]} size={carSize} />
+          <WorldCars
+            positions={[[0, 0, trafficCarRotation(car)]]}
+            size={carSize}
+            colorOffset={index}
+          />
         </group>
       ))}
       {walkers.map((walker, index) => (

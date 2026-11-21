@@ -401,9 +401,12 @@ function TrafficLightSignal({
 export function WorldCars({
   positions,
   size,
+  colorOffset = 0,
 }: {
   positions: readonly [number, number, number?][];
   size: number;
+  /** Shifts the body colour so single cars in a group can still look different. */
+  colorOffset?: number;
 }) {
   const bodyColors = ["#c94b36", "#e3b542", "#276b9a", "#43845c"];
 
@@ -415,7 +418,7 @@ export function WorldCars({
   return (
     <>
       {positions.map(([x, z, rotation = 0], index) => {
-        const bodyColor = bodyColors[index % bodyColors.length] ?? "#c94b36";
+        const bodyColor = bodyColors[(index + colorOffset) % bodyColors.length] ?? "#c94b36";
 
         return (
           <group key={`car-${index}`} position={[x, 0, z]} rotation={[0, rotation, 0]}>

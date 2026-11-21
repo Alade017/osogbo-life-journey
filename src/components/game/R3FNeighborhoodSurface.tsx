@@ -546,6 +546,8 @@ export function R3FNeighborhoodSurface({
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [area, bounds.left, bounds.top, bounds.width, bounds.height]);
+  // Cars after the parked bus and tuk-tuk. Memoised so re-renders do not restart their journeys.
+  const movingCars = useMemo(() => dressing.cars.slice(2), [dressing]);
   const street = useMemo(() => {
     const flat = (rects: readonly DressingRect[], y: number, height: number): WorldInstance[] =>
       rects.map((rect) => {
@@ -756,7 +758,7 @@ export function R3FNeighborhoodSurface({
           <WorldSidewalks sidewalks={street.sidewalks} curbs={street.curbs} />
           <WorldStreetLights positions={street.lights} size={streetSize} />
           <StreetLife
-            cars={dressing.cars.slice(2)}
+            cars={movingCars}
             people={dressing.people}
             toWorld={(x, z) => point(x, z)}
             carSize={streetSize}
