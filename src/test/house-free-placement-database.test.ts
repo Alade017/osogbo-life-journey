@@ -87,7 +87,7 @@ describe("free furniture placement database", () => {
     // brings that overload back. Drop it again so the five-argument version is the only one.
     await db.exec("drop function if exists public.house_place_free(uuid, text, numeric, numeric);");
     // Exercise the exact rearrangement function under test, not a hand-written test stub.
-    await db.exec(readFileSync("supabase/migrations/20261118024000_house_rearrange.sql", "utf8"));
+    await db.exec(readFileSync("supabase/migrations/20261122052147_house_rearrange.sql", "utf8"));
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 

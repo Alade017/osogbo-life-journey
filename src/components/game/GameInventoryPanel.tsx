@@ -1,6 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import { Backpack, GlassWater, Package, Search, Shirt, Smartphone, type LucideIcon } from "lucide-react";
+import {
+  Backpack,
+  GlassWater,
+  Package,
+  Search,
+  Shirt,
+  Smartphone,
+  type LucideIcon,
+} from "lucide-react";
 import { toast } from "sonner";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { EmptyState } from "@/components/game/ui";
@@ -51,7 +59,13 @@ function InventoryTileArt({ slug, Icon }: { slug: string | null | undefined; Ico
 
 export function GameInventoryPanel() {
   const { data: items, isLoading, isError, error, refetch, isRefetching } = useQuery(q.inventory());
-  const { data: character, isLoading: characterLoading, isError: characterError, refetch: refetchCharacter, isRefetching: characterRefetching } = useQuery(q.character());
+  const {
+    data: character,
+    isLoading: characterLoading,
+    isError: characterError,
+    refetch: refetchCharacter,
+    isRefetching: characterRefetching,
+  } = useQuery(q.character());
   const {
     data: equipment,
     isLoading: equipmentLoading,
@@ -95,7 +109,9 @@ export function GameInventoryPanel() {
     return (
       <section className="pi-panel" role="alert">
         <h1 className="text-lg font-bold text-ink">Unable to load your inventory</h1>
-        <p className="mt-1 text-sm text-muted-foreground">{error?.message ?? "Please try loading your inventory again."}</p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {error?.message ?? "Please try loading your inventory again."}
+        </p>
         <Button
           className="mt-4"
           variant="outline"
@@ -115,8 +131,9 @@ export function GameInventoryPanel() {
   const query = search.trim().toLocaleLowerCase();
   const compatibleItems = query
     ? slotItems.filter((entry) =>
-        [entry.item?.name, entry.item?.description, entry.item?.slug]
-          .some((value) => value?.toLocaleLowerCase().includes(query)),
+        [entry.item?.name, entry.item?.description, entry.item?.slug].some((value) =>
+          value?.toLocaleLowerCase().includes(query),
+        ),
       )
     : slotItems;
   const selectedItem = compatibleItems.find((item) => item.id === selectedId);
@@ -139,28 +156,42 @@ export function GameInventoryPanel() {
           slot: selectedSlot,
         })
       : "This item cannot be equipped.";
-  const discardError = selectedItem && character
+  const discardError =
+    selectedItem && character
+      ? validatePlayerAction({
+          action: "discard",
+          characterId: character.id,
+          inventoryEntry: selectedItem,
+          quantity: 1,
+        })
+      : "Player data is not available.";
+  const discardTarget = inventory.find((entry) => entry.id === discardId);
+  const confirmationError = character
     ? validatePlayerAction({
         action: "discard",
         characterId: character.id,
-        inventoryEntry: selectedItem,
+        inventoryEntry: discardTarget,
         quantity: 1,
       })
     : "Player data is not available.";
-  const discardTarget = inventory.find((entry) => entry.id === discardId);
-  const confirmationError = character
-    ? validatePlayerAction({ action: "discard", characterId: character.id, inventoryEntry: discardTarget, quantity: 1 })
-    : "Player data is not available.";
   const inventoryMutationPending =
-    isError || characterError || characterLoading || useItem.isPending || equipItem.isPending || unequipItem.isPending || discardItem.isPending;
+    isError ||
+    characterError ||
+    characterLoading ||
+    useItem.isPending ||
+    equipItem.isPending ||
+    unequipItem.isPending ||
+    discardItem.isPending;
   const categoryFilters: (InventoryCategory | "all")[] = ["all", ...INVENTORY_CATEGORIES];
   const normalizedEquipment = normalizeEquippedItems(equipment);
   const wornNow = normalizedEquipment.map((entry) => ({ slot: entry.slot, item: entry.item }));
   // Trying an item on: the stage shows the selected item in its slot, so 3D models appear live.
   const canTryOn = !equipmentLoading && !equipmentError && !!selectedSlot && !equipError;
-  const isAlreadyWorn = !!selectedSlot && wornNow.some(
-    (entry) => entry.slot === selectedSlot && entry.item?.id === selectedItem?.item?.id,
-  );
+  const isAlreadyWorn =
+    !!selectedSlot &&
+    wornNow.some(
+      (entry) => entry.slot === selectedSlot && entry.item?.id === selectedItem?.item?.id,
+    );
   const hasUnsavedPreview = canTryOn && !isAlreadyWorn;
   const previewEquipment =
     hasUnsavedPreview && selectedSlot && selectedItem
@@ -203,24 +234,36 @@ export function GameInventoryPanel() {
           {characterLoading || characterError || !character ? (
             <div className="pi-detail-placeholder" role="status">
               <strong>{characterLoading ? "Loading character…" : "Character unavailable"}</strong>
-              {!characterLoading && <Button variant="outline" disabled={characterRefetching} onClick={() => void refetchCharacter()}>{characterRefetching ? "Retrying…" : "Retry character"}</Button>}
+              {!characterLoading && (
+                <Button
+                  variant="outline"
+                  disabled={characterRefetching}
+                  onClick={() => void refetchCharacter()}
+                >
+                  {characterRefetching ? "Retrying…" : "Retry character"}
+                </Button>
+              )}
             </div>
           ) : (
-          <CharacterPreview
-            appearance={(character?.appearance ?? {}) as unknown as Appearance}
-            gender={character?.gender ?? "nonbinary"}
-            interactive
-            equipment={previewEquipment}
-            label={
-              hasUnsavedPreview
-                ? "Outfit try-on preview; choose Wear to save"
-                : "Your character wearing the saved outfit"
-            }
-          />
+            <CharacterPreview
+              appearance={(character?.appearance ?? {}) as unknown as Appearance}
+              gender={character?.gender ?? "nonbinary"}
+              interactive
+              equipment={previewEquipment}
+              label={
+                hasUnsavedPreview
+                  ? "Outfit try-on preview; choose Wear to save"
+                  : "Your character wearing the saved outfit"
+              }
+            />
           )}
           <div className="pi-stage-foot">
             <div>
-              <strong>{hasUnsavedPreview ? `Trying on: ${selectedItem?.item?.name ?? "Item"}` : "Saved outfit"}</strong>
+              <strong>
+                {hasUnsavedPreview
+                  ? `Trying on: ${selectedItem?.item?.name ?? "Item"}`
+                  : "Saved outfit"}
+              </strong>
               <span>
                 {selectedItem && hasUnsavedPreview
                   ? "Try-on preview — choose Wear to save"
@@ -231,8 +274,17 @@ export function GameInventoryPanel() {
                       : "Select a wearable item to preview changes"}
               </span>
             </div>
-            <span className={`pi-outfit-state ${hasUnsavedPreview ? "is-preview" : ""}`} role="status">
-              {equipmentError ? "Equipment unavailable" : equipmentLoading ? "Loading equipment" : hasUnsavedPreview ? "Unsaved preview" : "Saved appearance"}
+            <span
+              className={`pi-outfit-state ${hasUnsavedPreview ? "is-preview" : ""}`}
+              role="status"
+            >
+              {equipmentError
+                ? "Equipment unavailable"
+                : equipmentLoading
+                  ? "Loading equipment"
+                  : hasUnsavedPreview
+                    ? "Unsaved preview"
+                    : "Saved appearance"}
             </span>
           </div>
         </section>
@@ -302,13 +354,21 @@ export function GameInventoryPanel() {
                         <button
                           type="button"
                           className="pi-chip-btn"
-                          disabled={inventoryMutationPending || !character || !equipped ||
-                            !!(character && equipped && validatePlayerAction({
-                              action: "unequip",
-                              characterId: character.id,
-                              equippedItem: equipped,
-                              slot,
-                            }))}
+                          disabled={
+                            inventoryMutationPending ||
+                            !character ||
+                            !equipped ||
+                            !!(
+                              character &&
+                              equipped &&
+                              validatePlayerAction({
+                                action: "unequip",
+                                characterId: character.id,
+                                equippedItem: equipped,
+                                slot,
+                              })
+                            )
+                          }
                           onClick={() => {
                             if (!character || !equipped) return;
                             const validationError = validatePlayerAction({
@@ -362,7 +422,9 @@ export function GameInventoryPanel() {
                 aria-label="Search inventory"
               />
             </label>
-            <span className="pi-bag-count">{compatibleItems.length} of {inventory.length} stacks</span>
+            <span className="pi-bag-count">
+              {compatibleItems.length} of {inventory.length} stacks
+            </span>
           </div>
           <div className="pi-filters" role="group" aria-label="Filter bag by category">
             {categoryFilters.map((category) => (
@@ -412,7 +474,10 @@ export function GameInventoryPanel() {
                       setSelectedId(item.id);
                       if (window.matchMedia("(max-width: 760px)").matches) {
                         window.requestAnimationFrame(() =>
-                          detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" }),
+                          detailRef.current?.scrollIntoView({
+                            behavior: "smooth",
+                            block: "nearest",
+                          }),
                         );
                       }
                     }}
@@ -430,7 +495,12 @@ export function GameInventoryPanel() {
               })}
             </div>
 
-            <aside ref={detailRef} className="pi-detail" aria-live="polite" aria-label="Selected item details">
+            <aside
+              ref={detailRef}
+              className="pi-detail"
+              aria-live="polite"
+              aria-label="Selected item details"
+            >
               {selectedItem ? (
                 <>
                   {hasItemModel(selectedItem.item?.slug) && (
@@ -475,7 +545,9 @@ export function GameInventoryPanel() {
                         <Button
                           variant="secondary"
                           disabled={
-                            equipmentLoading || equipmentError || !!equipError ||
+                            equipmentLoading ||
+                            equipmentError ||
+                            !!equipError ||
                             inventoryMutationPending ||
                             (!!requestedSlot && selectedSlot !== requestedSlot)
                           }
@@ -507,35 +579,57 @@ export function GameInventoryPanel() {
                 <div className="pi-detail-placeholder">
                   <Package size={32} aria-hidden="true" />
                   <strong>Choose an item</strong>
-                  <p className="pi-note">Select an item from your bag to preview it, check its details, or use it.</p>
+                  <p className="pi-note">
+                    Select an item from your bag to preview it, check its details, or use it.
+                  </p>
                 </div>
               )}
             </aside>
           </div>
         </>
       )}
-      <AlertDialog.Root open={discardId !== null} onOpenChange={(open) => { if (!open) setDiscardId(null); }}>
+      <AlertDialog.Root
+        open={discardId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDiscardId(null);
+        }}
+      >
         <AlertDialog.Portal>
-          <AlertDialog.Overlay className="fixed inset-0 bg-foreground/40" style={{ zIndex: "calc(var(--game-dialog-layer) + 1)" }} />
+          <AlertDialog.Overlay
+            className="fixed inset-0 bg-foreground/40"
+            style={{ zIndex: "calc(var(--game-dialog-layer) + 1)" }}
+          />
           <AlertDialog.Content
             className="fixed left-1/2 top-1/2 grid w-[calc(100%_-_2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-lg"
             style={{ zIndex: "calc(var(--game-dialog-layer) + 2)" }}
           >
             <AlertDialog.Title className="text-lg font-bold">Discard item?</AlertDialog.Title>
             <AlertDialog.Description className="text-sm text-muted-foreground">
-              {discardTarget ? `Remove one ${discardTarget.item?.name ?? "item"} from your inventory? This cannot be undone.` : "This item is no longer available."}
+              {discardTarget
+                ? `Remove one ${discardTarget.item?.name ?? "item"} from your inventory? This cannot be undone.`
+                : "This item is no longer available."}
             </AlertDialog.Description>
-            {confirmationError && <p className="text-sm text-destructive" role="status">{confirmationError}</p>}
+            {confirmationError && (
+              <p className="text-sm text-destructive" role="status">
+                {confirmationError}
+              </p>
+            )}
             <div className="flex flex-wrap justify-end gap-2">
-              <AlertDialog.Cancel asChild><Button variant="outline">Keep item</Button></AlertDialog.Cancel>
+              <AlertDialog.Cancel asChild>
+                <Button variant="outline">Keep item</Button>
+              </AlertDialog.Cancel>
               <AlertDialog.Action asChild>
-                <Button variant="destructive" disabled={!!confirmationError || inventoryMutationPending || !discardTarget}
+                <Button
+                  variant="destructive"
+                  disabled={!!confirmationError || inventoryMutationPending || !discardTarget}
                   onClick={() => {
                     if (!confirmationError && !inventoryMutationPending && discardTarget) {
                       discardItem.mutate({ id: discardTarget.id, quantity: 1 });
                     }
                   }}
-                >Discard one</Button>
+                >
+                  Discard one
+                </Button>
               </AlertDialog.Action>
             </div>
           </AlertDialog.Content>

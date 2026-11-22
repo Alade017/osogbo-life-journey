@@ -131,7 +131,7 @@ function BasicLocationVenueScene({
 
       <div className="relative h-64 overflow-hidden rounded-lg border border-edge bg-muted sm:h-80 md:h-[25rem]">
         {sceneStatus !== "fallback" && (
-          <VenueSceneBoundary onError={() => setSceneStatus("fallback")}>
+          <VenueSceneBoundary resetKey={slug} onError={() => setSceneStatus("fallback")}>
             <Canvas
               key={slug}
               shadows
@@ -400,7 +400,11 @@ export function LocationVenueScene(props: {
           <WorldLoadingIndicator title="Entering the mall" detail="Opening the shopping hall…" />
         }
       >
-        <OsunMallVenue locationId={props.locationId} locationName={props.locationName} />
+        <OsunMallVenue
+          key={props.locationId}
+          locationId={props.locationId}
+          locationName={props.locationName}
+        />
       </Suspense>
     );
   const venue = props.design ?? getLocationVenueDesign(props.slug, props.locationName);
@@ -433,6 +437,6 @@ export function LocationVenueScene(props: {
       <SchoolCampusVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
     </Suspense>
   ) : (
-    <BasicLocationVenueScene {...props} />
+    <BasicLocationVenueScene key={props.slug} {...props} />
   );
 }
