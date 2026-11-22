@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Vector3, type Camera, type Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -481,6 +481,7 @@ function RemoteFigure({ person }: { person: MallPerson }) {
 function FollowCamera({ sim }: { sim: { current: MallSim } }) {
   const { camera } = useThree();
   const target = useRef(new Vector3());
+  const desired = useMemo(() => new Vector3(), []);
   useEffect(() => {
     if ("fov" in camera) {
       camera.fov = 40;
@@ -490,7 +491,7 @@ function FollowCamera({ sim }: { sim: { current: MallSim } }) {
   useFrame((_, delta) => {
     const [x, z] = sim.current.player.pos;
     target.current.set(x, 0, z);
-    const desired = new Vector3(x, 14, z + 13);
+    desired.set(x, 14, z + 13);
     camera.position.lerp(desired, Math.min(1, delta * 4));
     camera.lookAt(target.current.x, 0.8, target.current.z);
   });
