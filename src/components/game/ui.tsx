@@ -86,14 +86,6 @@ export function Chip({ children, tone = "plain" }: { children: ReactNode; tone?:
   );
 }
 
-export function ComingSoon({ children }: { children?: ReactNode }) {
-  return (
-    <span className="inline-flex items-center gap-1 rounded-full border border-dashed border-border bg-muted px-2.5 py-0.5 text-xs font-bold text-muted-foreground">
-      Coming Soon{children ? ` · ${children}` : ""}
-    </span>
-  );
-}
-
 export function EmptyState({ title, body }: { title: string; body: string }) {
   return (
     <div className="game-panel game-canvas p-8 text-center">
