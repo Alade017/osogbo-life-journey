@@ -284,3 +284,31 @@ it("attaches worn back accessories to the animated upper spine", () => {
   const rig = runtime.rigs[0]!;
   expect(runtime.portals).toContain(rig.byName.get(BONE.spine2));
 });
+
+it.each(["Walk", "Talk", "Dance"] as const)(
+  "keeps requesting frames for looping %s playback",
+  (motion) => {
+    render(<CharacterBody variant="male" height={1} motion={motion} />);
+    play(3);
+
+    runtime.invalidate.mockClear();
+    play(0.5);
+
+    expect(runtime.invalidate).toHaveBeenCalled();
+  },
+);
+
+it("resumes frame invalidation when transitioning from settled idle to talking", () => {
+  const view = render(<CharacterBody variant="male" height={1} motion="Idle" />);
+  play(3);
+
+  runtime.invalidate.mockClear();
+  play(0.5);
+  expect(runtime.invalidate).not.toHaveBeenCalled();
+
+  view.rerender(<CharacterBody variant="male" height={1} motion="Talk" />);
+  runtime.invalidate.mockClear();
+  play(0.5);
+
+  expect(runtime.invalidate).toHaveBeenCalled();
+});
