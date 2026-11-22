@@ -2,10 +2,14 @@ import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { getLocationVenueDesign } from "@/lib/location-venue-designs";
+import { StrictMode } from "react";
+import type { VenueFixture } from "@/lib/location-venue-designs";
 
 const sceneMock = vi.hoisted(() => ({
   renderChildren: false,
   failingKind: null as string | null,
+  pendingKind: null as string | null,
+  pendingPromise: null as Promise<void> | null,
 }));
 
 vi.mock("@react-three/fiber", () => ({
@@ -21,6 +25,9 @@ vi.mock("@/components/3d/VenueFurniture", () => ({
     if (kind === sceneMock.failingKind) {
       throw new Error("Furniture model unavailable");
     }
+    if (kind === sceneMock.pendingKind && sceneMock.pendingPromise) {
+      throw sceneMock.pendingPromise;
+    }
     return <div data-testid={`furniture-${kind}`} />;
   },
 }));
@@ -28,6 +35,8 @@ vi.mock("@/components/3d/VenueFurniture", () => ({
 beforeEach(() => {
   sceneMock.renderChildren = false;
   sceneMock.failingKind = null;
+  sceneMock.pendingKind = null;
+  sceneMock.pendingPromise = null;
 });
 vi.mock("@/components/3d/WorldScene", () => ({
   WorldCamera: () => null,
@@ -214,4 +223,116 @@ it("isolates furniture failures without disabling the venue", () => {
   expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Test table" }));
   expect(screen.getByText("Table details")).toBeInTheDocument();
+});
+
+function makeFixture(id: string, kind: VenueFixture["kind"]): VenueFixture {
+  return { id, kind, label: id, detail: `${id} details`, position: [0, 0] };
+}
+
+function renderVenue(fixtures: VenueFixture[]) {
+  return (
+    <LocationVenueScene
+      slug="unknown-location"
+      locationName="Test Venue"
+      design={{
+        ...getLocationVenueDesign("unknown-location", "Test Venue"),
+        fixtures,
+      }}
+    />
+  );
+}
+
+function suspendFurniture(kind: string) {
+  let resolve!: () => void;
+  sceneMock.pendingKind = kind;
+  sceneMock.pendingPromise = new Promise<void>((complete) => {
+    resolve = complete;
+  });
+
+  return async () => {
+    await act(async () => {
+      sceneMock.pendingKind = null;
+      sceneMock.pendingPromise = null;
+      resolve();
+    });
+  };
+}
+
+describe("optional furniture readiness", () => {
+  const table = makeFixture("Test table", "table");
+  const seat = makeFixture("Test seat", "seat");
+  const planter = makeFixture("Test planter", "planter");
+  const loadingMessage = "Some furnishings are still loading.";
+  const failureMessage = "Some furnishings are unavailable.";
+
+  beforeEach(() => {
+    vi.useRealTimers();
+    sceneMock.renderChildren = true;
+  });
+
+  it("hides optional status when all furniture is ready", () => {
+    render(renderVenue([table, seat]));
+    expect(screen.queryByText(loadingMessage)).not.toBeInTheDocument();
+    expect(screen.queryByText(failureMessage)).not.toBeInTheDocument();
+  });
+
+  it("keeps the venue interactive while furniture loads", async () => {
+    const complete = suspendFurniture("table");
+    render(renderVenue([table, seat]));
+    expect(screen.getByText(loadingMessage)).toBeInTheDocument();
+    expect(screen.queryByText("Opening the venue")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Test seat" }));
+    expect(screen.getByRole("button", { name: "Test seat" })).toHaveAttribute("aria-pressed", "true");
+    await complete();
+    expect(screen.queryByText(loadingMessage)).not.toBeInTheDocument();
+  });
+
+  it("reports furniture failure without disabling the venue", () => {
+    sceneMock.failingKind = "table";
+    render(renderVenue([table, seat]));
+    expect(screen.getByText(failureMessage)).toBeInTheDocument();
+    expect(screen.getByTestId("furniture-seat")).toBeInTheDocument();
+    expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
+  });
+
+  it("preserves failed readiness under Strict Mode", () => {
+    sceneMock.failingKind = "table";
+    render(<StrictMode>{renderVenue([table, seat])}</StrictMode>);
+    expect(screen.getByText(failureMessage)).toBeInTheDocument();
+    expect(screen.queryByText(loadingMessage)).not.toBeInTheDocument();
+  });
+
+  it("excludes unsupported fixtures", () => {
+    render(renderVenue([planter]));
+    expect(screen.queryByText(loadingMessage)).not.toBeInTheDocument();
+    expect(screen.queryByText(failureMessage)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Test planter" })).toBeInTheDocument();
+  });
+
+  it("clears failure status when a fixture is removed", () => {
+    sceneMock.failingKind = "table";
+    const { rerender } = render(renderVenue([table, seat]));
+    expect(screen.getByText(failureMessage)).toBeInTheDocument();
+    rerender(renderVenue([seat]));
+    expect(screen.queryByText(failureMessage)).not.toBeInTheDocument();
+  });
+
+  it("starts a fresh lifecycle for reintroduced furniture", async () => {
+    const { rerender } = render(renderVenue([table, seat]));
+    rerender(renderVenue([seat]));
+    const complete = suspendFurniture("table");
+    rerender(renderVenue([table, seat]));
+    expect(screen.getByText(loadingMessage)).toBeInTheDocument();
+    await complete();
+    expect(screen.queryByText(loadingMessage)).not.toBeInTheDocument();
+  });
+
+  it("hides optional status during manual fallback", () => {
+    sceneMock.renderChildren = false;
+    render(renderVenue([table, seat]));
+    fireEvent.click(screen.getByRole("button", { name: "Continue without 3D" }));
+    expect(screen.queryByText(loadingMessage)).not.toBeInTheDocument();
+    expect(screen.queryByText(failureMessage)).not.toBeInTheDocument();
+    expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
+  });
 });

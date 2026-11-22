@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
 import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
 import { transportMapHref } from "@/lib/transport-park";
-import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { resolveVenueScene } from "@/lib/venue-scene-resolver";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 
@@ -32,6 +32,21 @@ import {
 import { VenueEnvironment } from "@/components/3d/VenueEnvironment";
 import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
 import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
+import { VENUE_FURNITURE } from "@/lib/venue-furniture-assets";
+import {
+  getFurnitureKey,
+  summarizeFurnitureReadiness,
+  type FurnitureResult,
+} from "@/lib/venue-furniture-readiness";
+import {
+  getFurnitureResults,
+  registerFurniture,
+  reportFurnitureResult,
+  unregisterFurniture,
+  type FurnitureRegistry,
+  type FurnitureRegistration,
+} from "@/lib/venue-furniture-lifecycle";
+import { VenueFurnitureStatus } from "./VenueFurnitureStatus";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -42,25 +57,52 @@ function VenueSceneReady({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-function handleFurnitureError() {
-  // Optional furniture failures must not disable the surrounding venue.
-}
-
 function FixtureModel({
   fixture,
   active,
   accentColor,
   onSelect,
+  onRegister,
+  onResult,
+  onUnregister,
 }: {
   fixture: VenueFixture;
   active: boolean;
   accentColor: string;
   onSelect: () => void;
+  onRegister: (key: string, registration: FurnitureRegistration) => void;
+  onResult: (key: string, token: symbol, result: FurnitureResult) => void;
+  onUnregister: (key: string, token: symbol) => void;
 }) {
   const [x, z] = fixture.position;
+  const furnitureKey = getFurnitureKey(fixture);
+  const supported = Boolean(VENUE_FURNITURE[fixture.kind]);
+  const [token] = useState(() => Symbol("venue-furniture"));
+  const latestResult = useRef<FurnitureResult | undefined>(undefined);
+
+  const handleReady = useCallback(() => {
+    latestResult.current = "ready";
+    onResult(furnitureKey, token, "ready");
+  }, [furnitureKey, token, onResult]);
+
+  const handleError = useCallback(() => {
+    latestResult.current = "failed";
+    onResult(furnitureKey, token, "failed");
+  }, [furnitureKey, token, onResult]);
+
+  useEffect(() => {
+    if (!supported) return;
+    onRegister(furnitureKey, { token, result: latestResult.current });
+    return () => {
+      onUnregister(furnitureKey, token);
+    };
+  }, [furnitureKey, supported, token, onRegister, onUnregister]);
+
+  if (!supported) return null;
+
   return (
     <group position={[x, 0, z]}>
-      <VenueSceneBoundary key={fixture.kind} onError={handleFurnitureError}>
+      <VenueSceneBoundary key={furnitureKey} onError={handleError}>
         <Suspense fallback={null}>
           <VenueFurnitureModel
             kind={fixture.kind}
@@ -71,6 +113,7 @@ function FixtureModel({
               onSelect();
             }}
           />
+          <VenueSceneReady onReady={handleReady} />
         </Suspense>
       </VenueSceneBoundary>
     </group>
@@ -105,6 +148,37 @@ function BasicLocationVenueScene({
   const [selectedFixture, setSelectedFixture] = useState(venue.fixtures[0]?.id ?? "");
   const [sceneStatus, setSceneStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const [slowLoading, setSlowLoading] = useState(false);
+  const [furnitureRegistry, setFurnitureRegistry] =
+    useState<FurnitureRegistry>(() => new Map());
+
+  const furnitureReadiness = useMemo(() => {
+    if (sceneKind !== "generic" || sceneStatus !== "ready") return null;
+    return summarizeFurnitureReadiness(
+      venue.fixtures,
+      getFurnitureResults(furnitureRegistry),
+    );
+  }, [sceneKind, sceneStatus, venue.fixtures, furnitureRegistry]);
+
+  const handleFurnitureRegister = useCallback(
+    (key: string, registration: FurnitureRegistration) => {
+      setFurnitureRegistry((current) => registerFurniture(current, key, registration));
+    },
+    [],
+  );
+
+  const handleFurnitureResult = useCallback(
+    (key: string, token: symbol, result: FurnitureResult) => {
+      setFurnitureRegistry((current) => reportFurnitureResult(current, key, token, result));
+    },
+    [],
+  );
+
+  const handleFurnitureUnregister = useCallback(
+    (key: string, token: symbol) => {
+      setFurnitureRegistry((current) => unregisterFurniture(current, key, token));
+    },
+    [],
+  );
   const handleSceneReady = useCallback(() => {
     setSceneStatus((status) => (status === "loading" ? "ready" : status));
   }, []);
@@ -267,11 +341,14 @@ function BasicLocationVenueScene({
                     </mesh>
                     {venue.fixtures.map((fixture) => (
                       <FixtureModel
-                        key={fixture.id}
+                        key={getFurnitureKey(fixture)}
                         fixture={fixture}
                         active={fixture.id === selectedFixture}
                         accentColor={venue.accentColor}
                         onSelect={() => setSelectedFixture(fixture.id)}
+                        onRegister={handleFurnitureRegister}
+                        onResult={handleFurnitureResult}
+                        onUnregister={handleFurnitureUnregister}
                       />
                     ))}
                   </>
@@ -313,6 +390,13 @@ function BasicLocationVenueScene({
           </div>
         )}
       </div>
+
+      {furnitureReadiness && (
+        <VenueFurnitureStatus
+          pending={furnitureReadiness.pending}
+          failed={furnitureReadiness.failed}
+        />
+      )}
 
       {venue.transportPark && (
         <section aria-label="Plan a journey" className="space-y-3">
