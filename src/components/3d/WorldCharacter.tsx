@@ -1,4 +1,7 @@
-import { resolveEquippedHeadwear, resolveWornOutfit } from "@/game/wearable-outfits";
+import {
+  resolveEquippedHeadwear,
+  resolveNormalizedWornOutfit,
+} from "@/game/wearable-outfits";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, Vector3, type Group } from "three";
@@ -55,7 +58,7 @@ export function WorldCharacter({
   body?: BodyVariant | undefined;
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
-  const outfit = resolveWornOutfit(safe, gender, equipment);
+  const outfit = resolveNormalizedWornOutfit(safe, equipment);
   // Only inventory items with a supported 3D headwear model render on the rig.
   safe.headwear = resolveEquippedHeadwear(equipment);
   if (outfit.hasWearables) safe.clothed = true;

@@ -21,6 +21,7 @@ export type WornOutfit = {
   patterned: boolean;
   hasWearables: boolean;
 };
+const OUTFIT_SLOTS: readonly string[] = ["top", "bottom", "shoes"];
 const record = (v: unknown): v is Record<string, unknown> =>
   typeof v === "object" && v !== null && !Array.isArray(v);
 /** Render only bounded cosmetic metadata. Ownership and equipping remain server-authoritative. */
@@ -29,7 +30,16 @@ export function resolveWornOutfit(
   gender: string,
   equipment: readonly WearableEquipment[],
 ): WornOutfit {
-  const safe = normalizeAvatarAppearance(appearance, gender);
+  return resolveNormalizedWornOutfit(
+    normalizeAvatarAppearance(appearance, gender),
+    equipment,
+  );
+}
+
+export function resolveNormalizedWornOutfit(
+  safe: Readonly<Required<Appearance>>,
+  equipment: readonly WearableEquipment[],
+): WornOutfit {
   const colors: [string, string, string] = [
     OUTFITS[safe.outfit]!,
     TROUSERS[safe.bottoms]!,
@@ -43,7 +53,7 @@ export function resolveWornOutfit(
   };
   for (const entry of equipment) {
     const slot = entry.slot,
-      index = ["top", "bottom", "shoes"].indexOf(slot);
+      index = OUTFIT_SLOTS.indexOf(slot);
     if (index < 0) continue;
     // Existing starter equipment predates cosmetic metadata.
     if (slot === "top" && entry.item?.slug === "basic_outfit") {
