@@ -5,6 +5,7 @@ import { pageMeta } from "@/lib/seo";
 import { Button } from "@/components/ui/button";
 import { EmptyState, LoadingState, PageHeader } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
+import { notificationAppFor, openPhoneAppFromNotification } from "@/lib/notification-targets";
 
 export const Route = createFileRoute("/_authenticated/_game/notifications")({
   head: () => pageMeta("Notifications", "Updates about your life in Osogbo."),
@@ -34,29 +35,36 @@ function NotificationsPage() {
         <EmptyState title="All quiet" body="No notifications yet." />
       ) : (
         <ul className="space-y-3">
-          {notes.map((n) => (
-            <li key={n.id}>
-              <button
-                type="button"
-                onClick={() => !n.read_at && mark.mutate(n.id)}
-                className={cn("game-panel block w-full p-4 text-left", !n.read_at && "bg-sun")}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <p className="font-display text-lg font-semibold">{n.title}</p>
-                  {!n.read_at && (
-                    <span
-                      className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full border-2 border-edge bg-clay"
-                      aria-label="Unread"
-                    />
-                  )}
-                </div>
-                <p className="text-sm">{n.body}</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {new Date(n.created_at).toLocaleString("en-NG")}
-                </p>
-              </button>
-            </li>
-          ))}
+          {notes.map((n) => {
+            const app = notificationAppFor(n.kind);
+            return (
+              <li key={n.id}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!n.read_at) mark.mutate(n.id);
+                    if (app) openPhoneAppFromNotification(app);
+                  }}
+                  aria-label={app ? `${n.title}. Open ${app}` : n.title}
+                  className={cn("game-panel block w-full p-4 text-left", !n.read_at && "bg-sun")}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-display text-lg font-semibold">{n.title}</p>
+                    {!n.read_at && (
+                      <span
+                        className="mt-2 h-2.5 w-2.5 shrink-0 rounded-full border-2 border-edge bg-clay"
+                        aria-label="Unread"
+                      />
+                    )}
+                  </div>
+                  <p className="text-sm">{n.body}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    {new Date(n.created_at).toLocaleString("en-NG")}
+                  </p>
+                </button>
+              </li>
+            );
+          })}
         </ul>
       )}
     </div>
