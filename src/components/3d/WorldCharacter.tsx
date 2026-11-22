@@ -162,7 +162,8 @@ export function WorldCharacter({
     if (walkingRef.current !== travelling) {
       walkingRef.current = travelling;
       setWalking(travelling);
-      invalidate();
+      // Travel already requested a frame above; stopping needs its own invalidation.
+      if (!travelling) invalidate();
     }
     const group = bodyRef.current;
     if (!group) return;
