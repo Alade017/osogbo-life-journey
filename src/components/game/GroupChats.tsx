@@ -407,6 +407,11 @@ function GroupThread({
       {addingMember && (
         <fieldset className="phone-group-friends" aria-label="Add a member">
           <legend>Add a friend to this group</legend>
+          {addable.length === 0 && (
+            <p className="phone-group-empty" role="status">
+              Every friend you have is already in this group.
+            </p>
+          )}
           {addable.map((friend) => (
             <div key={friend.character_id} className="phone-group-friend">
               <span>{friend.player_name}</span>

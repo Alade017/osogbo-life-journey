@@ -424,7 +424,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                     <p className="text-[11px] text-muted-foreground mb-2">
                       Preview on this phone; your stall name, goods and open status are saved.
                     </p>
-                    <div className="grid grid-cols-4 gap-2">
+                    <div className="grid min-w-0 grid-cols-2 gap-2 min-[380px]:grid-cols-4">
                       {THEMES.map((theme) => (
                         <button
                           type="button"

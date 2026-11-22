@@ -14,3 +14,6 @@ export function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: str
     if (timer !== undefined) clearTimeout(timer);
   });
 }
+
+/** After this long on a loading screen, the player is offered a retry instead of waiting silently. */
+export const SLOW_LOAD_AFTER_MS = 8_000;

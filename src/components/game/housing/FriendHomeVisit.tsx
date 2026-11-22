@@ -38,7 +38,7 @@ export function FriendHomeVisit({
       </div>
       <DashboardFeatureStrip />
       {visitQuery.isLoading ? (
-        <LoadingState />
+        <LoadingState title="Visiting the home" detail="Loading the friend's home…" />
       ) : visitQuery.isError || !house ? (
         <section className="game-panel p-5" role="status">
           <p>This home is private, unavailable, or no longer shared with you.</p>

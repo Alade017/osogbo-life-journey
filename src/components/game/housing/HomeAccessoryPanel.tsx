@@ -37,6 +37,7 @@ export function HomeAccessoryPanel({
   if (!actionId) return null;
   const action = ACTION_CATALOG[actionId];
   const cooking = actionId === "cook";
+  const noticeText = error || disabledReason || "";
   const selected = MEALS.find((item) => item.id === meal)!;
   const actionLabel = cooking ? `Cook ${selected.name}` : action.name;
   const accessoryLabel = cooking
@@ -176,11 +177,14 @@ export function HomeAccessoryPanel({
       {cooking && (
         <p className="home-meal-note">All meal choices have the time and benefits shown above.</p>
       )}
-      {(disabledReason || error) && (
-        <p className="home-task-notice" role={error ? "alert" : "status"}>
-          {error || disabledReason}
-        </p>
-      )}
+      {/* Always rendered so the notice never pushes the controls down when it appears. */}
+      <p
+        className="home-task-notice"
+        role={noticeText ? (error ? "alert" : "status") : undefined}
+        aria-hidden={noticeText ? undefined : true}
+      >
+        {noticeText}
+      </p>
       {confirmed && (
         <p className="home-task-confirmation" role="status">
           Needs updated — {action.outcome}

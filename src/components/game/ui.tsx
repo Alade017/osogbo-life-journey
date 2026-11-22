@@ -1,9 +1,13 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
+import { SLOW_LOAD_AFTER_MS } from "@/lib/request-timeout";
+
+const SLOW_LOAD_DETAIL = "This is taking longer than usual. Check your connection, then try again.";
 
 export function PageHeader({
   title,
@@ -95,13 +99,36 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
   );
 }
 
-export function LoadingState() {
+/**
+ * Loading screen for a game page. Each page names what it is opening. After a while it offers a
+ * retry, which reloads every query on the page, instead of waiting silently.
+ */
+export function LoadingState({
+  title = "Loading your game",
+  detail = "Preparing your world…",
+}: {
+  title?: string;
+  detail?: string;
+}) {
+  const queryClient = useQueryClient();
+  const [slow, setSlow] = useState(false);
+  useEffect(() => {
+    const timer = window.setTimeout(() => setSlow(true), SLOW_LOAD_AFTER_MS);
+    return () => window.clearTimeout(timer);
+  }, []);
   return (
-    <div className="game-inline-loading" role="status" aria-label="Loading">
+    <div className="game-inline-loading" role="status" aria-label={title}>
       <WorldLoadingIndicator
         presentation="screen"
-        title="Loading your game"
-        detail="Preparing your world…"
+        title={title}
+        detail={slow ? SLOW_LOAD_DETAIL : detail}
+        action={
+          slow ? (
+            <Button type="button" size="sm" onClick={() => void queryClient.invalidateQueries()}>
+              Try again
+            </Button>
+          ) : undefined
+        }
       />
     </div>
   );

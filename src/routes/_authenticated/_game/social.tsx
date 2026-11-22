@@ -136,7 +136,10 @@ function SocialPage() {
       void supabase.removeChannel(channel);
     };
   }, [character?.current_location_id, qc]);
-  if (characterLoading || npcsLoading || !character) return <LoadingState />;
+  if (characterLoading || npcsLoading || !character)
+    return (
+      <LoadingState title="Opening your social life" detail="Loading your contacts and messages…" />
+    );
   const time = simulation.gameTime;
   const placeBySlug = (slug: string) =>
     locations.find((location) => location.slug === slug) ?? null;

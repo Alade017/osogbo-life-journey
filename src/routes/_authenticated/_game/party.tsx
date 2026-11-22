@@ -99,7 +99,8 @@ export function PartyExperience({
     enabled: Boolean(characterId),
   });
 
-  if (characterLoading) return <LoadingState />;
+  if (characterLoading)
+    return <LoadingState title="Opening the party" detail="Loading your character…" />;
   if (!character)
     return <EmptyState title="No character yet" body="Create a character to join the party." />;
 
@@ -335,7 +336,8 @@ function ClubsTab({
   const cooldownLeft = danceCooldownRemaining(cooldownAt, now);
   const clubs = venues.filter((venue) => venue.venue_kind === "club");
 
-  if (isLoading) return <LoadingState />;
+  if (isLoading)
+    return <LoadingState title="Opening the venues" detail="Loading the clubs and drinks…" />;
   if (clubs.length === 0)
     return <EmptyState title="No clubs open" body="Clubs will appear here when they open." />;
 
@@ -514,7 +516,7 @@ function DrinksTab({
   isLoading: boolean;
 }) {
   const buy = useInvalidatingMutation(partyRpc.buyDrink, "Drink bought.");
-  if (isLoading) return <LoadingState />;
+  if (isLoading) return <LoadingState title="Opening the drinks" detail="Loading the club menu…" />;
   const canBuy = inClub || Boolean(atEventCentre);
   return (
     <div className="grid gap-3">
@@ -582,7 +584,8 @@ function EventsTab({
   );
   const eventCentres = venues.filter((v) => v.venue_kind === "event_center");
 
-  if (events.isLoading) return <LoadingState />;
+  if (events.isLoading)
+    return <LoadingState title="Opening the events" detail="Loading the city events…" />;
   if (events.isError)
     return (
       <div className="game-panel grid gap-2 p-4" role="alert">
