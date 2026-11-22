@@ -32,7 +32,12 @@ import {
   travelConditionAdjustment,
   weatherForDay,
 } from "@/lib/world-simulation";
-import { hasAuthoritativeLocationArrival } from "@/lib/location-venue-designs";
+import {
+  getLocationVenueDesign,
+  hasAuthoritativeLocationArrival,
+} from "@/lib/location-venue-designs";
+import { preloadVenueModule } from "@/components/game/venue-preloader";
+import { canPreloadVenueInBrowser } from "@/lib/venue-preload-policy";
 
 export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
   head: () => pageMeta("District", "Visit a district of Osogbo."),
@@ -271,6 +276,14 @@ function LocationPage() {
       },
       travelAnimationDurationMs(travelState.estimatedMinutes ?? 1),
     );
+    if (
+      loc.type !== "bank" &&
+      meetsLevelRequirement &&
+      canPreloadVenueInBrowser()
+    ) {
+      const venue = getLocationVenueDesign(loc.slug, loc.name);
+      void preloadVenueModule(loc.slug, venue, loc.id);
+    }
   }
 
   function changeTravelMode(mode: (typeof availableModes)[number]) {
