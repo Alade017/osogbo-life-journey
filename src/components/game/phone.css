@@ -2582,6 +2582,31 @@
 
 /* Okada rides: hero, fare card, destination field, and ride history. */
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 /* Party: hero, mood card, segmented tabs, and phone-style panels inside the app. */
 .phone-party {
   display: grid;
@@ -3728,34 +3753,6 @@
 }
 .phone-app-body .map-app > header strong {
   display: block;
-/* Okada rides in the phone: an iOS-style grouped screen with a large title, a fare card, hairline ride rows
-   and status pills. Markup and behaviour are unchanged. */
-.okada-app {
-  display: grid;
-  gap: 14px;
-  padding: 16px 16px 24px;
-}
-.okada-hero {
-  display: grid;
-  grid-template-columns: 46px minmax(0, 1fr);
-  align-items: center;
-  gap: 12px;
-}
-.okada-hero h2 {
-  margin: 0;
-/* Missions and notifications in the phone: an iOS-style grouped list. Hairline cards, status pills and
-   pill buttons. Markup and behaviour are unchanged. */
-.phone-app-body .missions-app,
-.phone-app-body .notifications-app {
-  padding: 16px 16px 24px;
-}
-.phone-app-body .missions-panel,
-.phone-app-body .notifications-panel {
-  display: grid;
-  gap: 12px;
-}
-.phone-app-body .missions-heading,
-.phone-app-body .notifications-heading {
   color: var(--foreground);
   font-size: 1.6rem;
   font-weight: 800;
@@ -3772,68 +3769,6 @@
   display: grid;
   gap: 0;
   overflow: hidden;
-.okada-hero p {
-  margin: 3px 0 0;
-  color: var(--muted-foreground);
-  font-size: 0.78rem;
-}
-.okada-hero-icon,
-.okada-ride-icon {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  border-radius: 50%;
-  color: var(--primary-foreground);
-  background: var(--primary);
-}
-.okada-ride-icon {
-  width: 38px;
-  height: 38px;
-  background: var(--muted);
-  color: var(--primary);
-}
-.okada-hero-icon svg,
-.okada-ride-icon svg {
-  width: 20px;
-  height: 20px;
-}
-.okada-request,
-.okada-history {
-  display: grid;
-  gap: 12px;
-  margin: 0;
-}
-.phone-app-body .missions-intro {
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  margin: 0;
-}
-.phone-app-body .missions-state,
-.phone-app-body .notifications-state {
-  color: var(--muted-foreground);
-  font-size: 0.85rem;
-  margin: 8px 0 0;
-  text-align: center;
-}
-.phone-app-body .missions-retry {
-  min-height: 40px;
-  padding: 0 16px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-.phone-app-body .missions-list {
-  display: grid;
-  gap: 10px;
-}
-.phone-app-body .missions-card {
-  display: grid;
-  gap: 8px;
-  padding: 14px;
   border-radius: 14px;
   background: var(--card);
   box-shadow: 0 0 0 0.5px var(--border);
@@ -3872,6 +3807,63 @@
 }
 
 /* Messages */
+
+/* Okada rides in the phone: an iOS-style grouped screen with a large title, a fare card, hairline ride rows
+   and status pills. Markup and behaviour are unchanged. */
+.okada-app {
+  display: grid;
+  gap: 14px;
+  padding: 16px 16px 24px;
+}
+.okada-hero {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+.okada-hero h2 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.okada-hero p {
+  margin: 3px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+.okada-hero-icon,
+.okada-ride-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.okada-ride-icon {
+  width: 38px;
+  height: 38px;
+  background: var(--muted);
+  color: var(--primary);
+}
+.okada-hero-icon svg,
+.okada-ride-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.okada-request,
+.okada-history {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px var(--border);
+}
 .okada-history h3 {
   margin: 0;
   font-size: 1rem;
@@ -3968,20 +3960,6 @@
   font-size: 0.72rem;
 }
 .okada-status {
-.phone-app-body .missions-card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-.phone-app-body .missions-title {
-  font-size: 0.95rem;
-  font-weight: 700;
-  min-width: 0;
-  overflow-wrap: anywhere;
-}
-.phone-app-body .missions-badge {
-  flex: none;
   padding: 3px 9px;
   border-radius: 999px;
   background: var(--muted);
@@ -4013,6 +3991,82 @@
 }
 .okada-cancel:disabled {
   opacity: 0.45;
+}
+
+/* Missions and notifications in the phone: an iOS-style grouped list. Hairline cards, status pills and
+   pill buttons. Markup and behaviour are unchanged. */
+.phone-app-body .missions-app,
+.phone-app-body .notifications-app {
+  padding: 16px 16px 24px;
+}
+.phone-app-body .missions-panel,
+.phone-app-body .notifications-panel {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .missions-heading,
+.phone-app-body .notifications-heading {
+  color: var(--foreground);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  margin: 0;
+}
+.phone-app-body .missions-intro {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 0;
+}
+.phone-app-body .missions-state,
+.phone-app-body .notifications-state {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  margin: 8px 0 0;
+  text-align: center;
+}
+.phone-app-body .missions-retry {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.phone-app-body .missions-list {
+  display: grid;
+  gap: 10px;
+}
+.phone-app-body .missions-card {
+  display: grid;
+  gap: 8px;
+  padding: 14px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px var(--border);
+}
+.phone-app-body .missions-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.phone-app-body .missions-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.phone-app-body .missions-badge {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 700;
 }
 .phone-app-body .missions-badge[data-status="completed"] {
   background: color-mix(in srgb, var(--success) 16%, var(--card));
