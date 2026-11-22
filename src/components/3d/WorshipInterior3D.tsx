@@ -1,5 +1,5 @@
-import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
 import { shopperLook } from "@/game/mall-appearance";
@@ -10,6 +10,22 @@ import { WorldLighting, WorldMaterial } from "./WorldScene";
 const WALL_HEIGHT = 4;
 const WALL_THICKNESS = 0.4;
 const DOOR_HALF_WIDTH = 1.1;
+const PRAYER_POSE_EPSILON = 0.001;
+
+/** Returns the next pose, snapping exactly to the target when settled. */
+export function nextPrayerPose(
+  current: number,
+  target: number,
+  delta: number,
+): number {
+  const next =
+    current +
+    (target - current) * Math.min(1, delta * 4);
+
+  return Math.abs(target - next) <= PRAYER_POSE_EPSILON
+    ? target
+    : next;
+}
 
 function Wall({
   center,
@@ -140,17 +156,28 @@ function Visitor({
   appearance: Appearance;
   gender: string;
 }) {
+  const { invalidate } = useThree();
   const group = useRef<Group>(null);
   const pose = useRef(0);
   const [px, pz] = layout.prayerSpot;
   const [sx, sz] = layout.spawn;
+
+  useEffect(() => {
+    invalidate();
+  }, [praying, sx, sz, px, pz, invalidate]);
+
   useFrame((_, delta) => {
     const target = praying ? 1 : 0;
-    pose.current += (target - pose.current) * Math.min(1, delta * 4);
+    if (pose.current === target) return;
+
+    pose.current = nextPrayerPose(pose.current, target, delta);
+
     const x = sx + (px - sx) * pose.current;
     const z = sz + (pz - sz) * pose.current;
     group.current?.position.set(x, -0.12 * pose.current, z);
     if (group.current) group.current.rotation.x = 0.35 * pose.current;
+
+    invalidate();
   });
   return (
     <group ref={group} position={[sx, 0, sz]}>
