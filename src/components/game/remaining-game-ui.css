@@ -497,19 +497,6 @@
 }
 
 /* Each chat row is 64px tall with 8px between rows, matching the list's 72px row height. */
-.phone-ui-refresh .phone-app-body .phone-conversation {
-  box-sizing: border-box;
-  height: 72px;
-  min-height: 72px;
-  margin-bottom: 8px;
-  gap: 12px;
-  padding: 0 14px;
-  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
-  border-radius: 18px;
-  color: var(--brand-ink);
-  background: #ffffff;
-  contain-intrinsic-size: 72px;
-}
 
 /* Profile pictures show the character's head only, inside a round frame. */
 .phone-ui-refresh .phone-app-body .phone-avatar-head {
@@ -529,187 +516,36 @@
   max-width: none;
 }
 
-.phone-ui-refresh .phone-app-body .phone-conversation:hover {
-  border-color: color-mix(in srgb, var(--brand-royal) 35%, transparent);
-  background: #ffffff;
-}
 
-.phone-ui-refresh .phone-app-body .phone-conversation-copy strong,
-.phone-ui-refresh .phone-app-body .phone-thread-person strong {
-  color: var(--brand-ink);
-  font-size: 15px;
-}
 
-.phone-ui-refresh .phone-app-body .phone-conversation-copy small,
-.phone-ui-refresh .phone-app-body .phone-thread-person small {
-  color: var(--brand-slate);
-  font-size: 13px;
-}
 
-.phone-ui-refresh .phone-app-body .phone-thread-header {
-  min-height: 72px;
-  gap: 12px;
-  padding: 12px 16px;
-  border-bottom: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
-  color: var(--brand-ink);
-  background: var(--brand-porcelain);
-}
 
-.phone-ui-refresh .phone-app-body .phone-thread-back {
-  width: 44px;
-  height: 44px;
-  color: var(--brand-royal);
-}
 
-.phone-ui-refresh .phone-app-body .phone-thread-search-toggle {
-  flex: none;
-  color: var(--brand-royal);
-  background: color-mix(in srgb, var(--brand-royal) 8%, transparent);
-}
 
-.phone-ui-refresh .phone-app-body .phone-message-history {
-  gap: 14px;
-  padding: 20px 16px;
-}
 
-.phone-ui-refresh .phone-app-body .phone-message-bubble {
-  max-width: 78%;
-  gap: 6px;
-  padding: 12px 14px 8px;
-  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
-  border-radius: 18px 18px 18px 6px;
-  color: var(--brand-ink);
-  background: #ffffff;
-  box-shadow: none;
-  font-size: 15px;
-  line-height: 1.5;
-}
 
-.phone-ui-refresh .phone-app-body .phone-message-bubble.is-own {
-  border-color: transparent;
-  border-radius: 18px 18px 6px 18px;
-  color: #fff;
-  background: var(--brand-royal);
-}
 
-.phone-ui-refresh .phone-app-body .phone-message-bubble.is-own .phone-message-time {
-  color: color-mix(in srgb, #fff 75%, transparent);
-}
 
-.phone-ui-refresh .phone-app-body .phone-message-time {
-  font-size: 11px;
-}
 
-.phone-ui-refresh .phone-app-body .phone-chat-composer {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 7px 10px 10px;
-  border-top: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
-  background: var(--card);
-}
 
-.phone-ui-refresh .phone-app-body .phone-chat-input {
-  min-height: 42px;
-  padding: 10px 4px;
-  border: 0;
-  border-radius: 0;
-  color: var(--brand-ink);
-  background: transparent;
-  font-size: 14px;
-}
 
-.phone-ui-refresh .phone-app-body .phone-chat-send {
-  width: 40px;
-  height: 44px;
-  color: #fff;
-  background: var(--brand-royal);
-}
 
-.phone-ui-refresh .phone-app-body .phone-chat-send:disabled {
-  background: var(--brand-mist);
-  color: var(--brand-slate);
-}
 
 /* Messages header: one flowing column. The subtitle, then the search bar and new-message
    button on one row, then the filters, then the chat list, which takes the remaining height. */
-.phone-ui-refresh .phone-app-body .phone-chat-panel {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px 16px 0;
-}
 
-.phone-ui-refresh .phone-app-body .phone-chat-panel-inbox {
-  gap: 6px;
-  padding: 8px 12px 0;
-}
 
-.phone-ui-refresh .phone-app-body .phone-inbox-heading {
-  flex: none;
-}
 
-.phone-ui-refresh .phone-app-body .phone-inbox-heading > div {
-  padding: 0;
-}
 
-.phone-ui-refresh .phone-app-body .phone-inbox-heading p {
-  margin: 0;
-}
 
-.phone-ui-refresh .phone-app-body .phone-inbox-controls {
-  display: flex;
-  flex: none;
-  align-items: center;
-  gap: 10px;
-}
 
 .phone-ui-refresh .phone-app-body .phone-new-message-button {
   flex: none;
 }
 
-.phone-ui-refresh .phone-app-body .phone-inbox-search {
-  display: flex;
-  flex: 1;
-  min-width: 0;
-  height: 40px;
-  min-height: 40px;
-  align-items: center;
-  gap: 8px;
-  margin: 0;
-  padding: 0 12px;
-  border: 1px solid color-mix(in srgb, var(--brand-mist) 90%, transparent);
-  border-radius: 14px;
-  background: #ffffff;
-}
 
-.phone-ui-refresh .phone-app-body .phone-inbox-search input {
-  flex: 1;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--brand-ink);
-  font-size: 14px;
-}
 
-.phone-ui-refresh .phone-app-body .phone-inbox-filters {
-  display: flex;
-  flex: none;
-  gap: 8px;
-}
 
-.phone-ui-refresh .phone-app-body .phone-conversation-list {
-  flex: 1 1 auto;
-  min-height: 0;
-  max-height: none;
-  gap: 0;
-  padding: 4px 4px 12px;
-}
 /* Palette accents for the other apps: royal primary actions and eyebrows, ink headings. */
 .phone-ui-refresh .phone-app-body .phone-btn-primary {
   color: #fff;
@@ -779,26 +615,8 @@
 
 /* Messages header, matching the New message screen: a bold title with the new-message button
    on its right, then a full-width search bar. The subtitle is removed. */
-.phone-ui-refresh .phone-app-body .phone-inbox-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 14px 16px 6px;
-}
 
-.phone-ui-refresh .phone-app-body .phone-inbox-heading h3 {
-  display: block;
-  margin: 0;
-  color: var(--brand-ink);
-  font-size: 1.45rem;
-  font-weight: 850;
-  letter-spacing: -0.02em;
-}
 
-.phone-ui-refresh .phone-app-body .phone-inbox-controls {
-  padding: 4px 4px 0;
-}
 
 .phone-ui-refresh .phone-app-body .phone-new-message-button {
   width: 40px;
@@ -808,9 +626,4 @@
   background: #ffffff;
 }
 
-.phone-ui-refresh .phone-app-body .phone-inbox-search {
-  height: 44px;
-  min-height: 44px;
-  border-radius: 14px;
-}
 

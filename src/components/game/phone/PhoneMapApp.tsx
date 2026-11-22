@@ -13,7 +13,7 @@ export function PhoneMapApp() {
   const { data: places, isLoading, isError, refetch } = useQuery(q.locations());
 
   return (
-    <div className="phone-local-app" aria-label="Places to explore">
+    <div className="phone-local-app map-app" aria-label="Places to explore">
       <header>
         <MapPinned aria-hidden="true" />
         <span>
