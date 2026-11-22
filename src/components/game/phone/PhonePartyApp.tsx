@@ -1,5 +1,6 @@
 import { PartyPopper } from "lucide-react";
 import { PartyExperience } from "@/routes/_authenticated/_game/party";
+import "./phone-party.css";
 
 export function PhonePartyApp() {
   return (
