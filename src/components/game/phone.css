@@ -3273,98 +3273,6 @@
 }
 
 /* Missions in the phone: gold heading, one card per mission, status badges from tokens. */
-.phone-app-body .missions-app {
-  display: grid;
-  gap: 12px;
-  padding: 12px;
-}
-.phone-app-body .missions-panel {
-  display: grid;
-  gap: 8px;
-  padding: 14px;
-}
-.phone-app-body .missions-heading {
-  font-size: 1rem;
-  font-weight: 700;
-  margin: 0;
-}
-.phone-app-body .missions-intro {
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  margin: 0;
-}
-.phone-app-body .missions-state {
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  padding: 16px 0;
-  text-align: center;
-}
-.phone-app-body .missions-retry {
-  color: var(--primary);
-  font-weight: 700;
-  margin-top: 8px;
-}
-.phone-app-body .missions-list {
-  display: grid;
-  gap: 8px;
-}
-.phone-app-body .missions-card {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  box-shadow: var(--elevation-card);
-  color: var(--card-foreground);
-  display: grid;
-  gap: 6px;
-  padding: 12px;
-}
-.phone-app-body .missions-card-top {
-  align-items: flex-start;
-  display: flex;
-  gap: 8px;
-  justify-content: space-between;
-}
-.phone-app-body .missions-title {
-  font-size: 0.85rem;
-  font-weight: 700;
-}
-.phone-app-body .missions-badge {
-  background: var(--muted);
-  border-radius: 999px;
-  color: var(--muted-foreground);
-  flex-shrink: 0;
-  font-size: 0.68rem;
-  font-weight: 700;
-  padding: 3px 9px;
-  white-space: nowrap;
-}
-.phone-app-body .missions-badge[data-status="completed"] {
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
-.phone-app-body .missions-badge[data-status="claimed"] {
-  background: var(--brand-porcelain, var(--muted));
-  color: var(--brand-ink, var(--card-foreground));
-}
-.phone-app-body .missions-desc {
-  color: var(--muted-foreground);
-  font-size: 0.75rem;
-  line-height: 1.4;
-  margin: 0;
-}
-.phone-app-body .missions-claim {
-  background: var(--primary);
-  border-radius: 10px;
-  color: var(--primary-foreground);
-  font-size: 0.8rem;
-  font-weight: 700;
-  margin-top: 4px;
-  padding: 8px;
-  width: 100%;
-}
-.phone-app-body .missions-claim:disabled {
-  opacity: 0.6;
-}
 
 /* Community contribution in the phone: a hero, one card per fund, figures in a two-column strip. */
 .phone-app-body .contribution-app {
@@ -3629,67 +3537,6 @@
 }
 
 /* Town notifications in the phone: a header with a clear action, and one bordered row per notification. */
-.phone-app-body .notifications-app {
-  display: grid;
-  gap: 12px;
-  padding: 12px;
-}
-.phone-app-body .notifications-panel {
-  display: grid;
-  gap: 10px;
-  padding: 14px;
-}
-.phone-app-body .notifications-head {
-  align-items: center;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-  padding-bottom: 10px;
-}
-.phone-app-body .notifications-heading {
-  font-size: 0.98rem;
-  font-weight: 700;
-  margin: 0;
-}
-.phone-app-body .notifications-clear {
-  color: var(--primary);
-  font-size: 0.78rem;
-  font-weight: 700;
-  min-height: 36px;
-  padding: 0 4px;
-}
-.phone-app-body .notifications-list {
-  display: grid;
-  gap: 8px;
-}
-.phone-app-body .notifications-item {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  color: var(--card-foreground);
-  display: grid;
-  gap: 4px;
-  padding: 12px;
-}
-.phone-app-body .notifications-kind {
-  color: var(--primary);
-  font-size: 0.68rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-}
-.phone-app-body .notifications-body {
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  line-height: 1.4;
-  margin: 0;
-}
-.phone-app-body .notifications-state {
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  padding: 16px 0;
-  text-align: center;
-}
 
 /* Profile in the phone: token colours for the stage, XP track and tab switch, and a clear avatar card. */
 .phone-app-body .pi-profile .pi-stage {
@@ -3896,6 +3743,19 @@
 }
 .okada-hero h2 {
   margin: 0;
+/* Missions and notifications in the phone: an iOS-style grouped list. Hairline cards, status pills and
+   pill buttons. Markup and behaviour are unchanged. */
+.phone-app-body .missions-app,
+.phone-app-body .notifications-app {
+  padding: 16px 16px 24px;
+}
+.phone-app-body .missions-panel,
+.phone-app-body .notifications-panel {
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .missions-heading,
+.phone-app-body .notifications-heading {
   color: var(--foreground);
   font-size: 1.6rem;
   font-weight: 800;
@@ -3942,6 +3802,37 @@
 .okada-history {
   display: grid;
   gap: 12px;
+  margin: 0;
+}
+.phone-app-body .missions-intro {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  margin: 0;
+}
+.phone-app-body .missions-state,
+.phone-app-body .notifications-state {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  margin: 8px 0 0;
+  text-align: center;
+}
+.phone-app-body .missions-retry {
+  min-height: 40px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.phone-app-body .missions-list {
+  display: grid;
+  gap: 10px;
+}
+.phone-app-body .missions-card {
+  display: grid;
+  gap: 8px;
   padding: 14px;
   border-radius: 14px;
   background: var(--card);
@@ -4077,6 +3968,20 @@
   font-size: 0.72rem;
 }
 .okada-status {
+.phone-app-body .missions-card-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.phone-app-body .missions-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.phone-app-body .missions-badge {
+  flex: none;
   padding: 3px 9px;
   border-radius: 999px;
   background: var(--muted);
@@ -4108,4 +4013,76 @@
 }
 .okada-cancel:disabled {
   opacity: 0.45;
+}
+.phone-app-body .missions-badge[data-status="completed"] {
+  background: color-mix(in srgb, var(--success) 16%, var(--card));
+  color: var(--success);
+}
+.phone-app-body .missions-badge[data-status="claimed"] {
+  background: color-mix(in srgb, var(--primary) 14%, var(--card));
+  color: var(--primary);
+}
+.phone-app-body .missions-desc {
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.45;
+  margin: 0;
+}
+.phone-app-body .missions-claim {
+  justify-self: start;
+  min-height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+.phone-app-body .missions-claim:disabled {
+  opacity: 0.45;
+}
+.phone-app-body .notifications-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.phone-app-body .notifications-clear {
+  min-height: 32px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--primary);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+.phone-app-body .notifications-list {
+  display: grid;
+  gap: 0;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px var(--border);
+  overflow: hidden;
+}
+.phone-app-body .notifications-item {
+  display: grid;
+  gap: 3px;
+  padding: 12px 14px;
+}
+.phone-app-body .notifications-item + .notifications-item {
+  border-top: 0.5px solid var(--border);
+}
+.phone-app-body .notifications-kind {
+  color: var(--primary);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.phone-app-body .notifications-body {
+  color: var(--foreground);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  margin: 0;
 }
