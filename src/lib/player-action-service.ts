@@ -7,7 +7,7 @@ export type PlayerAction = "inspect" | "use" | "equip" | "unequip" | "discard";
 export type PlayerActionRequest = {
   action: PlayerAction;
   characterId: string;
-  inventoryEntry?: PlayerInventoryEntry | null;
+  inventoryEntry?: PlayerInventoryEntry | null | undefined;
   equippedItem?: EquippedItem | null;
   slot?: EquipmentSlot;
   quantity?: number;
