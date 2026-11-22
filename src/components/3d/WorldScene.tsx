@@ -373,12 +373,21 @@ function TrafficLightSignal({
   const red = useRef<MeshBasicMaterial>(null);
   const amber = useRef<MeshBasicMaterial>(null);
   const green = useRef<MeshBasicMaterial>(null);
+  const lastSignalState = useRef<"stop" | "caution" | "go" | null>(null);
 
   useFrame(() => {
     const state = getSignalState(junctionId);
-    if (red.current) red.current.color.set(state === "stop" ? "#ef2929" : "#401b1b");
-    if (amber.current) amber.current.color.set(state === "caution" ? "#f59e0b" : "#49320d");
-    if (green.current) green.current.color.set(state === "go" ? "#22c55e" : "#173b27");
+    if (
+      state === lastSignalState.current ||
+      !red.current ||
+      !amber.current ||
+      !green.current
+    ) return;
+
+    red.current.color.set(state === "stop" ? "#ef2929" : "#401b1b");
+    amber.current.color.set(state === "caution" ? "#f59e0b" : "#49320d");
+    green.current.color.set(state === "go" ? "#22c55e" : "#173b27");
+    lastSignalState.current = state;
   });
 
   return (
