@@ -662,28 +662,8 @@
   min-width: 0;
 }
 
-.phone-town-composer {
-  display: grid;
-  gap: 0.7rem;
-  padding: 0.75rem;
-}
 
-.phone-town-composer label {
-  display: grid;
-  gap: 0.3rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-}
 
-.phone-town-composer :is(input, textarea, select) {
-  width: 100%;
-  min-width: 0;
-  padding: 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 0.6rem;
-  background: var(--card);
-  color: var(--foreground);
-}
 
 .phone-app-recovery > div {
   display: flex;
@@ -851,62 +831,12 @@
   font-size: 0.82rem;
 }
 
-.phone-town-social {
-  display: grid;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-  padding-top: 0.65rem;
-  border-top: 1px solid var(--border);
-}
 
-.phone-town-social > button {
-  justify-self: start;
-  min-height: 36px;
-  padding: 0.4rem 0.7rem;
-  border-radius: 0.55rem;
-  color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 10%, var(--card));
-  font-size: 0.75rem;
-  font-weight: 700;
-}
 
-.phone-town-social > button[aria-pressed="true"] {
-  color: var(--primary-foreground);
-  background: var(--primary);
-}
 
-.phone-town-social form {
-  display: flex;
-  gap: 0.4rem;
-}
 
-.phone-town-social input {
-  min-width: 0;
-  min-height: 38px;
-  flex: 1;
-  padding: 0.4rem 0.6rem;
-  border: 1px solid var(--border);
-  border-radius: 0.55rem;
-  background: var(--background);
-}
 
-.phone-town-social form button {
-  min-height: 38px;
-  padding: 0.4rem 0.7rem;
-  border-radius: 0.55rem;
-  color: var(--primary-foreground);
-  background: var(--primary);
-  font-size: 0.75rem;
-  font-weight: 700;
-}
 
-.phone-town-social .phone-town-comment {
-  margin: 0;
-  padding: 0.5rem;
-  border-radius: 0.55rem;
-  background: var(--muted);
-  overflow-wrap: anywhere;
-}
 
 .phone-app-toolbar button {
   min-width: 54px;
@@ -4786,4 +4716,58 @@
 .okada-cancel:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* Town News: feed cards, likes, comments and composer. */
+.town-news { display: grid; gap: 0.9rem; }
+.town-news-hero { display: flex; align-items: center; gap: 0.75rem; padding: 0.9rem; border-radius: 1rem; color: var(--primary-foreground); background: linear-gradient(135deg, var(--primary), color-mix(in srgb, var(--primary) 60%, var(--brand-ink, #16225c))); box-shadow: var(--elevation-card); }
+.town-news-hero strong { display: block; font-size: 1.05rem; }
+.town-news-hero small { font-size: 0.75rem; opacity: 0.85; }
+.town-news-hero-icon { display: grid; place-items: center; width: 2.4rem; height: 2.4rem; border-radius: 0.8rem; background: color-mix(in srgb, #fff 18%, transparent); }
+.town-news-hero-icon svg { width: 1.2rem; height: 1.2rem; }
+.town-news-section { display: grid; gap: 0.6rem; }
+.town-news-heading { margin: 0; font-size: 0.75rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted-foreground); }
+.town-news-state { margin: 0; padding: 0.8rem; border: 1px dashed var(--border); border-radius: 0.8rem; font-size: 0.8rem; color: var(--muted-foreground); }
+.town-news-retry { padding: 0; border: 0; background: none; color: var(--primary); font-weight: 700; text-decoration: underline; }
+.town-news-updates { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+.town-news-update { display: grid; gap: 0.2rem; padding: 0.7rem 0.8rem; border: 1px solid var(--border); border-radius: 0.9rem; background: var(--card); }
+.town-news-update strong { font-size: 0.9rem; }
+.town-news-update time { font-size: 0.7rem; color: var(--muted-foreground); }
+.town-news-update span:not(.town-news-tag) { font-size: 0.8rem; color: var(--muted-foreground); }
+.town-news-tag { justify-self: start; padding: 0.15rem 0.5rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); font-size: 0.65rem; font-weight: 800; }
+.town-news-feed { display: grid; gap: 0.75rem; margin: 0; padding: 0; list-style: none; }
+.town-news-card { display: grid; gap: 0.45rem; padding: 0.9rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--card); color: var(--card-foreground); box-shadow: var(--elevation-card); animation: town-news-rise 360ms ease-out both; }
+.town-news-meta { display: flex; align-items: center; justify-content: space-between; gap: 0.5rem; font-size: 0.7rem; color: var(--muted-foreground); }
+.town-news-chip { padding: 0.18rem 0.55rem; border-radius: 999px; background: color-mix(in srgb, var(--primary) 14%, transparent); color: var(--primary); font-size: 0.65rem; font-weight: 800; }
+.town-news-chip-market { background: color-mix(in srgb, #d97706 16%, transparent); color: #b45309; }
+.town-news-chip-sports { background: color-mix(in srgb, #16a34a 16%, transparent); color: #15803d; }
+.town-news-chip-general { background: color-mix(in srgb, var(--muted-foreground) 14%, transparent); color: var(--muted-foreground); }
+.town-news-title { margin: 0; font-size: 1rem; font-weight: 800; line-height: 1.25; text-wrap: balance; }
+.town-news-body { margin: 0; font-size: 0.85rem; line-height: 1.5; }
+.town-news-actions { display: flex; gap: 0.5rem; padding-top: 0.25rem; }
+.town-news-like { display: inline-flex; align-items: center; gap: 0.4rem; min-height: 38px; padding: 0.35rem 0.8rem; border: 1px solid var(--border); border-radius: 999px; background: var(--background); color: var(--foreground); font-size: 0.78rem; font-weight: 700; cursor: pointer; transition: background 160ms ease, color 160ms ease, border-color 160ms ease, transform 120ms ease; }
+.town-news-like:active { transform: scale(0.96); }
+.town-news-like:disabled { opacity: 0.55; cursor: not-allowed; }
+.town-news-like[aria-pressed="true"] { border-color: color-mix(in srgb, #e11d48 40%, transparent); background: color-mix(in srgb, #e11d48 10%, var(--card)); color: #e11d48; }
+.town-news-heart { width: 1rem; height: 1rem; }
+.town-news-like[aria-pressed="true"] .town-news-heart { animation: town-news-heart-pop 420ms cubic-bezier(0.2, 0.9, 0.3, 1.3); }
+.town-news-comments { display: grid; gap: 0.35rem; margin: 0.2rem 0 0; padding: 0; list-style: none; }
+.town-news-comments li { justify-self: start; max-width: 90%; padding: 0.45rem 0.7rem; border-radius: 0.9rem 0.9rem 0.9rem 0.25rem; background: var(--muted); font-size: 0.8rem; line-height: 1.4; animation: town-news-rise 240ms ease-out both; }
+.town-news-comment-form { display: flex; align-items: center; gap: 0.4rem; }
+.town-news-comment-form input { flex: 1; min-width: 0; min-height: 38px; padding: 0.4rem 0.75rem; border: 1px solid var(--border); border-radius: 999px; background: var(--background); color: var(--foreground); font-size: 0.8rem; }
+.town-news-send { display: grid; place-items: center; width: 38px; height: 38px; border: 0; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); cursor: pointer; }
+.town-news-send:disabled { opacity: 0.5; cursor: not-allowed; }
+.town-news-send svg { width: 1rem; height: 1rem; }
+.town-news-compose-toggle { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; min-height: 44px; border: 1px dashed color-mix(in srgb, var(--primary) 50%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--primary) 8%, transparent); color: var(--primary); font-size: 0.85rem; font-weight: 800; cursor: pointer; }
+.town-news-compose-toggle svg { width: 1rem; height: 1rem; }
+.town-news-composer { display: grid; gap: 0.6rem; padding: 0.9rem; border: 1px solid var(--border); border-radius: 1rem; background: var(--card); }
+.town-news-composer label { display: grid; gap: 0.3rem; font-size: 0.75rem; font-weight: 700; color: var(--muted-foreground); }
+.town-news-composer :is(input, textarea) { padding: 0.5rem 0.7rem; border: 1px solid var(--border); border-radius: 0.6rem; background: var(--background); color: var(--foreground); font-size: 0.85rem; }
+.town-news-submit { min-height: 42px; border: 0; border-radius: 999px; background: var(--primary); color: var(--primary-foreground); font-weight: 800; cursor: pointer; }
+.town-news-submit:disabled { opacity: 0.6; }
+@keyframes town-news-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+@keyframes town-news-heart-pop { 0% { transform: scale(1); } 35% { transform: scale(1.35); } 70% { transform: scale(0.92); } 100% { transform: scale(1); } }
+@media (prefers-reduced-motion: reduce) {
+  .town-news-card, .town-news-comments li, .town-news-like[aria-pressed="true"] .town-news-heart { animation: none; }
+  .town-news-like { transition: none; }
 }
