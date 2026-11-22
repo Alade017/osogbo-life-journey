@@ -62,3 +62,11 @@ export function walkingCadence(distance: number, delta: number, height: number):
     return 0;
   return Math.min(CHARACTER_MOTION.walkMaxCadence, distance / delta / height / CHARACTER_MOTION.walkReferenceSpeed);
 }
+
+/** Preserve shortest-angle turning while skipping trig for settled facing. */
+export function shortestFacingDifference(targetYaw: number, currentYaw: number): number {
+  const rawDifference = targetYaw - currentYaw;
+  return Math.abs(rawDifference) <= 0.002
+    ? rawDifference
+    : Math.atan2(Math.sin(rawDifference), Math.cos(rawDifference));
+}

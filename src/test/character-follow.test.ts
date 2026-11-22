@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   followStep,
   measuredSpeed,
+  shortestFacingDifference,
   walkingCadence,
   type Vec3,
 } from "../components/3d/character-follow.ts";
@@ -120,4 +121,20 @@ describe("walkingCadence", () => {
       expect(walkingCadence(distance, delta, height)).toBe(0);
     },
   );
+});
+
+describe("shortestFacingDifference", () => {
+  it("preserves zero and tiny settled rotations", () => {
+    expect(shortestFacingDifference(0, 0)).toBe(0);
+    expect(shortestFacingDifference(0.001, 0)).toBe(0.001);
+    expect(shortestFacingDifference(-0.001, 0)).toBe(-0.001);
+  });
+  it("turns toward the shortest direction across the angle wrap", () => {
+    expect(shortestFacingDifference(-Math.PI + 0.1, Math.PI - 0.1)).toBeCloseTo(0.2);
+    expect(shortestFacingDifference(Math.PI - 0.1, -Math.PI + 0.1)).toBeCloseTo(-0.2);
+  });
+  it("retains normal turns and equivalent full rotations", () => {
+    expect(shortestFacingDifference(Math.PI / 2, 0)).toBeCloseTo(Math.PI / 2);
+    expect(shortestFacingDifference(2 * Math.PI, 0)).toBeCloseTo(0);
+  });
 });

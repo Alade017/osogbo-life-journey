@@ -10,7 +10,7 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WORLD_SCALE } from "./world-theme";
 import { CHARACTER_GROUND, CHARACTER_MOTION } from "./character-config";
 import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
-import { followStep, measuredSpeed, walkingCadence, type Vec3 } from "./character-follow";
+import { followStep, measuredSpeed, shortestFacingDifference, walkingCadence, type Vec3 } from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -125,7 +125,7 @@ export function WorldCharacter({
   useFrame((_state, delta) => {
     const rootGroup = root.current;
     if (rootGroup) {
-      const difference = Math.atan2(Math.sin(yaw - rootGroup.rotation.y), Math.cos(yaw - rootGroup.rotation.y));
+      const difference = shortestFacingDifference(yaw, rootGroup.rotation.y);
       if (Math.abs(difference) > 0.002) {
         rootGroup.rotation.y += reduced ? difference : difference * blend(CHARACTER_MOTION.headTurnRate, delta);
         invalidate();
