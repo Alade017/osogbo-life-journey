@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
+import { resolveEquippedHeadwear } from "@/game/wearable-outfits";
 import {
   HAIR_COLORS,
   HAIR_STYLES_BY_GENDER,
-  HEADWEAR,
   OUTFITS,
   SHOE_COLORS,
   SKIN_TONES,
@@ -17,7 +17,7 @@ import {
 describe("character appearance customization", () => {
   it("resets to the established starter look", () => {
     expect(DEFAULT_CHARACTER_APPEARANCE).toEqual({
-      clothed: false,
+      clothed: true,
       skin: 1,
       hair: 1,
       hairColor: 0,
@@ -42,7 +42,7 @@ describe("character appearance customization", () => {
       expect(appearance.outfit).toBeLessThan(OUTFITS.length);
       expect(appearance.bottoms).toBeLessThan(TROUSERS.length);
       expect(appearance.shoes).toBeLessThan(SHOE_COLORS.length);
-      expect(appearance.headwear).toBeLessThan(HEADWEAR.length);
+      expect(appearance.headwear).toBe(0); // Character creation never assigns headwear.
       expect(appearance.stature).toBeLessThan(3);
       expect(appearance.build).toBeLessThan(4);
     },
@@ -80,4 +80,23 @@ it("adds the reference short crop without moving existing female hairstyle indic
   expect(appearanceForGender({ ...DEFAULT_CHARACTER_APPEARANCE, hair: index }, "female").hair).toBe(
     index,
   );
+});
+
+
+describe("inventory headwear rendering", () => {
+  it("renders no headwear when the head slot is empty", () => {
+    expect(resolveEquippedHeadwear([])).toBe(0);
+    expect(resolveEquippedHeadwear([{ slot: "top", item: { slug: "gele" } }])).toBe(0);
+  });
+
+  it.each([["gele", 1], ["fila", 2], ["cap", 3]] as const)(
+    "maps equipped %s to its procedural model",
+    (slug, style) => {
+      expect(resolveEquippedHeadwear([{ slot: "head", item: { slug } }])).toBe(style);
+    },
+  );
+
+  it("does not invent a cap for unknown inventory headwear", () => {
+    expect(resolveEquippedHeadwear([{ slot: "head", item: { slug: "unmodeled_hat" } }])).toBe(0);
+  });
 });

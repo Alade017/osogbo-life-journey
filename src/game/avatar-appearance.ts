@@ -23,7 +23,7 @@ export const BODY_HEIGHTS = ["Short", "Average", "Tall"];
 export const BODY_BUILDS = ["Lean", "Average", "Athletic", "Muscular"];
 
 export type Appearance = {
-  /** Whether the character wears the top, trousers and shoes. Female bodies start unclothed. */
+  /** Whether the character wears the top, trousers and shoes. New characters receive an outfit. */
   clothed?: boolean;
   skin?: number;
   hair?: number;

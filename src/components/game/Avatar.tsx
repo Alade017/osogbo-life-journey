@@ -1,3 +1,4 @@
+import { resolveEquippedHeadwear, resolveWornOutfit, type WearableEquipment } from "@/game/wearable-outfits";
 import type { ReactNode } from "react";
 import {
   BODY_BUILDS,
@@ -25,7 +26,7 @@ export {
 } from "@/game/avatar-appearance";
 export type { Appearance } from "@/game/avatar-appearance";
 
-export type AvatarEquipment = { slot: string };
+export type AvatarEquipment = WearableEquipment;
 export type AvatarFacing = "north" | "east" | "south" | "west";
 export type AvatarAnimationState = "idle" | "walk" | "turn" | "talk" | "work" | "sleep" | "dance";
 
@@ -75,9 +76,9 @@ export function AvatarArtwork({
   const safe = normalizeAvatarAppearance(appearance, gender);
   const skin = SKIN_TONES[safe.skin]!;
   const hairColor = HAIR_COLORS[safe.hairColor]!;
-  const shirt = OUTFITS[safe.outfit]!;
-  const pants = TROUSERS[safe.bottoms]!;
-  const shoes = SHOE_COLORS[safe.shoes]!;
+  const wornOutfit = resolveWornOutfit(safe, gender, equipment);
+  if (wornOutfit.hasWearables) safe.clothed = true;
+  const [shirt, pants, shoes] = wornOutfit.colors;
   const hair = safe.hair;
   const bodyWidth = [0.9, 1, 1.07, 1.14][safe.build] ?? 1;
   const bodyHeight = [0.92, 1, 1.06][safe.stature] ?? 1;
@@ -90,6 +91,7 @@ export function AvatarArtwork({
   const isFemale = gender === "female";
   const isMale = gender === "male";
   const worn = new Set(equipment.map((item) => item.slot));
+  const headwearStyle = resolveEquippedHeadwear(equipment);
   const pose = poseFor(animationState, animationFrame);
   const mirrored = facing === "west";
   const directionTransform = mirrored ? "translate(64 0) scale(-1 1)" : undefined;
@@ -299,31 +301,7 @@ export function AvatarArtwork({
                   )}
                 </g>
               )}
-              {safe.headwear === 1 && (
-                <path
-                  d="M17 16q4-13 15-13t15 13q-8-4-15-2t-15 2z"
-                  fill={shirt}
-                  stroke={EDGE}
-                  strokeWidth="2"
-                />
-              )}
-              {safe.headwear === 2 && (
-                <path
-                  d="m21 10 3-6h17l3 8q-11-4-23-2z"
-                  fill={shirt}
-                  stroke={EDGE}
-                  strokeWidth="2"
-                />
-              )}
-              {safe.headwear === 3 && (
-                <path
-                  d="M20 14q1-12 12-12t12 12H20zm18-1h10v3H38z"
-                  fill={shirt}
-                  stroke={EDGE}
-                  strokeWidth="2"
-                />
-              )}
-              {worn.has("head") && (
+              {headwearStyle > 0 && (
                 <path
                   data-equipment-slot="head"
                   d="M19 14q2-10 13-10t13 10q-13-4-26 0z"

@@ -1,3 +1,4 @@
+import { publicWornEquipment } from "./wearable-outfits";
 import type { Appearance } from "./avatar-appearance";
 import type { AvatarEquipment } from "@/components/game/Avatar";
 
@@ -20,6 +21,8 @@ export function worldAppearance(value: string): Appearance {
       const entry = (data as Record<string, unknown>)[key];
       if (typeof entry === "number" && Number.isInteger(entry)) result[key] = entry;
     }
+    if (typeof (data as Record<string, unknown>)["clothed"] === "boolean")
+      result.clothed = (data as { clothed: boolean }).clothed;
     return result;
   } catch {
     return {};
@@ -28,13 +31,7 @@ export function worldAppearance(value: string): Appearance {
 export function worldEquipment(value: string): AvatarEquipment[] {
   try {
     const data: unknown = JSON.parse(value);
-    return Array.isArray(data)
-      ? data.flatMap((entry) =>
-          entry && typeof entry === "object" && typeof entry.slot === "string"
-            ? [{ slot: entry.slot }]
-            : [],
-        )
-      : [];
+    return publicWornEquipment(data);
   } catch {
     return [];
   }

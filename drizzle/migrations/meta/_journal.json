@@ -764,6 +764,20 @@
       "when": 1795006800000,
       "tag": "0107_adire_crafting",
       "breakpoints": true
+    },
+    {
+      "idx": 109,
+      "version": "7",
+      "when": 1795026600000,
+      "tag": "0109_wearable_outfits",
+      "breakpoints": true
+    },
+    {
+      "idx": 111,
+      "version": "7",
+      "when": 1795008000000,
+      "tag": "0111_fuel_jerrycan_shop",
+      "breakpoints": true
     }
   ]
 }
