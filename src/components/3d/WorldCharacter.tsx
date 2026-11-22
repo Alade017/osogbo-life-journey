@@ -132,7 +132,7 @@ export function WorldCharacter({
       } else rootGroup.rotation.y = yaw;
     }
     let travelled = 0;
-    if (rootGroup && rootGroup.position.distanceTo(goalPosition) > 0.001) {
+    if (rootGroup && rootGroup.position.distanceToSquared(goalPosition) > 0.000001) {
       const here = rootGroup.position;
       const currentCoords = movementBuffers.current;
       currentCoords[0] = here.x;
