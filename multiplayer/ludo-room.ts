@@ -1,7 +1,7 @@
 import { Room, type AuthContext, type Client } from "colyseus";
 import { COLOURS, SEAT_HOLD_MS, type Colour } from "../src/lib/mini-games/ludo-engine.ts";
 import { LudoTable, type TableEvent } from "../src/lib/mini-games/ludo-table.ts";
-import { recordLudoWin } from "./ludo-persistence.ts";
+import { recordLudoWin, settleLudoStake, stakeSeats } from "./ludo-persistence.ts";
 
 // One Ludo table per room. The table in src/lib/mini-games/ludo-table.ts holds every rule. This room only
 // verifies the sign-in, turns socket messages into table actions and sends the table's events back out.
@@ -15,17 +15,27 @@ const TOKEN_MAX_LENGTH = 4_096;
 
 function publicSettings() {
   const url = process.env["SUPABASE_URL"] ?? process.env["VITE_SUPABASE_URL"];
-  const key = process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
-  if (!url || !key) throw new Error("The Ludo server needs Supabase URL and publishable key configuration.");
+  const key =
+    process.env["SUPABASE_PUBLISHABLE_KEY"] ?? process.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
+  if (!url || !key)
+    throw new Error("The Ludo server needs Supabase URL and publishable key configuration.");
   return { url: url.replace(/\/$/, ""), key };
 }
 
 function allowedOrigins() {
-  const configured = process.env["MULTIPLAYER_ALLOWED_ORIGINS"]?.split(",").map((value) => value.trim()).filter(Boolean);
+  const configured = process.env["MULTIPLAYER_ALLOWED_ORIGINS"]
+    ?.split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
   if (configured?.length) return configured;
   return process.env["NODE_ENV"] === "production" || process.env["RAILWAY_ENVIRONMENT_NAME"]
     ? []
-    : ["http://127.0.0.1:3000", "http://localhost:3000", "http://127.0.0.1:3010", "http://localhost:3010"];
+    : [
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3010",
+        "http://localhost:3010",
+      ];
 }
 
 // Confirms the sign-in with Supabase. The room never trusts a user id sent by the client.
@@ -57,14 +67,21 @@ function parseMove(payload: unknown): { colour: Colour; tokenIndex: number; die?
   return die === undefined ? { colour, tokenIndex } : { colour, tokenIndex, die };
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export class LudoRoom extends Room {
   override maxClients = 4;
   override maxMessagesPerSecond = 8;
 
   private table!: LudoTable;
+  /** The stake table this room plays, when it was opened for one. Only its seated players may join. */
+  private stakeTableId: string | null = null;
 
-  override onCreate() {
-    this.setMetadata({ kind: "ludo" });
+  override onCreate(options: { tableId?: unknown } = {}) {
+    const tableId =
+      typeof options.tableId === "string" && UUID.test(options.tableId) ? options.tableId : null;
+    this.stakeTableId = tableId;
+    this.setMetadata(tableId ? { kind: "ludo", tableId } : { kind: "ludo" });
     this.table = new LudoTable({
       clock: {
         setTimeout: (callback, ms) => {
@@ -74,7 +91,8 @@ export class LudoRoom extends Room {
       },
       random: Math.random,
       broadcast: (event) => this.dispatch(event),
-      recordWin: (result) => recordLudoWin(result),
+      recordWin: (result) =>
+        tableId ? settleLudoStake(tableId, result.winnerId) : recordLudoWin(result),
     });
     this.onMessage("START_GAME", (client) => this.table.start(userOf(client)));
     this.onMessage("ROLL_DICE", (client) => this.table.roll(userOf(client)));
@@ -98,7 +116,14 @@ export class LudoRoom extends Room {
       options.accessToken.length > TOKEN_MAX_LENGTH
     )
       throw new Error("Sign in before joining a Ludo table.");
-    return readLudoPlayer(options.accessToken);
+    const player = await readLudoPlayer(options.accessToken);
+    if (this.stakeTableId) {
+      // A stake table is played only by the players who paid into its seats.
+      const table = await stakeSeats(this.stakeTableId);
+      if (table.status !== "playing" || !table.seats.some((seat) => seat.user_id === player.userId))
+        throw new Error("You do not hold a seat at this table.");
+    }
+    return player;
   }
 
   override onJoin(client: Client, _options: unknown, auth: LudoAuth) {
@@ -125,7 +150,9 @@ export class LudoRoom extends Room {
     else if (event.type === "GAME_EVENTS") this.broadcast("GAME_EVENTS", { events: event.events });
     else if (event.type === "TOAST") this.broadcast("TOAST", { text: event.text });
     else {
-      const target = this.clients.find((client) => (client.auth as LudoAuth | undefined)?.userId === event.requestedBy);
+      const target = this.clients.find(
+        (client) => (client.auth as LudoAuth | undefined)?.userId === event.requestedBy,
+      );
       target?.send("ERROR", { code: event.code });
     }
   }

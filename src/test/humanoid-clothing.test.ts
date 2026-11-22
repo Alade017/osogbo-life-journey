@@ -106,3 +106,27 @@ it.each(["male", "female"] as const)(
     }
   },
 );
+
+it("keeps garment weights finite with missing or invalid source influences", () => {
+  const rig = createHumanoid({ variant: "male", skinColor: "#754c32", hairColor: null });
+  const body = rig.meshes[0]!;
+  body.geometry = body.geometry.clone();
+  const weights = body.geometry.getAttribute("skinWeight");
+  const indices = body.geometry.getAttribute("skinIndex");
+  for (let i = 0; i < weights.count; i++) {
+    weights.setXYZW(i, 0, Number.NaN, -1, 1);
+    indices.setXYZW(i, 0, 0, 0, rig.bones.length);
+  }
+  const outfit = createFittedClothing(body, ["#eeeeee", "#333333", "#111111"], false);
+  const result = outfit.geometry.getAttribute("skinWeight");
+  const resultIndices = outfit.geometry.getAttribute("skinIndex");
+  expect(result.count).toBeGreaterThan(0);
+  for (let i = 0; i < result.count; i++) {
+    expect(result.getX(i)).toBe(1);
+    expect(result.getY(i)).toBe(0);
+    expect(result.getZ(i)).toBe(0);
+    expect(result.getW(i)).toBe(0);
+    expect(resultIndices.getX(i)).toBe(0);
+  }
+  expect(() => createVisibleSkin(body)).not.toThrow();
+});

@@ -481,6 +481,8 @@ function RemoteFigure({ person }: { person: MallPerson }) {
 function FollowCamera({ sim }: { sim: { current: MallSim } }) {
   const { camera } = useThree();
   const target = useRef(new Vector3());
+  // Reused every frame so the camera follow does not allocate garbage on low-end phones.
+  const desired = useRef(new Vector3());
   useEffect(() => {
     if ("fov" in camera) {
       camera.fov = 40;
@@ -490,8 +492,8 @@ function FollowCamera({ sim }: { sim: { current: MallSim } }) {
   useFrame((_, delta) => {
     const [x, z] = sim.current.player.pos;
     target.current.set(x, 0, z);
-    const desired = new Vector3(x, 14, z + 13);
-    camera.position.lerp(desired, Math.min(1, delta * 4));
+    desired.current.set(x, 14, z + 13);
+    camera.position.lerp(desired.current, Math.min(1, delta * 4));
     camera.lookAt(target.current.x, 0.8, target.current.z);
   });
   return null;

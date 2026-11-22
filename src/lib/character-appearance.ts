@@ -3,7 +3,6 @@ import {
   HAIR_STYLES_BY_GENDER,
   BODY_BUILDS,
   BODY_HEIGHTS,
-  HEADWEAR,
   OUTFITS,
   SHOE_COLORS,
   SKIN_TONES,
@@ -56,7 +55,7 @@ export function randomizeCharacterAppearance(
     outfit: chooseIndex(OUTFITS.length, random),
     bottoms: chooseIndex(TROUSERS.length, random),
     shoes: chooseIndex(SHOE_COLORS.length, random),
-    headwear: chooseIndex(HEADWEAR.length, random),
+    headwear: 0,
     stature: chooseIndex(BODY_HEIGHTS.length, random),
     build: chooseIndex(BODY_BUILDS.length, random),
   };

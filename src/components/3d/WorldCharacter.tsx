@@ -1,13 +1,13 @@
-import { resolveWornOutfit } from "@/game/wearable-outfits";
+import { resolveEquippedHeadwear, resolveWornOutfit } from "@/game/wearable-outfits";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, Vector3, type Group } from "three";
 import { normalizeAvatarAppearance, type Appearance } from "@/game/avatar-appearance";
 import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Avatar";
 import { WORLD_SCALE } from "./world-theme";
-import { CHARACTER_GROUND, CHARACTER_MOTION, CHARACTER_SOCKETS } from "./character-config";
+import { CHARACTER_GROUND, CHARACTER_MOTION } from "./character-config";
 import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
-import { followStep, measuredSpeed, type Vec3 } from "./character-follow";
+import { followStep, measuredSpeed, walkingCadence, type Vec3 } from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -56,6 +56,8 @@ export function WorldCharacter({
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
   const outfit = resolveWornOutfit(safe, gender, equipment);
+  // Only inventory items with a supported 3D headwear model render on the rig.
+  safe.headwear = resolveEquippedHeadwear(equipment);
   if (outfit.hasWearables) safe.clothed = true;
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
   const variant = body ?? bodyVariantFor(gender);
@@ -63,8 +65,8 @@ export function WorldCharacter({
   const { invalidate } = useThree();
   const [reduced, setReduced] = useState(false);
   const [walking, setWalking] = useState(false);
-  const last = useRef(position);
-  const walkUntil = useRef(0);
+  const cadence = useRef(1);
+  const walkingRef = useRef(false);
   // The root glides toward `position` each frame, so a new spot is walked to rather than jumped to.
   const root = useRef<Group>(null);
   const goal = useRef(new Vector3(...position));
@@ -99,33 +101,25 @@ export function WorldCharacter({
     invalidate();
   }, [lookKey, invalidate]);
   useEffect(() => {
-    const moved = Math.hypot(x - last.current[0], z - last.current[2]) > 0.001;
-    last.current = [x, y, z];
-    if (moved) {
-      walkUntil.current = performance.now() + 350;
-      setWalking(true);
+    if (reduced && walkingRef.current) {
+      walkingRef.current = false;
+      setWalking(false);
     }
-    if (reduced) return;
-    const continuous =
-      animation === "walk" ||
-      animation === "work" ||
-      animation === "talk" ||
-      animation === "dance" ||
-      animation === "interact" ||
-      !!taskPose;
-    if (!moved && !continuous && !walking) return;
-    const settleUntil = performance.now() + CHARACTER_MOTION.settleSeconds * 1000;
-    const timer = window.setInterval(() => {
-      invalidate();
-      if (performance.now() >= walkUntil.current) setWalking(false);
-      const active = continuous || performance.now() < Math.max(walkUntil.current, settleUntil);
-      if (!active) window.clearInterval(timer);
-    }, 1000 / 15);
-    return () => window.clearInterval(timer);
-  }, [x, y, z, animation, taskPose, reduced, invalidate, walking]);
+    invalidate();
+  }, [x, y, z, animation, taskPose, reduced, invalidate]);
   const yaw = FACING_YAW[facing] ?? 0;
+  const initialYaw = useRef(yaw);
+  useEffect(() => { invalidate(); }, [yaw, invalidate]);
   useFrame((_state, delta) => {
     const rootGroup = root.current;
+    if (rootGroup) {
+      const difference = Math.atan2(Math.sin(yaw - rootGroup.rotation.y), Math.cos(yaw - rootGroup.rotation.y));
+      if (Math.abs(difference) > 0.002) {
+        rootGroup.rotation.y += reduced ? difference : difference * blend(CHARACTER_MOTION.headTurnRate, delta);
+        invalidate();
+      } else rootGroup.rotation.y = yaw;
+    }
+    let travelled = 0;
     if (rootGroup && rootGroup.position.distanceTo(goal.current) > 0.001) {
       const here = rootGroup.position;
       const [nx, ny, nz] = followStep(
@@ -135,7 +129,15 @@ export function WorldCharacter({
         speed.current,
         CHARACTER_MOTION.glideRate,
       );
+      travelled = Math.hypot(nx - here.x, nz - here.z);
       rootGroup.position.set(nx, ny, nz);
+      invalidate();
+    }
+    const travelling = !reduced && travelled > 0;
+    cadence.current = travelling ? walkingCadence(travelled, delta, h) : animation === "walk" ? 1 : 0;
+    if (walkingRef.current !== travelling) {
+      walkingRef.current = travelling;
+      setWalking(travelling);
       invalidate();
     }
     const group = bodyRef.current;
@@ -145,7 +147,8 @@ export function WorldCharacter({
     if (lookAt && !reduced) {
       const worldYaw = Math.atan2(lookAt[0] - x, lookAt[2] - z);
       const limit = CHARACTER_MOTION.headTurnLimit * 0.5;
-      turn = MathUtils.clamp(worldYaw - yaw, -limit, limit);
+      const difference = worldYaw - (rootGroup?.rotation.y ?? yaw);
+      turn = MathUtils.clamp(Math.atan2(Math.sin(difference), Math.cos(difference)), -limit, limit);
     }
     if (Math.abs(group.rotation.y - turn) > 0.002) {
       group.rotation.y = MathUtils.lerp(
@@ -160,14 +163,14 @@ export function WorldCharacter({
     }
   });
   const moving = walking && !reduced && !taskPose;
-  const motion = motionFor(animation, moving, taskPose);
+  const motion = motionFor(reduced && animation === "walk" ? "idle" : animation, moving, taskPose);
   const wornAccessory = equipment.find((item) => item.slot === "accessory") as
     { item?: { slug?: string } | null } | undefined;
   const AccessoryModel = wornAccessory?.item?.slug
     ? WORN_ITEM_MODELS[wornAccessory.item.slug]
     : undefined;
   return (
-    <group ref={root} name={`character:${name}`} rotation={[0, yaw, 0]}>
+    <group ref={root} name={`character:${name}`} rotation={[0, initialYaw.current, 0]}>
       <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} renderOrder={-1}>
         <circleGeometry args={[h * CHARACTER_GROUND.shadowRadius, 20]} />
         <meshBasicMaterial
@@ -194,13 +197,12 @@ export function WorldCharacter({
             height={h}
             motion={motion}
             animated={!reduced}
+            walkCadence={cadence}
             held={held}
+            backAccessory={AccessoryModel ? <AccessoryModel h={1} /> : null}
             appearance={safe}
             gender={gender}
           />
-          <group name="back_socket" position={[0, h * CHARACTER_SOCKETS.back, 0]}>
-            {AccessoryModel ? <AccessoryModel h={h} /> : null}
-          </group>
         </group>
       </group>
     </group>

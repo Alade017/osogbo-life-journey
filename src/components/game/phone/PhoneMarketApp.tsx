@@ -13,13 +13,13 @@ import {
   getMarketStallRentStatus,
   getMyPlayerStall,
   getMyStallStock,
-  manageMyStallStock,
   payMarketStallRent,
   rentMarketStall,
   saveMyPlayerStall,
   STALL_CATEGORY_OPTIONS,
   type StallCategory,
 } from "@/lib/market-stall-service";
+import { useStallStockManagement } from "@/hooks/use-stall-stock-management";
 import { PaletteSelect } from "@/components/ui/palette-select";
 import "./phone-market-app.css";
 
@@ -31,6 +31,21 @@ const THEMES = [
 ];
 
 export function PhoneMarketApp() {
+  const character = useQuery(q.character());
+  if (character.isPending) return <p role="status">Loading your market…</p>;
+  if (character.isError || !character.data)
+    return (
+      <div role="alert">
+        Your character could not load.{" "}
+        <button type="button" onClick={() => void character.refetch()}>
+          Reload market
+        </button>
+      </div>
+    );
+  return <MarketAppContent key={character.data.id} characterId={character.data.id} />;
+}
+
+function MarketAppContent({ characterId }: { characterId: string }) {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"stalls" | "shops" | "players">("stalls");
   const { data: character } = useQuery(q.character());
@@ -45,6 +60,7 @@ export function PhoneMarketApp() {
     queryKey: ["playerStall", character?.id],
     enabled: !!character?.id,
     queryFn: () => getMyPlayerStall(character!.id),
+    retry: false,
   });
   const rentQuery = useQuery({
     queryKey: ["marketStallRent", character?.id],
@@ -52,7 +68,7 @@ export function PhoneMarketApp() {
     queryFn: getMarketStallRentStatus,
     retry: false,
   });
-  const activeLease = rentQuery.data?.status === "current";
+  const activeLease = rentQuery.isSuccess && rentQuery.data?.status === "current";
   const stockQuery = useQuery({
     queryKey: ["myStallStock", character?.id],
     enabled: !!character?.id && activeLease,
@@ -76,27 +92,25 @@ export function PhoneMarketApp() {
     },
   });
 
-  const [stallName, setStallName] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState<StallCategory>(
-    STALL_CATEGORY_OPTIONS[0]?.id ?? "fabrics",
-  );
+  const [nameDraft, setStallName] = useState<string | undefined>();
+  const [categoryDraft, setSelectedCategory] = useState<StallCategory | undefined>();
   const [selectedTheme, setSelectedTheme] = useState("indigo");
-  const [stallOpen, setStallOpen] = useState(false);
-  const [formInitialized, setFormInitialized] = useState(false);
-
-  if (stallQuery.data && !formInitialized) {
-    setStallName(stallQuery.data.name);
-    setSelectedCategory(
-      STALL_CATEGORY_OPTIONS.find((option) => option.id === stallQuery.data?.stall_category)?.id ??
-        "fabrics",
-    );
-    setStallOpen(stallQuery.data.is_open);
-    setFormInitialized(true);
-  }
+  const [openDraft, setStallOpen] = useState<boolean | undefined>();
+  const stallName = nameDraft ?? stallQuery.data?.name ?? "";
+  const selectedCategory =
+    categoryDraft ??
+    STALL_CATEGORY_OPTIONS.find((option) => option.id === stallQuery.data?.stall_category)?.id ??
+    "fabrics";
+  const stallOpen = openDraft ?? stallQuery.data?.is_open ?? false;
+  const savedOpen = activeLease && !!stallQuery.data?.is_open;
+  const stockManagement = useStallStockManagement(characterId);
 
   const invalidateStallState = async () => {
     await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["playerStall", character?.id] }),
+      queryClient.invalidateQueries(
+        { queryKey: ["playerStall", character?.id] },
+        { throwOnError: true },
+      ),
       queryClient.invalidateQueries({ queryKey: ["marketStallRent", character?.id] }),
       queryClient.invalidateQueries({ queryKey: ["myStallStock", character?.id] }),
       queryClient.invalidateQueries({ queryKey: ["ownedStalls", character?.id] }),
@@ -134,26 +148,19 @@ export function PhoneMarketApp() {
         isOpen: stallOpen,
       });
     },
-    onSuccess: async () => {
+    onSuccess: async (result) => {
       await invalidateStallState();
-      toast.success(stallOpen ? "Stall is now open at Oja-Oba Market." : "Stall details saved.");
+      setStallName(undefined);
+      setSelectedCategory(undefined);
+      setStallOpen(undefined);
+      toast.success(
+        result.isOpen ? "Stall is now open at Oja-Oba Market." : "Stall details saved.",
+      );
     },
     onError: (err) => {
       toast.error(err instanceof Error ? err.message : "Failed to update stall");
     },
   });
-  const stockMutation = useMutation({
-    mutationFn: manageMyStallStock,
-    onSuccess: async () => {
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["myStallStock", character?.id] }),
-        queryClient.invalidateQueries({ queryKey: q.inventory().queryKey }),
-      ]);
-      toast.success("Stall stock updated.");
-    },
-    onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
-  });
-
   // Shop purchase and sell
   const purchase = useGameAction(rpc.purchaseShopItem, {
     onSuccess: () => toast.success("Item purchased successfully."),
@@ -307,150 +314,196 @@ export function PhoneMarketApp() {
               )}
             </section>
             {/* Player's Stall Builder Card */}
-            <div className="phone-card market-app-stall">
-              <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2">
-                <div className="flex items-center gap-2">
-                  <span className="phone-app-icon-badge phone-app-green">
-                    <Store className="h-4 w-4" />
-                  </span>
-                  <div>
-                    <h3 className="font-bold text-sm">Your Oja-Oba Market Stall</h3>
-                    <p className="text-xs text-muted-foreground">Manage your town stall</p>
-                  </div>
-                </div>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
-                    stallOpen
-                      ? "bg-emerald-500/20 text-emerald-600"
-                      : "bg-muted text-muted-foreground"
-                  }`}
-                >
-                  {stallOpen ? "● Open" : "○ Closed"}
-                </span>
+            {stallQuery.isPending ? (
+              <p role="status">Loading your saved stall…</p>
+            ) : stallQuery.isError ? (
+              <div role="alert">
+                <p>Your saved stall could not load. Reload it before editing.</p>
+                <button type="button" onClick={() => void stallQuery.refetch()}>
+                  Reload stall details
+                </button>
               </div>
-
-              {/* Stall Live Preview */}
-              <div
-                className="market-app-preview my-3 p-3 rounded-xl text-white transition-all"
-                style={{
-                  backgroundColor: THEMES.find((t) => t.id === selectedTheme)?.color ?? "#1e3a8a",
-                  borderColor: THEMES.find((t) => t.id === selectedTheme)?.border ?? "#3b82f6",
-                  borderWidth: 2,
-                }}
-              >
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold tracking-wider uppercase opacity-80">
-                    Oja-Oba Stall
-                  </span>
-                  <span className="text-xs flex items-center gap-1 opacity-90">
-                    <TrendingUp className="h-3 w-3" />
-                    {stallOpen ? "Receiving Shoppers" : "Standby"}
-                  </span>
-                </div>
-                <h4 className="text-lg font-black mt-1">
-                  {stallName.trim() || `${character?.name ?? "Your"}'s Market Stall`}
-                </h4>
-                <p className="text-xs opacity-90 mt-0.5">{selectedCategory}</p>
-                <div className="mt-3 pt-2 border-t border-white/20 flex justify-between text-xs font-medium">
-                  <span>Saved town stall</span>
-                  <span>{stallOpen ? "Open to visitors" : "Closed"}</span>
-                </div>
-              </div>
-
-              {/* Stall Form Controls */}
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs font-bold block mb-1">Stall Name</label>
-                  <input
-                    type="text"
-                    value={stallName}
-                    placeholder={`${character?.name ?? "My"}'s Corner Store`}
-                    onChange={(e) => setStallName(e.target.value)}
-                    className="w-full text-sm px-3 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary outline-none"
-                    maxLength={50}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold block mb-1">Goods or Service Category</label>
-                  <PaletteSelect
-                    value={selectedCategory}
-                    disabled={!activeLease}
-                    onValueChange={(next) => {
-                      const category = STALL_CATEGORY_OPTIONS.find((option) => option.id === next);
-                      if (category) setSelectedCategory(category.id);
-                    }}
-                    options={STALL_CATEGORY_OPTIONS.map((cat) => ({
-                      value: cat.id,
-                      label: `${cat.label} (${cat.desc})`,
-                    }))}
-                  />
-                </div>
-
-                <div>
-                  <label className="text-xs font-bold block mb-1">Canopy colour preview</label>
-                  <p className="text-[11px] text-muted-foreground mb-2">
-                    Preview on this phone; your stall name, goods and open status are saved.
-                  </p>
-                  <div className="grid grid-cols-4 gap-2">
-                    {THEMES.map((theme) => (
-                      <button
-                        type="button"
-                        key={theme.id}
-                        onClick={() => setSelectedTheme(theme.id)}
-                        className={`py-2 px-1 rounded-lg text-xs font-bold border transition-all text-center ${
-                          selectedTheme === theme.id
-                            ? "ring-2 ring-primary border-primary"
-                            : "border-border"
-                        }`}
-                        style={{ backgroundColor: `${theme.color}25` }}
-                      >
-                        {theme.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between pt-1">
-                  <div>
-                    <span className="text-xs font-bold block">Open for Customers</span>
-                    <span className="text-[11px] text-muted-foreground">
-                      Show your stall as open in town
+            ) : (
+              <div className="phone-card market-app-stall">
+                <div className="flex items-center justify-between gap-2 border-b border-border/40 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="phone-app-icon-badge phone-app-green">
+                      <Store className="h-4 w-4" />
                     </span>
+                    <div>
+                      <h3 className="font-bold text-sm">Your Oja-Oba Market Stall</h3>
+                      <p className="text-xs text-muted-foreground">Manage your town stall</p>
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    disabled={!activeLease}
-                    onClick={() => setStallOpen((prev) => !prev)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
-                      stallOpen
-                        ? "bg-emerald-600 text-white"
-                        : "bg-muted text-foreground hover:bg-muted/80"
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[11px] font-bold ${
+                      savedOpen
+                        ? "bg-emerald-500/20 text-emerald-600"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
-                    {stallOpen ? "Stall is Open" : "Stall is Closed"}
-                  </button>
+                    {savedOpen ? "● Open (saved)" : "○ Closed (saved)"}
+                  </span>
                 </div>
 
-                <button
-                  type="button"
-                  disabled={!activeLease || saveStallMutation.isPending}
-                  onClick={() => saveStallMutation.mutate()}
-                  className="w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+                {/* Stall Live Preview */}
+                <div
+                  className="market-app-preview my-3 p-3 rounded-xl text-white transition-all"
+                  style={{
+                    backgroundColor: THEMES.find((t) => t.id === selectedTheme)?.color ?? "#1e3a8a",
+                    borderColor: THEMES.find((t) => t.id === selectedTheme)?.border ?? "#3b82f6",
+                    borderWidth: 2,
+                  }}
                 >
-                  <Check className="h-4 w-4" />
-                  {saveStallMutation.isPending ? "Saving stall..." : "Save stall details"}
-                </button>
-                {!activeLease && (
-                  <p role="status" className="text-xs text-muted-foreground">
-                    Rent a current stall before saving or opening your stall.
-                  </p>
-                )}
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-semibold tracking-wider uppercase opacity-80">
+                      Oja-Oba Stall
+                    </span>
+                    <span className="text-xs flex items-center gap-1 opacity-90">
+                      <TrendingUp className="h-3 w-3" />
+                      {stallOpen ? "Receiving Shoppers" : "Standby"}
+                    </span>
+                  </div>
+                  <h4 className="text-lg font-black mt-1">
+                    {stallName.trim() || `${character?.name ?? "Your"}'s Market Stall`}
+                  </h4>
+                  <p className="text-xs opacity-90 mt-0.5">{selectedCategory}</p>
+                  <div className="mt-3 pt-2 border-t border-white/20 flex justify-between text-xs font-medium">
+                    <span>Stall preview</span>
+                    <span>{stallOpen ? "Open to visitors" : "Closed"}</span>
+                  </div>
+                </div>
+
+                {/* Stall Form Controls */}
+                <p className="text-xs text-muted-foreground">
+                  Preview changes take effect after saving. The status above reflects your saved
+                  stall and current lease.
+                </p>
+                <fieldset
+                  disabled={!activeLease || saveStallMutation.isPending}
+                  className="space-y-3"
+                >
+                  <div>
+                    <label className="text-xs font-bold block mb-1">Stall Name</label>
+                    <input
+                      type="text"
+                      value={stallName}
+                      placeholder={`${character?.name ?? "My"}'s Corner Store`}
+                      onChange={(e) => setStallName(e.target.value)}
+                      className="w-full text-sm px-3 py-2 rounded-lg border border-border bg-background focus:ring-2 focus:ring-primary outline-none"
+                      maxLength={50}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold block mb-1">
+                      Goods or Service Category
+                    </label>
+                    <PaletteSelect
+                      value={selectedCategory}
+                      disabled={!activeLease}
+                      onValueChange={(next) => {
+                        const category = STALL_CATEGORY_OPTIONS.find(
+                          (option) => option.id === next,
+                        );
+                        if (category) setSelectedCategory(category.id);
+                      }}
+                      options={STALL_CATEGORY_OPTIONS.map((cat) => ({
+                        value: cat.id,
+                        label: `${cat.label} (${cat.desc})`,
+                      }))}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="text-xs font-bold block mb-1">Canopy colour preview</label>
+                    <p className="text-[11px] text-muted-foreground mb-2">
+                      Preview on this phone; your stall name, goods and open status are saved.
+                    </p>
+                    <div className="grid grid-cols-4 gap-2">
+                      {THEMES.map((theme) => (
+                        <button
+                          type="button"
+                          key={theme.id}
+                          onClick={() => setSelectedTheme(theme.id)}
+                          className={`py-2 px-1 rounded-lg text-xs font-bold border transition-all text-center ${
+                            selectedTheme === theme.id
+                              ? "ring-2 ring-primary border-primary"
+                              : "border-border"
+                          }`}
+                          style={{ backgroundColor: `${theme.color}25` }}
+                        >
+                          {theme.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1">
+                    <div>
+                      <span className="text-xs font-bold block">Open for Customers</span>
+                      <span className="text-[11px] text-muted-foreground">
+                        Show your stall as open in town
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={!activeLease}
+                      onClick={() => setStallOpen(!stallOpen)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                        stallOpen
+                          ? "bg-emerald-600 text-white"
+                          : "bg-muted text-foreground hover:bg-muted/80"
+                      }`}
+                    >
+                      {stallOpen ? "Stall is Open" : "Stall is Closed"}
+                    </button>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={!activeLease || saveStallMutation.isPending}
+                    onClick={() => saveStallMutation.mutate()}
+                    className="w-full py-2.5 rounded-xl font-bold text-sm bg-primary text-primary-foreground hover:opacity-90 transition-all flex items-center justify-center gap-2 mt-2 disabled:opacity-50"
+                  >
+                    <Check className="h-4 w-4" />
+                    {saveStallMutation.isPending ? "Saving stall..." : "Save stall details"}
+                  </button>
+                  {!activeLease && (
+                    <p role="status" className="text-xs text-muted-foreground">
+                      Rent a current stall before saving or opening your stall.
+                    </p>
+                  )}
+                </fieldset>
               </div>
-            </div>
+            )}
 
             {character?.user_id && (
               <StallIncomePanel key={character.user_id} userId={character.user_id} />
+            )}
+            {(stockManagement.pending || stockManagement.storageError) && (
+              <div role="status" className="phone-card space-y-2 p-3">
+                <p>
+                  {stockManagement.storageError
+                    ? "The saved stock request could not be read. Restore browser storage and reload the request before changing stock."
+                    : "A stock update needs confirmation. Retry the saved request; it will not transfer items twice."}
+                </p>
+                <button
+                  type="button"
+                  disabled={stockManagement.busy}
+                  onClick={() =>
+                    stockManagement.storageError
+                      ? stockManagement.reloadSaved()
+                      : stockManagement.submit()
+                  }
+                >
+                  {stockManagement.storageError
+                    ? "Reload saved stock request"
+                    : stockManagement.busy
+                      ? "Confirming stock…"
+                      : "Retry stock update"}
+                </button>
+              </div>
             )}
             {activeLease && (
               <section
@@ -488,7 +541,8 @@ export function PhoneMarketApp() {
                       <div className="min-w-0">
                         <strong className="block text-xs">{item.name}</strong>
                         <span className="text-[11px] text-muted-foreground">
-                          {item.quantity} listed · {formatNaira(item.priceMinor)}
+                          {item.quantity === 0 ? "Sold out" : `${item.quantity} listed`} ·{" "}
+                          {formatNaira(item.priceMinor)}
                         </span>
                       </div>
                       <div className="flex flex-wrap items-center gap-2">
@@ -529,9 +583,9 @@ export function PhoneMarketApp() {
                         <button
                           type="button"
                           className="rounded border px-2 py-1 text-[11px]"
-                          disabled={stockMutation.isPending}
+                          disabled={stockManagement.blocked}
                           onClick={() =>
-                            stockMutation.mutate({
+                            stockManagement.submit({
                               action: "set_price",
                               itemId: item.id,
                               priceMinor: price,
@@ -543,9 +597,9 @@ export function PhoneMarketApp() {
                         <button
                           type="button"
                           className="rounded border px-2 py-1 text-[11px]"
-                          disabled={stockMutation.isPending}
+                          disabled={stockManagement.blocked}
                           onClick={() =>
-                            stockMutation.mutate({
+                            stockManagement.submit({
                               action: "set_quantity",
                               itemId: item.id,
                               quantity,
@@ -557,9 +611,9 @@ export function PhoneMarketApp() {
                         <button
                           type="button"
                           className="rounded border px-2 py-1 text-[11px]"
-                          disabled={stockMutation.isPending}
+                          disabled={stockManagement.blocked}
                           onClick={() =>
-                            stockMutation.mutate({ action: "remove", itemId: item.id })
+                            stockManagement.submit({ action: "remove", itemId: item.id })
                           }
                         >
                           Remove
@@ -622,9 +676,9 @@ export function PhoneMarketApp() {
                           <button
                             type="button"
                             className="rounded-lg bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground disabled:opacity-50"
-                            disabled={stockMutation.isPending || quantity > entry.quantity}
+                            disabled={stockManagement.blocked || quantity > entry.quantity}
                             onClick={() =>
-                              stockMutation.mutate({
+                              stockManagement.submit({
                                 action: "add",
                                 itemId: entry.item_id,
                                 quantity,
