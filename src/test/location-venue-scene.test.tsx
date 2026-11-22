@@ -7,6 +7,7 @@ import type { VenueFixture } from "@/lib/location-venue-designs";
 
 const sceneMock = vi.hoisted(() => ({
   renderChildren: false,
+  furnitureRender: vi.fn(),
   failingKind: null as string | null,
   pendingKind: null as string | null,
   pendingPromise: null as Promise<void> | null,
@@ -22,6 +23,7 @@ vi.mock("@react-three/fiber", () => ({
 
 vi.mock("@/components/3d/VenueFurniture", () => ({
   VenueFurnitureModel: ({ kind }: { kind: string }) => {
+    sceneMock.furnitureRender(kind);
     if (kind === sceneMock.failingKind) {
       throw new Error("Furniture model unavailable");
     }
@@ -33,6 +35,7 @@ vi.mock("@/components/3d/VenueFurniture", () => ({
 }));
 
 beforeEach(() => {
+  sceneMock.furnitureRender.mockClear();
   sceneMock.renderChildren = false;
   sceneMock.failingKind = null;
   sceneMock.pendingKind = null;
@@ -325,6 +328,36 @@ describe("optional furniture readiness", () => {
     expect(screen.getByText(loadingMessage)).toBeInTheDocument();
     await complete();
     expect(screen.queryByText(loadingMessage)).not.toBeInTheDocument();
+  });
+
+  it("does not rerender unrelated furniture when selection changes", () => {
+    const screenFixture = makeFixture("Test screen", "screen");
+
+    render(renderVenue([table, seat, screenFixture]));
+    sceneMock.furnitureRender.mockClear();
+
+    fireEvent.click(screen.getByRole("button", { name: "Test seat" }));
+
+    expect(sceneMock.furnitureRender).toHaveBeenCalledWith("table");
+    expect(sceneMock.furnitureRender).toHaveBeenCalledWith("seat");
+    expect(sceneMock.furnitureRender).not.toHaveBeenCalledWith("screen");
+    expect(screen.getByRole("button", { name: "Test seat" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+  });
+
+  it("does not rerender ready furniture when another model finishes loading", async () => {
+    const complete = suspendFurniture("table");
+
+    render(renderVenue([table, seat]));
+    sceneMock.furnitureRender.mockClear();
+
+    await complete();
+
+    expect(screen.queryByText(loadingMessage)).not.toBeInTheDocument();
+    expect(sceneMock.furnitureRender).toHaveBeenCalledWith("table");
+    expect(sceneMock.furnitureRender).not.toHaveBeenCalledWith("seat");
   });
 
   it("hides optional status during manual fallback", () => {

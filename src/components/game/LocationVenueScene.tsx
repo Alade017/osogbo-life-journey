@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
 import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
 import { transportMapHref } from "@/lib/transport-park";
-import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { Component, lazy, memo, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { resolveVenueScene } from "@/lib/venue-scene-resolver";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 import { SpecializedVenueFallback } from "./SpecializedVenueFallback";
@@ -59,7 +59,7 @@ function VenueSceneReady({ onReady }: { onReady: () => void }) {
   return null;
 }
 
-function FixtureModel({
+const FixtureModel = memo(function FixtureModel({
   fixture,
   active,
   accentColor,
@@ -71,7 +71,7 @@ function FixtureModel({
   fixture: VenueFixture;
   active: boolean;
   accentColor: string;
-  onSelect: () => void;
+  onSelect: (fixtureId: string) => void;
   onRegister: (key: string, registration: FurnitureRegistration) => void;
   onResult: (key: string, token: symbol, result: FurnitureResult) => void;
   onUnregister: (key: string, token: symbol) => void;
@@ -105,6 +105,14 @@ function FixtureModel({
     };
   }, [furnitureKey, supported, token, onRegister, onUnregister]);
 
+  const handleClick = useCallback(
+    (event: { stopPropagation: () => void }) => {
+      event.stopPropagation();
+      onSelect(fixture.id);
+    },
+    [onSelect, fixture.id],
+  );
+
   if (!supported) return null;
 
   return (
@@ -115,17 +123,14 @@ function FixtureModel({
             kind={fixture.kind}
             active={active}
             accentColor={accentColor}
-            onClick={(event) => {
-              event.stopPropagation();
-              onSelect();
-            }}
+            onClick={handleClick}
           />
           <VenueSceneReady onReady={handleReady} />
         </Suspense>
       </VenueSceneBoundary>
     </group>
   );
-}
+});
 
 function BasicLocationVenueScene({
   slug,
@@ -352,7 +357,7 @@ function BasicLocationVenueScene({
                         fixture={fixture}
                         active={fixture.id === selectedFixture}
                         accentColor={venue.accentColor}
-                        onSelect={() => setSelectedFixture(fixture.id)}
+                        onSelect={setSelectedFixture}
                         onRegister={handleFurnitureRegister}
                         onResult={handleFurnitureResult}
                         onUnregister={handleFurnitureUnregister}
