@@ -121,6 +121,7 @@ export function WorldCharacter({
   }, [x, y, z, animation, taskPose, reduced, invalidate]);
   const yaw = FACING_YAW[facing] ?? 0;
   const initialYaw = useRef(yaw);
+  const lookAtCache = useRef<{ targetX: number; targetZ: number; x: number; z: number; facingYaw: number; turn: number } | null>(null);
   useEffect(() => { invalidate(); }, [yaw, invalidate]);
   useFrame((_state, delta) => {
     const rootGroup = root.current;
@@ -168,7 +169,23 @@ export function WorldCharacter({
     // A look at a nearby character turns the body a little, measured relative to its facing.
     let turn = 0;
     if (lookAt && !reduced) {
-      turn = lookAtBodyTurn(lookAt[0], lookAt[2], x, z, rootGroup?.rotation.y ?? yaw);
+      const targetX = lookAt[0];
+      const targetZ = lookAt[2];
+      const facingYaw = rootGroup?.rotation.y ?? yaw;
+      const cached = lookAtCache.current;
+      if (
+        cached &&
+        cached.targetX === targetX &&
+        cached.targetZ === targetZ &&
+        cached.x === x &&
+        cached.z === z &&
+        cached.facingYaw === facingYaw
+      ) {
+        turn = cached.turn;
+      } else {
+        turn = lookAtBodyTurn(targetX, targetZ, x, z, facingYaw);
+        lookAtCache.current = { targetX, targetZ, x, z, facingYaw, turn };
+      }
     }
     if (Math.abs(group.rotation.y - turn) > 0.002) {
       group.rotation.y = MathUtils.lerp(
