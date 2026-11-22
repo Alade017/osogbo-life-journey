@@ -4060,81 +4060,112 @@
   opacity: 0.6;
 }
 
-/* Community contribution in the phone: a hero, one card per fund, figures in a two-column strip. */
+/* Community contribution in the phone: an iOS-style grouped screen. A large title, the amount as a grouped
+   row, fund cards with hairline edges, and a full-width pill button. */
 .phone-app-body .contribution-app {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  padding: 16px 16px 24px;
 }
 .phone-app-body .contribution-hero h2 {
-  font-size: 1.05rem;
+  color: var(--foreground);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   margin: 0;
 }
 .phone-app-body .contribution-hero p {
   color: var(--muted-foreground);
   font-size: 0.8rem;
-  margin: 2px 0 0;
+  margin: 3px 0 0;
 }
 .phone-app-body .contribution-app .contribution-card {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--shape-card, 14px);
-  box-shadow: var(--elevation-card);
+  border-radius: 14px;
+  box-shadow: 0 0 0 0.5px var(--border);
   color: var(--card-foreground);
   display: grid;
-  gap: 10px;
+  gap: 12px;
   padding: 14px;
 }
 .phone-app-body .contribution-app .contribution-card h3 {
-  font-size: 0.95rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
   margin: 0;
 }
 .phone-app-body .contribution-figures {
   display: grid;
-  gap: 8px;
+  gap: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
+  border-top: 0.5px solid var(--border);
+  padding-top: 10px;
 }
 .phone-app-body .contribution-figures > div {
-  background: var(--muted);
-  border-radius: 12px;
-  padding: 10px;
+  min-width: 0;
+  padding: 0 8px;
+}
+.phone-app-body .contribution-figures > div + div {
+  border-left: 0.5px solid var(--border);
+}
+.phone-app-body .contribution-figures > div:first-child {
+  padding-left: 0;
 }
 .phone-app-body .contribution-figures dt {
   color: var(--muted-foreground);
   font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 .phone-app-body .contribution-figures dd {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  margin: 2px 0 0;
+  margin: 3px 0 0;
 }
 .phone-app-body .contribution-app .phone-service-field {
-  color: var(--muted-foreground);
+  align-items: center;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: 0 0 0 0.5px var(--border);
+  color: var(--foreground);
   display: grid;
-  font-size: 0.78rem;
-  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  grid-template-columns: 1fr minmax(0, 7rem);
+  gap: 10px;
+  padding: 12px 14px;
 }
 .phone-app-body .contribution-app .phone-service-field input {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--card-foreground);
+  background: var(--muted);
+  border: 0;
+  border-radius: 9px;
+  color: var(--foreground);
   font-size: 0.95rem;
-  min-height: 44px;
-  padding: 0 12px;
+  font-variant-numeric: tabular-nums;
+  min-height: 36px;
+  padding: 0 10px;
+  text-align: right;
+  width: 100%;
 }
 .phone-app-body .contribution-app .contribution-card > button {
   background: var(--primary);
+  border: 0;
   border-radius: 12px;
   color: var(--primary-foreground);
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   font-weight: 700;
   min-height: 44px;
   width: 100%;
 }
+.phone-app-body .contribution-app .contribution-card > button:not(:disabled):active {
+  transform: scale(0.98);
+}
 .phone-app-body .contribution-app .contribution-card > button:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
 }
 
 /* Billboards in the phone: token colours, a card for the campaign form, and one card per campaign. */
