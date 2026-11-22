@@ -44,6 +44,7 @@ import {
 } from "lucide-react";
 import { fetchHouseLight, setHouseLight } from "@/lib/house-light";
 import { fetchHouseWalls, setHouseWalls } from "@/lib/house-walls";
+import { houseSaveFailureMessage } from "@/lib/house-error-messages";
 import {
   houseWallsDefaultClosed,
   houseRoomViews,
@@ -532,6 +533,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     );
   }, [playerId, refreshHouseState, serverState?.house?.id]);
   const houseTypeId = serverState?.house?.house_type_id;
+  // Overdue homes are read-only on the server, so the page keeps them read-only too.
+  const houseOverdue = serverState?.house?.status === "overdue";
   const singleRoom = (serverState?.house?.house_type.bedrooms ?? 1) <= 1;
   const roomLayout = houseTypes.find((entry) => entry.id === houseTypeId);
   const slots = useMemo(() => {
@@ -661,7 +664,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     },
     onError: (error: Error) => {
       setPreviewMove(null);
-      const message = `Your change wasn’t saved. ${error.message.replaceAll("_", " ").toLowerCase()}.`;
+      const message = houseSaveFailureMessage(error.message);
       setApiError(message);
       toast.error(message);
       refreshHouseState();
@@ -1785,7 +1788,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             type="button"
             aria-label={editing ? "Close shop" : "Shop"}
             aria-pressed={editing}
-            disabled={taskBusy}
+            disabled={taskBusy || (houseOverdue && !editing)}
             onClick={() => {
               movement.cancel();
               setPinnedRoom(null);
@@ -1842,7 +1845,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             <input
               type="checkbox"
               checked={wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)}
-              disabled={isOffline || wallsMutation.isPending}
+              disabled={isOffline || houseOverdue || wallsMutation.isPending}
               onChange={(event) => wallsMutation.mutate(event.target.checked)}
             />
             Full walls
@@ -1997,6 +2000,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
 
         {!editing &&
           (isOffline ||
+            houseOverdue ||
             !gameTime.ready ||
             activityError ||
             (gameTime.sleepElapsedSeconds === null &&
@@ -2008,6 +2012,8 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               {activityError && <p role="alert">{activityError}</p>}
               {isOffline ? (
                 <p role="status">Reconnect to use your accessories.</p>
+              ) : houseOverdue ? (
+                <p role="status">Rent is overdue. Pay it to change or use this home.</p>
               ) : !gameTime.ready ? (
                 <p role="status">Connecting character needs...</p>
               ) : gameTime.sleepElapsedSeconds === null &&
