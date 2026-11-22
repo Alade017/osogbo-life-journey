@@ -274,6 +274,16 @@ describe("free furniture placement database", () => {
     );
     expect(result.rows[0]!.result.ok).toBe(true);
     const after = await rows();
+    const afterSnapshot = after.map(
+      ({ id, slot, x, y, floor, rotation_deg }) => ({
+        id,
+        slot,
+        x,
+        y,
+        floor,
+        rotation_deg,
+      }),
+    );
     expect(after.map((p) => p.id)).toEqual(before.map((p) => p.id));
     expect(after.map((p) => p.item_id)).toEqual(before.map((p) => p.item_id));
     expect(after.map((p) => p.slot)).toEqual(before.map((p) => p.slot));
@@ -332,7 +342,7 @@ describe("free furniture placement database", () => {
         db.query("select public.house_rearrange_owned_items($1,$2,$3,$4)", [
           userId,
           house,
-          JSON.stringify(after),
+          JSON.stringify(afterSnapshot),
           JSON.stringify(duplicated),
         ]),
       ).rejects.toThrow("INVALID_POSITION");
