@@ -336,3 +336,86 @@ describe("optional furniture readiness", () => {
     expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
   });
 });
+
+describe("venue scene transitions", () => {
+  beforeEach(() => {
+    vi.useRealTimers();
+    sceneMock.renderChildren = false;
+  });
+
+  function enterFallback() {
+    fireEvent.click(screen.getByRole("button", { name: "Continue without 3D" }));
+  }
+
+  function expectFreshScene() {
+    expect(screen.getByTestId("venue-canvas")).toBeInTheDocument();
+    expect(screen.getByText("Opening the venue")).toBeInTheDocument();
+    expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
+  }
+
+  it("resets fallback when switching shops", () => {
+    const { rerender } = render(
+      <LocationVenueScene slug="unknown-location" locationName="Test Venue" shopSlug="shop-a" />,
+    );
+    enterFallback();
+    rerender(
+      <LocationVenueScene slug="unknown-location" locationName="Test Venue" shopSlug="shop-b" />,
+    );
+    expectFreshScene();
+  });
+
+  it("resets fallback when the server location changes", () => {
+    const { rerender } = render(
+      <LocationVenueScene slug="unknown-location" locationName="Test Venue" locationId="location-a" />,
+    );
+    enterFallback();
+    rerender(
+      <LocationVenueScene slug="unknown-location" locationName="Test Venue" locationId="location-b" />,
+    );
+    expectFreshScene();
+  });
+
+  it("resets fallback when the scene kind changes", () => {
+    const design = getLocationVenueDesign("unknown-location", "Test Venue");
+    const { rerender } = render(
+      <LocationVenueScene slug="unknown-location" locationName="Test Venue" design={design} />,
+    );
+    enterFallback();
+    rerender(
+      <LocationVenueScene slug="unknown-location" locationName="Test Venue" design={{ ...design, scene: "market" }} />,
+    );
+    expectFreshScene();
+  });
+
+  it("preserves fallback when presentation changes", () => {
+    const design = getLocationVenueDesign("unknown-location", "Test Venue");
+    const { rerender } = render(
+      <LocationVenueScene slug="unknown-location" locationName="Test Venue" design={design} />,
+    );
+    enterFallback();
+    rerender(
+      <LocationVenueScene slug="unknown-location" locationName="Updated Venue" design={{ ...design, accentColor: "#ffffff" }} />,
+    );
+    expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
+    expect(screen.getByText(/The 3D preview did not start/)).toBeInTheDocument();
+  });
+
+  it("starts a fresh loading timeout after transition", () => {
+    vi.useFakeTimers();
+    try {
+      const { rerender } = render(
+        <LocationVenueScene slug="unknown-location" locationName="Test Venue" shopSlug="shop-a" />,
+      );
+      act(() => { vi.advanceTimersByTime(4000); });
+      rerender(
+        <LocationVenueScene slug="unknown-location" locationName="Test Venue" shopSlug="shop-b" />,
+      );
+      act(() => { vi.advanceTimersByTime(1000); });
+      expect(screen.queryByText("The interior is taking longer than expected.")).not.toBeInTheDocument();
+      act(() => { vi.advanceTimersByTime(4000); });
+      expect(screen.getByText("The interior is taking longer than expected.")).toBeInTheDocument();
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+});

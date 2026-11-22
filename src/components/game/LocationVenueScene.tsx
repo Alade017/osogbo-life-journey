@@ -47,6 +47,7 @@ import {
   type FurnitureRegistration,
 } from "@/lib/venue-furniture-lifecycle";
 import { VenueFurnitureStatus } from "./VenueFurnitureStatus";
+import { getVenueSceneIdentity } from "@/lib/venue-scene-identity";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -521,9 +522,17 @@ export function LocationVenueScene(props: {
 }) {
   const venue = props.design ?? getLocationVenueDesign(props.slug, props.locationName);
   const sceneKind = resolveVenueScene(props.slug, venue, props.locationId);
+  const sceneIdentity = getVenueSceneIdentity({
+    slug: props.slug,
+    locationId: props.locationId,
+    shopSlug: props.shopSlug,
+    sceneKind,
+    venue,
+  });
   if (sceneKind === "mall" && props.locationId)
     return (
       <Suspense
+        key={sceneIdentity}
         fallback={
           <WorldLoadingIndicator title="Entering the mall" detail="Opening the shopping hall…" />
         }
@@ -534,6 +543,7 @@ export function LocationVenueScene(props: {
   if (sceneKind === "clinic")
     return (
       <Suspense
+        key={sceneIdentity}
         fallback={
           <WorldLoadingIndicator title="Opening the clinic" detail="Preparing the rooms…" />
         }
@@ -544,6 +554,7 @@ export function LocationVenueScene(props: {
   if (sceneKind === "worship")
     return (
       <Suspense
+        key={sceneIdentity}
         fallback={
           <WorldLoadingIndicator title="Entering the prayer hall" detail="Preparing the hall…" />
         }
@@ -553,6 +564,7 @@ export function LocationVenueScene(props: {
     );
   return sceneKind === "campus" ? (
     <Suspense
+      key={sceneIdentity}
       fallback={
         <WorldLoadingIndicator title="Opening the campus" detail="Preparing the grounds…" />
       }
@@ -560,6 +572,6 @@ export function LocationVenueScene(props: {
       <SchoolCampusVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
     </Suspense>
   ) : (
-    <BasicLocationVenueScene key={props.slug} {...props} />
+    <BasicLocationVenueScene key={sceneIdentity} {...props} />
   );
 }
