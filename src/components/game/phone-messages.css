@@ -1465,11 +1465,14 @@
   font-size: 0.95rem;
   font-weight: 800;
 }
-/* Unread-style count on the People button in the messenger's bottom bar. */
+/* Count on the People button in the messenger's bottom bar, pinned to that button's corner. */
+.phone-messenger .phone-message-nav button {
+  position: relative;
+}
 .phone-messenger .phone-nav-badge {
   position: absolute;
-  top: 4px;
-  right: calc(50% - 22px);
+  top: 2px;
+  right: 6px;
   min-width: 18px;
   height: 18px;
   padding: 0 5px;
