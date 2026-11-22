@@ -101,32 +101,18 @@ export type NeighborhoodZoneTag =
 const AUTHORED_ZONES: readonly AuthoredZone[] = [
   {
     id: "zone-fuel-pumps",
-    services: ["jobs"],
+    services: ["jobs", "market"],
+    shopSlug: "fuel-and-go-forecourt",
     zoneTag: "FILLING_STATION",
     category: "filling-station",
     title: "Fuel & Go Forecourt Pumps",
-    subtitle: "Refuel vehicles, stock 10L jerrycans, or clock in as a station attendant.",
+    subtitle: "Browse sealed 10L petrol jerrycans, or clock in as a station attendant.",
     promptLabel: "Fuel Pumps",
     interactRadius: 88,
     ringRadius: 1.05,
     badgeHeight: 2.35,
     hitSize: [2.2, 2.4, 3.6],
     actions: [
-      {
-        id: "fuel-buy-jerrycan",
-        label: "Buy 10L Petrol Jerrycan",
-        description: "Fill a yellow 10L emergency keg for generator or trips.",
-        walletDelta: -3200,
-        xpGain: 12,
-        craftItem: {
-          slug: "fuel_jerrycan_10l",
-          name: "10L Petrol Jerrycan",
-          category: "utility",
-          description: "Bright yellow 10L fuel keg filled at Olaiya Fuel & Go.",
-        },
-        toastMessage: "Filled a 10L Petrol Jerrycan (₦3,200) — added to inventory.",
-        activityKind: "purchase",
-      },
       {
         id: "fuel-attendant-shift",
         label: "Work Attendant Shift",
