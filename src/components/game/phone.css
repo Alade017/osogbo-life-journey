@@ -2581,186 +2581,6 @@
 }
 
 /* Okada rides: hero, fare card, destination field, and ride history. */
-.okada-app {
-  display: grid;
-  gap: 14px;
-  padding: 14px;
-}
-
-.okada-hero {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.okada-hero h2 {
-  margin: 0;
-  color: var(--brand-ink);
-  font-size: 1.1rem;
-  font-weight: 800;
-}
-
-.okada-hero p {
-  margin: 2px 0 0;
-  color: var(--muted-foreground);
-  font-size: 0.82rem;
-}
-
-.okada-hero-icon,
-.okada-ride-icon {
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
-
-.okada-hero-icon svg,
-.okada-ride-icon svg {
-  width: 18px;
-  height: 18px;
-}
-
-.okada-request,
-.okada-history {
-  display: grid;
-  gap: 12px;
-  padding: 16px;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--card);
-  color: var(--card-foreground);
-  box-shadow: var(--elevation-card);
-}
-
-.okada-history h3 {
-  margin: 0;
-  color: var(--muted-foreground);
-  font-size: 0.78rem;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-}
-
-.okada-fare {
-  display: grid;
-  gap: 2px;
-}
-
-.okada-fare span {
-  color: var(--muted-foreground);
-  font-size: 0.78rem;
-}
-
-.okada-fare strong {
-  font-size: 1.5rem;
-  font-weight: 800;
-  font-variant-numeric: tabular-nums;
-}
-
-.okada-field {
-  display: grid;
-  gap: 6px;
-}
-
-.okada-field > span {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  color: var(--muted-foreground);
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.okada-field input {
-  min-height: 42px;
-  padding: 0 12px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  background: var(--card);
-  color: var(--card-foreground);
-  font: inherit;
-}
-
-.okada-submit {
-  min-height: 44px;
-  border: 0;
-  border-radius: 999px;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  font: inherit;
-  font-weight: 750;
-  cursor: pointer;
-}
-
-.okada-submit:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.okada-balance {
-  margin: 0;
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  text-align: center;
-}
-
-.okada-notice {
-  margin: 0;
-  color: var(--destructive);
-  font-size: 0.85rem;
-}
-
-.okada-ride {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-}
-
-.okada-ride-copy {
-  display: grid;
-  min-width: 0;
-}
-
-.okada-ride-copy strong {
-  overflow: hidden;
-  font-size: 0.9rem;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.okada-ride-copy small {
-  color: var(--muted-foreground);
-  font-size: 0.74rem;
-}
-
-.okada-status {
-  border-radius: 999px;
-  padding: 3px 10px;
-  font-size: 0.72rem;
-  font-weight: 700;
-  white-space: nowrap;
-}
-
-.okada-status-active {
-  background: var(--primary);
-  color: var(--primary-foreground);
-}
-
-.okada-status-done {
-  background: var(--card);
-  border: 1px solid var(--border);
-  color: var(--brand-ink);
-}
-
-.okada-status-stopped {
-  color: var(--destructive);
-  border: 1px solid var(--destructive);
-}
 
 /* Party: hero, mood card, segmented tabs, and phone-style panels inside the app. */
 .phone-party {
@@ -3980,21 +3800,6 @@
   width: 1rem;
 }
 
-.okada-cancel {
-  margin-left: auto;
-  align-self: center;
-  border: 1px solid var(--destructive);
-  border-radius: 999px;
-  background: transparent;
-  color: var(--destructive);
-  padding: 4px 12px;
-  font-size: 0.8rem;
-  cursor: pointer;
-}
-.okada-cancel:disabled {
-  opacity: 0.5;
-  cursor: default;
-}
 
 /* Town News: feed cards, likes, comments and composer. */
 .town-news { display: grid; gap: 0.9rem; }
@@ -4076,6 +3881,21 @@
 }
 .phone-app-body .map-app > header strong {
   display: block;
+/* Okada rides in the phone: an iOS-style grouped screen with a large title, a fare card, hairline ride rows
+   and status pills. Markup and behaviour are unchanged. */
+.okada-app {
+  display: grid;
+  gap: 14px;
+  padding: 16px 16px 24px;
+}
+.okada-hero {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+.okada-hero h2 {
+  margin: 0;
   color: var(--foreground);
   font-size: 1.6rem;
   font-weight: 800;
@@ -4092,6 +3912,37 @@
   display: grid;
   gap: 0;
   overflow: hidden;
+.okada-hero p {
+  margin: 3px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+.okada-hero-icon,
+.okada-ride-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.okada-ride-icon {
+  width: 38px;
+  height: 38px;
+  background: var(--muted);
+  color: var(--primary);
+}
+.okada-hero-icon svg,
+.okada-ride-icon svg {
+  width: 20px;
+  height: 20px;
+}
+.okada-request,
+.okada-history {
+  display: grid;
+  gap: 12px;
+  padding: 14px;
   border-radius: 14px;
   background: var(--card);
   box-shadow: 0 0 0 0.5px var(--border);
@@ -4130,3 +3981,131 @@
 }
 
 /* Messages */
+.okada-history h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+}
+.okada-fare {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  padding-bottom: 10px;
+  border-bottom: 0.5px solid var(--border);
+}
+.okada-fare span {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+.okada-fare strong {
+  font-size: 1.25rem;
+  font-variant-numeric: tabular-nums;
+  font-weight: 800;
+}
+.okada-field {
+  display: grid;
+  gap: 6px;
+}
+.okada-field > span {
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+.okada-field input {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 11px;
+  background: var(--muted);
+  color: var(--foreground);
+  font-size: 0.92rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+.okada-submit {
+  min-height: 46px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.92rem;
+  font-weight: 700;
+  width: 100%;
+}
+.okada-submit:disabled {
+  opacity: 0.45;
+}
+.okada-balance {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  text-align: center;
+}
+.okada-notice {
+  margin: 0;
+  padding: 10px 14px;
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--destructive) 10%, var(--card));
+  color: var(--destructive);
+  font-size: 0.8rem;
+}
+.okada-ride {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 0;
+  border-top: 0.5px solid var(--border);
+}
+.okada-ride:first-of-type {
+  border-top: 0;
+}
+.okada-ride-copy {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+.okada-ride-copy strong {
+  overflow-wrap: anywhere;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.okada-ride-copy small {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+.okada-status {
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.okada-status-active {
+  background: color-mix(in srgb, #d97706 16%, var(--card));
+  color: #b45309;
+}
+.okada-status-done {
+  background: color-mix(in srgb, var(--success) 16%, var(--card));
+  color: var(--success);
+}
+.okada-status-stopped {
+  background: color-mix(in srgb, var(--destructive) 12%, var(--card));
+  color: var(--destructive);
+}
+.okada-cancel {
+  min-height: 30px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--destructive) 10%, var(--card));
+  color: var(--destructive);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.okada-cancel:disabled {
+  opacity: 0.45;
+}
