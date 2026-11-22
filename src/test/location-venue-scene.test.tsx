@@ -1,9 +1,11 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
+import { getLocationVenueDesign } from "@/lib/location-venue-designs";
 
 const sceneMock = vi.hoisted(() => ({
   renderChildren: false,
+  failingKind: null as string | null,
 }));
 
 vi.mock("@react-three/fiber", () => ({
@@ -15,11 +17,17 @@ vi.mock("@react-three/fiber", () => ({
 }));
 
 vi.mock("@/components/3d/VenueFurniture", () => ({
-  VenueFurnitureModel: () => null,
+  VenueFurnitureModel: ({ kind }: { kind: string }) => {
+    if (kind === sceneMock.failingKind) {
+      throw new Error("Furniture model unavailable");
+    }
+    return <div data-testid={`furniture-${kind}`} />;
+  },
 }));
 
 beforeEach(() => {
   sceneMock.renderChildren = false;
+  sceneMock.failingKind = null;
 });
 vi.mock("@/components/3d/WorldScene", () => ({
   WorldCamera: () => null,
@@ -172,4 +180,38 @@ it("starts a fresh loading lifecycle for a different venue", () => {
   expect(screen.getByTestId("venue-canvas")).toBeInTheDocument();
   expect(screen.getByText("Opening the venue")).toBeInTheDocument();
   expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
+});
+
+it("isolates furniture failures without disabling the venue", () => {
+  sceneMock.renderChildren = true;
+  sceneMock.failingKind = "table";
+  const design = {
+    ...getLocationVenueDesign("unknown-location", "Test Venue"),
+    fixtures: [
+      {
+        id: "test-table",
+        kind: "table" as const,
+        label: "Test table",
+        detail: "Table details",
+        position: [0, 0] as [number, number],
+      },
+      {
+        id: "test-seat",
+        kind: "seat" as const,
+        label: "Test seat",
+        detail: "Seat details",
+        position: [2, 0] as [number, number],
+      },
+    ],
+  };
+  render(
+    <LocationVenueScene slug="unknown-location" locationName="Test Venue" design={design} />,
+  );
+  expect(screen.getByTestId("venue-canvas")).toBeInTheDocument();
+  expect(screen.queryByTestId("furniture-table")).not.toBeInTheDocument();
+  expect(screen.getByTestId("furniture-seat")).toBeInTheDocument();
+  expect(screen.queryByText("Opening the venue")).not.toBeInTheDocument();
+  expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Test table" }));
+  expect(screen.getByText("Table details")).toBeInTheDocument();
 });

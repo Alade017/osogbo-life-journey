@@ -42,6 +42,10 @@ function VenueSceneReady({ onReady }: { onReady: () => void }) {
   return null;
 }
 
+function handleFurnitureError() {
+  // Optional furniture failures must not disable the surrounding venue.
+}
+
 function FixtureModel({
   fixture,
   active,
@@ -56,17 +60,19 @@ function FixtureModel({
   const [x, z] = fixture.position;
   return (
     <group position={[x, 0, z]}>
-      <Suspense fallback={null}>
-        <VenueFurnitureModel
-          kind={fixture.kind}
-          active={active}
-          accentColor={accentColor}
-          onClick={(event) => {
-            event.stopPropagation();
-            onSelect();
-          }}
-        />
-      </Suspense>
+      <VenueSceneBoundary key={fixture.kind} onError={handleFurnitureError}>
+        <Suspense fallback={null}>
+          <VenueFurnitureModel
+            kind={fixture.kind}
+            active={active}
+            accentColor={accentColor}
+            onClick={(event) => {
+              event.stopPropagation();
+              onSelect();
+            }}
+          />
+        </Suspense>
+      </VenueSceneBoundary>
     </group>
   );
 }
