@@ -4771,3 +4771,168 @@
   .town-news-card, .town-news-comments li, .town-news-like[aria-pressed="true"] .town-news-heart { animation: none; }
   .town-news-like { transition: none; }
 }
+
+/* Map and Messages in the phone: iOS-style grouped screens. Hairline list rows, pill search, bubbles
+   with a primary tail for your own messages, and a rounded composer. Markup and behaviour are unchanged. */
+.phone-app-body .map-app {
+  display: grid;
+  gap: 12px;
+  padding: 16px 16px 24px;
+}
+.phone-app-body .map-app > header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+.phone-app-body .map-app > header > svg {
+  flex: none;
+  width: 44px;
+  height: 44px;
+  padding: 11px;
+  border-radius: 50%;
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.phone-app-body .map-app > header strong {
+  display: block;
+  color: var(--foreground);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.phone-app-body .map-app > header small {
+  display: block;
+  margin-top: 3px;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+}
+.phone-app-body .map-app .phone-local-list {
+  display: grid;
+  gap: 0;
+  overflow: hidden;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px var(--border);
+}
+.phone-app-body .map-app .phone-local-card {
+  padding: 13px 14px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.phone-app-body .map-app .phone-local-card + .phone-local-card {
+  border-top: 0.5px solid var(--border);
+}
+.phone-app-body .map-app .phone-local-card small {
+  color: var(--primary);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.phone-app-body .map-app .phone-local-card strong {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.phone-app-body .map-app .phone-local-card p {
+  margin: 2px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+}
+.phone-app-body .map-app .phone-map-state {
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+/* Messages */
+.phone-messenger {
+  background: var(--background);
+}
+.phone-messenger .phone-inbox-search input,
+.phone-messenger .phone-player-search-input {
+  min-height: 38px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--muted);
+  font-size: 0.88rem;
+}
+.phone-messenger .phone-conversation {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 0;
+  border-bottom: 0.5px solid var(--border);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.phone-messenger .phone-conversation-avatar {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+}
+.phone-messenger .phone-conversation-copy strong {
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.phone-messenger .phone-conversation-status {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
+}
+.phone-messenger .phone-thread-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  padding: 10px 14px;
+  border-bottom: 0.5px solid var(--border);
+  background: var(--card);
+}
+.phone-messenger .phone-message-bubble {
+  max-width: 78%;
+  padding: 9px 13px;
+  border: 0;
+  border-radius: 18px 18px 18px 6px;
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 0 0 0.5px var(--border);
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+.phone-messenger .phone-message-bubble.is-own {
+  margin-left: auto;
+  border-radius: 18px 18px 6px 18px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: none;
+}
+.phone-messenger .phone-chat-composer {
+  padding: 8px 10px;
+  border-top: 0.5px solid var(--border);
+  background: var(--card);
+}
+.phone-messenger .phone-chat-input {
+  min-height: 38px;
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 20px;
+  background: var(--muted);
+  font-size: 0.92rem;
+}
+.phone-messenger .phone-chat-send {
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
