@@ -130,7 +130,7 @@ type HouseState = {
   outfit: HouseOutfit;
   inventory: HouseInventoryItem[];
 };
-type HouseStateSnapshot = { state: HouseState; source: "server" | "saved" };
+type HouseStateSnapshot = { state: HouseState; source: "server" };
 type CanonicalHome = {
   propertyId: string;
   playerPropertyId: string;
@@ -175,7 +175,8 @@ const houseTypes = housingData as Array<{
     max_y: number;
   };
 }>;
-const CACHE_PREFIX = "osogbo-house-state-v1:";
+// v2: v1 snapshots could show an out-of-date layout, so they are never read again.
+const CACHE_PREFIX = "osogbo-house-state-v2:";
 
 function getBuyRequestKey(playerId: string, itemId: string, memory: Map<string, string>) {
   const storageKey = `${CACHE_PREFIX}buy-request:${playerId}:${itemId}`;
@@ -248,16 +249,6 @@ function normalizeHouseState(value: unknown): HouseState | null {
       ? (value["inventory"] as HouseInventoryItem[])
       : [],
   };
-}
-
-function readSavedHouseState(characterId: string): HouseState | null {
-  try {
-    return normalizeHouseState(
-      JSON.parse(localStorage.getItem(`${CACHE_PREFIX}${characterId}`) ?? "null"),
-    );
-  } catch {
-    return null;
-  }
 }
 
 function houseLoadMessage(error: unknown) {
@@ -504,11 +495,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                 : "HOUSE_SERVICE_UNAVAILABLE",
           );
         } else {
-          try {
-            localStorage.setItem(`${CACHE_PREFIX}${character!.id}`, JSON.stringify(normalized));
-          } catch {
-            /* Storage may be unavailable. */
-          }
           return { state: normalized, source: "server" };
         }
       } catch (error) {
@@ -519,21 +505,17 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         const legacyResponse = await authorizedFetch("/api/housing/home");
         const fallback = legacyHouseState(await legacyResponse.json().catch(() => null));
         if (legacyResponse.ok && fallback) {
-          localStorage.setItem(`${CACHE_PREFIX}${character!.id}`, JSON.stringify(fallback));
           return { state: fallback, source: "server" };
         }
       } catch {
-        // The saved snapshot below remains usable when either endpoint is unavailable.
+        // The server is the only source of truth; a failure below is shown to the player.
       }
 
-      const saved = readSavedHouseState(character!.id);
-      if (saved) return { state: saved, source: "saved" };
       throw primaryError ?? new Error("HOUSE_SERVICE_UNAVAILABLE");
     },
   });
   const snapshot = stateQuery.data;
   const serverState = snapshot?.state;
-  const usingSaved = snapshot?.source === "saved";
   const canonicalHomeQuery = useQuery({
     ...canonicalHomeOptions(character?.id),
     enabled: !!character?.id && online,
@@ -663,12 +645,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       if (character?.id) {
         const serverSnapshot: HouseStateSnapshot = { state, source: "server" };
         updateHouseStateStore(queryClient, character.id, serverSnapshot);
-      }
-      try {
-        if (character?.id)
-          localStorage.setItem(`${CACHE_PREFIX}${character.id}`, JSON.stringify(state));
-      } catch {
-        /* Storage may be unavailable. */
       }
       void queryClient.invalidateQueries({ queryKey: q.wallet().queryKey });
       void queryClient.invalidateQueries({ queryKey: q.equipment().queryKey });
@@ -949,8 +925,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         if (path) {
           const arrived = await movement.walk([exterior, [doorX, doorY, doorZ], ...path]);
           if (!arrived) movement.place([doorX, doorY, doorZ]);
-        }
-        else {
+        } else {
           movement.place([doorX, doorY, doorZ]);
           toast.error("The entrance is blocked. Rearrange your furniture to clear the way.");
         }
@@ -1102,7 +1077,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const appearance = (
     character?.appearance && typeof character.appearance === "object" ? character.appearance : {}
   ) as Appearance;
-  const isOffline = !online || usingSaved;
+  const isOffline = !online;
   const drawerQuery = useQuery({
     queryKey: ["house-drawer", character?.id ?? "anonymous"],
     queryFn: fetchDrawerState,
