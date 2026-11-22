@@ -3,6 +3,7 @@ import { BANK_INTERIORS } from "@/game/bank-interiors";
 import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
 import { transportMapHref } from "@/lib/transport-park";
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { resolveVenueScene } from "@/lib/venue-scene-resolver";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 
 const CivicServiceScene = lazy(() =>
@@ -110,6 +111,7 @@ function BasicLocationVenueScene({
     () => design ?? getLocationVenueDesign(slug, locationName),
     [design, slug, locationName],
   );
+  const sceneKind = resolveVenueScene(slug, venue);
   const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -184,7 +186,7 @@ function BasicLocationVenueScene({
               />
               <WorldLighting size={14} />
               <Suspense fallback={null}>
-                {venue.civicService ? (
+                {sceneKind === "civic" && venue.civicService ? (
                   <CivicServiceScene
                     variant={venue.civicService}
                     fixtures={venue.fixtures}
@@ -194,7 +196,7 @@ function BasicLocationVenueScene({
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
                   />
-                ) : venue.bankInterior ? (
+                ) : sceneKind === "bank" && venue.bankInterior ? (
                   <BankInteriorScene
                     variant={venue.bankInterior}
                     fixtures={venue.fixtures}
@@ -204,26 +206,26 @@ function BasicLocationVenueScene({
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
                   />
-                ) : venue.transportPark ? (
+                ) : sceneKind === "transport" ? (
                   <TransitParkScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
                     onSelect={setSelectedFixture}
                     onSelectMode={setPreferredMode}
                   />
-                ) : venue.scene === "healthcare" ? (
+                ) : sceneKind === "healthcare" ? (
                   <HealthcareScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
                     onSelect={setSelectedFixture}
                   />
-                ) : venue.scene === "market" ? (
+                ) : sceneKind === "market" ? (
                   <MarketTradingHall
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
                     onSelect={setSelectedFixture}
                   />
-                ) : venue.scene === "workplace" ? (
+                ) : sceneKind === "workplace" ? (
                   <WorkplaceScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
@@ -232,7 +234,7 @@ function BasicLocationVenueScene({
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
                   />
-                ) : venue.retailInterior ? (
+                ) : sceneKind === "retail" ? (
                   <RetailInteriorScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
@@ -241,7 +243,7 @@ function BasicLocationVenueScene({
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
                   />
-                ) : venue.foodInterior ? (
+                ) : sceneKind === "food" && venue.foodInterior ? (
                   <BukaInteriorScene
                     variant={venue.foodInterior}
                     fixtures={venue.fixtures}
@@ -251,7 +253,7 @@ function BasicLocationVenueScene({
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
                   />
-                ) : venue.environment ? (
+                ) : sceneKind === "environment" && venue.environment ? (
                   <VenueEnvironment
                     url={venue.environment.url}
                     open={shutterOpen}
@@ -439,7 +441,9 @@ export function LocationVenueScene(props: {
   onBrowseMarket?: () => void;
   onBankServices?: () => void;
 }) {
-  if (props.slug === "osun-mall" && props.locationId)
+  const venue = props.design ?? getLocationVenueDesign(props.slug, props.locationName);
+  const sceneKind = resolveVenueScene(props.slug, venue, props.locationId);
+  if (sceneKind === "mall" && props.locationId)
     return (
       <Suspense
         fallback={
@@ -449,8 +453,7 @@ export function LocationVenueScene(props: {
         <OsunMallVenue locationId={props.locationId} locationName={props.locationName} />
       </Suspense>
     );
-  const venue = props.design ?? getLocationVenueDesign(props.slug, props.locationName);
-  if (venue.scene === "clinic")
+  if (sceneKind === "clinic")
     return (
       <Suspense
         fallback={
@@ -460,7 +463,7 @@ export function LocationVenueScene(props: {
         <ClinicVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
       </Suspense>
     );
-  if (venue.scene === "worship")
+  if (sceneKind === "worship")
     return (
       <Suspense
         fallback={
@@ -470,7 +473,7 @@ export function LocationVenueScene(props: {
         <WorshipVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
       </Suspense>
     );
-  return venue.scene === "campus" ? (
+  return sceneKind === "campus" ? (
     <Suspense
       fallback={
         <WorldLoadingIndicator title="Opening the campus" detail="Preparing the grounds…" />

@@ -27,6 +27,8 @@ describe("location venue scene", () => {
       vi.advanceTimersByTime(5_000);
     });
 
+    expect(screen.getByText("The interior is taking longer than expected.")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Continue without 3D" }));
     expect(screen.queryByText("Opening the venue")).not.toBeInTheDocument();
     expect(screen.getByText(/The 3D preview did not start/)).toBeInTheDocument();
     expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
