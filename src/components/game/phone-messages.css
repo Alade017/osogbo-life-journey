@@ -314,6 +314,20 @@
   box-shadow: none;
   background: var(--card);
 }
+.phone-new-message-button:has(.phone-new-message-label) {
+  width: auto;
+  min-width: 40px;
+  padding: 0 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 999px;
+}
+.phone-new-message-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
 .phone-messenger .phone-chat-composer .phone-chat-input {
   flex: 1;
   min-width: 0;
@@ -1232,7 +1246,16 @@
   background: var(--card);
   box-shadow: none;
 }
+/* Composer: keep the form and its entry inside the chat width, with the same gutter as the messages. */
+.phone-messenger .phone-chat-composer {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
+  min-width: 0;
+}
 .phone-messenger .phone-chat-entry {
+  width: 100%;
+  box-sizing: border-box;
   display: flex;
   min-width: 0;
   align-items: center;
@@ -1424,4 +1447,43 @@
   border-radius: 50%;
   background: var(--primary);
   color: var(--primary-foreground);
+}
+
+/* People: incoming friend requests at the top of the People tab. */
+.phone-people-requests {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 12px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px var(--border);
+}
+.phone-people-requests-title {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+/* Count on the People button in the messenger's bottom bar, pinned to that button's corner. */
+.phone-messenger .phone-message-nav button {
+  position: relative;
+}
+.phone-messenger .phone-nav-badge {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 999px;
+  color: var(--primary-foreground);
+  background: var(--primary);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 18px;
+  text-align: center;
+}
+.phone-messenger .phone-nav-badge[hidden] {
+  display: none;
 }

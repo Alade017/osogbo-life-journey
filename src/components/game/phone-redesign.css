@@ -393,6 +393,14 @@
   font-size: 14px;
 }
 
+.phone-ui-refresh .phone-group-friend > span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .phone-ui-refresh .phone-group-primary {
   width: 100%;
   border-radius: 14px;

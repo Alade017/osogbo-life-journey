@@ -3225,6 +3225,38 @@
   justify-self: start;
   margin-top: 4px;
 }
+/* Festival cards: date and venue in a fixed left column, title and listing link in the right column.
+   Long titles wrap inside their column, so cards line up and nothing overlaps. */
+.phone-app-body .calendar-app .calendar-festival {
+  display: grid;
+  grid-template-columns: minmax(84px, 0.8fr) minmax(0, 1.6fr);
+  align-items: start;
+  gap: 4px 12px;
+}
+.phone-app-body .calendar-app .calendar-festival > time {
+  grid-column: 1;
+  grid-row: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.phone-app-body .calendar-app .calendar-festival > p {
+  grid-column: 1;
+  grid-row: 2;
+  margin: 0;
+  min-width: 0;
+}
+.phone-app-body .calendar-app .calendar-festival > h3 {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.phone-app-body .calendar-app .calendar-festival > a {
+  grid-column: 2;
+  grid-row: 2;
+  margin-top: 0;
+}
 
 /* Wardrobe in the phone: token colours instead of the hardcoded cream gradients, a tighter three-column bag,
    and the item detail as a card under the bag. */

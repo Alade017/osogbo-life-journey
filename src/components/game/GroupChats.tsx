@@ -1,12 +1,24 @@
 import { useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, BellOff, ImagePlus, LogOut, Pin, Plus, Send, Users } from "lucide-react";
+import {
+  ArrowLeft,
+  BellOff,
+  ImagePlus,
+  LogOut,
+  MoreHorizontal,
+  Pin,
+  Plus,
+  Send,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { VoiceNotePlayer, VoiceNoteRecorder } from "@/components/game/VoiceNotes";
 import { MEDIA_MAX_BYTES } from "@/lib/social-media";
 import {
   GROUP_REACTIONS,
+  addSocialGroupMember,
   createSocialGroup,
   fetchSocialGroupMessages,
   fetchSocialGroups,
@@ -48,7 +60,13 @@ export function GroupChats({ friends }: { friends: GroupFriend[] }) {
     );
   }
   if (view.kind === "thread") {
-    return <GroupThread groupId={view.groupId} onBack={() => setView({ kind: "list" })} />;
+    return (
+      <GroupThread
+        groupId={view.groupId}
+        friends={friends}
+        onBack={() => setView({ kind: "list" })}
+      />
+    );
   }
   return (
     <GroupList
@@ -61,6 +79,7 @@ export function GroupChats({ friends }: { friends: GroupFriend[] }) {
 function GroupList({ onNew, onOpen }: { onNew: () => void; onOpen: (groupId: string) => void }) {
   const queryClient = useQueryClient();
   const groupsQuery = useQuery({ queryKey: ["socialGroups"], queryFn: fetchSocialGroups });
+  const [openTools, setOpenTools] = useState<string | null>(null);
   const prefs = useMutation({
     mutationFn: (input: { group: SocialGroup; pinned: boolean; muted: boolean }) =>
       setGroupPrefs(input.group.id, input.pinned, input.muted),
@@ -78,7 +97,8 @@ function GroupList({ onNew, onOpen }: { onNew: () => void; onOpen: (groupId: str
           onClick={onNew}
           aria-label="New group"
         >
-          <Plus size={19} />
+          <Plus size={19} aria-hidden="true" />
+          <span className="phone-new-message-label">New group</span>
         </button>
       </div>
       {groupsQuery.isPending ? (
@@ -105,24 +125,41 @@ function GroupList({ onNew, onOpen }: { onNew: () => void; onOpen: (groupId: str
               </button>
               <button
                 type="button"
-                className={group.pinned ? "phone-group-tool is-on" : "phone-group-tool"}
-                aria-pressed={group.pinned}
-                aria-label={group.pinned ? `Unpin ${group.name}` : `Pin ${group.name}`}
-                onClick={() => prefs.mutate({ group, pinned: !group.pinned, muted: group.muted })}
-                disabled={prefs.isPending}
+                className="phone-group-tool"
+                aria-expanded={openTools === group.id}
+                aria-label={`Options for ${group.name}`}
+                onClick={() => setOpenTools((current) => (current === group.id ? null : group.id))}
               >
-                <Pin size={15} aria-hidden="true" />
+                <MoreHorizontal size={15} aria-hidden="true" />
               </button>
-              <button
-                type="button"
-                className={group.muted ? "phone-group-tool is-on" : "phone-group-tool"}
-                aria-pressed={group.muted}
-                aria-label={group.muted ? `Unmute ${group.name}` : `Mute ${group.name}`}
-                onClick={() => prefs.mutate({ group, pinned: group.pinned, muted: !group.muted })}
-                disabled={prefs.isPending}
-              >
-                <BellOff size={15} aria-hidden="true" />
-              </button>
+              {openTools === group.id && (
+                <>
+                  <button
+                    type="button"
+                    className={group.pinned ? "phone-group-tool is-on" : "phone-group-tool"}
+                    aria-pressed={group.pinned}
+                    aria-label={group.pinned ? `Unpin ${group.name}` : `Pin ${group.name}`}
+                    onClick={() =>
+                      prefs.mutate({ group, pinned: !group.pinned, muted: group.muted })
+                    }
+                    disabled={prefs.isPending}
+                  >
+                    <Pin size={15} aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    className={group.muted ? "phone-group-tool is-on" : "phone-group-tool"}
+                    aria-pressed={group.muted}
+                    aria-label={group.muted ? `Unmute ${group.name}` : `Mute ${group.name}`}
+                    onClick={() =>
+                      prefs.mutate({ group, pinned: group.pinned, muted: !group.muted })
+                    }
+                    disabled={prefs.isPending}
+                  >
+                    <BellOff size={15} aria-hidden="true" />
+                  </button>
+                </>
+              )}
             </li>
           ))}
         </ul>
@@ -264,12 +301,36 @@ function GroupReactions({
   );
 }
 
-function GroupThread({ groupId, onBack }: { groupId: string; onBack: () => void }) {
+function GroupThread({
+  groupId,
+  friends,
+  onBack,
+}: {
+  groupId: string;
+  friends: GroupFriend[];
+  onBack: () => void;
+}) {
   const queryClient = useQueryClient();
   const [draft, setDraft] = useState("");
+  const [addingMember, setAddingMember] = useState(false);
   const pictureInput = useRef<HTMLInputElement>(null);
   const groupsQuery = useQuery({ queryKey: ["socialGroups"], queryFn: fetchSocialGroups });
   const group: SocialGroup | undefined = groupsQuery.data?.find((item) => item.id === groupId);
+  // The group summary carries member names only, so friends already in the group are hidden by name.
+  // The server still rejects duplicates, full groups and blocked pairs.
+  const addable = group
+    ? friends.filter((friend) => !group.memberNames.includes(friend.player_name))
+    : [];
+  const canAddMember = !!group && group.memberCount < MAX_GROUP_MEMBERS && addable.length > 0;
+
+  const addMember = useMutation({
+    mutationFn: (characterId: string) => addSocialGroupMember(groupId, characterId),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ["socialGroups"] });
+      toast.success("Member added");
+    },
+    onError: (error) => toast.error(errorText(error)),
+  });
   const messagesQuery = useQuery({
     queryKey: ["socialGroupMessages", groupId],
     queryFn: () => fetchSocialGroupMessages(groupId),
@@ -320,6 +381,17 @@ function GroupThread({ groupId, onBack }: { groupId: string; onBack: () => void 
         <button type="button" className="phone-back-button" onClick={onBack}>
           <ArrowLeft size={16} aria-hidden="true" /> Groups
         </button>
+        {canAddMember && (
+          <button
+            type="button"
+            className="phone-group-leave"
+            onClick={() => setAddingMember((open) => !open)}
+            aria-expanded={addingMember}
+            aria-label="Add a member"
+          >
+            <UserPlus size={15} aria-hidden="true" />
+          </button>
+        )}
         <button
           type="button"
           className="phone-group-leave"
@@ -332,6 +404,24 @@ function GroupThread({ groupId, onBack }: { groupId: string; onBack: () => void 
       </div>
       <h3 className="phone-group-title">{group?.name ?? "Group"}</h3>
       {group && <p className="phone-group-members">{group.memberNames.join(", ")}</p>}
+      {addingMember && (
+        <fieldset className="phone-group-friends" aria-label="Add a member">
+          <legend>Add a friend to this group</legend>
+          {addable.map((friend) => (
+            <div key={friend.character_id} className="phone-group-friend">
+              <span>{friend.player_name}</span>
+              <Button
+                type="button"
+                size="sm"
+                disabled={addMember.isPending}
+                onClick={() => addMember.mutate(friend.character_id)}
+              >
+                Add
+              </Button>
+            </div>
+          ))}
+        </fieldset>
+      )}
       <div className="phone-group-messages" role="log" aria-live="polite">
         {messagesQuery.isPending ? (
           <p className="phone-inbox-state">Loading messages…</p>
