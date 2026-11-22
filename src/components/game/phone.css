@@ -23,12 +23,7 @@
   border: 2px solid color-mix(in srgb, var(--brand-cream) 20%, transparent);
 
   z-index: var(--game-dialog-layer) !important;
-}
-
-/* Full-height phone apps keep native scrolling while hiding visual scrollbars. */
-
-
-.phone-app-view {
+}.phone-app-view {
   min-height: 0;
   flex: 1;
   color: #0a0a0a;
@@ -221,13 +216,7 @@
 
 .theme-warm {
   background: var(--accent);
-}
-
-
-
-
-
-.phone-screen {
+}.phone-screen {
   display: flex;
   width: 100%;
   height: 100%;
@@ -820,15 +809,7 @@
 .phone-app-view > :not(.phone-app-toolbar) {
   min-height: 0;
   flex: 1;
-}
-
-
-
-
-
-
-
-.phone-app-view .phone-finance-app,
+}.phone-app-view .phone-finance-app,
 .phone-app-view .phone-finance-card,
 .phone-app-view .billboard-ad-app {
   color: #0a0a0a;
@@ -870,15 +851,7 @@
 .phone-home-bar-button:active .phone-home-indicator {
   background: var(--brand-cream, #fff);
   transform: scaleY(1.3);
-}
-
-
-
-
-
-
-
-.phone-new-message-button,
+}.phone-new-message-button,
 .phone-icon-button {
   display: grid;
   width: 44px;
@@ -889,42 +862,7 @@
   border-radius: 50%;
   color: var(--success);
   background: var(--card);
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-.message-reply-quote {
+}.message-reply-quote {
   display: grid;
   gap: 0.125rem;
   margin-block: 0 0.4rem;
@@ -1001,11 +939,7 @@
   color: var(--muted-foreground);
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-
-
-.message-format-toolbar {
+}.message-format-toolbar {
   display: flex;
   min-height: 44px;
   align-items: center;
@@ -1184,21 +1118,7 @@
   background: transparent;
   font-size: 11px;
   font-weight: 800;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-.phone-search-submit {
+}.phone-search-submit {
   display: grid;
   width: 34px;
   height: 34px;
@@ -1208,16 +1128,7 @@
   border-radius: 50%;
   color: var(--success);
   background: transparent;
-}
-
-
-
-
-
-
-
-
-@media (max-width: 480px) {
+}@media (max-width: 480px) {
   .phone-thread-header {
     min-height: 58px;
   }
@@ -1308,14 +1219,7 @@
   .phone-app-icon {
     transition: none;
   }
-}
-
-/* Phone apps inherit the active phone theme. Fixed black text made the
-   messaging, finance and billboard cards unreadable on dark surfaces. */
-
-
-
-.phone-app-view .phone-finance-app,
+}.phone-app-view .phone-finance-app,
 .phone-app-view .billboard-ad-app {
   background: var(--background);
 }
@@ -1873,13 +1777,7 @@
 
 .phone-app-body .game-settings-page input {
   min-width: 0;
-}
-
-/* Messaging gestures and voice playback share the existing phone palette. */
-
-
-
-.message-action-dialog {
+}.message-action-dialog {
   z-index: calc(var(--game-dialog-layer, 100) + 10);
   width: min(92vw, 360px);
   border-radius: 24px;
@@ -1904,12 +1802,7 @@
 .message-action-menu svg {
   width: 18px;
   height: 18px;
-}
-
-
-
-
-.voice-note-player {
+}.voice-note-player {
   display: grid;
   width: min(280px, 67vw);
   min-width: 0;
@@ -1994,21 +1887,7 @@
   background: transparent;
   font-size: 11px;
   font-weight: 800;
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-.chat-avatar-button {
+}.chat-avatar-button {
   flex: none;
   display: grid;
   place-items: center;
@@ -2019,14 +1898,7 @@
 
 .chat-avatar-button > span {
   border-radius: 50%;
-}
-
-
-
-
-
-
-.chat-media-dialog,
+}.chat-media-dialog,
 .chat-profile-card {
   width: min(92vw, 420px);
   max-height: 86dvh;
@@ -2373,31 +2245,6 @@
 
 
 /* Okada rides: hero, fare card, destination field, and ride history. */
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 /* Party: hero, mood card, segmented tabs, and phone-style panels inside the app. */
 .phone-party {
@@ -3091,81 +2938,112 @@
 
 /* Missions in the phone: gold heading, one card per mission, status badges from tokens. */
 
-/* Community contribution in the phone: a hero, one card per fund, figures in a two-column strip. */
+/* Community contribution in the phone: an iOS-style grouped screen. A large title, the amount as a grouped
+   row, fund cards with hairline edges, and a full-width pill button. */
 .phone-app-body .contribution-app {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  padding: 16px 16px 24px;
 }
 .phone-app-body .contribution-hero h2 {
-  font-size: 1.05rem;
+  color: var(--foreground);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   margin: 0;
 }
 .phone-app-body .contribution-hero p {
   color: var(--muted-foreground);
   font-size: 0.8rem;
-  margin: 2px 0 0;
+  margin: 3px 0 0;
 }
 .phone-app-body .contribution-app .contribution-card {
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--shape-card, 14px);
-  box-shadow: var(--elevation-card);
+  border-radius: 14px;
+  box-shadow: 0 0 0 0.5px var(--border);
   color: var(--card-foreground);
   display: grid;
-  gap: 10px;
+  gap: 12px;
   padding: 14px;
 }
 .phone-app-body .contribution-app .contribution-card h3 {
-  font-size: 0.95rem;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.3;
   margin: 0;
 }
 .phone-app-body .contribution-figures {
   display: grid;
-  gap: 8px;
+  gap: 0;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
+  border-top: 0.5px solid var(--border);
+  padding-top: 10px;
 }
 .phone-app-body .contribution-figures > div {
-  background: var(--muted);
-  border-radius: 12px;
-  padding: 10px;
+  min-width: 0;
+  padding: 0 8px;
+}
+.phone-app-body .contribution-figures > div + div {
+  border-left: 0.5px solid var(--border);
+}
+.phone-app-body .contribution-figures > div:first-child {
+  padding-left: 0;
 }
 .phone-app-body .contribution-figures dt {
   color: var(--muted-foreground);
   font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 .phone-app-body .contribution-figures dd {
-  font-size: 0.9rem;
+  font-size: 0.95rem;
   font-variant-numeric: tabular-nums;
   font-weight: 700;
-  margin: 2px 0 0;
+  margin: 3px 0 0;
 }
 .phone-app-body .contribution-app .phone-service-field {
-  color: var(--muted-foreground);
+  align-items: center;
+  background: var(--card);
+  border-radius: 14px;
+  box-shadow: 0 0 0 0.5px var(--border);
+  color: var(--foreground);
   display: grid;
-  font-size: 0.78rem;
-  gap: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  grid-template-columns: 1fr minmax(0, 7rem);
+  gap: 10px;
+  padding: 12px 14px;
 }
 .phone-app-body .contribution-app .phone-service-field input {
-  background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--card-foreground);
+  background: var(--muted);
+  border: 0;
+  border-radius: 9px;
+  color: var(--foreground);
   font-size: 0.95rem;
-  min-height: 44px;
-  padding: 0 12px;
+  font-variant-numeric: tabular-nums;
+  min-height: 36px;
+  padding: 0 10px;
+  text-align: right;
+  width: 100%;
 }
 .phone-app-body .contribution-app .contribution-card > button {
   background: var(--primary);
+  border: 0;
   border-radius: 12px;
   color: var(--primary-foreground);
-  font-size: 0.85rem;
+  font-size: 0.92rem;
   font-weight: 700;
   min-height: 44px;
   width: 100%;
 }
+.phone-app-body .contribution-app .contribution-card > button:not(:disabled):active {
+  transform: scale(0.98);
+}
 .phone-app-body .contribution-app .contribution-card > button:disabled {
-  opacity: 0.55;
+  opacity: 0.45;
 }
 
 /* Billboards in the phone: token colours, a card for the campaign form, and one card per campaign. */
@@ -3242,29 +3120,48 @@
   margin-top: 4px;
 }
 
-/* Town calendar in the phone: a hero, one card per event with its time as a kicker, and a reminder toggle. */
+/* Town calendar in the phone: a grouped list of events. Each row has an accent rule, a time kicker,
+   the title and venue, and a pill reminder toggle on the right. */
 .phone-app-body .calendar-app {
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  padding: 16px 16px 24px;
 }
 .phone-app-body .calendar-hero h2 {
-  font-size: 1.05rem;
+  color: var(--foreground);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   margin: 0;
 }
 .phone-app-body .calendar-hero p {
   color: var(--muted-foreground);
   font-size: 0.8rem;
-  margin: 2px 0 0;
+  margin: 3px 0 0;
 }
 .phone-app-body .calendar-app .calendar-event {
+  align-items: center;
   background: var(--card);
-  border: 1px solid var(--border);
-  border-radius: var(--shape-card, 14px);
-  box-shadow: var(--elevation-card);
+  border-radius: 14px;
+  box-shadow: 0 0 0 0.5px var(--border);
   color: var(--card-foreground);
   display: grid;
-  gap: 4px;
-  padding: 14px;
+  gap: 2px 12px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  overflow: hidden;
+  padding: 13px 14px 13px 18px;
+  position: relative;
+}
+.phone-app-body .calendar-app .calendar-event::before {
+  background: var(--primary);
+  border-radius: 3px;
+  bottom: 12px;
+  content: "";
+  left: 7px;
+  position: absolute;
+  top: 12px;
+  width: 3px;
 }
 .phone-app-body .calendar-app .calendar-event time {
   color: var(--primary);
@@ -3275,7 +3172,10 @@
 }
 .phone-app-body .calendar-app .calendar-event h3 {
   font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.3;
   margin: 0;
+  min-width: 0;
 }
 .phone-app-body .calendar-app .calendar-event p {
   color: var(--muted-foreground);
@@ -3283,23 +3183,47 @@
   margin: 0;
 }
 .phone-app-body .calendar-app .calendar-event > button {
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  color: var(--card-foreground);
-  font-size: 0.8rem;
+  align-self: center;
+  background: var(--muted);
+  border: 0;
+  border-radius: 999px;
+  color: var(--foreground);
+  font-size: 0.75rem;
   font-weight: 700;
-  justify-self: start;
-  margin-top: 8px;
-  min-height: 40px;
-  padding: 0 14px;
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  min-height: 34px;
+  padding: 0 12px;
+  white-space: nowrap;
 }
 .phone-app-body .calendar-app .calendar-event > button[aria-pressed="true"] {
-  background: var(--primary);
-  border-color: var(--primary);
-  color: var(--primary-foreground);
+  background: color-mix(in srgb, var(--primary) 16%, var(--card));
+  color: var(--primary);
 }
 .phone-app-body .calendar-app .calendar-event > button:disabled {
   opacity: 0.55;
+}
+.phone-app-body .calendar-festivals {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+.phone-app-body .calendar-section-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin: 0;
+}
+.phone-app-body .calendar-note {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  margin: 0;
+}
+.phone-app-body .calendar-app .calendar-festival a {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  justify-self: start;
+  margin-top: 4px;
 }
 
 /* Wardrobe in the phone: token colours instead of the hardcoded cream gradients, a tighter three-column bag,
@@ -3519,86 +3443,313 @@
   .town-news-like { transition: none; }
 }
 
-/* Map and Messages in the phone: iOS-style grouped screens. Hairline list rows, pill search, bubbles
-   with a primary tail for your own messages, and a rounded composer. Markup and behaviour are unchanged. */
-.phone-app-body .map-app {
-  display: grid;
-  gap: 12px;
+/* Support: an iOS-style grouped settings screen. Large title, a segmented control, grouped
+   rows separated by hairlines, and one full-width primary action. */
+.support-app {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
   padding: 16px 16px 24px;
 }
-.phone-app-body .map-app > header {
+
+.support-header {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 0;
-  border: 0;
-  background: transparent;
 }
-.phone-app-body .map-app > header > svg {
+
+.support-header-mark {
+  display: grid;
+  width: 46px;
+  height: 46px;
   flex: none;
-  width: 44px;
-  height: 44px;
-  padding: 11px;
+  place-items: center;
   border-radius: 50%;
-  color: var(--primary-foreground);
   background: var(--primary);
+  color: var(--primary-foreground);
 }
-.phone-app-body .map-app > header strong {
-  display: block;
+
+.support-header h3 {
+  margin: 0;
   color: var(--foreground);
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
 }
-.phone-app-body .map-app > header small {
-  display: block;
-  margin-top: 3px;
+
+.support-header p {
+  margin: 2px 0 0;
   color: var(--muted-foreground);
-  font-size: 0.78rem;
+  font-size: 0.8rem;
 }
-.phone-app-body .map-app .phone-local-list {
-  display: grid;
-  gap: 0;
+
+.support-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 11px;
+  background: var(--muted);
+}
+
+.support-tab {
+  flex: 1;
+  min-height: 32px;
+  border: 0;
+  border-radius: 9px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.support-tab.is-active {
+  background: var(--card);
+  color: var(--foreground);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
+}
+
+.support-panel {
   overflow: hidden;
   border-radius: 14px;
   background: var(--card);
   box-shadow: 0 0 0 0.5px var(--border);
 }
-.phone-app-body .map-app .phone-local-card {
-  padding: 13px 14px;
-  border: 0;
-  border-radius: 0;
-  background: transparent;
-  box-shadow: none;
+
+.support-search {
+  display: block;
+  padding: 10px 12px;
+  border-bottom: 0.5px solid var(--border);
 }
-.phone-app-body .map-app .phone-local-card + .phone-local-card {
+
+.support-search input,
+.support-field input,
+.support-field textarea {
+  width: 100%;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  outline: none;
+}
+
+.support-search input {
+  height: 34px;
+  padding: 0 10px;
+  border-radius: 9px;
+  background: var(--muted);
+}
+
+.support-faq-list,
+.support-feedback-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.support-faq-list {
+  gap: 0;
+}
+
+.support-faq + .support-faq {
   border-top: 0.5px solid var(--border);
 }
-.phone-app-body .map-app .phone-local-card small {
-  color: var(--primary);
-  font-size: 0.66rem;
-  font-weight: 800;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+
+.support-faq button {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 13px 14px;
+  border: 0;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 0.9rem;
+  font-weight: 500;
+  text-align: left;
 }
-.phone-app-body .map-app .phone-local-card strong {
-  display: block;
-  font-size: 0.92rem;
-  font-weight: 700;
-}
-.phone-app-body .map-app .phone-local-card p {
-  margin: 2px 0 0;
+
+.support-faq button svg {
+  flex: none;
   color: var(--muted-foreground);
-  font-size: 0.8rem;
+  transition: transform 200ms ease;
 }
-.phone-app-body .map-app .phone-map-state {
+
+.support-faq button svg.is-open {
+  transform: rotate(180deg);
+}
+
+.support-faq p {
+  margin: 0;
+  padding: 0 14px 14px;
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.support-empty {
+  display: grid;
+  gap: 12px;
+  padding: 20px 16px;
+  justify-items: center;
   color: var(--muted-foreground);
   font-size: 0.85rem;
   text-align: center;
 }
 
-/* Messages */
+.support-empty p {
+  margin: 0;
+}
+
+.support-notice,
+.support-error {
+  margin: 0;
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.support-notice {
+  background: color-mix(in srgb, var(--success) 14%, var(--card));
+  color: var(--foreground);
+}
+
+.support-error {
+  background: color-mix(in srgb, var(--destructive) 12%, var(--card));
+  color: var(--destructive);
+}
+
+.support-field {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 14px;
+  border-bottom: 0.5px solid var(--border);
+  font-size: 0.9rem;
+}
+
+.support-field > span {
+  flex: none;
+  width: 84px;
+  color: var(--foreground);
+  font-weight: 500;
+}
+
+.support-field:has(textarea) {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+
+.support-field:has(textarea) > span {
+  width: auto;
+}
+
+.support-field textarea {
+  resize: vertical;
+  min-height: 110px;
+  line-height: 1.5;
+}
+
+.support-field small {
+  align-self: flex-end;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+}
+
+.support-submit {
+  display: flex;
+  width: calc(100% - 28px);
+  min-height: 46px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: 14px 14px 16px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.support-submit:disabled {
+  opacity: 0.45;
+}
+
+.support-feedback-card {
+  display: grid;
+  gap: 6px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px var(--border);
+}
+
+.support-feedback-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.support-feedback-top strong {
+  font-size: 0.95rem;
+  line-height: 1.3;
+}
+
+.support-feedback-card p {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.85rem;
+  line-height: 1.45;
+}
+
+.support-feedback-card small {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+}
+
+.support-status {
+  flex: none;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: var(--muted);
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.support-status.is-received {
+  background: color-mix(in srgb, var(--primary) 14%, var(--card));
+  color: var(--primary);
+}
+
+.support-status.is-in_progress {
+  background: color-mix(in srgb, #d97706 16%, var(--card));
+  color: #b45309;
+}
+
+.support-status.is-resolved {
+  background: color-mix(in srgb, var(--success) 16%, var(--card));
+  color: var(--success);
+}
+
+.support-back {
+  align-self: center;
+  min-height: 40px;
+  padding: 0 18px;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.95rem;
+  font-weight: 500;
+}
 
 /* Okada rides in the phone: an iOS-style grouped screen with a large title, a fare card, hairline ride rows
    and status pills. Markup and behaviour are unchanged. */
@@ -3933,310 +4084,81 @@
   margin: 0;
 }
 
-/* Support: an iOS-style grouped settings screen. Large title, a segmented control, grouped
-   rows separated by hairlines, and one full-width primary action. */
-.support-app {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
+/* Map and Messages in the phone: iOS-style grouped screens. Hairline list rows, pill search, bubbles
+   with a primary tail for your own messages, and a rounded composer. Markup and behaviour are unchanged. */
+.phone-app-body .map-app {
+  display: grid;
+  gap: 12px;
   padding: 16px 16px 24px;
 }
-
-.support-header {
+.phone-app-body .map-app > header {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 0;
+  border: 0;
+  background: transparent;
 }
-
-.support-header-mark {
-  display: grid;
-  width: 46px;
-  height: 46px;
+.phone-app-body .map-app > header > svg {
   flex: none;
-  place-items: center;
+  width: 44px;
+  height: 44px;
+  padding: 11px;
   border-radius: 50%;
-  background: var(--primary);
   color: var(--primary-foreground);
+  background: var(--primary);
 }
-
-.support-header h3 {
-  margin: 0;
+.phone-app-body .map-app > header strong {
+  display: block;
   color: var(--foreground);
   font-size: 1.6rem;
   font-weight: 800;
   letter-spacing: -0.02em;
   line-height: 1.1;
 }
-
-.support-header p {
-  margin: 2px 0 0;
+.phone-app-body .map-app > header small {
+  display: block;
+  margin-top: 3px;
   color: var(--muted-foreground);
-  font-size: 0.8rem;
+  font-size: 0.78rem;
 }
-
-.support-tabs {
-  display: flex;
-  gap: 2px;
-  padding: 3px;
-  border-radius: 11px;
-  background: var(--muted);
-}
-
-.support-tab {
-  flex: 1;
-  min-height: 32px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--muted-foreground);
-  font-size: 0.8rem;
-  font-weight: 600;
-  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
-}
-
-.support-tab.is-active {
-  background: var(--card);
-  color: var(--foreground);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
-}
-
-.support-panel {
+.phone-app-body .map-app .phone-local-list {
+  display: grid;
+  gap: 0;
   overflow: hidden;
   border-radius: 14px;
   background: var(--card);
   box-shadow: 0 0 0 0.5px var(--border);
 }
-
-.support-search {
-  display: block;
-  padding: 10px 12px;
-  border-bottom: 0.5px solid var(--border);
-}
-
-.support-search input,
-.support-field input,
-.support-field textarea {
-  width: 100%;
-  min-width: 0;
-  border: 0;
-  background: transparent;
-  color: var(--foreground);
-  font-size: 0.9rem;
-  outline: none;
-}
-
-.support-search input {
-  height: 34px;
-  padding: 0 10px;
-  border-radius: 9px;
-  background: var(--muted);
-}
-
-.support-faq-list,
-.support-feedback-list {
-  display: grid;
-  gap: 10px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.support-faq-list {
-  gap: 0;
-}
-
-.support-faq + .support-faq {
-  border-top: 0.5px solid var(--border);
-}
-
-.support-faq button {
-  display: flex;
-  width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+.phone-app-body .map-app .phone-local-card {
   padding: 13px 14px;
   border: 0;
+  border-radius: 0;
   background: transparent;
-  color: var(--foreground);
-  font-size: 0.9rem;
-  font-weight: 500;
-  text-align: left;
+  box-shadow: none;
 }
-
-.support-faq button svg {
-  flex: none;
+.phone-app-body .map-app .phone-local-card + .phone-local-card {
+  border-top: 0.5px solid var(--border);
+}
+.phone-app-body .map-app .phone-local-card small {
+  color: var(--primary);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.phone-app-body .map-app .phone-local-card strong {
+  display: block;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+.phone-app-body .map-app .phone-local-card p {
+  margin: 2px 0 0;
   color: var(--muted-foreground);
-  transition: transform 200ms ease;
+  font-size: 0.8rem;
 }
-
-.support-faq button svg.is-open {
-  transform: rotate(180deg);
-}
-
-.support-faq p {
-  margin: 0;
-  padding: 0 14px 14px;
-  color: var(--muted-foreground);
-  font-size: 0.85rem;
-  line-height: 1.5;
-}
-
-.support-empty {
-  display: grid;
-  gap: 12px;
-  padding: 20px 16px;
-  justify-items: center;
+.phone-app-body .map-app .phone-map-state {
   color: var(--muted-foreground);
   font-size: 0.85rem;
   text-align: center;
-}
-
-.support-empty p {
-  margin: 0;
-}
-
-.support-notice,
-.support-error {
-  margin: 0;
-  padding: 10px 14px;
-  font-size: 0.82rem;
-  line-height: 1.4;
-}
-
-.support-notice {
-  background: color-mix(in srgb, var(--success) 14%, var(--card));
-  color: var(--foreground);
-}
-
-.support-error {
-  background: color-mix(in srgb, var(--destructive) 12%, var(--card));
-  color: var(--destructive);
-}
-
-.support-field {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 11px 14px;
-  border-bottom: 0.5px solid var(--border);
-  font-size: 0.9rem;
-}
-
-.support-field > span {
-  flex: none;
-  width: 84px;
-  color: var(--foreground);
-  font-weight: 500;
-}
-
-.support-field:has(textarea) {
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
-}
-
-.support-field:has(textarea) > span {
-  width: auto;
-}
-
-.support-field textarea {
-  resize: vertical;
-  min-height: 110px;
-  line-height: 1.5;
-}
-
-.support-field small {
-  align-self: flex-end;
-  color: var(--muted-foreground);
-  font-size: 0.7rem;
-}
-
-.support-submit {
-  display: flex;
-  width: calc(100% - 28px);
-  min-height: 46px;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin: 14px 14px 16px;
-  border: 0;
-  border-radius: 12px;
-  background: var(--primary);
-  color: var(--primary-foreground);
-  font-size: 0.95rem;
-  font-weight: 600;
-}
-
-.support-submit:disabled {
-  opacity: 0.45;
-}
-
-.support-feedback-card {
-  display: grid;
-  gap: 6px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: var(--card);
-  box-shadow: 0 0 0 0.5px var(--border);
-}
-
-.support-feedback-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.support-feedback-top strong {
-  font-size: 0.95rem;
-  line-height: 1.3;
-}
-
-.support-feedback-card p {
-  margin: 0;
-  color: var(--foreground);
-  font-size: 0.85rem;
-  line-height: 1.45;
-}
-
-.support-feedback-card small {
-  color: var(--muted-foreground);
-  font-size: 0.72rem;
-}
-
-.support-status {
-  flex: none;
-  padding: 3px 9px;
-  border-radius: 999px;
-  background: var(--muted);
-  color: var(--muted-foreground);
-  font-size: 0.7rem;
-  font-weight: 700;
-}
-
-.support-status.is-received {
-  background: color-mix(in srgb, var(--primary) 14%, var(--card));
-  color: var(--primary);
-}
-
-.support-status.is-in_progress {
-  background: color-mix(in srgb, #d97706 16%, var(--card));
-  color: #b45309;
-}
-
-.support-status.is-resolved {
-  background: color-mix(in srgb, var(--success) 16%, var(--card));
-  color: var(--success);
-}
-
-.support-back {
-  align-self: center;
-  min-height: 40px;
-  padding: 0 18px;
-  border: 0;
-  background: transparent;
-  color: var(--primary);
-  font-size: 0.95rem;
-  font-weight: 500;
 }
