@@ -201,6 +201,10 @@ class PhoneAppBoundary extends Component<
   static getDerivedStateFromError() {
     return { failed: true };
   }
+  override componentDidCatch(error: Error, info: { componentStack?: string | null }) {
+    // Keep the real failure visible to developers instead of only the friendly recovery card.
+    console.error(`Phone app "${this.props.appName}" failed to render`, error, info.componentStack);
+  }
   override render() {
     if (!this.state.failed) return this.props.children;
     return (
