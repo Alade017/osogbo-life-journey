@@ -1,0 +1,52 @@
+/* Party in the phone: the same grouped look as the other apps. The shared party screen is restyled only
+   inside .phone-party, so the desktop party route is unchanged. */
+.phone-party {
+  display: grid;
+  gap: 14px;
+  padding: 16px 16px 24px;
+}
+.phone-party-hero {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+.phone-party-hero-icon {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+.phone-party-hero-icon svg {
+  width: 21px;
+  height: 21px;
+}
+.phone-party-hero h2 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 1.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+}
+.phone-party-hero p {
+  margin: 3px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+.phone-party .game-panel {
+  padding: 14px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px var(--border);
+}
+.phone-party .font-display {
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+}

@@ -1,4 +1,4 @@
-import { canOccupyNeighborhoodPoint } from "./authoritative-movement.ts";
+import { createNeighborhoodOccupancyChecker } from "./authoritative-movement.ts";
 import {
   neighborhoodSceneBounds,
   toWorld,
@@ -56,41 +56,82 @@ export function checkNeighborhoodEntrances(
   const step = 8;
   const columns = Math.floor(width / step) + 1;
   const rows = Math.floor(height / step) + 1;
+  const totalCells = columns * rows;
   const index = (x: number, y: number) => y * columns + x;
   const point = (x: number, y: number) => ({ x: left + x * step, y: top + y * step });
   const valid = (x: number, y: number) => x >= 0 && y >= 0 && x < columns && y < rows;
-  const open = (x: number, y: number) => {
-    if (!valid(x, y)) return false;
+
+  // 0 = unknown, -1 = blocked, 1 = open, 2 = visited.
+  // Combining occupancy memoization and BFS visitation avoids rechecking blocked cells.
+  const cellStates = new Int8Array(totalCells);
+  const canOccupy = createNeighborhoodOccupancyChecker(origin, area.objects, area.obstacles);
+  const isOpen = (cell: number) => {
+    const cached = cellStates[cell]!;
+    if (cached !== 0) return cached > 0;
+
+    const x = cell % columns;
+    const y = Math.floor(cell / columns);
     const world = toWorld(point(x, y), origin);
-    return (
-      validCheckpoint(world) &&
-      canOccupyNeighborhoodPoint(world, origin, area.objects, area.obstacles)
-    );
+    const open = validCheckpoint(world) && canOccupy(world);
+    cellStates[cell] = open ? 1 : -1;
+    return open;
   };
+
   const sx = Math.round((spawn.x - left) / step);
   const sy = Math.round((spawn.y - top) / step);
-  if (!open(sx, sy))
+  if (!valid(sx, sy) || !isOpen(index(sx, sy))) {
     return { spawnClear: false, unreachable: area.objects.map((object) => object.id), visited: 0 };
-  const seen = new Uint8Array(columns * rows);
-  const queue: [number, number][] = [[sx, sy]];
-  seen[index(sx, sy)] = 1;
-  const pending = new Set(area.objects.map((object) => object.id));
-  for (let cursor = 0; cursor < queue.length; cursor++) {
-    const [x, y] = queue[cursor]!;
-    const current = point(x, y);
-    for (const object of area.objects) {
-      if (Math.hypot(current.x - object.x, current.y - object.y) <= 16) pending.delete(object.id);
-    }
-    for (const [nx, ny] of [
-      [x + 1, y],
-      [x - 1, y],
-      [x, y + 1],
-      [x, y - 1],
-    ] as const) {
-      if (!valid(nx, ny) || seen[index(nx, ny)] || !open(nx, ny)) continue;
-      seen[index(nx, ny)] = 1;
-      queue.push([nx, ny]);
-    }
   }
-  return { spawnClear: true, unreachable: [...pending], visited: queue.length };
+
+  // A flat integer queue avoids allocating a tuple for every reachable grid cell.
+  const queue = new Int32Array(totalCells);
+  let head = 0;
+  let tail = 0;
+  const start = index(sx, sy);
+  cellStates[start] = 2;
+  queue[tail++] = start;
+
+  const visit = (x: number, y: number) => {
+    if (!valid(x, y)) return;
+    const cell = index(x, y);
+    const state = cellStates[cell]!;
+    if (state === 2 || state === -1 || (state === 0 && !isOpen(cell))) return;
+    cellStates[cell] = 2;
+    queue[tail++] = cell;
+  };
+
+  while (head < tail) {
+    const cell = queue[head++]!;
+    const x = cell % columns;
+    const y = Math.floor(cell / columns);
+    visit(x + 1, y);
+    visit(x - 1, y);
+    visit(x, y + 1);
+    visit(x, y - 1);
+  }
+
+  // Each target only needs a small local grid search; do not scan every target per BFS cell.
+  const pending = new Set(area.objects.map((object) => object.id));
+  for (const object of area.objects) {
+    const minX = Math.max(0, Math.ceil((object.x - 16 - left) / step));
+    const maxX = Math.min(columns - 1, Math.floor((object.x + 16 - left) / step));
+    const minY = Math.max(0, Math.ceil((object.y - 16 - top) / step));
+    const maxY = Math.min(rows - 1, Math.floor((object.y + 16 - top) / step));
+    let reachable = false;
+
+    for (let y = minY; y <= maxY && !reachable; y++) {
+      for (let x = minX; x <= maxX; x++) {
+        if (
+          cellStates[index(x, y)] === 2 &&
+          Math.hypot(left + x * step - object.x, top + y * step - object.y) <= 16
+        ) {
+          reachable = true;
+          break;
+        }
+      }
+    }
+    if (reachable) pending.delete(object.id);
+  }
+
+  return { spawnClear: true, unreachable: [...pending], visited: tail };
 }
