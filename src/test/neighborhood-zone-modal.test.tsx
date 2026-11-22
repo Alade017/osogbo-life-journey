@@ -21,7 +21,9 @@ vi.mock("@/components/game/LocationVenueScene", () => ({
 }));
 vi.mock("@/components/game/FoodVenueServices", () => ({
   FoodVenueServices: ({ shopSlug }: { shopSlug?: string | null }) => (
-    <div data-testid="food-venue-services">Food purchase and eating services · {shopSlug ?? "location offers"}</div>
+    <div data-testid="food-venue-services">
+      Food purchase and eating services · {shopSlug ?? "location offers"}
+    </div>
   ),
 }));
 vi.mock("@/components/game/phone/PhoneBankApp", () => ({
@@ -135,7 +137,9 @@ it("opens real food services without exposing fabricated meal rewards", () => {
   expect(screen.queryByText(/Only confirmed bank/)).not.toBeInTheDocument();
   expect(screen.queryByText(/\+26 Hunger/)).not.toBeInTheDocument();
   fireEvent.click(screen.getAllByRole("button", { name: /Food & drinks/ })[0]!);
-  expect(screen.getByTestId("food-venue-services")).toHaveTextContent("Food purchase and eating services");
+  expect(screen.getByTestId("food-venue-services")).toHaveTextContent(
+    "Food purchase and eating services",
+  );
 });
 
 it("opens the food purchase and eating services at Mama Sikira Buka", () => {

@@ -450,11 +450,11 @@ export function NeighborhoodZoneModal({
             {subTab === "market" && (
               <div className="rounded-xl border border-[#16225C]/15 bg-white/85 p-2">
                 {zone.foodOnly ? (
-                  <FoodVenueServices shopSlug={zone.shopSlug} />
-                ) : (
-                  <MarketPage
-                    {...(zone.shopSlug != null ? { shopSlug: zone.shopSlug } : {})}
+                  <FoodVenueServices
+                    {...(zone.shopSlug !== undefined ? { shopSlug: zone.shopSlug } : {})}
                   />
+                ) : (
+                  <MarketPage {...(zone.shopSlug != null ? { shopSlug: zone.shopSlug } : {})} />
                 )}
               </div>
             )}
