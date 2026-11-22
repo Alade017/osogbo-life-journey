@@ -191,3 +191,50 @@
     transition: none;
   }
 }
+
+/* City Shops is a link until its own screen is designed. */
+.market-app-shop-link,
+.market-app-back {
+  min-height: 44px;
+  border: 0;
+  background: transparent;
+  color: var(--primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  text-align: left;
+}
+.market-app-shop-link {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 14px;
+  border-radius: 14px;
+  background: var(--card);
+  box-shadow: 0 0 0 0.5px var(--border);
+}
+
+/* Keep form fields inside the screen: long labels wrap and the canopy swatches fit two per row. */
+.market-app .phone-sub-content,
+.market-app-section,
+.market-app-stall,
+.market-app-stall form,
+.market-app-stall form > div,
+.market-app-lease {
+  min-width: 0;
+  max-width: 100%;
+}
+.market-app-stall input,
+.market-app-stall select,
+.market-app-stall form button {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.market-app-stall form button {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.market-app-stall .grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
