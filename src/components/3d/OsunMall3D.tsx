@@ -3,7 +3,7 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Vector3, type Camera, type Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { WalkPoint } from "@/game/grid-walk-path";
-import { advanceCrowd, isPaying, MALL_CROWD_TARGET, type MallShopper } from "@/game/mall-crowd";
+import { advanceCrowd, getShopperById, isPaying, MALL_CROWD_TARGET, type MallShopper } from "@/game/mall-crowd";
 import { createWalker, stepWalker, type MallWalker } from "@/game/mall-movement";
 import {
   MALL_BOUNDS,
@@ -253,7 +253,7 @@ function ShopperFigure({
 }) {
   const group = useRef<Group>(null);
   useFrame(() => {
-    const shopper = sim.current.shoppers.find((candidate) => candidate.id === id);
+    const shopper = getShopperById(sim.current.shoppers, id);
     const node = group.current;
     if (!node) return;
     node.visible = Boolean(shopper);

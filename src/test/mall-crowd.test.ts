@@ -5,6 +5,7 @@ import {
   advanceCrowd,
   buildShopperRoute,
   createShopper,
+  getShopperById,
 } from "@/game/mall-crowd";
 import { stepWalker } from "@/game/mall-movement";
 import { canWalkInMall } from "@/game/osun-mall-layout";
@@ -68,5 +69,83 @@ describe("mall payment", () => {
     }
     expect(sawPaying).toBe(true);
     expect(sawBrowsing).toBe(true);
+  });
+});
+
+describe("mall shopper lookup", () => {
+  it("returns the matching shopper", () => {
+    const { shoppers } = advanceCrowd([], 0, 0);
+
+    for (const shopper of shoppers) {
+      expect(
+        getShopperById(shoppers, shopper.id),
+      ).toBe(shopper);
+    }
+  });
+
+  it("returns undefined for missing shoppers", () => {
+    const { shoppers } = advanceCrowd([], 0, 0);
+
+    expect(
+      getShopperById(shoppers, "missing"),
+    ).toBeUndefined();
+
+    expect(
+      getShopperById([], "missing"),
+    ).toBeUndefined();
+  });
+
+  it("returns updated objects from new snapshots", () => {
+    const initial = advanceCrowd([], 0, 0);
+    const shopper = initial.shoppers[0]!;
+
+    expect(
+      getShopperById(initial.shoppers, shopper.id),
+    ).toBe(shopper);
+
+    const next = advanceCrowd(
+      initial.shoppers,
+      0.1,
+      initial.nextSeed,
+    );
+
+    const updated = next.shoppers.find(
+      (candidate) => candidate.id === shopper.id,
+    );
+
+    expect(updated).toBeDefined();
+    expect(updated).not.toBe(shopper);
+
+    expect(
+      getShopperById(next.shoppers, shopper.id),
+    ).toBe(updated);
+  });
+
+  it("does not retain removed shoppers in new snapshots", () => {
+    const { shoppers } = advanceCrowd([], 0, 0);
+    const removed = shoppers[0]!;
+
+    getShopperById(shoppers, removed.id);
+
+    const remaining = shoppers.filter(
+      (shopper) => shopper.id !== removed.id,
+    );
+
+    expect(
+      getShopperById(remaining, removed.id),
+    ).toBeUndefined();
+  });
+
+  it("preserves first-match behaviour for duplicate IDs", () => {
+    const { shoppers } = advanceCrowd([], 0, 0);
+    const first = shoppers[0]!;
+    const duplicate = { ...first };
+
+    expect(
+      getShopperById(
+        [first, duplicate],
+        first.id,
+      ),
+    ).toBe(first);
   });
 });
