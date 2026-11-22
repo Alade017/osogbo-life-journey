@@ -4502,6 +4502,28 @@
 .phone-app-body .calendar-app .calendar-event > button:disabled {
   opacity: 0.55;
 }
+.phone-app-body .calendar-festivals {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+.phone-app-body .calendar-section-title {
+  font-size: 0.95rem;
+  font-weight: 800;
+  margin: 0;
+}
+.phone-app-body .calendar-note {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  margin: 0;
+}
+.phone-app-body .calendar-app .calendar-festival a {
+  color: var(--primary);
+  font-size: 0.78rem;
+  font-weight: 700;
+  justify-self: start;
+  margin-top: 4px;
+}
 
 /* Wardrobe in the phone: token colours instead of the hardcoded cream gradients, a tighter three-column bag,
    and the item detail as a card under the bag. */
