@@ -1,7 +1,13 @@
 import { Component, type ReactNode } from "react";
 
+type VenueSceneBoundaryProps = {
+  children: ReactNode;
+  onError?: () => void;
+  fallback?: ReactNode;
+};
+
 export class VenueSceneBoundary extends Component<
-  { children: ReactNode; onError: () => void },
+  VenueSceneBoundaryProps,
   { failed: boolean }
 > {
   override state = { failed: false };
@@ -11,11 +17,12 @@ export class VenueSceneBoundary extends Component<
   }
 
   override componentDidCatch() {
-    this.props.onError();
+    this.props.onError?.();
   }
 
   override render() {
-    return this.state.failed ? null : this.props.children;
+    return this.state.failed
+      ? (this.props.fallback ?? null)
+      : this.props.children;
   }
 }
-

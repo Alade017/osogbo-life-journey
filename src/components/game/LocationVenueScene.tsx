@@ -5,6 +5,7 @@ import { transportMapHref } from "@/lib/transport-park";
 import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { resolveVenueScene } from "@/lib/venue-scene-resolver";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
+import { SpecializedVenueFallback } from "./SpecializedVenueFallback";
 
 import { venueSceneLoaders } from "./venue-scene-loaders";
 
@@ -529,49 +530,64 @@ export function LocationVenueScene(props: {
     sceneKind,
     venue,
   });
-  if (sceneKind === "mall" && props.locationId)
-    return (
-      <Suspense
-        key={sceneIdentity}
-        fallback={
-          <WorldLoadingIndicator title="Entering the mall" detail="Opening the shopping hall…" />
-        }
-      >
-        <OsunMallVenue locationId={props.locationId} locationName={props.locationName} />
-      </Suspense>
-    );
-  if (sceneKind === "clinic")
-    return (
-      <Suspense
-        key={sceneIdentity}
-        fallback={
-          <WorldLoadingIndicator title="Opening the clinic" detail="Preparing the rooms…" />
-        }
-      >
-        <ClinicVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
-      </Suspense>
-    );
-  if (sceneKind === "worship")
-    return (
-      <Suspense
-        key={sceneIdentity}
-        fallback={
-          <WorldLoadingIndicator title="Entering the prayer hall" detail="Preparing the hall…" />
-        }
-      >
-        <WorshipVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
-      </Suspense>
-    );
-  return sceneKind === "campus" ? (
-    <Suspense
-      key={sceneIdentity}
-      fallback={
-        <WorldLoadingIndicator title="Opening the campus" detail="Preparing the grounds…" />
-      }
-    >
-      <SchoolCampusVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
-    </Suspense>
-  ) : (
-    <BasicLocationVenueScene key={sceneIdentity} {...props} />
+  const specializedFallback = (
+    <SpecializedVenueFallback locationName={props.locationName} venue={venue} />
   );
+  if (sceneKind === "mall" && props.locationId) {
+    return (
+      <VenueSceneBoundary key={sceneIdentity} fallback={specializedFallback}>
+        <Suspense
+          fallback={
+            <WorldLoadingIndicator title="Entering the mall" detail="Opening the shopping hall…" />
+          }
+        >
+          <OsunMallVenue locationId={props.locationId} locationName={props.locationName} />
+        </Suspense>
+      </VenueSceneBoundary>
+    );
+  }
+
+  if (sceneKind === "clinic") {
+    return (
+      <VenueSceneBoundary key={sceneIdentity} fallback={specializedFallback}>
+        <Suspense
+          fallback={
+            <WorldLoadingIndicator title="Opening the clinic" detail="Preparing the rooms…" />
+          }
+        >
+          <ClinicVenue slug={props.slug} locationName={props.locationName} />
+        </Suspense>
+      </VenueSceneBoundary>
+    );
+  }
+
+  if (sceneKind === "worship") {
+    return (
+      <VenueSceneBoundary key={sceneIdentity} fallback={specializedFallback}>
+        <Suspense
+          fallback={
+            <WorldLoadingIndicator title="Entering the prayer hall" detail="Preparing the hall…" />
+          }
+        >
+          <WorshipVenue slug={props.slug} locationName={props.locationName} />
+        </Suspense>
+      </VenueSceneBoundary>
+    );
+  }
+
+  if (sceneKind === "campus") {
+    return (
+      <VenueSceneBoundary key={sceneIdentity} fallback={specializedFallback}>
+        <Suspense
+          fallback={
+            <WorldLoadingIndicator title="Opening the campus" detail="Preparing the grounds…" />
+          }
+        >
+          <SchoolCampusVenue slug={props.slug} locationName={props.locationName} />
+        </Suspense>
+      </VenueSceneBoundary>
+    );
+  }
+
+  return <BasicLocationVenueScene key={sceneIdentity} {...props} />;
 }
