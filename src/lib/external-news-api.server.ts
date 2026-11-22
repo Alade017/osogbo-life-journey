@@ -11,6 +11,9 @@ export type ExternalNewsItem = {
 };
 
 const REFRESH_MS = 15 * 60 * 1000;
+// After a failed refresh (GDELT returns 429 when asked too often, or times out), wait before
+// asking again. Without this, every request retried and kept the provider rate-limited.
+const FAILURE_COOLDOWN_MS = 15 * 60 * 1000;
 const MAX_ITEMS = 20;
 const GDELT_URL = "https://api.gdeltproject.org/api/v2/doc/doc";
 
@@ -28,9 +31,25 @@ function safeText(value: unknown, limit: number) {
   return typeof value === "string" ? value.replace(/\s+/g, " ").trim().slice(0, limit) : "";
 }
 
+// GDELT sends seendate as compact UTC, for example 20261116T080330Z. Date() cannot parse
+// that form, which left every headline without a date.
+const GDELT_SEENDATE = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/;
+
 function parseDate(value: unknown): string | null {
   if (typeof value !== "string") return null;
-  const parsed = new Date(value);
+  const compact = GDELT_SEENDATE.exec(value.trim());
+  const parsed = compact
+    ? new Date(
+        Date.UTC(
+          +compact[1]!,
+          +compact[2]! - 1,
+          +compact[3]!,
+          +compact[4]!,
+          +compact[5]!,
+          +compact[6]!,
+        ),
+      )
+    : new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
 }
 
@@ -101,11 +120,13 @@ export async function getExternalNews(region: ExternalNewsRegion): Promise<Exter
   const db = supabaseAdmin;
   const { data: refreshRow } = await db
     .from("external_news_refreshes")
-    .select("refreshed_at")
+    .select("refreshed_at,failed_at")
     .eq("region", region)
     .maybeSingle();
   const refreshedAt = refreshRow?.refreshed_at ? Date.parse(refreshRow.refreshed_at) : 0;
-  if (!refreshedAt || Date.now() - refreshedAt > REFRESH_MS) {
+  const failedAt = refreshRow?.failed_at ? Date.parse(refreshRow.failed_at) : 0;
+  const failedRecently = failedAt > refreshedAt && Date.now() - failedAt < FAILURE_COOLDOWN_MS;
+  if (!failedRecently && (!refreshedAt || Date.now() - refreshedAt > REFRESH_MS)) {
     try {
       await refresh(region);
     } catch (error) {
