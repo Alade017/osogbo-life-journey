@@ -26,7 +26,6 @@ import {
   MessageCircle,
   Gamepad2,
   Newspaper,
-  School,
   PartyPopper,
   PanelsTopLeft,
   Target,
@@ -102,11 +101,6 @@ const RealEstatePage = lazy(() =>
     default: m.RealEstatePage,
   })),
 );
-const NigerianSchoolsApp = lazy(() =>
-  import("@/components/game/phone/NigerianSchoolsApp").then((m) => ({
-    default: m.NigerianSchoolsApp,
-  })),
-);
 const GamesApp = lazy(() =>
   import("@/components/game/mini-games/GamesApp").then((m) => ({ default: m.GamesApp })),
 );
@@ -167,7 +161,6 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
   { label: "Games", icon: Gamepad2, tone: "phone-app-coral" },
-  { label: "Nigerian Schools", icon: School, tone: "phone-app-blue" },
   { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
   { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue", emphasis: "important" },
@@ -606,7 +599,6 @@ export function PhoneLauncher({
     }
 
     if (appName === "Games") return <GamesApp />;
-    if (appName === "Nigerian Schools") return <NigerianSchoolsApp />;
     if (appName === "Settings") return <SettingsPage />;
     if (appName === "Osun Gist") return <OsunGistApp />;
     if (appName === "Map") return <PhoneMapApp />;
