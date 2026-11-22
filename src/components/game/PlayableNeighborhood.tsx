@@ -16,7 +16,7 @@ import {
   DoorOpen,
   Home,
   Landmark,
-  Map,
+  Map as MapIcon,
   MessageCircle,
   Store,
   Users,
@@ -1336,14 +1336,14 @@ export function PlayableNeighborhood() {
                       </div>
                     )}
                     <Link to="/map" className="neighborhood-map-shortcut">
-                      <Map size={16} aria-hidden="true" /> Explore 3D map
+                      <MapIcon size={16} aria-hidden="true" /> Explore 3D map
                     </Link>
                     <div
                       className="neighborhood-zoom-controls"
                       aria-label="Neighborhood map controls"
                     >
                       <Link to="/map" aria-label="City map">
-                        <Map size={16} aria-hidden="true" />
+                        <MapIcon size={16} aria-hidden="true" />
                       </Link>
                     </div>
                     {(nearbyZoneMatch || nearbyZoneNpcMatch || nearbyObject) && (
