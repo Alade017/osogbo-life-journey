@@ -92,7 +92,12 @@ function FixtureModel({
 
   useEffect(() => {
     if (!supported) return;
-    onRegister(furnitureKey, { token, result: latestResult.current });
+    onRegister(furnitureKey, {
+      token,
+      ...(latestResult.current !== undefined
+        ? { result: latestResult.current }
+        : {}),
+    });
     return () => {
       onUnregister(furnitureKey, token);
     };
