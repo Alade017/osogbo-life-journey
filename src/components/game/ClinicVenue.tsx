@@ -24,71 +24,159 @@ export function ClinicVenue({ slug, locationName }: { slug: string; locationName
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const unavailable = useCallback(() => setStatus("fallback"), []);
   const cancel = walk.cancel;
-  useEffect(() => { if (exterior) cancel(); }, [exterior, cancel]);
-  useEffect(() => { if (walk.room) setRoom(walk.room); }, [walk.room]);
   useEffect(() => {
-    const timer = window.setTimeout(() => setStatus(value => value === "loading" ? "fallback" : value), 5000);
+    if (exterior) cancel();
+  }, [exterior, cancel]);
+  useEffect(() => {
+    if (walk.room) setRoom(walk.room);
+  }, [walk.room]);
+  useEffect(() => {
+    const timer = window.setTimeout(
+      () => setStatus((value) => (value === "loading" ? "fallback" : value)),
+      5000,
+    );
     return () => window.clearTimeout(timer);
   }, []);
-  const staff = visit?.status === "examination" ? visit.assignedStaff : visit?.staff?.onDuty ? visit.staff : null;
+  const staff =
+    visit?.status === "examination"
+      ? visit.assignedStaff
+      : visit?.staff?.onDuty
+        ? visit.staff
+        : null;
   const onStage = (stage: ClinicVisitStatus) => {
     if (exterior) return;
-    const target = stage === "waiting" ? CLINIC_ROOM_APPROACH["waiting"] :
-      stage === "examination" ? CLINIC_ROOM_APPROACH["exam"] :
-      ["discharged", "cancelled"].includes(stage) ? CLINIC_SPAWN : null;
+    const target =
+      stage === "waiting"
+        ? CLINIC_ROOM_APPROACH["waiting"]
+        : stage === "examination"
+          ? CLINIC_ROOM_APPROACH["exam"]
+          : ["discharged", "cancelled"].includes(stage)
+            ? CLINIC_SPAWN
+            : null;
     if (target) walk.walkTo(target);
   };
   return (
     <section className="game-panel space-y-3 p-3 md:p-5" aria-labelledby={heading}>
       <header>
         <p className="text-sm text-muted-foreground">{locationName}</p>
-        <h2 id={heading} className="text-xl font-bold">{exterior ? "Clinic grounds" : "Clinic interior"}</h2>
+        <h2 id={heading} className="text-xl font-bold">
+          {exterior ? "Clinic grounds" : "Clinic interior"}
+        </h2>
       </header>
       <div role="group" aria-label="Clinic view" className="flex gap-2">
-        {[false, true].map(value => (
-          <button key={String(value)} type="button" aria-pressed={exterior === value}
+        {[false, true].map((value) => (
+          <button
+            key={String(value)}
+            type="button"
+            aria-pressed={exterior === value}
             onClick={() => setExterior(value)}
-            className="rounded-lg border border-edge bg-card px-3 py-3 text-sm aria-pressed:bg-primary aria-pressed:text-primary-foreground">
+            className="rounded-lg border border-edge bg-card px-3 py-3 text-sm aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+          >
             {value ? "Clinic grounds" : "Interior cutaway"}
           </button>
         ))}
       </div>
       <div className="relative h-[55svh] min-h-72 overflow-hidden rounded-lg border border-edge bg-muted">
-        {status !== "fallback" && <VenueSceneBoundary resetKey={slug} onError={unavailable}>
-          <Canvas shadows frameloop="demand" dpr={[1, 1.25]}
-            gl={{ antialias: false, powerPreference: "low-power" }}
-            onCreated={() => setStatus("ready")}
-            fallback={<p className="p-4">WebGL is unavailable. Use the clinic controls below.</p>}
-            aria-label="Interactive 3D clinic">
-            <WorldCamera width={34} depth={exterior ? 44 : 22} stage target={[0, 1.2, exterior ? 5 : 0]} zoom={1} />
-            <WorldLighting size={44} />
-            <TierOneClinicScene exterior={exterior} selectedRoom={room} onRoomSelect={setRoom}
-              onWalkTo={walk.walkTo} fixtures={venue.fixtures} selected={fixture} onSelect={setFixture} />
-            {!exterior && <VenueVisitor position={walk.position} facing={walk.facing} walking={walk.walking} />}
-            {!exterior && staff && <VenueVisitor position={[-7.5, 0.06, -6]} facing="south" uniformColor={WORLD_PALETTE.linen} />}
-          </Canvas>
-        </VenueSceneBoundary>}
-        {status === "loading" && <div className="absolute inset-0 grid place-items-center bg-background/70">
-          <WorldLoadingIndicator title="Opening the clinic" detail="Preparing the grounds and rooms…" />
-        </div>}
-        {status === "fallback" && <p role="note" className="p-4">The 3D scene is unavailable on this device. The clinic controls remain available below.</p>}
-      </div>
-      {!exterior && <>
-        <details>
-          <summary className="cursor-pointer rounded-lg border border-edge p-3 text-sm font-semibold">Explore rooms</summary>
-          <div role="group" aria-label="Clinic rooms" className="mt-2 flex flex-wrap gap-2">
-            {CLINIC_ROOMS.map(item => <button key={item.id} type="button" aria-pressed={room === item.id}
-              disabled={!CLINIC_ROOM_APPROACH[item.id]}
-              onClick={() => { const target = CLINIC_ROOM_APPROACH[item.id]; if (target) { setRoom(item.id); walk.walkTo(target); } }}
-              className="rounded-lg border border-edge bg-card px-3 py-3 text-sm disabled:opacity-50 aria-pressed:bg-primary aria-pressed:text-primary-foreground">
-              {item.name}{!CLINIC_ROOM_APPROACH[item.id] ? " · Staff only" : ""}
-            </button>)}
-            <button type="button" onClick={() => walk.walkTo(CLINIC_SPAWN)} className="rounded-lg border border-edge px-3 py-3 text-sm">Return to entrance</button>
+        {status !== "fallback" && (
+          <VenueSceneBoundary resetKey={slug} onError={unavailable}>
+            <Canvas
+              shadows
+              frameloop="demand"
+              dpr={[1, 1.25]}
+              gl={{ antialias: false, powerPreference: "low-power" }}
+              onCreated={() => setStatus("ready")}
+              fallback={<p className="p-4">WebGL is unavailable. Use the clinic controls below.</p>}
+              aria-label="Interactive 3D clinic"
+            >
+              <WorldCamera
+                width={34}
+                depth={exterior ? 44 : 22}
+                stage
+                target={[0, 1.2, exterior ? 5 : 0]}
+                zoom={1}
+              />
+              <WorldLighting size={44} />
+              <TierOneClinicScene
+                exterior={exterior}
+                selectedRoom={room}
+                onRoomSelect={setRoom}
+                onWalkTo={walk.walkTo}
+                fixtures={venue.fixtures}
+                selected={fixture}
+                onSelect={setFixture}
+              />
+              {!exterior && (
+                <VenueVisitor
+                  position={walk.position}
+                  facing={walk.facing}
+                  walking={walk.walking}
+                />
+              )}
+              {!exterior && staff && (
+                <VenueVisitor
+                  position={[-7.5, 0.06, -6]}
+                  facing="south"
+                  uniformColor={WORLD_PALETTE.linen}
+                />
+              )}
+            </Canvas>
+          </VenueSceneBoundary>
+        )}
+        {status === "loading" && (
+          <div className="absolute inset-0 grid place-items-center bg-background/70">
+            <WorldLoadingIndicator
+              title="Opening the clinic"
+              detail="Preparing the grounds and rooms…"
+            />
           </div>
-        </details>
-        <p role="status" className="text-sm text-muted-foreground">Local walkthrough · {walk.message}</p>
-        <p className="text-sm">{venue.fixtures.find(item => item.id === fixture)?.detail}</p>
-      </>}
+        )}
+        {status === "fallback" && (
+          <p role="note" className="p-4">
+            The 3D scene is unavailable on this device. The clinic controls remain available below.
+          </p>
+        )}
+      </div>
+      {!exterior && (
+        <>
+          <details>
+            <summary className="cursor-pointer rounded-lg border border-edge p-3 text-sm font-semibold">
+              Explore rooms
+            </summary>
+            <div role="group" aria-label="Clinic rooms" className="mt-2 flex flex-wrap gap-2">
+              {CLINIC_ROOMS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  aria-pressed={room === item.id}
+                  disabled={!CLINIC_ROOM_APPROACH[item.id]}
+                  onClick={() => {
+                    const target = CLINIC_ROOM_APPROACH[item.id];
+                    if (target) {
+                      setRoom(item.id);
+                      walk.walkTo(target);
+                    }
+                  }}
+                  className="rounded-lg border border-edge bg-card px-3 py-3 text-sm disabled:opacity-50 aria-pressed:bg-primary aria-pressed:text-primary-foreground"
+                >
+                  {item.name}
+                  {!CLINIC_ROOM_APPROACH[item.id] ? " · Staff only" : ""}
+                </button>
+              ))}
+              <button
+                type="button"
+                onClick={() => walk.walkTo(CLINIC_SPAWN)}
+                className="rounded-lg border border-edge px-3 py-3 text-sm"
+              >
+                Return to entrance
+              </button>
+            </div>
+          </details>
+          <p role="status" className="text-sm text-muted-foreground">
+            Local walkthrough · {walk.message}
+          </p>
+          <p className="text-sm">{venue.fixtures.find((item) => item.id === fixture)?.detail}</p>
+        </>
+      )}
       <ClinicVisitPanel onStage={onStage} onVisit={setVisit} />
     </section>
   );

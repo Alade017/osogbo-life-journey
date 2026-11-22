@@ -78,7 +78,13 @@ import {
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { MovementDirection } from "@/lib/player-movement";
-import { NPC_CATALOG, npcActivityAt, npcFromSavedDefinition, socialActionsFor, type SocialAction } from "@/lib/npc-simulation";
+import {
+  NPC_CATALOG,
+  npcActivityAt,
+  npcFromSavedDefinition,
+  socialActionsFor,
+  type SocialAction,
+} from "@/lib/npc-simulation";
 import { hasBuildingVenueInterior, hasLocationVenueDesign } from "@/lib/location-venue-designs";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
@@ -572,13 +578,7 @@ export function PlayableNeighborhood() {
         isMoving,
       };
     });
-  }, [
-    area.objects,
-    area.obstacles,
-    scheduledNpcs,
-    npcPositionOverrides,
-    simulation.paused,
-  ]);
+  }, [area.objects, area.obstacles, scheduledNpcs, npcPositionOverrides, simulation.paused]);
   const localPlaces =
     placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
   const hasShopOffers =
@@ -671,7 +671,9 @@ export function PlayableNeighborhood() {
     nearbyObject?.kind === "npc"
       ? (activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null)
       : null;
-  const selectedNpc = selectedNpcId ? activeNpcs.find((npc) => npc.id === selectedNpcId) ?? null : nearbyNpc;
+  const selectedNpc = selectedNpcId
+    ? (activeNpcs.find((npc) => npc.id === selectedNpcId) ?? null)
+    : nearbyNpc;
   const npcInteraction = useGameAction(rpc.interactWithNpc, {
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: q.npcRelationships().queryKey });
@@ -1140,17 +1142,24 @@ export function PlayableNeighborhood() {
     setSelectedNpcId(null);
   };
   const relationship = npcRelationships.data?.find((row) => row.npc_id === selectedNpc?.id);
-  const canInteractWithNpc = !!selectedNpc && selectedNpc.available && !selectedNpc.isMoving &&
-    nearbyNpc?.id === selectedNpc.id && npcRelationships.isSuccess;
-  const eligibleNpcActions = socialActionsFor({
-    friendship: relationship?.friendship ?? 0,
-    romance: relationship?.romance ?? 0,
-    trust: relationship?.trust ?? 0,
-    conflict: relationship?.conflict ?? 0,
-    meetings: relationship?.meetings ?? 0,
-    lastInteractionDay: relationship?.last_interaction_day ?? null,
-    lastInteractionText: relationship?.last_interaction_text ?? null,
-  }, canInteractWithNpc);
+  const canInteractWithNpc =
+    !!selectedNpc &&
+    selectedNpc.available &&
+    !selectedNpc.isMoving &&
+    nearbyNpc?.id === selectedNpc.id &&
+    npcRelationships.isSuccess;
+  const eligibleNpcActions = socialActionsFor(
+    {
+      friendship: relationship?.friendship ?? 0,
+      romance: relationship?.romance ?? 0,
+      trust: relationship?.trust ?? 0,
+      conflict: relationship?.conflict ?? 0,
+      meetings: relationship?.meetings ?? 0,
+      lastInteractionDay: relationship?.last_interaction_day ?? null,
+      lastInteractionText: relationship?.last_interaction_text ?? null,
+    },
+    canInteractWithNpc,
+  );
   const npcActions: readonly { action: SocialAction; label: string }[] = [
     { action: "greet", label: "Say hello" },
     { action: "work", label: "Ask about work" },
@@ -1670,25 +1679,32 @@ export function PlayableNeighborhood() {
                             by the game server for this location and time.
                           </p>
                           <div className="flex flex-wrap gap-2">
-                            {npcActions.filter(({ action }) => eligibleNpcActions.includes(action)).map(({ action, label }) => (
-                              <button
-                                key={action}
-                                type="button"
-                                className="neighborhood-action-card"
-                                disabled={npcInteraction.isPending || !canInteractWithNpc}
-                                onClick={() => {
-                                  if (!canInteractWithNpc || npcInteraction.isPending || !eligibleNpcActions.includes(action)) return;
-                                  npcInteraction.mutate({
-                                    npcId: selectedNpc.id,
-                                    action,
-                                    requestId: crypto.randomUUID(),
-                                  });
-                                }}
-                              >
-                                <MessageCircle size={17} aria-hidden="true" />
-                                {npcInteraction.isPending ? "Speaking..." : label}
-                              </button>
-                            ))}
+                            {npcActions
+                              .filter(({ action }) => eligibleNpcActions.includes(action))
+                              .map(({ action, label }) => (
+                                <button
+                                  key={action}
+                                  type="button"
+                                  className="neighborhood-action-card"
+                                  disabled={npcInteraction.isPending || !canInteractWithNpc}
+                                  onClick={() => {
+                                    if (
+                                      !canInteractWithNpc ||
+                                      npcInteraction.isPending ||
+                                      !eligibleNpcActions.includes(action)
+                                    )
+                                      return;
+                                    npcInteraction.mutate({
+                                      npcId: selectedNpc.id,
+                                      action,
+                                      requestId: crypto.randomUUID(),
+                                    });
+                                  }}
+                                >
+                                  <MessageCircle size={17} aria-hidden="true" />
+                                  {npcInteraction.isPending ? "Speaking..." : label}
+                                </button>
+                              ))}
                           </div>
                           {npcDialogue && (
                             <p className="rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
