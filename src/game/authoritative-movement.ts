@@ -60,6 +60,52 @@ export function canOccupyNeighborhoodPoint(
   });
 }
 
+
+/** Build a reusable collision checker when many points share the same scene geometry. */
+export function createNeighborhoodOccupancyChecker(
+  origin: WorldPoint,
+  objects: readonly NeighborhoodObject[] = NEIGHBORHOOD_OBJECTS,
+  obstacles: readonly NeighborhoodObstacle[] = [],
+) {
+  const objectSolids = objects
+    .filter((object) => object.kind !== "npc" && !object.walkIn)
+    .map((object) => {
+      const footprint = neighborhoodBuildingFootprint(object);
+      return {
+        left: footprint.left,
+        right: footprint.left + footprint.width,
+        top: footprint.top,
+        bottom: footprint.top + footprint.height,
+      };
+    });
+  const obstacleSolids = obstacles.map((obstacle) => {
+    const footprint = neighborhoodObstacleFootprint(obstacle);
+    return {
+      left: footprint.left,
+      right: footprint.left + footprint.width,
+      top: footprint.top,
+      bottom: footprint.top + footprint.height,
+    };
+  });
+
+  return (point: WorldPoint) => {
+    const scenePoint = toScene(point, origin);
+    const body = {
+      left: scenePoint.x - 8,
+      right: scenePoint.x + 8,
+      top: scenePoint.y + 8,
+      bottom: scenePoint.y + 20,
+    };
+    const clears = (solid: (typeof objectSolids)[number]) =>
+      body.right <= solid.left ||
+      body.left >= solid.right ||
+      body.bottom <= solid.top ||
+      body.top >= solid.bottom;
+
+    return objectSolids.every(clears) && obstacleSolids.every(clears);
+  };
+}
+
 export function canRestoreNeighborhoodCheckpoint(
   point: WorldPoint,
   origin: WorldPoint,

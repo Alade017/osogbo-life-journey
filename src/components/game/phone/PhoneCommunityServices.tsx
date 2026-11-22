@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { foodDeliveryService, type FoodDelivery } from "@/lib/food-delivery-service";
 import { formatNaira, q } from "@/lib/game";
+import { lagosDateKey, OSOGBO_CALENDAR } from "@/lib/osogbo-calendar";
 import { OKADA_DESTINATIONS, OKADA_HOME } from "@/game/okada-destinations";
 import { PaletteSelect } from "@/components/ui/palette-select";
 import { Bike, MapPin, PackageCheck, ShoppingBasket, UtensilsCrossed } from "lucide-react";
@@ -95,6 +96,13 @@ function StateMessage({
   return null;
 }
 
+function formatFestivalDate(startsOn: string) {
+  return new Date(`${startsOn}T12:00:00+01:00`).toLocaleDateString("en-NG", {
+    timeZone: "Africa/Lagos",
+    dateStyle: "medium",
+  });
+}
+
 function CalendarApp() {
   const client = useQueryClient();
   const events = usePhoneRows<TownEvent>(
@@ -119,22 +127,29 @@ function CalendarApp() {
     onError: (error: Error) => toast.error(error.message),
   });
   const saved = new Set(reminders.data?.map((item) => item.event_id));
+  const now = Date.now();
+  const upcoming = events.data?.filter((event) => new Date(event.starts_at).getTime() >= now) ?? [];
+  const today = lagosDateKey();
+  const festivals = OSOGBO_CALENDAR.filter((item) => item.startsOn >= today);
   return (
     <div className="phone-service-screen calendar-app">
       <header className="calendar-hero">
         <h2>Town calendar</h2>
-        <p>Town events and your saved reminders</p>
+        <p>Upcoming town events and your reminders</p>
       </header>
       <StateMessage
         loading={events.isLoading || reminders.isLoading}
         error={events.isError || reminders.isError}
-        empty={!events.data?.length}
+        empty={!upcoming.length && !festivals.length}
         retry={() => {
           void events.refetch();
           void reminders.refetch();
         }}
       />
-      {events.data?.map((event) => (
+      {events.data && !upcoming.length && (
+        <p className="phone-service-state">No upcoming town events.</p>
+      )}
+      {upcoming.map((event) => (
         <article className="phone-service-card calendar-event" key={event.id}>
           <time>
             {new Date(event.starts_at).toLocaleString("en-NG", {
@@ -155,6 +170,22 @@ function CalendarApp() {
           </button>
         </article>
       ))}
+      {festivals.length > 0 && (
+        <section className="calendar-festivals" aria-label="Osogbo festival dates">
+          <h3 className="calendar-section-title">Osogbo festival dates</h3>
+          <p className="calendar-note">Information only. Reminders apply to town events.</p>
+          {festivals.map((item) => (
+            <article className="phone-service-card calendar-event calendar-festival" key={item.id}>
+              <time>{formatFestivalDate(item.startsOn)}</time>
+              <h3>{item.title}</h3>
+              <p>{item.venue}</p>
+              <a href={item.sourceUrl} target="_blank" rel="noreferrer">
+                Official listing
+              </a>
+            </article>
+          ))}
+        </section>
+      )}
     </div>
   );
 }

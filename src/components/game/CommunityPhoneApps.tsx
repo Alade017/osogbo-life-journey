@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Heart, Newspaper, Plus, Send, Trophy } from "lucide-react";
 import { PaletteSelect } from "@/components/ui/palette-select";
 import { loadGameUpdates, sortGameUpdates } from "@/lib/game-updates";
+import "./phone/phone-leaderboard.css";
 
 export type CommunityPhoneApp =
   "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution" | "Leaderboard" | "Town News";
