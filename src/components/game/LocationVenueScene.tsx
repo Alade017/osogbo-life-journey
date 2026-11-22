@@ -6,43 +6,20 @@ import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useState, t
 import { resolveVenueScene } from "@/lib/venue-scene-resolver";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 
-const CivicServiceScene = lazy(() =>
-  import("@/components/3d/CivicServiceScene").then((module) => ({ default: module.CivicServiceScene })),
-);
-const BankInteriorScene = lazy(() =>
-  import("@/components/3d/BankInteriorScene").then((module) => ({ default: module.BankInteriorScene })),
-);
-const TransitParkScene = lazy(() =>
-  import("@/components/3d/TransitParkScene").then((module) => ({ default: module.TransitParkScene })),
-);
-const HealthcareScene = lazy(() =>
-  import("@/components/3d/HealthcareScene").then((module) => ({ default: module.HealthcareScene })),
-);
-const WorkplaceScene = lazy(() =>
-  import("@/components/3d/WorkplaceScene").then((module) => ({ default: module.WorkplaceScene })),
-);
-const RetailInteriorScene = lazy(() =>
-  import("@/components/3d/RetailInteriorScene").then((module) => ({ default: module.RetailInteriorScene })),
-);
-const BukaInteriorScene = lazy(() =>
-  import("@/components/3d/BukaInteriorScene").then((module) => ({ default: module.BukaInteriorScene })),
-);
-const MarketTradingHall = lazy(() =>
-  import("@/components/3d/MarketTradingScene").then((module) => ({ default: module.MarketTradingHall })),
-);
+import { venueSceneLoaders } from "./venue-scene-loaders";
 
-const ClinicVenue = lazy(() =>
-  import("./ClinicVenue").then((module) => ({ default: module.ClinicVenue })),
-);
-const OsunMallVenue = lazy(() =>
-  import("./OsunMallVenue").then((module) => ({ default: module.OsunMallVenue })),
-);
-const WorshipVenue = lazy(() =>
-  import("./WorshipVenue").then((module) => ({ default: module.WorshipVenue })),
-);
-const SchoolCampusVenue = lazy(() =>
-  import("./SchoolCampusVenue").then((module) => ({ default: module.SchoolCampusVenue })),
-);
+const CivicServiceScene = lazy(venueSceneLoaders.civic);
+const BankInteriorScene = lazy(venueSceneLoaders.bank);
+const TransitParkScene = lazy(venueSceneLoaders.transport);
+const HealthcareScene = lazy(venueSceneLoaders.healthcare);
+const WorkplaceScene = lazy(venueSceneLoaders.workplace);
+const RetailInteriorScene = lazy(venueSceneLoaders.retail);
+const BukaInteriorScene = lazy(venueSceneLoaders.food);
+const MarketTradingHall = lazy(venueSceneLoaders.market);
+const ClinicVenue = lazy(venueSceneLoaders.clinic);
+const OsunMallVenue = lazy(venueSceneLoaders.mall);
+const WorshipVenue = lazy(venueSceneLoaders.worship);
+const SchoolCampusVenue = lazy(venueSceneLoaders.campus);
 import { Canvas } from "@react-three/fiber";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
