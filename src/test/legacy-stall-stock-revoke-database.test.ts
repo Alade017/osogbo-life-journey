@@ -3,7 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { beforeAll, afterAll, expect, it } from "vitest";
 
-const migration = "supabase/migrations/20261122010000_revoke_legacy_stall_stock.sql";
+const migration = "supabase/migrations/20261121235531_revoke_legacy_stall_stock.sql";
 let db: PGlite;
 
 beforeAll(async () => {

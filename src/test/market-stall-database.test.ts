@@ -78,7 +78,9 @@ beforeAll(async () => {
     readFileSync("drizzle/migrations/0077_market_stall_rent_categories_sales.sql", "utf8"),
   );
   // This fixture replays the legacy stall migration after its Supabase dependencies.
-  await db.exec(readFileSync("supabase/migrations/20261118161000_stall_stock_receipts.sql", "utf8"));
+  await db.exec(
+    readFileSync("supabase/migrations/20261121234233_stall_stock_receipts.sql", "utf8"),
+  );
 }, 180_000);
 
 beforeEach(async () => {
