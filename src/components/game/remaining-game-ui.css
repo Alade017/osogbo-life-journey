@@ -185,22 +185,19 @@
   background: transparent;
 }
 
-/* App tiles. Every app shares one shape: a rounded icon with a light-to-deep gradient in the
-   app's tone. The tone classes only set --app-tone. "important" tiles are larger and glow;
-   "utility" tiles are soft and tinted so they sit back. Entrances stagger by --tile-index and
-   use backwards fill, so the hover lift still works once they have settled. */
+/* App tiles, in the iOS home-screen style: one flat, solid rounded square per app, a white
+   glyph, a single line of label underneath. The tone classes only set --app-tone. Utility apps
+   become a tinted tile with a coloured glyph, like the rows in iOS Settings. Pressing shrinks
+   the icon slightly, the way a home-screen tile responds to a finger. */
 .phone-ui-refresh .phone-app {
-  min-height: 96px;
-  gap: 8px;
-  border: 1px solid transparent;
-  border-radius: 18px;
+  min-height: 92px;
+  gap: 6px;
+  border: 0;
+  background: none;
   color: var(--brand-ink);
   font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.01em;
-  transition: transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  animation: phone-tile-in 420ms cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
-  animation-delay: calc(var(--tile-index, 0) * 24ms);
+  font-weight: 500;
+  line-height: 1.25;
 }
 
 .phone-ui-refresh .phone-app > span:last-child {
@@ -212,45 +209,32 @@
   word-break: break-word;
 }
 
-.phone-ui-refresh .phone-app:hover,
-.phone-ui-refresh .phone-app:focus-visible {
-  transform: translateY(-2px);
-}
-
 .phone-ui-refresh .phone-app:focus-visible {
   outline: 2px solid var(--ring);
   outline-offset: 4px;
+  border-radius: 16px;
 }
 
 .phone-ui-refresh .phone-app .phone-app-icon {
   --app-tone: var(--brand-royal);
-  --app-glyph: var(--brand-cream);
+  --app-glyph: #ffffff;
   position: relative;
   display: grid;
   width: 60px;
   height: 60px;
   place-items: center;
-  border: 1px solid color-mix(in srgb, var(--brand-ink) 12%, transparent);
-  border-radius: 20px;
+  border: 0;
+  border-radius: 15px;
   color: var(--app-glyph);
-  background: linear-gradient(
-    160deg,
-    color-mix(in srgb, var(--app-tone) 78%, #ffffff) 0%,
-    var(--app-tone) 58%,
-    color-mix(in srgb, var(--app-tone) 82%, var(--brand-ink)) 100%
-  );
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 10px 18px -6px color-mix(in srgb, var(--app-tone) 55%, transparent);
-  transition:
-    transform 180ms cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 180ms ease;
+  background: var(--app-tone);
+  box-shadow: inset 0 0 0 0.5px rgba(0, 0, 0, 0.08);
+  transition: transform 140ms ease;
 }
 
 .phone-ui-refresh .phone-app .phone-app-icon svg {
-  width: 24px;
-  height: 24px;
-  stroke-width: 1.9;
+  width: 28px;
+  height: 28px;
+  stroke-width: 1.8;
 }
 
 .phone-ui-refresh .phone-app .phone-app-icon.phone-app-green {
@@ -274,77 +258,18 @@
   --app-tone: var(--brand-slate);
 }
 
-.phone-ui-refresh .phone-app:hover .phone-app-icon {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 16px 24px -8px color-mix(in srgb, var(--app-tone) 60%, transparent);
-}
-
 .phone-ui-refresh .phone-app:active .phone-app-icon {
-  transform: scale(0.92);
+  transform: scale(0.9);
 }
 
-/* Important: larger, with a bevelled base and a stronger glow. */
-.phone-ui-refresh .phone-app .phone-app-icon.phone-app-important {
-  width: 64px;
-  height: 64px;
-  border-radius: 22px;
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.5),
-    inset 0 -3px 0 rgba(0, 0, 0, 0.14),
-    0 3px 0 color-mix(in srgb, var(--app-tone) 55%, var(--brand-ink)),
-    0 14px 24px -8px color-mix(in srgb, var(--app-tone) 60%, transparent);
-}
-
-/* Utility: soft and tinted, no glow. */
-.phone-ui-refresh .phone-app .phone-app-icon.phone-app-utility,
-.phone-ui-refresh .phone-app:hover .phone-app-icon.phone-app-utility {
-  background: color-mix(in srgb, var(--app-tone) 16%, #ffffff);
-  border-color: color-mix(in srgb, var(--app-tone) 30%, transparent);
-  color: color-mix(in srgb, var(--app-tone) 60%, var(--brand-ink));
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-utility {
+  --app-glyph: var(--app-tone);
+  background: color-mix(in srgb, var(--app-tone) 16%, var(--card));
   box-shadow: none;
 }
 
-.phone-ui-refresh .phone-app-badge::after {
-  content: "";
-  position: absolute;
-  inset: -4px;
-  border: 2px solid color-mix(in srgb, var(--destructive, #b42318) 45%, transparent);
-  border-radius: 999px;
-  animation: phone-badge-pulse 1.8s ease-out infinite;
-}
-
-@keyframes phone-tile-in {
-  from {
-    opacity: 0;
-    transform: translateY(10px) scale(0.94);
-  }
-  to {
-    opacity: 1;
-    transform: none;
-  }
-}
-
-@keyframes phone-badge-pulse {
-  from {
-    transform: scale(0.8);
-    opacity: 0.9;
-  }
-  to {
-    transform: scale(1.7);
-    opacity: 0;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .phone-ui-refresh .phone-app,
-  .phone-ui-refresh .phone-app-badge::after {
-    animation: none;
-  }
-  .phone-ui-refresh .phone-app,
-  .phone-ui-refresh .phone-app .phone-app-icon {
-    transition: none;
-  }
+.phone-ui-refresh .phone-app-badge {
+  border-color: var(--card);
 }
 
 .phone-ui-refresh .phone-app-view {

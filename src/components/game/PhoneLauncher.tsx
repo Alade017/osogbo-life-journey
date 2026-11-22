@@ -59,7 +59,6 @@ import {
   useState,
   lazy,
   Suspense,
-  type CSSProperties,
   type ReactNode,
 } from "react";
 import { type CommunityPhoneApp } from "@/components/game/CommunityPhoneApps";
@@ -692,7 +691,7 @@ export function PhoneLauncher({
                 key={apps[0]?.label}
                 aria-label={`App page ${pageIndex + 1}`}
               >
-                {apps.map((app, index) => {
+                {apps.map((app) => {
                   const Icon = app.icon;
                   const badge =
                     app.label === "Missions" && missionCount > 0
@@ -705,7 +704,6 @@ export function PhoneLauncher({
                     <button
                       type="button"
                       className="phone-app"
-                      style={{ "--tile-index": index } as CSSProperties}
                       key={app.label}
                       onClick={() => openApp(app.label)}
                       aria-label={`Open ${app.label}`}
