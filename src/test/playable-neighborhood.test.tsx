@@ -11,6 +11,8 @@ const state = vi.hoisted(() => ({
   join: vi.fn(),
   rpc: vi.fn(),
   scene: vi.fn(),
+  preloadVenue: vi.fn(),
+  canPreloadVenue: vi.fn(),
   homeReads: 0,
   currentAction: null as { animation: string } | null,
   gameTime: { minute: 0, hour: 8, day: 1, weekday: 0 },
@@ -105,6 +107,12 @@ vi.mock("@/routes/_authenticated/_game/jobs", () => ({
 }));
 vi.mock("@/components/game/phone/PhoneBankApp", () => ({
   PhoneBankApp: () => <div>Bank services</div>,
+}));
+vi.mock("@/components/game/venue-preloader", () => ({
+  preloadVenueModule: state.preloadVenue,
+}));
+vi.mock("@/lib/venue-preload-policy", () => ({
+  canPreloadVenueInBrowser: state.canPreloadVenue,
 }));
 vi.mock("@/components/game/LocationVenueScene", () => ({
   LocationVenueScene: () => <div>Venue interior</div>,
@@ -204,6 +212,8 @@ function room(location: string) {
 let client: QueryClient;
 beforeEach(() => {
   vi.clearAllMocks();
+  state.preloadVenue.mockReset().mockResolvedValue(true);
+  state.canPreloadVenue.mockReset().mockReturnValue(true);
   state.location = "city";
   state.homeReads = 0;
   state.gameTime = { minute: 0, hour: 8, day: 1, weekday: 0 };
@@ -333,6 +343,7 @@ it("places and talks to a scheduled NPC through the server-authoritative interac
     "interact_with_npc",
     expect.objectContaining({ p_npc_id: "npc-adeola", p_action: "greet" }),
   );
+  expect(state.preloadVenue).not.toHaveBeenCalled();
 });
 
 it("opens an NPC conversation from a 3D target only when the player is within interaction range", async () => {
@@ -538,4 +549,46 @@ it("closes a room that never publishes its initial authoritative state", async (
     await vi.advanceTimersByTimeAsync(1_500);
   });
   expect(state.join).toHaveBeenCalledTimes(2);
+});
+
+it("preloads the market venue when its action panel opens", async () => {
+  state.location = "market";
+  state.position = toWorld({ x: 145, y: 165 }, { x: 3, y: 5 });
+  state.shopRows = [{ shop: { location_id: "market", slug: "market-sales-stall" } }];
+  show();
+  await screen.findByRole("button", { name: /Interact with Oja-Oba stalls/i });
+  expect(state.preloadVenue).not.toHaveBeenCalled();
+  await act(async () => {
+    screen.getByRole("button", { name: /Interact with Oja-Oba stalls/i }).click();
+  });
+  await screen.findByRole("button", { name: "Explore venue interior" });
+  await waitFor(() => {
+    expect(state.preloadVenue).toHaveBeenCalledTimes(1);
+  });
+  expect(state.preloadVenue).toHaveBeenCalledWith(
+    "oja-oba",
+    expect.objectContaining({ scene: "market" }),
+  );
+  expect(screen.queryByText("Venue interior")).not.toBeInTheDocument();
+});
+
+it("skips venue preloading when network policy disallows it", async () => {
+  state.canPreloadVenue.mockReturnValue(false);
+  state.location = "market";
+  state.position = toWorld({ x: 145, y: 165 }, { x: 3, y: 5 });
+  state.shopRows = [{ shop: { location_id: "market", slug: "market-sales-stall" } }];
+  show();
+  const interaction = await screen.findByRole("button", {
+    name: /Interact with Oja-Oba stalls/i,
+  });
+  await act(async () => {
+    interaction.click();
+  });
+  const enter = await screen.findByRole("button", { name: "Explore venue interior" });
+  expect(state.preloadVenue).not.toHaveBeenCalled();
+  await act(async () => {
+    enter.click();
+  });
+  await screen.findByText("Venue interior");
+  expect(state.preloadVenue).not.toHaveBeenCalled();
 });
