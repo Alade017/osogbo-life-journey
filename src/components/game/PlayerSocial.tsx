@@ -33,6 +33,12 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  fetchAccountMessageTheme,
+  readLocalMessageTheme,
+  saveAccountMessageTheme,
+  type MessageTheme,
+} from "@/lib/message-theme";
 import { useMessageWindow } from "@/hooks/use-message-window";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
@@ -702,13 +708,19 @@ export function PlayerSocial({
   const [activeChat, setActiveChat] = useState<ActiveChat | null>(null);
   const [statusBody, setStatusBody] = useState("");
   const [statusTheme, setStatusTheme] = useState<StatusTheme>("leaf");
-  const [messageTheme, setMessageTheme] = useState("porcelain");
+  const [messageTheme, setMessageTheme] = useState<MessageTheme>(readLocalMessageTheme);
   useEffect(() => {
-    try {
-      setMessageTheme(localStorage.getItem("osogbo-message-theme") ?? "porcelain");
-    } catch {
-      /* Default theme. */
-    }
+    let active = true;
+    void fetchAccountMessageTheme()
+      .then((theme) => {
+        if (active) setMessageTheme(theme);
+      })
+      .catch(() => {
+        /* Keep this browser's theme. */
+      });
+    return () => {
+      active = false;
+    };
   }, []);
   const [threadMenu, setThreadMenu] = useState<InboxConversation | null>(null);
   const [replyTarget, setReplyTarget] = useState<SocialMessage | null>(null);
@@ -1943,12 +1955,11 @@ export function PlayerSocial({
                   type="button"
                   aria-pressed={messageTheme === choice.id}
                   onClick={() => {
-                    setMessageTheme(choice.id);
-                    try {
-                      localStorage.setItem("osogbo-message-theme", choice.id);
-                    } catch {
-                      /* Session theme remains available. */
-                    }
+                    const theme = choice.id as MessageTheme;
+                    setMessageTheme(theme);
+                    saveAccountMessageTheme(theme).catch((error: unknown) =>
+                      toast.error(error instanceof Error ? error.message : "Theme not saved"),
+                    );
                   }}
                 >
                   <span className={`message-theme-swatch theme-${choice.id}`} />
