@@ -1,6 +1,6 @@
 import { WORLD_PALETTE } from "./world-theme";
-import { useRef } from "react";
-import { useFrame } from "@react-three/fiber";
+import { useEffect, useRef } from "react";
+import { useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
 /** Local navigation visitor; does not replace the saved multiplayer character. */
 export function VenueVisitor({
@@ -14,6 +14,10 @@ export function VenueVisitor({
   walking?: boolean;
   uniformColor?: string;
 }) {
+  const { invalidate } = useThree();
+  useEffect(() => {
+    invalidate();
+  }, [walking, invalidate]);
   const legs = useRef<(Group | null)[]>([]),
     arms = useRef<(Group | null)[]>([]);
   const headings: Record<string, number> = { north: Math.PI, south: 0, east: Math.PI / 2, west: -Math.PI / 2 };
@@ -27,6 +31,7 @@ export function VenueVisitor({
       if (legs.current[i]) legs.current[i]!.rotation.x = angle;
       if (arms.current[i]) arms.current[i]!.rotation.x = -angle;
     }
+    if (walking && !reduced) invalidate();
   });
   return (
     <group position={[...position]} rotation={[0, yaw, 0]} name="venue-walkthrough-visitor">
