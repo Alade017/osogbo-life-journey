@@ -48,6 +48,7 @@ export function PhoneMarketApp() {
 function MarketAppContent({ characterId }: { characterId: string }) {
   const queryClient = useQueryClient();
   const [tab, setTab] = useState<"stalls" | "shops" | "players">("stalls");
+  const [shopsOpen, setShopsOpen] = useState(false);
   const { data: character } = useQuery(q.character());
   const { data: wallet } = useQuery(q.wallet());
   const { data: inventory } = useQuery(q.inventory());
@@ -213,7 +214,10 @@ function MarketAppContent({ characterId }: { characterId: string }) {
             type="button"
             aria-pressed={tab === "shops"}
             className={tab === "shops" ? "is-active" : ""}
-            onClick={() => setTab("shops")}
+            onClick={() => {
+              setTab("shops");
+              setShopsOpen(false);
+            }}
           >
             <ShoppingBag className="h-4 w-4" aria-hidden="true" />
             <span>City Shops</span>
@@ -745,8 +749,11 @@ function MarketAppContent({ characterId }: { characterId: string }) {
               </div>
             </div>
           </div>
-        ) : (
+        ) : shopsOpen ? (
           <div className="market-app-section space-y-4 p-3">
+            <button type="button" className="market-app-back" onClick={() => setShopsOpen(false)}>
+              ← Back to Market
+            </button>
             <div className="market-app-shop-summary flex items-center justify-between text-xs px-1">
               <span className="font-semibold text-muted-foreground">
                 Wallet Cash:{" "}
@@ -879,6 +886,16 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                 </div>
               </div>
             )}
+          </div>
+        ) : (
+          <div className="market-app-section p-3">
+            <button
+              type="button"
+              className="market-app-shop-link"
+              onClick={() => setShopsOpen(true)}
+            >
+              Go to City Shops <span aria-hidden="true">→</span>
+            </button>
           </div>
         )}
       </div>
