@@ -29,7 +29,7 @@ Read-only production counts found one ended bungalow lease and one ended duplex 
 
 Files inspected:
 
-- `supabase/migrations/20261118024000_house_rearrange.sql`
+- `supabase/migrations/20261122052147_house_rearrange.sql`
 - `drizzle/migrations/0105_house_rearrange.sql`
 - `src/lib/house-rearrange.server.ts`
 - `src/game/house-arrangement.ts`
@@ -92,7 +92,7 @@ The rearrangement database test now:
 - asserts a missing legacy row is not recreated or used to move an unrelated item;
 - retains the inventory-quantity, stale-snapshot, duplicate-cell, and foreign-house checks.
 
-**Test harness correction:** the PGlite test now explicitly loads `supabase/migrations/20261118024000_house_rearrange.sql` after its prerequisite migrations, and projects the expected snapshot into the exact six fields consumed by the RPC (`id`, `slot`, `x`, `y`, `floor`, `rotation_deg`). This prevents a false `LAYOUT_CHANGED` caused by passing the test query's extra `item_id` field.
+**Test harness correction:** the PGlite test now explicitly loads `supabase/migrations/20261122052147_house_rearrange.sql` after its prerequisite migrations, and projects the expected snapshot into the exact six fields consumed by the RPC (`id`, `slot`, `x`, `y`, `floor`, `rotation_deg`). This prevents a false `LAYOUT_CHANGED` caused by passing the test query's extra `item_id` field.
 
 **Remaining validation:** run the focused PGlite/Vitest test and the broader house database suite. The test harness and migration are committed to the draft reconciliation PR, but no test run has yet been performed in this environment.
 

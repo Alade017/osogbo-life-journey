@@ -37,7 +37,7 @@ The following local versions were observed with no exact matching remote version
 - `20261117190000`
 - `20261118010000`
 - `20261118020000`
-- `20261118024000`
+- `20261118024000` (file renamed on 2026-11-22 to `20261122052147_house_rearrange.sql`, the version the hosted ledger recorded when it was applied)
 - `20261118123000`
 - `20261118133000`
 - `20261118193000`

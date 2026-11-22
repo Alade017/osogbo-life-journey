@@ -3,7 +3,7 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { beforeAll, afterAll, expect, it } from "vitest";
 
-const migration = "supabase/migrations/20261121220000_harden_helper_functions.sql";
+const migration = "supabase/migrations/20261121211903_harden_helper_functions.sql";
 let db: PGlite;
 
 beforeAll(async () => {

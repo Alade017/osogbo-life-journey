@@ -5,10 +5,10 @@ import { afterAll, beforeAll, expect, it } from "vitest";
 
 const migrations = [
   "supabase/migrations/20261115090000_ludo_matches.sql",
-  "supabase/migrations/20261121210000_lock_direct_table_writes.sql",
-  "supabase/migrations/20261121211000_mini_game_seat_visibility.sql",
-  "supabase/migrations/20261121212000_profiles_own_row_read.sql",
-  "supabase/migrations/20261121213000_player_social_actions_definer.sql",
+  "supabase/migrations/20261121204913_lock_direct_table_writes.sql",
+  "supabase/migrations/20261121204950_mini_game_seat_visibility.sql",
+  "supabase/migrations/20261121205002_profiles_own_row_read.sql",
+  "supabase/migrations/20261121205009_player_social_actions_definer.sql",
 ];
 
 const alice = "11111111-1111-4111-8111-111111111111";
