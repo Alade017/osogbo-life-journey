@@ -135,7 +135,12 @@ export function CharacterBody({
     return inverse ? new Vector3().setFromMatrixPosition(inverse.clone().invert()).negate() : new Vector3();
   }, [rig, upperSpine]);
   const phase = useRef({ motion, elapsed: 0 });
-  useEffect(() => { invalidate(); }, [rig, motion, animated, invalidate]);
+  const settledPose = useRef(false);
+
+  useEffect(() => {
+    settledPose.current = false;
+    invalidate();
+  }, [rig, motion, animated, invalidate]);
 
   useEffect(() => {
     return () => {
@@ -149,6 +154,9 @@ export function CharacterBody({
   }, [rig]);
 
   useFrame((_state, delta) => {
+    const looping = animated && LOOPING_MOTIONS.has(motion);
+    if (settledPose.current && !looping) return;
+
     if (phase.current.motion !== motion) phase.current = { motion, elapsed: 0 };
     else if (animated && motion !== "Idle") {
       const rate = motion === "Walk" ? (walkCadence?.current ?? 1) : 1;
@@ -171,7 +179,8 @@ export function CharacterBody({
       moving = true;
       rig.root.position.y += (restY - rig.root.position.y) * blend;
     }
-    if (moving || (animated && LOOPING_MOTIONS.has(motion))) invalidate();
+    settledPose.current = !moving && !looping;
+    if (moving || looping) invalidate();
   });
 
   return (
