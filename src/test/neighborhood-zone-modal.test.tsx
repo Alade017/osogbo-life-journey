@@ -19,6 +19,13 @@ vi.mock("sonner", () => ({ toast: { error: state.error, success: state.success }
 vi.mock("@/components/game/LocationVenueScene", () => ({
   LocationVenueScene: () => <div>Buka interior</div>,
 }));
+vi.mock("@/components/game/FoodVenueServices", () => ({
+  FoodVenueServices: ({ shopSlug }: { shopSlug?: string | null }) => (
+    <div data-testid="food-venue-services">
+      Food purchase and eating services · {shopSlug ?? "location offers"}
+    </div>
+  ),
+}));
 vi.mock("@/components/game/phone/PhoneBankApp", () => ({
   PhoneBankApp: () => <div>Bank account services</div>,
 }));
@@ -130,7 +137,15 @@ it("opens real food services without exposing fabricated meal rewards", () => {
   expect(screen.queryByText(/Only confirmed bank/)).not.toBeInTheDocument();
   expect(screen.queryByText(/\+26 Hunger/)).not.toBeInTheDocument();
   fireEvent.click(screen.getAllByRole("button", { name: /Food & drinks/ })[0]!);
-  expect(screen.getByText("Server food catalogue")).toBeInTheDocument();
+  expect(screen.getByTestId("food-venue-services")).toHaveTextContent(
+    "Food purchase and eating services",
+  );
+});
+
+it("opens the food purchase and eating services at Mama Sikira Buka", () => {
+  setup("zone-buka-stall");
+  fireEvent.click(screen.getAllByRole("button", { name: /Food & drinks/ })[0]!);
+  expect(screen.getByTestId("food-venue-services")).toHaveTextContent("location offers");
 });
 it("uses destination fares and shows routes beyond the first six", async () => {
   setup("zone-transit-stand");
