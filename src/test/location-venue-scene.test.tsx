@@ -1,10 +1,26 @@
 import { act, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 
-vi.mock("@react-three/fiber", () => ({
-  Canvas: () => <div data-testid="venue-canvas" />,
+const sceneMock = vi.hoisted(() => ({
+  renderChildren: false,
 }));
+
+vi.mock("@react-three/fiber", () => ({
+  Canvas: ({ children }: { children: import("react").ReactNode }) => (
+    <div data-testid="venue-canvas">
+      {sceneMock.renderChildren ? children : null}
+    </div>
+  ),
+}));
+
+vi.mock("@/components/3d/VenueFurniture", () => ({
+  VenueFurnitureModel: () => null,
+}));
+
+beforeEach(() => {
+  sceneMock.renderChildren = false;
+});
 vi.mock("@/components/3d/WorldScene", () => ({
   WorldCamera: () => null,
   WorldLighting: () => null,
@@ -112,4 +128,48 @@ it("keeps workplace features, jobs and courses accessible when WebGL fails", () 
   expect(screen.getByRole("link", { name: "Jobs & shifts" })).toHaveAttribute("href", "/jobs");
   expect(screen.getByRole("link", { name: "Courses" })).toHaveAttribute("href", "/education");
   vi.useRealTimers();
+});
+
+it("cancels the loading timer when the scene becomes ready", () => {
+  vi.useFakeTimers();
+  const clearTimer = vi.spyOn(window, "clearTimeout");
+  const { rerender } = render(
+    <LocationVenueScene slug="town-market" locationName="Town Market" />,
+  );
+  expect(screen.getByText("Opening the venue")).toBeInTheDocument();
+  try {
+    sceneMock.renderChildren = true;
+    rerender(<LocationVenueScene slug="town-market" locationName="Town Market" />);
+    expect(screen.queryByText("Opening the venue")).not.toBeInTheDocument();
+    expect(clearTimer).toHaveBeenCalled();
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(screen.queryByText("The interior is taking longer than expected.")).not.toBeInTheDocument();
+  } finally {
+    clearTimer.mockRestore();
+    vi.useRealTimers();
+  }
+});
+
+it("preserves manual fallback when venue details change", () => {
+  const { rerender } = render(
+    <LocationVenueScene slug="town-market" locationName="Town Market" />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Continue without 3D" }));
+  rerender(<LocationVenueScene slug="town-market" locationName="Updated Town Market" />);
+  expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
+  expect(screen.queryByText("Opening the venue")).not.toBeInTheDocument();
+  expect(screen.getByText(/The 3D preview did not start/)).toBeInTheDocument();
+});
+
+it("starts a fresh loading lifecycle for a different venue", () => {
+  const { rerender } = render(
+    <LocationVenueScene slug="town-market" locationName="Town Market" />,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Continue without 3D" }));
+  rerender(<LocationVenueScene slug="transit-park" locationName="Transit Park" />);
+  expect(screen.getByTestId("venue-canvas")).toBeInTheDocument();
+  expect(screen.getByText("Opening the venue")).toBeInTheDocument();
+  expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
 });

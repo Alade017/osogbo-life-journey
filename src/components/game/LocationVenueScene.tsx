@@ -100,24 +100,30 @@ function BasicLocationVenueScene({
   const [sceneStatus, setSceneStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const [slowLoading, setSlowLoading] = useState(false);
   const handleSceneReady = useCallback(() => {
-    setSceneStatus("ready");
+    setSceneStatus((status) => (status === "loading" ? "ready" : status));
   }, []);
   const selected =
     venue.fixtures.find((fixture) => fixture.id === selectedFixture) ?? venue.fixtures[0];
 
   useEffect(() => {
-    setSceneStatus((status) => (status === "ready" ? status : "loading"));
     setSelectedFixture((current) =>
       venue.fixtures.some((fixture) => fixture.id === current)
         ? current
         : (venue.fixtures[0]?.id ?? ""),
     );
+  }, [venue]);
+
+  useEffect(() => {
+    if (sceneStatus !== "loading") {
+      setSlowLoading(false);
+      return;
+    }
     const timer = window.setTimeout(
       () => setSlowLoading(true),
       SCENE_START_TIMEOUT_MS,
     );
     return () => window.clearTimeout(timer);
-  }, [slug, venue]);
+  }, [sceneStatus]);
 
   return (
     <section className="game-panel space-y-4 p-4 md:p-6" aria-labelledby="location-venue-title">
