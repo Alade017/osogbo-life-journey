@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { VENUE_FURNITURE } from "@/lib/venue-furniture-assets";
 
 import {
   getFurnitureKey,
@@ -114,6 +115,27 @@ describe("venue furniture readiness", () => {
   it("handles an empty fixture collection", () => {
     expect(
       summarizeFurnitureReadiness([], {}),
+    ).toEqual({
+      total: 0,
+      pending: 0,
+      ready: 0,
+      failed: 0,
+    });
+  });
+
+  it("includes the configured asset URL in fixture identity", () => {
+    expect(JSON.parse(getFurnitureKey(table))).toEqual([
+      table.id,
+      table.kind,
+      VENUE_FURNITURE.table?.url,
+    ]);
+  });
+
+  it("excludes unsupported fixtures from readiness tracking", () => {
+    const planter = fixture("plant-1", "planter");
+
+    expect(
+      summarizeFurnitureReadiness([planter], {}),
     ).toEqual({
       total: 0,
       pending: 0,

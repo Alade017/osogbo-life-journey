@@ -10,7 +10,11 @@ export type FurnitureResults = Readonly<
 export function getFurnitureKey(
   fixture: VenueFixture,
 ): string {
-  return JSON.stringify([fixture.id, fixture.kind]);
+  return JSON.stringify([
+    fixture.id,
+    fixture.kind,
+    VENUE_FURNITURE[fixture.kind]?.url ?? null,
+  ]);
 }
 
 export function summarizeFurnitureReadiness(
