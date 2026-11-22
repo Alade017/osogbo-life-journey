@@ -24,7 +24,7 @@ async function call<T = Page>(
 beforeAll(async () => {
   db = new PGlite({ extensions: { pg_trgm } });
   await db.exec(`create role anon;create role authenticated;create role service_role;create schema auth;create schema extensions;create schema realtime;
-  create table auth.users(id uuid primary key,is_anonymous boolean not null default false);create table realtime.messages(id bigint generated always as identity);
+  create table auth.users(id uuid primary key,email text,is_anonymous boolean not null default false);create table realtime.messages(id bigint generated always as identity);
   create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('test.user_id',true),'')::uuid$$;
   create function realtime.topic() returns text language sql stable as $$select ''::text$$;
   create function realtime.broadcast_changes(text,text,text,text,text,anyelement,anyelement) returns void language plpgsql as $$begin return;end$$;
@@ -47,6 +47,15 @@ beforeAll(async () => {
   await db.exec(
     readFileSync("supabase/migrations/20261028143246_public_player_stall_discovery.sql", "utf8"),
   );
+  await db.exec(
+    readFileSync("drizzle/migrations/0077_market_stall_rent_categories_sales.sql", "utf8"),
+  );
+  await db.exec(
+    readFileSync("supabase/migrations/20261121234233_stall_stock_receipts.sql", "utf8"),
+  );
+  await db.exec(
+    readFileSync("supabase/migrations/20261122210000_record_live_behaviour_functions.sql", "utf8"),
+  );
   for (let n = 0; n < 58; n++) {
     const account = n === 0 ? uid : id(n);
     await db.query("insert into auth.users(id) values($1)", [account]);
@@ -56,11 +65,19 @@ beforeAll(async () => {
       [account, "Owner " + n],
     );
     await db.query(
-      "insert into player_stalls(id,user_id,character_id,name,goods,is_open) select $1,user_id,id,$2,'Crafts',$3 from characters where user_id=$4",
+      "insert into player_stalls(id,user_id,character_id,name,goods,is_open,stall_category) select $1,user_id,id,$2,'Handcrafted Beads & Art',$3,'crafts' from characters where user_id=$4",
       [id(n), "Sign " + n, n < 56, account],
     );
   }
   await db.exec("insert into wallets(user_id,character_id) select user_id,id from characters;");
+  await db.exec("update wallets set balance=50000;");
+  // Owners who save a stall must hold a current market-stall lease (live rule).
+  for (let n = 0; n < 56; n++) {
+    const account = n === 0 ? uid : id(n);
+    await db.query("select set_config('test.user_id',$1,false)", [account]);
+    await db.query("select public.rent_market_stall($1::uuid)", [account]);
+  }
+  await db.query("select set_config('test.user_id',$1,false)", [uid]);
 }, 180000);
 beforeEach(async () => {
   await db.exec("begin");
@@ -83,10 +100,16 @@ describe("public stall directory database", () => {
     } while (cursor);
     expect(all).toHaveLength(55);
     expect(new Set(all.map((s) => s.id)).size).toBe(55);
-    expect(all[0]).toEqual({ id: id(1), ownerName: "Owner 1", name: "Sign 1", goods: "Crafts" });
-    expect(all.every((s) => Object.keys(s).sort().join(",") === "goods,id,name,ownerName")).toBe(
-      true,
-    );
+    expect(all[0]).toEqual({
+      id: id(1),
+      ownerName: "Owner 1",
+      name: "Sign 1",
+      goods: "Handcrafted Beads & Art",
+      category: "crafts",
+    });
+    expect(
+      all.every((s) => Object.keys(s).sort().join(",") === "category,goods,id,name,ownerName"),
+    ).toBe(true);
     expect(all.some((s) => [id(0), id(56), id(57)].includes(s.id))).toBe(false);
     const defaultPage = await call();
     expect(defaultPage.items).toHaveLength(20);
@@ -153,25 +176,26 @@ describe("public stall directory database", () => {
   it("keeps owner save/open/close authority and changes the next listing without changing other stalls", async () => {
     await db.query("select set_config('test.user_id',$1,false)", [id(1)]);
     await db.exec("set role authenticated");
-    await call("public.save_player_stall('New sign','Beads',false)");
+    await call("public.save_player_stall('New sign','crafts',false)");
     await db.exec("reset role");
     await db.query("select set_config('test.user_id',$1,false)", [uid]);
     expect((await call()).items.some((s) => s.id === id(1))).toBe(false);
     await db.query("select set_config('test.user_id',$1,false)", [id(1)]);
-    await call("public.save_player_stall('New sign','Beads',true)");
+    await call("public.save_player_stall('New sign','crafts',true)");
     await db.query("select set_config('test.user_id',$1,false)", [uid]);
     expect((await call()).items[0]).toEqual({
       id: id(1),
       ownerName: "Owner 1",
       name: "New sign",
-      goods: "Beads",
+      goods: "Handcrafted Beads & Art",
+      category: "crafts",
     });
     expect((await db.query("select name from player_stalls where id=$1", [id(0)])).rows).toEqual([
       { name: "Sign 0" },
     ]);
   });
   it("is stable and never changes wallets, income records, transactions or ownership", async () => {
-    await call("public.save_player_stall('My sign','Crafts',true)");
+    await call("public.save_player_stall('My sign','crafts',true)");
     const snapshot = async () =>
       call<Record<string, unknown>>(
         String.raw`jsonb_build_object('stalls',(select jsonb_agg(to_jsonb(t) order by id) from player_stalls t),'state',(select jsonb_agg(t) from stall_income_state t),'days',(select jsonb_agg(t) from stall_income_days t),'receipts',(select jsonb_agg(t) from stall_income_receipts t),'wallets',(select jsonb_agg(to_jsonb(t) order by id) from wallets t),'transactions',(select count(*) from transactions))`,
@@ -182,7 +206,7 @@ describe("public stall directory database", () => {
     expect(await snapshot()).toEqual(before);
     expect(
       await call<string>(
-        "(select provolatile::text from pg_proc where oid='public.get_public_player_stalls(uuid,integer)'::regprocedure)",
+        "(select provolatile::text from pg_proc where oid='public.get_public_player_stalls(uuid,integer,text)'::regprocedure)",
       ),
     ).toBe("s");
   });
