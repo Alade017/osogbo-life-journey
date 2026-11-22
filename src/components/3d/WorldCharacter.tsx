@@ -106,10 +106,12 @@ export function WorldCharacter({
     media.addEventListener("change", change);
     return () => media.removeEventListener("change", change);
   }, []);
-  const lookKey = lookAt ? lookAt.map((value) => value.toFixed(2)).join(":") : "";
+  const lookX = lookAt?.[0];
+  const lookY = lookAt?.[1];
+  const lookZ = lookAt?.[2];
   useEffect(() => {
     invalidate();
-  }, [lookKey, invalidate]);
+  }, [lookX, lookY, lookZ, invalidate]);
   useEffect(() => {
     if (reduced && walkingRef.current) {
       walkingRef.current = false;
