@@ -11,16 +11,49 @@ export { VENUE_FURNITURE };
  * Scales a copy of the model so its width (x) matches `width` metres, then stands it on the floor
  * centred on the origin. Copying keeps each fixture independent of the others.
  */
-export function fitFurniture(source: Group, width: number) {
-  const copy = source.clone(true);
-  const box = new Box3().setFromObject(copy);
+type FurnitureBounds = {
+  width: number;
+  centerX: number;
+  centerZ: number;
+  minY: number;
+};
+
+const furnitureBoundsCache = new WeakMap<Group, FurnitureBounds>();
+
+function getFurnitureBounds(source: Group): FurnitureBounds {
+  const cached = furnitureBoundsCache.get(source);
+
+  if (cached) return cached;
+
+  const box = new Box3().setFromObject(source);
   const size = box.getSize(new Vector3());
-  const scale = size.x > 0 ? width / size.x : 1;
   const centre = box.getCenter(new Vector3());
+
+  const bounds: FurnitureBounds = {
+    width: size.x,
+    centerX: centre.x,
+    centerZ: centre.z,
+    minY: box.min.y,
+  };
+
+  furnitureBoundsCache.set(source, bounds);
+
+  return bounds;
+}
+
+export function fitFurniture(source: Group, width: number) {
+  const bounds = getFurnitureBounds(source);
+  const copy = source.clone(true);
+  const scale = bounds.width > 0 ? width / bounds.width : 1;
+
   return {
     copy,
     scale,
-    offset: [-centre.x * scale, -box.min.y * scale, -centre.z * scale] as [number, number, number],
+    offset: [
+      -bounds.centerX * scale,
+      -bounds.minY * scale,
+      -bounds.centerZ * scale,
+    ] as [number, number, number],
   };
 }
 
