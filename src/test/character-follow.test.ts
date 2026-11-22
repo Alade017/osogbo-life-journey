@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   followStep,
   measuredSpeed,
+  lookAtBodyTurn,
   shortestFacingDifference,
   walkingCadence,
   type Vec3,
@@ -136,5 +137,43 @@ describe("shortestFacingDifference", () => {
   it("retains normal turns and equivalent full rotations", () => {
     expect(shortestFacingDifference(Math.PI / 2, 0)).toBeCloseTo(Math.PI / 2);
     expect(shortestFacingDifference(2 * Math.PI, 0)).toBeCloseTo(0);
+  });
+});
+
+describe("lookAtBodyTurn", () => {
+  const limit = CHARACTER_MOTION.headTurnLimit * 0.5;
+
+  it("faces a target directly ahead without turning", () => {
+    expect(lookAtBodyTurn(0, 1, 0, 0, 0)).toBe(0);
+  });
+
+  it("clamps targets on either side to the existing turn limit", () => {
+    expect(lookAtBodyTurn(1, 0, 0, 0, 0)).toBeCloseTo(limit);
+    expect(lookAtBodyTurn(-1, 0, 0, 0, 0)).toBeCloseTo(-limit);
+  });
+
+  it("preserves shortest-angle wrapping at the negative and positive pi boundary", () => {
+    expect(lookAtBodyTurn(0, -1, 0, 0, -Math.PI + 0.1)).toBeCloseTo(-0.1);
+    expect(lookAtBodyTurn(0, -1, 0, 0, Math.PI - 0.1)).toBeCloseTo(0.1);
+  });
+
+  it("updates the direction when the target or requested position changes", () => {
+    expect(lookAtBodyTurn(0, 1, 0, 0, 0)).toBe(0);
+    expect(lookAtBodyTurn(1, 1, 0, 0, 0)).toBeGreaterThan(0);
+    expect(lookAtBodyTurn(1, 1, 1, 0, 0)).toBe(0);
+  });
+
+  it("preserves the original look-at formula across representative coordinates", () => {
+    for (const [tx, tz, x, z, facing] of [
+      [2, 4, 1, 3, 0],
+      [-2, -3, 5, 1, Math.PI],
+      [1, -4, -2, 5, -Math.PI / 2],
+      [0, 0, 0, 0, Math.PI / 2],
+    ]) {
+      const yaw = Math.atan2(tx - x, tz - z);
+      const diff = yaw - facing;
+      const expected = Math.max(-limit, Math.min(limit, Math.atan2(Math.sin(diff), Math.cos(diff))));
+      expect(lookAtBodyTurn(tx, tz, x, z, facing)).toBeCloseTo(expected);
+    }
   });
 });

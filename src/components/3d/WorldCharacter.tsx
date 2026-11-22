@@ -10,7 +10,7 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WORLD_SCALE } from "./world-theme";
 import { CHARACTER_GROUND, CHARACTER_MOTION } from "./character-config";
 import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
-import { followStep, measuredSpeed, shortestFacingDifference, walkingCadence, type Vec3 } from "./character-follow";
+import { followStep, measuredSpeed, shortestFacingDifference, lookAtBodyTurn, walkingCadence, type Vec3 } from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -168,10 +168,7 @@ export function WorldCharacter({
     // A look at a nearby character turns the body a little, measured relative to its facing.
     let turn = 0;
     if (lookAt && !reduced) {
-      const worldYaw = Math.atan2(lookAt[0] - x, lookAt[2] - z);
-      const limit = CHARACTER_MOTION.headTurnLimit * 0.5;
-      const difference = worldYaw - (rootGroup?.rotation.y ?? yaw);
-      turn = MathUtils.clamp(Math.atan2(Math.sin(difference), Math.cos(difference)), -limit, limit);
+      turn = lookAtBodyTurn(lookAt[0], lookAt[2], x, z, rootGroup?.rotation.y ?? yaw);
     }
     if (Math.abs(group.rotation.y - turn) > 0.002) {
       group.rotation.y = MathUtils.lerp(

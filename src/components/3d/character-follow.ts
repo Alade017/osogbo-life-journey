@@ -70,3 +70,18 @@ export function shortestFacingDifference(targetYaw: number, currentYaw: number):
     ? rawDifference
     : Math.atan2(Math.sin(rawDifference), Math.cos(rawDifference));
 }
+
+/** Preserve the existing destination-based look-at turn, limited to half the head-turn range. */
+export function lookAtBodyTurn(
+  targetX: number,
+  targetZ: number,
+  positionX: number,
+  positionZ: number,
+  facingYaw: number,
+): number {
+  const worldYaw = Math.atan2(targetX - positionX, targetZ - positionZ);
+  const difference = worldYaw - facingYaw;
+  const wrapped = Math.atan2(Math.sin(difference), Math.cos(difference));
+  const limit = CHARACTER_MOTION.headTurnLimit * 0.5;
+  return Math.max(-limit, Math.min(limit, wrapped));
+}
