@@ -13,16 +13,25 @@ export function followStep(
   delta: number,
   speed: number,
   catchUpRate: number,
+  output: Vec3 = [0, 0, 0],
 ): Vec3 {
   const dx = goal[0] - current[0];
   const dy = goal[1] - current[1];
   const dz = goal[2] - current[2];
   const distance = Math.hypot(dx, dy, dz);
-  if (distance === 0) return [goal[0], goal[1], goal[2]];
+  if (distance === 0) {
+    output[0] = goal[0];
+    output[1] = goal[1];
+    output[2] = goal[2];
+    return output;
+  }
   const eased = (1 - Math.exp(-Math.max(0, delta) * catchUpRate)) * distance;
   const step = Math.min(distance, Math.max(speed * Math.max(0, delta), eased));
   const scale = step / distance;
-  return [current[0] + dx * scale, current[1] + dy * scale, current[2] + dz * scale];
+  output[0] = current[0] + dx * scale;
+  output[1] = current[1] + dy * scale;
+  output[2] = current[2] + dz * scale;
+  return output;
 }
 
 /**
@@ -42,7 +51,14 @@ export function measuredSpeed(
 
 /** Convert rendered horizontal travel to a bounded gait playback rate. */
 export function walkingCadence(distance: number, delta: number, height: number): number {
-  if (![distance, delta, height].every(Number.isFinite) || distance <= 0 || delta <= 0 || height <= 0)
+  if (
+    !Number.isFinite(distance) ||
+    !Number.isFinite(delta) ||
+    !Number.isFinite(height) ||
+    distance <= 0 ||
+    delta <= 0 ||
+    height <= 0
+  )
     return 0;
   return Math.min(CHARACTER_MOTION.walkMaxCadence, distance / delta / height / CHARACTER_MOTION.walkReferenceSpeed);
 }

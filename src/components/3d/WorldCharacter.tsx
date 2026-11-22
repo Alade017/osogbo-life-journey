@@ -72,7 +72,14 @@ export function WorldCharacter({
   const walkingRef = useRef(false);
   // The root glides toward `position` each frame, so a new spot is walked to rather than jumped to.
   const root = useRef<Group>(null);
-  const goal = useRef(new Vector3(...position));
+  const goal = useRef<Vector3 | null>(null);
+  const goalPosition =
+    goal.current ?? (goal.current = new Vector3(...position));
+  const [movementBuffers] = useState(() => ({
+    current: [0, 0, 0] as Vec3,
+    goal: [0, 0, 0] as Vec3,
+    output: [0, 0, 0] as Vec3,
+  }));
   // Speed of the server's last update, so the glide keeps pace with the walk rather than easing off.
   const speed = useRef(0);
   const updateAt = useRef(performance.now());
@@ -88,10 +95,10 @@ export function WorldCharacter({
     updateAt.current = now;
     previousGoal.current = position;
   }
-  goal.current.set(x, y, z);
+  goalPosition.set(x, y, z);
   useLayoutEffect(() => {
-    root.current?.position.copy(goal.current);
-  }, []);
+    root.current?.position.copy(goalPosition);
+  }, [goalPosition]);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduced(media.matches);
@@ -123,14 +130,25 @@ export function WorldCharacter({
       } else rootGroup.rotation.y = yaw;
     }
     let travelled = 0;
-    if (rootGroup && rootGroup.position.distanceTo(goal.current) > 0.001) {
+    if (rootGroup && rootGroup.position.distanceTo(goalPosition) > 0.001) {
       const here = rootGroup.position;
+      const currentCoords = movementBuffers.current;
+      currentCoords[0] = here.x;
+      currentCoords[1] = here.y;
+      currentCoords[2] = here.z;
+
+      const goalCoords = movementBuffers.goal;
+      goalCoords[0] = goalPosition.x;
+      goalCoords[1] = goalPosition.y;
+      goalCoords[2] = goalPosition.z;
+
       const [nx, ny, nz] = followStep(
-        [here.x, here.y, here.z],
-        [goal.current.x, goal.current.y, goal.current.z],
+        currentCoords,
+        goalCoords,
         delta,
         speed.current,
         CHARACTER_MOTION.glideRate,
+        movementBuffers.output,
       );
       travelled = Math.hypot(nx - here.x, nz - here.z);
       rootGroup.position.set(nx, ny, nz);
