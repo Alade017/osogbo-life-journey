@@ -1,17 +1,34 @@
 import { Link } from "@tanstack/react-router";
-import { CivicServiceScene } from "@/components/3d/CivicServiceScene";
-import { BankInteriorScene } from "@/components/3d/BankInteriorScene";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
-import { TransitParkScene } from "@/components/3d/TransitParkScene";
 import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
 import { transportMapHref } from "@/lib/transport-park";
-import { HealthcareScene } from "@/components/3d/HealthcareScene";
-import { WorkplaceScene } from "@/components/3d/WorkplaceScene";
-import { RetailInteriorScene } from "@/components/3d/RetailInteriorScene";
-import { BukaInteriorScene } from "@/components/3d/BukaInteriorScene";
-import { MarketTradingHall } from "@/components/3d/MarketTradingScene";
-import { Component, lazy, Suspense, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Component, lazy, Suspense, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
+
+const CivicServiceScene = lazy(() =>
+  import("@/components/3d/CivicServiceScene").then((module) => ({ default: module.CivicServiceScene })),
+);
+const BankInteriorScene = lazy(() =>
+  import("@/components/3d/BankInteriorScene").then((module) => ({ default: module.BankInteriorScene })),
+);
+const TransitParkScene = lazy(() =>
+  import("@/components/3d/TransitParkScene").then((module) => ({ default: module.TransitParkScene })),
+);
+const HealthcareScene = lazy(() =>
+  import("@/components/3d/HealthcareScene").then((module) => ({ default: module.HealthcareScene })),
+);
+const WorkplaceScene = lazy(() =>
+  import("@/components/3d/WorkplaceScene").then((module) => ({ default: module.WorkplaceScene })),
+);
+const RetailInteriorScene = lazy(() =>
+  import("@/components/3d/RetailInteriorScene").then((module) => ({ default: module.RetailInteriorScene })),
+);
+const BukaInteriorScene = lazy(() =>
+  import("@/components/3d/BukaInteriorScene").then((module) => ({ default: module.BukaInteriorScene })),
+);
+const MarketTradingHall = lazy(() =>
+  import("@/components/3d/MarketTradingScene").then((module) => ({ default: module.MarketTradingHall })),
+);
 
 const ClinicVenue = lazy(() =>
   import("./ClinicVenue").then((module) => ({ default: module.ClinicVenue })),
@@ -39,6 +56,13 @@ import { VenueFurnitureModel } from "@/components/3d/VenueFurniture";
 import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
+
+function VenueSceneReady({ onReady }: { onReady: () => void }) {
+  useEffect(() => {
+    onReady();
+  }, [onReady]);
+  return null;
+}
 
 function FixtureModel({
   fixture,
@@ -95,6 +119,10 @@ function BasicLocationVenueScene({
   const [preferredMode, setPreferredMode] = useState<TravelMode | null>(null);
   const [selectedFixture, setSelectedFixture] = useState(venue.fixtures[0]?.id ?? "");
   const [sceneStatus, setSceneStatus] = useState<"loading" | "ready" | "fallback">("loading");
+  const [slowLoading, setSlowLoading] = useState(false);
+  const handleSceneReady = useCallback(() => {
+    setSceneStatus("ready");
+  }, []);
   const selected =
     venue.fixtures.find((fixture) => fixture.id === selectedFixture) ?? venue.fixtures[0];
 
@@ -106,7 +134,7 @@ function BasicLocationVenueScene({
         : (venue.fixtures[0]?.id ?? ""),
     );
     const timer = window.setTimeout(
-      () => setSceneStatus((status) => (status === "loading" ? "fallback" : status)),
+      () => setSlowLoading(true),
       SCENE_START_TIMEOUT_MS,
     );
     return () => window.clearTimeout(timer);
@@ -143,7 +171,6 @@ function BasicLocationVenueScene({
                   The 3D preview is unavailable. Use the room controls below.
                 </p>
               }
-              onCreated={() => setSceneStatus("ready")}
               aria-hidden="true"
             >
               <WorldCamera
@@ -156,113 +183,132 @@ function BasicLocationVenueScene({
                 zoom={1.2}
               />
               <WorldLighting size={14} />
-              {venue.civicService ? (
-                <CivicServiceScene
-                  variant={venue.civicService}
-                  fixtures={venue.fixtures}
-                  selected={selectedFixture}
-                  onSelect={setSelectedFixture}
-                  floorColor={venue.floorColor}
-                  wallColor={venue.wallColor}
-                  accentColor={venue.accentColor}
-                />
-              ) : venue.bankInterior ? (
-                <BankInteriorScene
-                  variant={venue.bankInterior}
-                  fixtures={venue.fixtures}
-                  selected={selectedFixture}
-                  onSelect={setSelectedFixture}
-                  floorColor={venue.floorColor}
-                  wallColor={venue.wallColor}
-                  accentColor={venue.accentColor}
-                />
-              ) : venue.transportPark ? (
-                <TransitParkScene
-                  fixtures={venue.fixtures}
-                  selected={selectedFixture}
-                  onSelect={setSelectedFixture}
-                  onSelectMode={setPreferredMode}
-                />
-              ) : venue.scene === "healthcare" ? (
-                <HealthcareScene
-                  fixtures={venue.fixtures}
-                  selected={selectedFixture}
-                  onSelect={setSelectedFixture}
-                />
-              ) : venue.scene === "market" ? (
-                <MarketTradingHall
-                  fixtures={venue.fixtures}
-                  selected={selectedFixture}
-                  onSelect={setSelectedFixture}
-                />
-              ) : venue.scene === "workplace" ? (
-                <WorkplaceScene
-                  fixtures={venue.fixtures}
-                  selected={selectedFixture}
-                  onSelect={setSelectedFixture}
-                  floorColor={venue.floorColor}
-                  wallColor={venue.wallColor}
-                  accentColor={venue.accentColor}
-                />
-              ) : venue.retailInterior ? (
-                <RetailInteriorScene
-                  fixtures={venue.fixtures}
-                  selected={selectedFixture}
-                  onSelect={setSelectedFixture}
-                  floorColor={venue.floorColor}
-                  wallColor={venue.wallColor}
-                  accentColor={venue.accentColor}
-                />
-              ) : venue.foodInterior ? (
-                <BukaInteriorScene
-                  variant={venue.foodInterior}
-                  fixtures={venue.fixtures}
-                  selected={selectedFixture}
-                  onSelect={setSelectedFixture}
-                  floorColor={venue.floorColor}
-                  wallColor={venue.wallColor}
-                  accentColor={venue.accentColor}
-                />
-              ) : venue.environment ? (
-                <VenueEnvironment
-                  url={venue.environment.url}
-                  open={shutterOpen}
-                  fixtures={venue.fixtures}
-                  activeId={selectedFixture}
-                  accentColor={venue.accentColor}
-                  onSelect={setSelectedFixture}
-                />
-              ) : (
-                <>
-                  <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
-                    <planeGeometry args={[11, 8]} />
-                    <WorldMaterial tone="tileLight" color={venue.floorColor} />
-                  </mesh>
-                  <mesh position={[0, 1.45, -3.95]} receiveShadow>
-                    <boxGeometry args={[11, 3, 0.18]} />
-                    <WorldMaterial tone="wall" color={venue.wallColor} />
-                  </mesh>
-                  <mesh position={[-5.42, 1.45, 0]} receiveShadow>
-                    <boxGeometry args={[0.18, 3, 8]} />
-                    <WorldMaterial tone="wall" color={venue.wallColor} />
-                  </mesh>
-                  {venue.fixtures.map((fixture) => (
-                    <FixtureModel
-                      key={fixture.id}
-                      fixture={fixture}
-                      active={fixture.id === selectedFixture}
-                      accentColor={venue.accentColor}
-                      onSelect={() => setSelectedFixture(fixture.id)}
-                    />
-                  ))}
-                </>
-              )}
+              <Suspense fallback={null}>
+                {venue.civicService ? (
+                  <CivicServiceScene
+                    variant={venue.civicService}
+                    fixtures={venue.fixtures}
+                    selected={selectedFixture}
+                    onSelect={setSelectedFixture}
+                    floorColor={venue.floorColor}
+                    wallColor={venue.wallColor}
+                    accentColor={venue.accentColor}
+                  />
+                ) : venue.bankInterior ? (
+                  <BankInteriorScene
+                    variant={venue.bankInterior}
+                    fixtures={venue.fixtures}
+                    selected={selectedFixture}
+                    onSelect={setSelectedFixture}
+                    floorColor={venue.floorColor}
+                    wallColor={venue.wallColor}
+                    accentColor={venue.accentColor}
+                  />
+                ) : venue.transportPark ? (
+                  <TransitParkScene
+                    fixtures={venue.fixtures}
+                    selected={selectedFixture}
+                    onSelect={setSelectedFixture}
+                    onSelectMode={setPreferredMode}
+                  />
+                ) : venue.scene === "healthcare" ? (
+                  <HealthcareScene
+                    fixtures={venue.fixtures}
+                    selected={selectedFixture}
+                    onSelect={setSelectedFixture}
+                  />
+                ) : venue.scene === "market" ? (
+                  <MarketTradingHall
+                    fixtures={venue.fixtures}
+                    selected={selectedFixture}
+                    onSelect={setSelectedFixture}
+                  />
+                ) : venue.scene === "workplace" ? (
+                  <WorkplaceScene
+                    fixtures={venue.fixtures}
+                    selected={selectedFixture}
+                    onSelect={setSelectedFixture}
+                    floorColor={venue.floorColor}
+                    wallColor={venue.wallColor}
+                    accentColor={venue.accentColor}
+                  />
+                ) : venue.retailInterior ? (
+                  <RetailInteriorScene
+                    fixtures={venue.fixtures}
+                    selected={selectedFixture}
+                    onSelect={setSelectedFixture}
+                    floorColor={venue.floorColor}
+                    wallColor={venue.wallColor}
+                    accentColor={venue.accentColor}
+                  />
+                ) : venue.foodInterior ? (
+                  <BukaInteriorScene
+                    variant={venue.foodInterior}
+                    fixtures={venue.fixtures}
+                    selected={selectedFixture}
+                    onSelect={setSelectedFixture}
+                    floorColor={venue.floorColor}
+                    wallColor={venue.wallColor}
+                    accentColor={venue.accentColor}
+                  />
+                ) : venue.environment ? (
+                  <VenueEnvironment
+                    url={venue.environment.url}
+                    open={shutterOpen}
+                    fixtures={venue.fixtures}
+                    activeId={selectedFixture}
+                    accentColor={venue.accentColor}
+                    onSelect={setSelectedFixture}
+                  />
+                ) : (
+                  <>
+                    <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                      <planeGeometry args={[11, 8]} />
+                      <WorldMaterial tone="tileLight" color={venue.floorColor} />
+                    </mesh>
+                    <mesh position={[0, 1.45, -3.95]} receiveShadow>
+                      <boxGeometry args={[11, 3, 0.18]} />
+                      <WorldMaterial tone="wall" color={venue.wallColor} />
+                    </mesh>
+                    <mesh position={[-5.42, 1.45, 0]} receiveShadow>
+                      <boxGeometry args={[0.18, 3, 8]} />
+                      <WorldMaterial tone="wall" color={venue.wallColor} />
+                    </mesh>
+                    {venue.fixtures.map((fixture) => (
+                      <FixtureModel
+                        key={fixture.id}
+                        fixture={fixture}
+                        active={fixture.id === selectedFixture}
+                        accentColor={venue.accentColor}
+                        onSelect={() => setSelectedFixture(fixture.id)}
+                      />
+                    ))}
+                  </>
+                )}
+                <VenueSceneReady onReady={handleSceneReady} />
+              </Suspense>
             </Canvas>
           </VenueSceneBoundary>
         )}
         {sceneStatus === "loading" && (
           <div className="absolute inset-0 grid place-items-center bg-background/70 p-4">
-            <WorldLoadingIndicator title="Opening the venue" detail="Preparing the interior…" />
+            <WorldLoadingIndicator
+              title="Opening the venue"
+              detail={
+                slowLoading
+                  ? "The interior is taking longer than expected."
+                  : "Preparing the interior…"
+              }
+              action={
+                <button
+                  type="button"
+                  className="rounded-lg border border-edge px-3 py-2 text-sm font-semibold"
+                  onClick={() => setSceneStatus("fallback")}
+                >
+                  Continue without 3D
+                </button>
+              }
+            />
           </div>
         )}
         {sceneStatus === "fallback" && (
@@ -433,6 +479,6 @@ export function LocationVenueScene(props: {
       <SchoolCampusVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
     </Suspense>
   ) : (
-    <BasicLocationVenueScene {...props} />
+    <BasicLocationVenueScene key={props.slug} {...props} />
   );
 }
