@@ -273,11 +273,12 @@ export function WorldInstances({
   const mesh = useRef<InstancedMesh>(null);
   const { invalidate } = useThree();
   const animatedObject = useMemo(() => new Object3D(), []);
+  const isAnimated = Boolean(animate);
   useEffect(() => {
-    if (!animate) return;
+    if (!isAnimated) return;
     const timer = window.setInterval(invalidate, 1000 / 15);
     return () => window.clearInterval(timer);
-  }, [animate, invalidate]);
+  }, [isAnimated, invalidate]);
   useFrame(({ clock }) => {
     if (!animate || !mesh.current) return;
     items.forEach((item, index) => {
