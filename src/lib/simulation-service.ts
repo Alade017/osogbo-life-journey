@@ -1,3 +1,4 @@
+import { SIMULATION_REQUEST_TIMEOUT_MS, withTimeout } from "@/lib/request-timeout";
 import { supabase } from "@/integrations/supabase/client";
 import { parseCityEventJoin } from "@/lib/city-event-service";
 import { type GameTime } from "@/lib/game-time";
@@ -83,16 +84,20 @@ export async function simulationCommand(args: {
   speed?: 0.5 | 1 | 2;
   queuedActions?: readonly LifeActionId[];
 }) {
-  const { data, error } = await supabase.rpc("personal_simulation_command", {
-    p_session: args.session,
-    p_revision: args.revision,
-    p_command: args.command,
-    ...(args.action !== undefined ? { p_action: args.action } : {}),
-    ...(args.requestId !== undefined ? { p_request: args.requestId } : {}),
-    ...(args.paused !== undefined ? { p_paused: args.paused } : {}),
-    ...(args.speed !== undefined ? { p_speed: args.speed } : {}),
-    ...(args.queuedActions !== undefined ? { p_queue: [...args.queuedActions] } : {}),
-  });
+  const { data, error } = await withTimeout(
+    supabase.rpc("personal_simulation_command", {
+      p_session: args.session,
+      p_revision: args.revision,
+      p_command: args.command,
+      ...(args.action !== undefined ? { p_action: args.action } : {}),
+      ...(args.requestId !== undefined ? { p_request: args.requestId } : {}),
+      ...(args.paused !== undefined ? { p_paused: args.paused } : {}),
+      ...(args.speed !== undefined ? { p_speed: args.speed } : {}),
+      ...(args.queuedActions !== undefined ? { p_queue: [...args.queuedActions] } : {}),
+    }),
+    SIMULATION_REQUEST_TIMEOUT_MS,
+    "The game server did not answer in time. Retrying.",
+  );
   if (error) throw new Error(error.message);
   return parseSimulationSnapshot(data);
 }
