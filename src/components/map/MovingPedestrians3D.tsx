@@ -1,8 +1,8 @@
+import { NpcBody } from "@/components/3d/NpcBody";
 import { useEffect, useMemo, useRef, useState, type FC } from "react";
 import { useFrame } from "@react-three/fiber";
 import type { Group } from "three";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
-import { WorldMaterial } from "@/components/3d/WorldScene";
 import {
   isValidTownPedestrianRoute,
   townPedestrianClearanceRadius,
@@ -310,24 +310,7 @@ function PedestrianCharacter({
       }}
       scale={isHovered ? 1.25 : 1.0}
     >
-      {/* Head */}
-      <mesh position={[0, 0.62, 0]} castShadow>
-        <sphereGeometry args={[0.11, 10, 10]} />
-        <WorldMaterial tone="timber" />
-      </mesh>
-
-      {/* Body / Torso Clothes */}
-      <mesh position={[0, 0.38, 0]} castShadow>
-        <boxGeometry args={[0.22, 0.32, 0.14]} />
-        <meshStandardMaterial color={npc.color} roughness={0.6} />
-      </mesh>
-
-      {/* Trousers / Wrapper */}
-      <mesh position={[0, 0.14, 0]} castShadow>
-        <boxGeometry args={[0.2, 0.22, 0.12]} />
-        <meshStandardMaterial color="#334155" roughness={0.7} />
-      </mesh>
-
+      <NpcBody detail="street" color={npc.color} />
       {/* Accessories */}
       {npc.role === "trader" && (
         /* Woven market basket on head */
@@ -426,18 +409,7 @@ function WaitingPassenger({
         document.body.style.cursor = "auto";
       }}
     >
-      <mesh position={[0, 0.62, 0]} castShadow>
-        <sphereGeometry args={[0.105, 10, 10]} />
-        <WorldMaterial tone="timber" />
-      </mesh>
-      <mesh position={[0, 0.37, 0]} castShadow>
-        <boxGeometry args={[0.21, 0.31, 0.14]} />
-        <meshStandardMaterial color={color} roughness={0.65} />
-      </mesh>
-      <mesh position={[0, 0.13, 0]} castShadow>
-        <boxGeometry args={[0.19, 0.21, 0.12]} />
-        <meshStandardMaterial color="#334155" roughness={0.7} />
-      </mesh>
+      <NpcBody detail="street" color={color} waiting />
       <Html center position={[0, 0.92, 0]}>
         <span
           style={{

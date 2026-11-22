@@ -126,3 +126,16 @@ export function publicWornEquipment(value: unknown): WearableEquipment[] {
   }
   return result;
 }
+
+/** Only recognized inventory headwear receives a 3D model; legacy cosmetics are ignored. */
+export function resolveEquippedHeadwear(equipment: readonly WearableEquipment[]): 0 | 1 | 2 | 3 {
+  const head = equipment.find((entry) => entry.slot === "head");
+  const slug = head?.item?.slug;
+  if (!slug) return 0;
+  const styles: Readonly<Record<string, 1 | 2 | 3>> = {
+    gele: 1,
+    fila: 2,
+    cap: 3,
+  };
+  return styles[slug] ?? 0;
+}

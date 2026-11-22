@@ -12,6 +12,10 @@ export const CHARACTER_SOCKETS = {
 export const CHARACTER_MOTION = {
   /** Per-second rate for blending between poses so changes fade instead of snapping. */
   fadeRate: 10,
+  /** Nominal walking speed in body heights per second for the procedural gait. */
+  walkReferenceSpeed: 1.2,
+  /** Limit cadence during network catch-up. */
+  walkMaxCadence: 2,
   /** Per-second rate for gliding to a new position, so moves are walked, never teleported. */
   glideRate: 6,
   /** Body rise on each footfall, as a fraction of height. */

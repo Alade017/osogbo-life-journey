@@ -100,6 +100,7 @@ const publicStockItemSchema = z
   .strict();
 
 const ownerStockItemSchema = publicStockItemSchema.extend({
+  quantity: z.number().int().min(0).max(999),
   referenceBuyPrice: z.number().int().positive(),
 });
 
@@ -206,17 +207,32 @@ export async function getPublicStallStock(stallId: string) {
     );
 }
 
-export async function manageMyStallStock(input: {
-  action: "add" | "set_price" | "set_quantity" | "remove";
-  itemId: string;
-  quantity?: number;
-  priceMinor?: number;
-}) {
-  const response = await callRpc("manage_my_stall_stock", {
-    p_action: input.action,
-    p_item_id: z.string().uuid().parse(input.itemId),
-    ...(input.quantity === undefined ? {} : { p_quantity: input.quantity }),
-    ...(input.priceMinor === undefined ? {} : { p_price_minor: input.priceMinor }),
+export const stallStockRequestSchema = z
+  .object({
+    action: z.enum(["add", "set_price", "set_quantity", "remove"]),
+    itemId: z.string().uuid(),
+    quantity: z.number().int().min(0).max(999).optional(),
+    priceMinor: z.number().int().positive().optional(),
+    requestId: z.string().uuid(),
+  })
+  .refine(
+    (v) =>
+      v.action !== "add" ||
+      (v.quantity !== undefined && v.quantity > 0 && v.priceMinor !== undefined),
+  )
+  .refine((v) => v.action !== "set_quantity" || v.quantity !== undefined)
+  .refine((v) => v.action !== "set_price" || v.priceMinor !== undefined);
+export type StallStockRequest = z.infer<typeof stallStockRequestSchema>;
+export type StallStockOperation = Omit<StallStockRequest, "requestId">;
+
+export async function manageMyStallStock(input: StallStockRequest) {
+  const request = stallStockRequestSchema.parse(input);
+  const response = await callRpc("manage_my_stall_stock_request", {
+    p_action: request.action,
+    p_item_id: request.itemId,
+    p_quantity: request.quantity ?? null,
+    p_price_minor: request.priceMinor ?? null,
+    p_request_id: request.requestId,
   });
   return stockMutationSchema.parse(response);
 }

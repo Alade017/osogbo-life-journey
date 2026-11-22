@@ -4,6 +4,7 @@ import {
   interactionOutcome,
   NPC_CATALOG,
   npcActivityAt,
+  npcFromSavedDefinition,
   relationshipTier,
   socialActionsFor,
   type Relationship,
@@ -118,4 +119,56 @@ describe("NPC routine and social simulation", () => {
     );
     expect(socialActionsFor(newRelationship, false)).toEqual([]);
   });
+});
+
+describe("NPC schedule consistency", () => {
+  const base = NPC_CATALOG[0]!;
+  const time = { ...INITIAL_GAME_TIME, hour: 10 };
+  it("uses a consistent home fallback for missing work venues", () => {
+    expect(npcActivityAt(base, time, slug => slug === base.homeSlug ? slug : null))
+      .toMatchObject({ destination: "home", destinationSlug: base.homeSlug, label: "resting at home", available: true });
+    expect(npcActivityAt(base, time, () => null).available).toBe(false);
+  });
+  it("prioritizes matching weekday overrides over daily defaults", () => {
+    const npc = { ...base, routine: [...base.routine, { start: 9, end: 12, destination: "home" as const, activity: "weekend rest", weekdays: [5, 6] }] };
+    expect(npcActivityAt(npc, { ...time, weekday: 5 }, slug => slug).label).toBe("weekend rest");
+    expect(npcActivityAt(npc, { ...time, weekday: 0 }, slug => slug).destination).toBe("work");
+  });
+  it("uses persisted venue IDs and validated schedule entries", () => {
+    const npc = npcFromSavedDefinition(base, {
+      name: base.name, role: base.role, personality: base.personality,
+      home_location_id: "home-id", work_location_id: "work-id",
+      routine: [{ start: 8, end: 16, place: "work", activity: "working" }, { start: -1, end: 25, place: "park", activity: "invalid" }],
+    }, id => id === "home-id" ? "residential" : "old-garage");
+    expect(npc.routine).toHaveLength(1);
+    expect(npcActivityAt(npc, time, slug => slug).destinationSlug).toBe("old-garage");
+  });
+  it("rejects invitations at the server conflict threshold", () => {
+    const strained = { ...newRelationship, friendship: 80, trust: 80, conflict: 50 };
+    expect(interactionOutcome("invite", base, strained).accepted).toBe(false);
+    expect(socialActionsFor(strained, true)).not.toContain("invite");
+    expect(socialActionsFor({ ...strained, conflict: 70 }, true)).toEqual(["greet", "end"]);
+  });
+});
+
+it("preserves daily schedules and resolves persisted weekend overrides", () => {
+  const base = NPC_CATALOG.find(npc => npc.id === "npc-morenike")!;
+  const npc = npcFromSavedDefinition(base, {
+    name: base.name,
+    role: base.role,
+    personality: base.personality,
+    home_location_id: "home-id",
+    work_location_id: "work-id",
+    routine: [
+      { start: 7, end: 15, place: "work", activity: "teaching a class" },
+      { start: 7, end: 17, place: "home", activity: "preparing lessons", weekdays: [6] },
+    ],
+  }, id => id === "home-id" ? "residential" : "student-district");
+  const lookup = (slug: string) => slug;
+  expect(npcActivityAt(npc, {
+    ...INITIAL_GAME_TIME, weekday: 0, hour: 10,
+  }, lookup).destination).toBe("work");
+  expect(npcActivityAt(npc, {
+    ...INITIAL_GAME_TIME, weekday: 6, hour: 10,
+  }, lookup).destination).toBe("home");
 });

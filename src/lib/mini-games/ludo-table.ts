@@ -235,7 +235,12 @@ export class LudoTable {
     for (const hold of this.holds.values()) hold.timer.clear();
     this.holds.clear();
     const playerIds = this.players.map((player) => player.userId);
-    void Promise.resolve(this.options.recordWin({ winnerId, playerIds })).catch(() => undefined);
+    // A failed write is logged, not retried: a retry could count the same win twice.
+    void Promise.resolve(this.options.recordWin({ winnerId, playerIds })).catch(
+      (error: unknown) => {
+        console.error("Ludo result was not recorded", { winnerId, playerIds, error });
+      },
+    );
   }
 
   private publish(): void {

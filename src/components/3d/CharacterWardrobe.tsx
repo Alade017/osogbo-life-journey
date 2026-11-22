@@ -18,16 +18,17 @@ export function CharacterWardrobe({
   const shoes = outfit?.colors[2] ?? SHOE_COLORS[appearance.shoes ?? 0] ?? SHOE_COLORS[0]!;
   const patterned = outfit?.patterned ?? appearance.outfit === 3;
   const cut = outfit?.topCut ?? "tee";
+  const clothed = appearance.clothed !== false;
   const mesh = useMemo(
-    () => createFittedClothing(body, [top, bottom, shoes], patterned, cut),
-    [body, top, bottom, shoes, patterned, cut],
+    () => clothed ? createFittedClothing(body, [top, bottom, shoes], patterned, cut) : null,
+    [body, top, bottom, shoes, patterned, cut, clothed],
   );
-  useEffect(
-    () => () => {
+  useEffect(() => {
+    if (!mesh) return;
+    return () => {
       for (const material of Array.isArray(mesh.material) ? mesh.material : [mesh.material])
         material.dispose();
-    },
-    [mesh],
-  );
-  return appearance.clothed === false ? null : <primitive object={mesh} dispose={null} />;
+    };
+  }, [mesh]);
+  return mesh ? <primitive object={mesh} dispose={null} /> : null;
 }

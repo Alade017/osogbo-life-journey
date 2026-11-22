@@ -16,6 +16,7 @@ export type NpcDefinition = {
     end: number;
     destination: "work" | "home" | "market" | "park";
     activity: string;
+    weekdays?: readonly number[];
   }[];
 };
 export type NpcActivity = {
@@ -159,26 +160,22 @@ export function npcActivityAt(
   locationBySlug: (slug: string) => string | null,
   weather: "sunny" | "cloudy" | "rainy" | "heavy-rain" = "sunny",
 ): NpcActivity {
-  const routine = npc.routine.find((entry) => time.hour >= entry.start && time.hour < entry.end);
-  const weatherFallback =
-    (weather === "rainy" || weather === "heavy-rain") && routine?.destination === "park";
-  const destination = weatherFallback
-    ? npc.homeSlug
-    : routine?.destination === "work"
-      ? npc.workSlug
-      : routine?.destination === "home"
-        ? npc.homeSlug
-        : routine?.destination === "market"
-          ? "oja-oba"
-          : "cultural-district";
-  const destinationSlug = locationBySlug(destination) ? destination : npc.homeSlug;
+  const matchesTime = (entry: NpcDefinition["routine"][number]) =>
+    time.hour >= entry.start && time.hour < entry.end;
+  const routine = npc.routine.find((entry) => entry.weekdays?.includes(time.weekday) && matchesTime(entry))
+    ?? npc.routine.find((entry) => !entry.weekdays && matchesTime(entry));
+  const kind = routine?.destination ?? "home";
+  const weatherFallback = (weather === "rainy" || weather === "heavy-rain") && kind === "park";
+  const requested = kind === "work" ? npc.workSlug : kind === "market" ? "oja-oba"
+    : kind === "park" ? "cultural-district" : npc.homeSlug;
+  const missing = !weatherFallback && !locationBySlug(requested);
+  const destinationSlug = weatherFallback || missing ? npc.homeSlug : requested;
   return {
     destinationSlug,
-    destination: weatherFallback ? "home" : (routine?.destination ?? "home"),
-    label: weatherFallback
-      ? "staying indoors during the rain"
-      : (routine?.activity ?? "taking a quiet break"),
-    available: time.hour >= 7 && time.hour < 22,
+    destination: weatherFallback || missing ? "home" : kind,
+    label: weatherFallback ? "staying indoors during the rain"
+      : missing ? "resting at home" : routine?.activity ?? "taking a quiet break",
+    available: !!locationBySlug(destinationSlug) && time.hour >= 7 && time.hour < 22,
   };
 }
 
@@ -205,7 +202,7 @@ export function interactionOutcome(
       changes: { conflict: 1 },
       message: "It feels too soon for that. Keep building trust and friendship first.",
     };
-  if (action === "invite" && (value.friendship < 40 || value.trust < 25))
+  if (action === "invite" && (value.friendship < 40 || value.trust < 25 || value.conflict >= 50))
     return {
       accepted: false,
       changes: { conflict: 1 },
@@ -288,6 +285,7 @@ export function actionLabel(action: SocialAction) {
 
 export function socialActionsFor(value: Relationship, available: boolean): SocialAction[] {
   if (!available) return [];
+  if (value.conflict >= 70) return ["greet", "end"];
   const actions: SocialAction[] = [
     "greet",
     "work",
@@ -302,4 +300,33 @@ export function socialActionsFor(value: Relationship, available: boolean): Socia
   if (value.friendship >= 40 && value.trust >= 25 && value.conflict < 50) actions.push("invite");
   actions.push("end");
   return actions;
+}
+
+/** Use persisted identity and schedule when available; the catalog supplies presentation metadata. */
+export function npcFromSavedDefinition(
+  base: NpcDefinition,
+  saved: { name: string; role: string; personality: string; home_location_id: string | null; work_location_id: string | null; routine: unknown },
+  slugForId: (id: string) => string | undefined,
+): NpcDefinition {
+  const routine: NpcDefinition["routine"] = [];
+  if (Array.isArray(saved.routine)) {
+    for (const entry of saved.routine) {
+      if (!entry || typeof entry !== "object") continue;
+      const { start, end, place, activity, weekdays } = entry;
+      if (!Number.isInteger(start) || !Number.isInteger(end) || start < 0 || end > 24 || start >= end ||
+          !["work", "home", "market", "park"].includes(place) || typeof activity !== "string") continue;
+      if (weekdays !== undefined && (!Array.isArray(weekdays) || weekdays.length === 0 || !weekdays.every((day: unknown) => typeof day === "number" && Number.isInteger(day) && day >= 0 && day <= 6))) continue;
+      routine.push({ start, end, destination: place, activity, ...(weekdays === undefined ? {} : { weekdays }) });
+    }
+  }
+  const traits: readonly string[] = ["warm", "reserved", "ambitious", "playful", "thoughtful", "creative"];
+  return {
+    ...base,
+    name: saved.name,
+    role: saved.role,
+    personality: traits.includes(saved.personality) ? saved.personality as NpcTrait : base.personality,
+    homeSlug: (saved.home_location_id && slugForId(saved.home_location_id)) || "",
+    workSlug: (saved.work_location_id && slugForId(saved.work_location_id)) || "",
+    routine,
+  };
 }

@@ -1,3 +1,5 @@
+import { CHARACTER_MOTION } from "./character-config";
+
 export type Vec3 = [number, number, number];
 
 /**
@@ -36,4 +38,11 @@ export function measuredSpeed(
   const distance = Math.hypot(next[0] - previous[0], next[1] - previous[1], next[2] - previous[2]);
   if (distance === 0) return 0;
   return Math.min(maxSpeed, distance / Math.max(elapsedSeconds, 0.02));
+}
+
+/** Convert rendered horizontal travel to a bounded gait playback rate. */
+export function walkingCadence(distance: number, delta: number, height: number): number {
+  if (![distance, delta, height].every(Number.isFinite) || distance <= 0 || delta <= 0 || height <= 0)
+    return 0;
+  return Math.min(CHARACTER_MOTION.walkMaxCadence, distance / delta / height / CHARACTER_MOTION.walkReferenceSpeed);
 }

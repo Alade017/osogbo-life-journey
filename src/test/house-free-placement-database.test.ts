@@ -87,9 +87,7 @@ describe("free furniture placement database", () => {
     // brings that overload back. Drop it again so the five-argument version is the only one.
     await db.exec("drop function if exists public.house_place_free(uuid, text, numeric, numeric);");
     // Exercise the exact rearrangement function under test, not a hand-written test stub.
-    await db.exec(
-      readFileSync("supabase/migrations/20261118024000_house_rearrange.sql", "utf8"),
-    );
+    await db.exec(readFileSync("supabase/migrations/20261118024000_house_rearrange.sql", "utf8"));
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 
@@ -214,10 +212,7 @@ describe("free furniture placement database", () => {
     // different item. Disable the mirror trigger only while creating this adversarial
     // fixture; the rearrangement update itself must run with the real trigger enabled.
     const characterId = (
-      await db.query<{ id: string }>(
-        "select id from public.characters where user_id=$1",
-        [userId],
-      )
+      await db.query<{ id: string }>("select id from public.characters where user_id=$1", [userId])
     ).rows[0]!.id;
     const target = (
       await db.query<{ id: string; item_id: string; slot: string; slot_type: string }>(
@@ -249,10 +244,10 @@ describe("free furniture placement database", () => {
         [userId, characterId, target.slot_type, target.slot],
       );
       if (unmirrored) {
-        await db.query(
-          "delete from public.home_items where character_id=$1 and item_id=$2",
-          [characterId, unmirrored.item_id],
-        );
+        await db.query("delete from public.home_items where character_id=$1 and item_id=$2", [
+          characterId,
+          unmirrored.item_id,
+        ]);
       }
     } finally {
       await db.exec(
@@ -342,7 +337,16 @@ describe("free furniture placement database", () => {
         db.query("select public.house_rearrange_owned_items($1,$2,$3,$4)", [
           userId,
           house,
-          JSON.stringify(afterSnapshot),
+          JSON.stringify(
+            after.map(({ id, slot, x, y, floor, rotation_deg }) => ({
+              id,
+              slot,
+              x,
+              y,
+              floor,
+              rotation_deg,
+            })),
+          ),
           JSON.stringify(duplicated),
         ]),
       ).rejects.toThrow("INVALID_POSITION");

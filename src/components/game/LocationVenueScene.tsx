@@ -19,6 +19,9 @@ const ClinicVenue = lazy(() =>
 const OsunMallVenue = lazy(() =>
   import("./OsunMallVenue").then((module) => ({ default: module.OsunMallVenue })),
 );
+const WorshipVenue = lazy(() =>
+  import("./WorshipVenue").then((module) => ({ default: module.WorshipVenue })),
+);
 const SchoolCampusVenue = lazy(() =>
   import("./SchoolCampusVenue").then((module) => ({ default: module.SchoolCampusVenue })),
 );
@@ -409,6 +412,16 @@ export function LocationVenueScene(props: {
         }
       >
         <ClinicVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
+      </Suspense>
+    );
+  if (venue.scene === "worship")
+    return (
+      <Suspense
+        fallback={
+          <WorldLoadingIndicator title="Entering the prayer hall" detail="Preparing the hall…" />
+        }
+      >
+        <WorshipVenue key={props.slug} slug={props.slug} locationName={props.locationName} />
       </Suspense>
     );
   return venue.scene === "campus" ? (
