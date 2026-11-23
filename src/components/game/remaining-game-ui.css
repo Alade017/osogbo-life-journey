@@ -738,3 +738,102 @@
     scroll-behavior: auto;
   }
 }
+
+/* Internal layout pass: wallet and profile. Existing queries, transactions,
+   controls and the in-game phone are intentionally unchanged. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page {
+  min-width: 0;
+  width: 100%;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-balance-grid,
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-lifetime-grid {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.wallet-balance-grid, .wallet-lifetime-grid) > .game-panel {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.wallet-balance-grid, .wallet-lifetime-grid) .font-display {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-row {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-info {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-info > p:last-child {
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-amount {
+  min-width: 0;
+  flex: 0 1 auto;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-hero,
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-columns,
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-glance {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.profile-hero, .profile-columns, .profile-glance) > * {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-identity h2,
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-glance-card strong,
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dd {
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dl > div {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-story :is(dt, dd) {
+  min-width: 0;
+}
+
+@media (max-width: 620px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 12px;
+    align-items: start;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-info {
+    grid-column: 2;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-amount {
+    grid-column: 2;
+    width: 100%;
+    text-align: left;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dl > div {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 380px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dl > div {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dd {
+    width: 100%;
+    text-align: left;
+  }
+}
