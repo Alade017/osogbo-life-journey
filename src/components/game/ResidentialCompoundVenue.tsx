@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
+import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { ResidentialCompoundScene } from "@/components/3d/ResidentialCompoundScene";
 import {
@@ -27,6 +28,10 @@ export function ResidentialCompoundVenue({
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const heading = useId();
   const unavailable = useCallback(() => setStatus("fallback"), []);
+  const ready = useCallback(
+    () => setStatus((status) => (status === "loading" ? "ready" : status)),
+    [],
+  );
   const feature = features.find((item) => item.id === selected) ?? features[0]!;
   const canEnter = !!home && !!onEnterHome;
   useEffect(() => {
@@ -51,12 +56,12 @@ export function ResidentialCompoundVenue({
       <div className="relative h-[55svh] min-h-72 overflow-hidden rounded-lg border border-edge bg-muted">
         {status !== "fallback" && (
           <VenueSceneBoundary resetKey={homeTypeId ?? "default"} onError={unavailable}>
-            <Canvas
+            <WorldCanvas
+              onSceneError={unavailable}
               shadows
               frameloop="demand"
               dpr={[1, 1.25]}
               gl={{ antialias: false, powerPreference: "low-power" }}
-              onCreated={() => setStatus("ready")}
               aria-label="Interactive 3D residential compound"
               fallback={
                 <p className="p-4">WebGL is unavailable. Use the compound controls below.</p>
@@ -71,7 +76,8 @@ export function ResidentialCompoundVenue({
               />
               <WorldLighting size={RESIDENTIAL_COMPOUND.width} />
               <ResidentialCompoundScene home={home} selected={feature.id} onSelect={setSelected} />
-            </Canvas>
+              <WorldSceneReady onReady={ready} />
+            </WorldCanvas>
           </VenueSceneBoundary>
         )}
         {status === "loading" && (
