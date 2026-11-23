@@ -44,7 +44,9 @@ function WalletPage() {
     onSuccess: () => toast.success("Cash withdrawn from your bank."),
   });
   const numericAmount = Number(amount);
-  const transferError = amount ? amountError(numericAmount) : "Enter an amount to continue.";
+  const transferError = amount ? amountError(numericAmount) : null;
+  const depositError = amount ? amountError(numericAmount, funds.cash) : null;
+  const withdrawError = amount ? amountError(numericAmount, funds.bank) : null;
 
   function submitTransfer(action: typeof deposit | typeof withdraw, available: number) {
     const error = amountError(numericAmount, available);
@@ -114,13 +116,18 @@ function WalletPage() {
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               placeholder="Enter whole Naira amount"
+              aria-invalid={!!transferError}
+              aria-describedby="wallet-transfer-help"
             />
+            <p id="wallet-transfer-help" className={`wallet-transfer-help text-xs ${transferError ? "text-destructive" : "text-muted-foreground"}`}>
+              {transferError ?? "Enter a whole naira amount to move money between cash and your bank."}
+            </p>
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 className="wallet-action-primary rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50"
                 disabled={
-                  !!transferError || !!amountError(numericAmount, funds.cash) || deposit.isPending
+                  !amount || !!depositError || deposit.isPending
                 }
                 onClick={() => submitTransfer(deposit, funds.cash)}
               >
@@ -130,13 +137,20 @@ function WalletPage() {
                 type="button"
                 className="wallet-action-secondary rounded-lg border-2 border-edge bg-secondary px-4 py-2 font-bold disabled:opacity-50"
                 disabled={
-                  !!transferError || !!amountError(numericAmount, funds.bank) || withdraw.isPending
+                  !amount || !!withdrawError || withdraw.isPending
                 }
                 onClick={() => submitTransfer(withdraw, funds.bank)}
               >
                 Withdraw cash
               </button>
             </div>
+            {amount && !transferError && (depositError || withdrawError) && (
+              <p className="wallet-transfer-limits text-xs text-muted-foreground" role="status">
+                {depositError && "Deposit exceeds available cash."}
+                {depositError && withdrawError && " "}
+                {withdrawError && "Withdrawal exceeds your bank balance."}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">Each transfer takes 3 minutes in game.</p>
           </>
         ) : bankAvailable && bankAccountLoading ? (
