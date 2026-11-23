@@ -403,3 +403,54 @@
     margin-inline-start: auto;
   }
 }
+
+/* UI-17: A shared region for each offer's details and purchase controls. */
+.market-app .market-app-product {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: none;
+}
+
+.market-app .market-app-product .market-app-purchase-row {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+.market-app .market-app-product .market-app-purchase-hint {
+  margin-top: 0;
+}
+
+/* UI-18: Consistent selected, primary and unavailable states. */
+.market-app .market-app-tabs button[aria-pressed="true"] {
+  border-color: var(--brand-royal);
+  background: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.market-app .market-app-product .market-app-buy:not(:disabled) {
+  background: var(--brand-royal);
+  border-color: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.market-app :is(.market-app-tabs button, .market-app-product button, .market-app-product input):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.market-app .market-app-product :is(button, input):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-app .market-app-product,
+  .market-app .market-app-product button {
+    transition: none;
+  }
+}
