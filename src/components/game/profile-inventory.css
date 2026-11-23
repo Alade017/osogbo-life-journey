@@ -1352,3 +1352,62 @@
     flex: 1 1 100%;
   }
 }
+
+/* UI-09: Small, contextual guidance appears only when useful. */
+.pi-inventory .pi-interaction-tip {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--brand-royal);
+  border-radius: 0 var(--shape-button) var(--shape-button) 0;
+  background: color-mix(in srgb, var(--color-primary-soft) 30%, var(--brand-cream));
+  color: var(--brand-slate);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* UI-10: Unfinished progress is visible even while badge details are closed. */
+.pi-profile .pi-badge-totals {
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
+  min-width: 0;
+  margin-inline-start: auto;
+  text-align: right;
+}
+
+.pi-profile .pi-badge-totals > span {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.pi-profile .pi-progress-summary {
+  color: var(--brand-royal-deep);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.pi-profile .pi-xp {
+  background: color-mix(in srgb, var(--brand-royal) 15%, var(--brand-cream));
+}
+
+.pi-profile .pi-xp > span {
+  background: var(--brand-royal);
+}
+
+.pi-profile .pi-badge.is-in-progress {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--brand-royal) 25%, var(--border));
+}
+
+.pi-profile .pi-badge.is-in-progress .pi-badge-bar > span {
+  background: var(--brand-royal);
+}
+
+@container (max-width: 380px) {
+  .pi-profile .pi-badge-totals {
+    justify-items: start;
+    margin-inline-start: 0;
+    text-align: left;
+  }
+}
