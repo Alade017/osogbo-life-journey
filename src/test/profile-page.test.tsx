@@ -1,5 +1,5 @@
 import React from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { moodLabel } from "@/lib/profile-service";
 import { ProfilePage } from "@/routes/_authenticated/_game/profile";
@@ -71,6 +71,23 @@ describe("profile page", () => {
     expect(moodLabel(90, 10)).toBe("Thriving");
     expect(moodLabel(90, 80)).toBe("Stressed");
     expect(moodLabel(20, 10)).toBe("Needs care");
+  });
+
+  it("progressively discloses badges while retaining their earned summary", () => {
+    render(<ProfilePage />);
+    const heading = screen.getByRole("heading", { name: "Badges" });
+    const summary = heading.closest("summary");
+    const disclosure = summary?.closest("details");
+
+    expect(summary).not.toBeNull();
+    expect(disclosure).not.toBeNull();
+    expect(disclosure).not.toHaveAttribute("open");
+    expect(screen.getByText("0 / 6 earned")).toBeInTheDocument();
+
+    fireEvent.click(summary!);
+    expect(disclosure).toHaveAttribute("open");
+    fireEvent.click(summary!);
+    expect(disclosure).not.toHaveAttribute("open");
   });
 
   it("renders current player data and the wardrobe entry point", () => {

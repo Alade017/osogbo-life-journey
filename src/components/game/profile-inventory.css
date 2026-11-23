@@ -1112,3 +1112,395 @@
 @media (max-height: 520px) and (orientation: landscape) {
   .pi-inventory .pi-canvas { height: clamp(180px, 48dvh, 260px); }
 }
+
+/* Inventory layout refinement: retain responsive cockpit, server-driven items,
+   equipment slots, preview renderers, category filters and dialog behavior. */
+.inventory-dialog-scroll {
+  container-type: inline-size;
+}
+
+.pi-inventory .pi-inventory-masthead,
+.pi-inventory .pi-bag-toolbar,
+.pi-inventory .pi-bag-layout,
+.pi-inventory .pi-section {
+  min-width: 0;
+}
+
+.pi-inventory .pi-bag-toolbar {
+  flex-wrap: wrap;
+}
+
+.pi-inventory .pi-inventory-search {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.pi-inventory .pi-bag {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 138px), 1fr));
+  align-items: stretch;
+}
+
+.pi-inventory .pi-tile {
+  width: 100%;
+  min-width: 0;
+  align-content: start;
+  gap: 0.35rem;
+  transition: border-color var(--duration-control) ease, box-shadow var(--duration-control) ease;
+}
+
+.pi-inventory .pi-tile strong {
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.pi-inventory .pi-tile small {
+  overflow-wrap: anywhere;
+}
+
+.pi-inventory .pi-detail {
+  max-width: 100%;
+}
+
+.pi-inventory .pi-detail-facts > div {
+  min-width: 0;
+}
+
+.pi-inventory .pi-detail-actions > button {
+  flex: 1 1 130px;
+}
+
+@container (max-width: 620px) {
+  .pi-inventory .pi-bag-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pi-inventory .pi-detail {
+    position: static;
+  }
+}
+
+@container (max-width: 380px) {
+  .pi-inventory .pi-bag {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pi-inventory .pi-detail-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 280px) {
+  .pi-inventory .pi-bag {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pi-inventory .pi-tile {
+    transition: none;
+  }
+}
+
+/* UI-03: Recognizable inventory states without duplicating selection logic. */
+.pi-inventory .pi-tile[aria-pressed="true"] {
+  position: relative;
+  border-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 45%, var(--brand-cream));
+}
+
+.pi-inventory .pi-tile-selected {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--shape-pill);
+  padding: 0.2rem 0.55rem;
+  color: var(--brand-royal-deep);
+  background: var(--color-primary-soft);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.pi-inventory .pi-filters button[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+.pi-inventory .pi-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pi-inventory .pi-detail-clear {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-pill);
+  padding: 0.35rem 0.75rem;
+  background: var(--popover);
+  color: var(--brand-royal-deep);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.pi-inventory .pi-detail-clear:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* UI-04: Badges remain available, but secondary achievement details
+   only occupy space once the player expands them. */
+.pi-profile .pi-badges-disclosure {
+  display: block;
+}
+
+.pi-profile .pi-badges-disclosure > summary {
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--shape-card);
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.9rem 1rem;
+}
+
+.pi-profile .pi-badges-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pi-profile .pi-badges-disclosure > summary::after {
+  content: "+";
+  color: var(--brand-royal);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pi-profile .pi-badges-disclosure[open] > summary::after {
+  content: "−";
+}
+
+.pi-profile .pi-badges-disclosure > summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.pi-profile .pi-badges-disclosure > .pi-badges {
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .pi-profile .pi-badges-disclosure > summary {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
+
+/* UI-07 / UI-08: Clear, predictable action hierarchy in the inventory.
+   Selection and action handlers remain driven by the existing component. */
+.pi-inventory .pi-detail-actions {
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.pi-inventory .pi-detail-actions > button {
+  min-width: 0;
+  min-height: 44px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.pi-inventory .pi-detail-actions .pi-action-primary:not(:disabled) {
+  color: var(--primary-foreground);
+  border-color: var(--brand-royal);
+  background: var(--brand-royal);
+  font-weight: 800;
+}
+
+.pi-inventory .pi-detail-actions .pi-action-secondary:not(:disabled) {
+  color: var(--brand-royal-deep);
+  border-color: var(--brand-mist);
+  background: var(--brand-cream);
+}
+
+.pi-inventory .pi-detail-actions .pi-action-destructive {
+  color: var(--destructive);
+  border-color: var(--border);
+  background: var(--card);
+}
+
+.pi-inventory .pi-detail-actions > button:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.pi-inventory .pi-detail-actions > button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@container (max-width: 420px) {
+  .pi-inventory .pi-detail-actions > button {
+    flex: 1 1 100%;
+  }
+}
+
+/* UI-09: Small, contextual guidance appears only when useful. */
+.pi-inventory .pi-interaction-tip {
+  margin: 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--brand-royal);
+  border-radius: 0 var(--shape-button) var(--shape-button) 0;
+  background: color-mix(in srgb, var(--color-primary-soft) 30%, var(--brand-cream));
+  color: var(--brand-slate);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* UI-10: Unfinished progress is visible even while badge details are closed. */
+.pi-profile .pi-badge-totals {
+  display: grid;
+  justify-items: end;
+  gap: 0.2rem;
+  min-width: 0;
+  margin-inline-start: auto;
+  text-align: right;
+}
+
+.pi-profile .pi-badge-totals > span {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 750;
+}
+
+.pi-profile .pi-progress-summary {
+  color: var(--brand-royal-deep);
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.pi-profile .pi-xp {
+  background: color-mix(in srgb, var(--brand-royal) 15%, var(--brand-cream));
+}
+
+.pi-profile .pi-xp > span {
+  background: var(--brand-royal);
+}
+
+.pi-profile .pi-badge.is-in-progress {
+  border-style: solid;
+  border-color: color-mix(in srgb, var(--brand-royal) 25%, var(--border));
+}
+
+.pi-profile .pi-badge.is-in-progress .pi-badge-bar > span {
+  background: var(--brand-royal);
+}
+
+@container (max-width: 380px) {
+  .pi-profile .pi-badge-totals {
+    justify-items: start;
+    margin-inline-start: 0;
+    text-align: left;
+  }
+}
+
+/* UI-11: A near-level-up signal, grounded in the existing XP calculation.
+   Static emphasis only: no artificial animation acceleration. */
+.pi-profile .pi-xp.is-near-goal {
+  background: color-mix(in srgb, var(--brand-royal) 19%, var(--brand-cream));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-royal) 20%, transparent);
+}
+
+.pi-profile .pi-xp.is-near-goal > span {
+  background: var(--brand-royal);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-royal) 14%, transparent);
+}
+
+.pi-profile .pi-xp.is-near-goal + .pi-stage-foot {
+  border-color: color-mix(in srgb, var(--brand-royal) 25%, var(--border));
+}
+
+/* UI-13: Present action restrictions beside the corresponding inventory choices. */
+.pi-inventory .pi-action-guidance {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-button);
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.pi-inventory .pi-action-guidance p {
+  margin: 0;
+}
+
+/* UI-14: Keep selected item facts concise and mutually aligned. */
+.pi-inventory .pi-detail-facts {
+  gap: 0.5rem;
+}
+
+/* UI-17: Keep equipped slots, bag items and item details in distinct regions. */
+.pi-inventory .pi-slots {
+  gap: 0.75rem;
+}
+
+.pi-inventory .pi-slot,
+.pi-inventory .pi-tile,
+.pi-inventory .pi-detail {
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.pi-inventory .pi-detail {
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.pi-inventory .pi-detail-facts {
+  padding-block: 0.75rem;
+  border-block: 1px solid var(--border);
+}
+
+.pi-inventory .pi-detail-actions {
+  gap: 0.5rem;
+}
+
+/* UI-18: Matching states and focus cues across filters, item tiles and slot actions. */
+.pi-inventory :is(.pi-slot.is-selected, .pi-tile[aria-pressed="true"], .pi-filters button[aria-pressed="true"]) {
+  border-color: var(--brand-royal);
+}
+
+.pi-inventory :is(.pi-chip-btn-primary, .pi-detail-actions .pi-action-primary):not(:disabled) {
+  background: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.pi-inventory :is(.pi-filters button, .pi-chip-btn, .pi-tile, .pi-detail-clear):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.pi-inventory :is(.pi-chip-btn, .pi-detail-actions > button):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pi-inventory .pi-tile,
+  .pi-inventory .pi-detail-actions > button {
+    transition: none;
+  }
+}

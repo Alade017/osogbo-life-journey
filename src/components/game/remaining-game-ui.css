@@ -626,4 +626,540 @@
   background: #ffffff;
 }
 
+/* UI-01: Shared visual language for non-home game pages.
+   Deliberately scoped to the existing route-level class: no changes to the
+   home dashboard, map canvas, phone surfaces or authoritative game state. */
+.city-game.dashboard-ui-refresh .game-screen-restyle {
+  --screen-section-gap: clamp(16px, 2vw, 24px);
+  --screen-panel-radius: var(--shape-card);
+  --screen-focus-ring: 0 0 0 3px color-mix(in srgb, var(--ring) 22%, transparent);
+}
 
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) {
+  min-width: 0;
+  column-gap: var(--screen-section-gap);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) > * {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) h1 {
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) p {
+  color: var(--color-text-secondary);
+  overflow-wrap: break-word;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-panel, .profile-glance-card) {
+  min-width: 0;
+  border-radius: var(--screen-panel-radius);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-panel, .profile-glance-card) :is(h2, h3, h4) {
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  box-shadow: var(--screen-focus-ring);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(button, a):disabled,
+.city-game.dashboard-ui-refresh .game-screen-restyle [aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* UI-02: Flexible content flow and touch-friendly form controls.
+   No fixed page widths, no forced grid count, and no positioning changes
+   to in-world controls or existing dialog portals. */
+.city-game.dashboard-ui-refresh .game-screen-restyle > :not(.game-home):not(.house-page) {
+  width: 100%;
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-settings-page, .wallet-page, .inventory-page, .profile-page) {
+  min-width: 0;
+  max-width: 100%;
+  gap: var(--screen-section-gap);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-settings-page, .wallet-page, .inventory-page, .profile-page) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(input, select, textarea) {
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle {
+    --screen-section-gap: 14px;
+    --screen-panel-radius: 18px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) {
+    gap: 10px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) h1 {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-settings-page, .wallet-page, .inventory-page, .profile-page) {
+    gap: var(--screen-section-gap);
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(input, select, textarea) {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle {
+    --screen-section-gap: 12px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) h1 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(button, a, input, select, textarea) {
+    transition: none;
+    scroll-behavior: auto;
+  }
+}
+
+/* Internal layout pass: wallet and profile. Existing queries, transactions,
+   controls and the in-game phone are intentionally unchanged. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page {
+  min-width: 0;
+  width: 100%;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-balance-grid,
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-lifetime-grid {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.wallet-balance-grid, .wallet-lifetime-grid) > .game-panel {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.wallet-balance-grid, .wallet-lifetime-grid) .font-display {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-row {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-info {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-info > p:last-child {
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-amount {
+  min-width: 0;
+  flex: 0 1 auto;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-hero,
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-columns,
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-glance {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.profile-hero, .profile-columns, .profile-glance) > * {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-identity h2,
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-glance-card strong,
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dd {
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dl > div {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .profile-story :is(dt, dd) {
+  min-width: 0;
+}
+
+@media (max-width: 620px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-row {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    gap: 8px 12px;
+    align-items: start;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-info {
+    grid-column: 2;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-amount {
+    grid-column: 2;
+    width: 100%;
+    text-align: left;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dl > div {
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 380px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dl > div {
+    flex-wrap: wrap;
+    gap: 4px 8px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle .profile-story dd {
+    width: 100%;
+    text-align: left;
+  }
+}
+
+/* UI-04: Transaction summaries stay scannable; metadata is revealed on demand.
+   Scope includes the wallet route only, not the separate in-phone Bank app. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-details {
+  margin-top: 0.4rem;
+  min-width: 0;
+  font-size: 0.8rem;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-details > summary {
+  display: list-item;
+  width: fit-content;
+  max-width: 100%;
+  color: var(--brand-royal-deep);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-details > summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-meta {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--shape-button);
+  background: var(--brand-porcelain);
+  color: var(--brand-slate);
+  overflow-wrap: anywhere;
+}
+
+/* UI-05: Keep the current balance and transfer action above secondary totals. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-history-disclosure {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-history-summary {
+  display: list-item;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  color: var(--brand-ink);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-history-summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-history-disclosure[open] .wallet-lifetime-grid {
+  margin-top: var(--screen-section-gap);
+}
+
+/* UI-06: One clear primary balance and action, without changing account rules. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-balance-primary {
+  border-left-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 36%, var(--brand-cream));
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-action-primary {
+  min-height: 44px;
+  background: var(--brand-royal);
+  border-color: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-action-secondary {
+  min-height: 44px;
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--brand-ink);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.wallet-action-primary, .wallet-action-secondary):disabled {
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+@media (max-width: 420px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.wallet-action-primary, .wallet-action-secondary) {
+    flex: 1 1 100%;
+  }
+}
+
+/* UI-11 / UI-12: Mission status hierarchy for both full-page and phone views.
+   No change to mission order, claim eligibility or reward amounts. */
+.mission-progress-page .mission-progress-card {
+  min-width: 0;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.mission-progress-page .mission-progress-card.is-near-goal {
+  border-left-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 22%, var(--card));
+}
+
+.mission-progress-page .mission-progress-card.is-ready {
+  border-left-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 40%, var(--card));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-royal) 22%, transparent);
+}
+
+.mission-progress-page .mission-progress-card.is-claimed {
+  box-shadow: none;
+}
+
+.mission-progress-page .mission-rewards-ready {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 0.75rem 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 28%, var(--border));
+  border-radius: var(--shape-card);
+  background: color-mix(in srgb, var(--color-primary-soft) 28%, var(--card));
+  color: var(--brand-royal-deep);
+  font-weight: 750;
+}
+
+.mission-progress-page .mission-reward-row {
+  flex-wrap: wrap;
+}
+
+.mission-progress-page .mission-reward-value {
+  min-width: 0;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+
+.mission-progress-page .mission-progress-card.is-ready .mission-reward-value {
+  color: var(--brand-royal-deep);
+}
+
+.mission-progress-page .mission-claim-action {
+  min-height: 44px;
+  margin-inline-start: auto;
+  color: var(--primary-foreground);
+  background: var(--brand-royal);
+  border-color: var(--brand-royal);
+  font-weight: 800;
+}
+
+.mission-progress-page .mission-claim-action:disabled {
+  opacity: 0.55;
+}
+
+.mission-progress-page .mission-claim-action:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+  .mission-progress-page .mission-claim-action {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mission-progress-page .mission-progress-card,
+  .mission-progress-page .mission-progress-track [class*="transition"] {
+    transition: none;
+  }
+}
+
+/* UI-13: Explain transfer eligibility at the amount entry point. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transfer-help,
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transfer-limits {
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page input[aria-invalid="true"] {
+  border-color: var(--destructive);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* UI-14: Retain current balance grouping without adding additional cards. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page .wallet-balance-grid > .game-panel {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page .wallet-balance-grid > .game-panel p {
+  overflow-wrap: anywhere;
+}
+
+/* UI-15: Distinguish core phone apps without changing launcher pages or order. */
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-important {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-foreground) 32%, transparent),
+    0 3px 10px color-mix(in srgb, var(--brand-ink) 12%, transparent);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-important svg {
+  stroke-width: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-ui-refresh .phone-app .phone-app-icon {
+    transition: none;
+  }
+}
+
+/* UI-19: Connect existing mission completion states without altering their source. */
+.mission-progress-page .mission-stage-path {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mission-progress-page .mission-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0 0.2rem;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.mission-progress-page .mission-stage:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 0.4rem;
+  left: calc(50% + 0.55rem);
+  width: calc(100% - 1.1rem);
+  height: 2px;
+  background: var(--border);
+}
+
+.mission-progress-page .mission-stage.is-complete::after {
+  background: var(--brand-royal);
+}
+
+.mission-progress-page .mission-stage-node {
+  display: block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--card);
+}
+
+.mission-progress-page .mission-stage.is-complete .mission-stage-node,
+.mission-progress-page .mission-stage.is-current .mission-stage-node {
+  border-color: var(--brand-royal);
+}
+
+.mission-progress-page .mission-stage.is-complete .mission-stage-node {
+  background: var(--brand-royal);
+}
+
+.mission-progress-page .mission-stage.is-current {
+  color: var(--brand-royal-deep);
+  font-weight: 800;
+}
+
+/* UI-19: Match Daily Tasks visual states to lifetime mission statuses. */
+.mission-progress-page .daily-task-card {
+  min-width: 0;
+  border-left: 3px solid var(--border);
+}
+
+.mission-progress-page .daily-task-card.is-ready {
+  border-left-color: var(--brand-royal);
+}
+
+.mission-progress-page .daily-task-card.is-claimed {
+  border-left-color: var(--success);
+}
+
+.mission-progress-page .daily-task-reward {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+}
+
+.mission-progress-page .daily-task-state {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.mission-progress-page .daily-task-state.is-ready {
+  color: var(--brand-royal-deep);
+}
+
+.mission-progress-page .daily-task-state.is-claimed {
+  color: var(--foreground);
+}
+
+/* UI-20: Processing text reflects the real pending claim, never an invented timer. */
+.mission-progress-page .mission-claim-action[aria-busy="true"] {
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mission-progress-page .mission-stage-path *,
+  .mission-progress-page .daily-task-card {
+    transition: none;
+    animation: none;
+  }
+}

@@ -46,7 +46,7 @@ export function useMissionClaim(userId: string, characterId: string) {
       );
       if (current())
         toast.success(
-          `Reward claimed: ${formatNaira(reward.money)}${reward.xp ? ` · +${reward.xp} XP` : ""}`,
+          `Mission reward claimed! ${formatNaira(reward.money)}${reward.xp ? ` · +${reward.xp} XP` : ""}`,
         );
     } catch {
       // A response can be lost after commit. Read canonical state before offering another attempt.

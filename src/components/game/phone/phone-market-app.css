@@ -238,3 +238,201 @@
 .market-app-stall .grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+
+/* UI-05: A quieter market header, keeping the existing three-way navigation
+   and all server-driven shop and stall sections intact. */
+.market-app .market-app-hero {
+  align-items: flex-start;
+}
+
+.market-app .market-app-hero > div {
+  min-width: 0;
+}
+
+.market-app .market-app-hero p {
+  max-width: 42ch;
+  overflow-wrap: break-word;
+}
+
+.market-app .market-app-tabs {
+  gap: 4px;
+}
+
+.market-app .market-app-tabs button {
+  min-height: 44px;
+  padding-inline: 6px;
+}
+
+/* UI-06: Active tab is the single emphasized navigation state. */
+.market-app .market-app-tabs button[aria-pressed="true"] {
+  border: 1px solid var(--brand-royal);
+  color: var(--primary-foreground);
+  background: var(--brand-royal);
+  box-shadow: none;
+  font-weight: 800;
+}
+
+.market-app .market-app-tabs button[aria-pressed="false"] {
+  border: 1px solid transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.market-app .market-app-tabs button:disabled,
+.market-app .market-app-product button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.market-app .market-app-tabs button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 380px) {
+  .market-app .market-app-tabs button {
+    flex-wrap: wrap;
+    gap: 3px;
+    padding-inline: 3px;
+  }
+}
+
+/* UI-07: Keep the market header compact while retaining recognizable tabs. */
+.market-app .market-app-hero {
+  gap: 10px;
+}
+
+.market-app .market-app-hero-icon {
+  flex-basis: 40px;
+  height: 40px;
+}
+
+.market-app .market-app-hero h2 {
+  font-size: clamp(1.25rem, 5cqi, 1.5rem);
+  line-height: 1.15;
+}
+
+.market-app .market-app-tabs button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* UI-08: Group price and quantity with the Buy action at the end of the row.
+   The existing quantity validation and purchase mutation are unchanged. */
+.market-app .market-app-product {
+  min-width: 0;
+}
+
+.market-app .market-app-product > .flex.items-center.justify-between {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.market-app .market-app-product > .flex.items-center.justify-between > .flex {
+  min-width: 0;
+}
+
+.market-app .market-app-product .market-app-buy {
+  min-width: 64px;
+  min-height: 44px;
+  color: var(--primary-foreground);
+  background: var(--brand-royal);
+  border: 1px solid var(--brand-royal);
+  font-weight: 800;
+}
+
+@media (max-width: 380px) {
+  .market-app .market-app-product > .flex.items-center.justify-between > .flex:last-child {
+    margin-left: auto;
+  }
+}
+
+/* UI-09: Help appears where the player needs it, not in a modal. */
+.market-app .market-interaction-tip {
+  margin: 0.75rem 1rem 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--brand-royal);
+  border-radius: 0 var(--shape-button) var(--shape-button) 0;
+  background: color-mix(in srgb, var(--color-primary-soft) 25%, var(--card));
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.market-app .market-app-section > .market-interaction-tip {
+  margin: 0;
+}
+
+/* UI-13: Put the existing purchase restriction beside the Buy action. */
+.market-app .market-app-purchase-hint {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--shape-button);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* UI-14: One concise cost/action row rather than competing mini-panels. */
+.market-app .market-app-purchase-row {
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 0.65rem;
+}
+
+.market-app .market-app-purchase-row > div {
+  min-width: 0;
+}
+
+.market-app .market-app-purchase-total {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 380px) {
+  .market-app .market-app-purchase-row > div:last-child {
+    margin-inline-start: auto;
+  }
+}
+
+/* UI-17: A shared region for each offer's details and purchase controls. */
+.market-app .market-app-product {
+  min-width: 0;
+  border: 1px solid var(--border);
+  background: var(--card);
+  box-shadow: none;
+}
+
+.market-app .market-app-offer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.market-app .market-app-product .market-app-purchase-row {
+  margin-top: auto;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+/* UI-18: Consistent primary and unavailable states. */
+.market-app :is(.market-app-tabs button, .market-app-product button, .market-app-product input):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.market-app .market-app-product input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .market-app .market-app-product,
+  .market-app .market-app-product button {
+    transition: none;
+  }
+}

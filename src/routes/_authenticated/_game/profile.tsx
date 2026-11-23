@@ -80,6 +80,7 @@ export function ProfilePage() {
     outfitSlots: EQUIPMENT_SLOTS.length,
   });
   const earned = badges.filter((badge) => badge.earned).length;
+  const inProgress = badges.filter((badge) => !badge.earned && badge.progress > 0).length;
   const mood = moodLabel(c.happiness, c.stress);
 
   return (
@@ -107,7 +108,15 @@ export function ProfilePage() {
               {xp.toNextLevel} to level {player.level + 1}
             </span>
           </div>
-          <div className="pi-xp" aria-hidden="true">
+          <div
+            className={`pi-xp${xpPercent >= 80 ? " is-near-goal" : ""}`}
+            role="progressbar"
+            aria-label={`Progress to level ${player.level + 1}`}
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={xpPercent}
+            aria-valuetext={`${xp.into} XP earned, ${xp.toNextLevel} XP remaining`}
+          >
             <span style={{ width: `${xpPercent}%` }} />
           </div>
           <div className="pi-stage-foot">
@@ -157,21 +166,31 @@ export function ProfilePage() {
         </div>
       </div>
 
-      <section className="pi-section" aria-labelledby="profile-badges-title">
-        <div className="pi-section-heading">
+      <details className="pi-section pi-badges-disclosure" aria-labelledby="profile-badges-title">
+        <summary className="pi-section-heading">
           <div>
             <p className="pi-eyebrow">Achievements</p>
             <h2 id="profile-badges-title">Badges</h2>
           </div>
-          <span>
-            {earned} / {badges.length} earned
-          </span>
-        </div>
+          <div className="pi-badge-totals">
+            <span>
+              {earned} / {badges.length} earned
+            </span>
+            {inProgress > 0 && (
+              <small className="pi-progress-summary">
+                {inProgress} achievement{inProgress === 1 ? "" : "s"} in progress
+              </small>
+            )}
+          </div>
+        </summary>
         <ul className="pi-badges">
           {badges.map((badge) => {
             const Icon = BADGE_ICONS[badge.id];
             return (
-              <li key={badge.id} className={`pi-badge${badge.earned ? " is-earned" : ""}`}>
+              <li
+                key={badge.id}
+                className={`pi-badge${badge.earned ? " is-earned" : ""}${!badge.earned && badge.progress > 0 ? " is-in-progress" : ""}`}
+              >
                 <span className="pi-badge-icon" aria-hidden="true">
                   <Icon size={22} />
                 </span>
@@ -193,7 +212,7 @@ export function ProfilePage() {
             );
           })}
         </ul>
-      </section>
+      </details>
 
       <nav className="pi-quick" aria-label="Profile actions">
         <button

@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import { Bell, MapPin } from "lucide-react";
+import { Bell, MapPin, Wallet } from "lucide-react";
 import { formatNaira } from "@/lib/game";
 import type { PlayerState } from "@/lib/player-state";
 import { LivingCostsSummary } from "@/components/game/LivingCostsSummary";
@@ -47,7 +47,8 @@ export function HomeDashboard({
               className="hd-balance"
               aria-label={`Wallet ${formatNaira(player.cash)}`}
             >
-              {formatNaira(player.cash)}
+              <Wallet size={24} aria-hidden="true" />
+              <span>{formatNaira(player.cash)}</span>
             </Link>
           </div>
         </header>

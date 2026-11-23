@@ -47,6 +47,13 @@ describe("phone navigation controller", () => {
     expect(state.app).toBe("Jobs");
   });
 
+  it("preserves Bank, Profile and Settings app mapping while keeping inventory standalone", () => {
+    expect(phoneAppForPath("/wallet")).toBe("Bank");
+    expect(phoneAppForPath("/profile")).toBe("Profile");
+    expect(phoneAppForPath("/settings")).toBe("Settings");
+    expect(phoneAppForPath("/inventory")).toBeUndefined();
+  });
+
   it("backs through in-phone app history before returning home", () => {
     let state: PhoneNavigationState = { app: null, history: [] };
     state = reducePhoneNavigation(state, { type: "open", app: "Messages" });

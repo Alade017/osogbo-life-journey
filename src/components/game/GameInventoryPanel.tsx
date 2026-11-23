@@ -432,6 +432,7 @@ export function GameInventoryPanel() {
                 key={category}
                 type="button"
                 aria-pressed={activeCategory === category}
+                aria-label={`${category === "all" ? "All items" : INVENTORY_CATEGORY_LABELS[category]} filter${activeCategory === category ? ", active" : ""}`}
                 onClick={() => setActiveCategory(category)}
               >
                 {category === "all" ? "All items" : INVENTORY_CATEGORY_LABELS[category]}
@@ -455,11 +456,16 @@ export function GameInventoryPanel() {
             </p>
           )}
 
+          {!requestedSlot && compatibleItems.length > 0 && !selectedItem && (
+            <p className="pi-interaction-tip">Select an item to see what you can do with it.</p>
+          )}
           <div className="pi-bag-layout">
             <div className="pi-bag" id="inventory-items">
               {compatibleItems.length === 0 && (
                 <p className="pi-bag-empty" role="status">
-                  {query ? "No items match your search." : "No items in this category."}
+                  {query
+                    ? "No items match your search. Try another name or clear the search."
+                    : "No items in this category. Try All items to browse your bag."}
                 </p>
               )}
               {compatibleItems.map((item) => {
@@ -470,6 +476,8 @@ export function GameInventoryPanel() {
                     type="button"
                     className="pi-tile"
                     aria-pressed={selectedId === item.id}
+                    aria-controls="inventory-selected-item-details"
+                    aria-label={`${item.item?.name ?? "Item"}, ${INVENTORY_CATEGORY_LABELS[normalizeInventoryCategory(item.item)]}, quantity ${item.quantity}${selectedId === item.id ? ", selected" : ""}`}
                     onClick={() => {
                       setSelectedId(item.id);
                       if (window.matchMedia("(max-width: 760px)").matches) {
@@ -486,6 +494,7 @@ export function GameInventoryPanel() {
                       <InventoryTileArt slug={item.item?.slug} Icon={Icon} />
                     </span>
                     <strong>{item.item?.name}</strong>
+                    {selectedId === item.id && <span className="pi-tile-selected">Selected</span>}
                     <small>
                       {INVENTORY_CATEGORY_LABELS[normalizeInventoryCategory(item.item)]} · ×
                       {item.quantity}
@@ -497,6 +506,7 @@ export function GameInventoryPanel() {
 
             <aside
               ref={detailRef}
+              id="inventory-selected-item-details"
               className="pi-detail"
               aria-live="polite"
               aria-label="Selected item details"
@@ -510,7 +520,16 @@ export function GameInventoryPanel() {
                       label={selectedItem.item?.name ?? "Item"}
                     />
                   )}
-                  <p className="pi-eyebrow">Item details</p>
+                  <div className="pi-detail-heading">
+                    <p className="pi-eyebrow">Item details</p>
+                    <button
+                      type="button"
+                      className="pi-detail-clear"
+                      onClick={() => setSelectedId(null)}
+                    >
+                      Clear selection
+                    </button>
+                  </div>
                   <h2>{selectedItem.item?.name}</h2>
                   <p className="pi-sub">{selectedItem.item?.description}</p>
                   <dl className="pi-detail-facts">
@@ -526,9 +545,14 @@ export function GameInventoryPanel() {
                     </div>
                   </dl>
                   {selectedItem.item ? (
-                    <div className="pi-detail-actions">
+                    <div
+                      className="pi-detail-actions"
+                      role="group"
+                      aria-label="Selected item actions"
+                    >
                       {selectedUse && (
                         <Button
+                          className="pi-action-primary"
                           disabled={!!useError || inventoryMutationPending}
                           onClick={() => useItem.mutate(selectedItem.id)}
                         >
@@ -544,6 +568,7 @@ export function GameInventoryPanel() {
                       {selectedSlot && (
                         <Button
                           variant="secondary"
+                          className={selectedUse ? "pi-action-secondary" : "pi-action-primary"}
                           disabled={
                             equipmentLoading ||
                             equipmentError ||
@@ -560,6 +585,7 @@ export function GameInventoryPanel() {
                       )}
                       <Button
                         variant="outline"
+                        className="pi-action-destructive"
                         disabled={!!discardError || inventoryMutationPending}
                         onClick={() => setDiscardId(selectedItem.id)}
                       >
@@ -569,10 +595,18 @@ export function GameInventoryPanel() {
                   ) : (
                     <p className="pi-note">Item actions aren't available right now.</p>
                   )}
-                  {((useError && selectedUse) || (equipError && selectedSlot)) && (
-                    <p className="pi-note" role="status">
-                      {useError && selectedUse ? useError : equipError}
-                    </p>
+                  {((!!useError && !!selectedUse) ||
+                    (!!equipError && !!selectedSlot) ||
+                    !!discardError) && (
+                    <div
+                      className="pi-action-guidance"
+                      role="status"
+                      aria-label="Item action restrictions"
+                    >
+                      {selectedUse && useError && <p>Use: {useError}</p>}
+                      {selectedSlot && equipError && <p>Wear: {equipError}</p>}
+                      {discardError && <p>Discard: {discardError}</p>}
+                    </div>
                   )}
                 </>
               ) : (
@@ -580,7 +614,7 @@ export function GameInventoryPanel() {
                   <Package size={32} aria-hidden="true" />
                   <strong>Choose an item</strong>
                   <p className="pi-note">
-                    Select an item from your bag to preview it, check its details, or use it.
+                    Choose an item from your bag to see its details and available actions.
                   </p>
                 </div>
               )}

@@ -1,9 +1,15 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Vector3, type Camera, type Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { WalkPoint } from "@/game/grid-walk-path";
-import { advanceCrowd, isPaying, MALL_CROWD_TARGET, type MallShopper } from "@/game/mall-crowd";
+import {
+  advanceCrowd,
+  getShopperById,
+  isPaying,
+  MALL_CROWD_TARGET,
+  type MallShopper,
+} from "@/game/mall-crowd";
 import { createWalker, stepWalker, type MallWalker } from "@/game/mall-movement";
 import {
   MALL_BOUNDS,
@@ -18,6 +24,7 @@ import { MALL_PROPS, type MallPropId, type MallTarget } from "@/game/mall-reacti
 import type { AvatarEquipment } from "@/components/game/Avatar";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
+import { SceneBoxGeometryProvider, useSceneBoxGeometry } from "./scene-box-geometries";
 
 /** A cosmetic item the player has placed on the floor. */
 export type PlacedProp = { id: MallPropId; position: WalkPoint };
@@ -84,8 +91,10 @@ function Block({
   color?: string | undefined;
   onClick?: (() => void) | undefined;
 }) {
+  const geometry = useSceneBoxGeometry(size);
   return (
     <mesh
+      geometry={geometry}
       position={at}
       castShadow
       receiveShadow
@@ -95,7 +104,6 @@ function Block({
         onClick();
       }}
     >
-      <boxGeometry args={size} />
       <WorldMaterial tone={tone} {...(color === undefined ? {} : { color })} />
     </mesh>
   );
@@ -253,7 +261,7 @@ function ShopperFigure({
 }) {
   const group = useRef<Group>(null);
   useFrame(() => {
-    const shopper = sim.current.shoppers.find((candidate) => candidate.id === id);
+    const shopper = getShopperById(sim.current.shoppers, id);
     const node = group.current;
     if (!node) return;
     node.visible = Boolean(shopper);
@@ -500,7 +508,7 @@ function FollowCamera({ sim }: { sim: { current: MallSim } }) {
 }
 
 /** The full mall scene: floor, fixtures, staff, the crowd, other players and the player. */
-export function OsunMall3D({
+function OsunMallContents({
   sim,
   people,
   playerMoving,
@@ -548,5 +556,14 @@ export function OsunMall3D({
         onMove={onMove}
       />
     </>
+  );
+}
+
+/** Each mounted mall owns its fixture geometry; NPC and interaction state stay local. */
+export function OsunMall3D(props: Parameters<typeof OsunMallContents>[0]) {
+  return (
+    <SceneBoxGeometryProvider>
+      <OsunMallContents {...props} />
+    </SceneBoxGeometryProvider>
   );
 }

@@ -5,6 +5,7 @@ import { q, rpc } from "@/lib/game";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
+import { HomePlayerStatus } from "@/components/game/HomePlayerStatus";
 import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { InventoryOverlay } from "@/components/game/InventoryOverlay";
@@ -38,6 +39,7 @@ import "@/components/game/game-dock.css";
 import "@/components/game/phone-redesign.css";
 import "@/components/game/phone-messages.css";
 import "@/components/game/game-bottom-bar.css";
+import "@/components/game/home-hud.css";
 
 export const Route = createFileRoute("/_authenticated/_game")({
   component: GameLayout,
@@ -51,6 +53,7 @@ function GameLayout() {
     select: (state) =>
       typeof (state.location.search as Record<string, unknown>)["visit"] === "string",
   });
+  const homeHud = (pathname === "/home" || pathname === "/house") && !visitingFriend;
   const qc = useQueryClient();
   const {
     data: character,
@@ -264,6 +267,7 @@ function GameLayout() {
           className={cn(
             "game-shell city-game navigation-redesign card-refresh dashboard-ui-refresh min-h-screen pb-20 md:pb-0",
             pathname === "/house" && "home-scene",
+            homeHud && "home-hud",
             profile?.reduced_motion && "reduce-motion",
             phoneOpen && "phone-open",
             (housingOpen || inventoryOpen) && "hud-menu-open",
@@ -271,7 +275,7 @@ function GameLayout() {
             hudIdle && "hud-idle",
           )}
         >
-          <WorldEnvironment />
+          <WorldEnvironment immersive={homeHud} />
           <OutsideTransition />
           <div className="city-game-frame">
             <div className="city-game-content">
@@ -279,6 +283,7 @@ function GameLayout() {
                 className={cn(
                   "city-game-main",
                   pathname !== "/home" &&
+                    pathname !== "/house" &&
                     pathname !== "/map" &&
                     pathname !== "/jobs" &&
                     pathname !== "/neighborhood"
@@ -286,7 +291,7 @@ function GameLayout() {
                     : undefined,
                 )}
               >
-                {(pathname === "/home" || pathname === "/neighborhood") && !visitingFriend ? (
+                {homeHud || (pathname === "/neighborhood" && !visitingFriend) ? (
                   <HomeDashboard
                     player={player}
                     location={currentLocation?.name ?? "Osogbo"}
@@ -300,6 +305,8 @@ function GameLayout() {
               </main>
             </div>
           </div>
+
+          {homeHud && <HomePlayerStatus key={player.id} player={player} />}
 
           <GameNeedsRail
             key={pathname === "/map" ? "map" : "game"}

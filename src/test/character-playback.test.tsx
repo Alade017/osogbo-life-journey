@@ -117,14 +117,93 @@ describe("upgraded character frame playback", () => {
   });
 });
 
-it("keeps the idle loop requesting frames on a demand-rendered canvas", () => {
+it("settles animated idle without unnecessary frame invalidation", () => {
   render(<CharacterBody variant="male" height={1} motion="Idle" />);
-  for (let i = 0; i < 1800; i++) {
-    runtime.invalidate.mockClear();
-    runtime.frame!({ clock: { elapsedTime: i / 60 } }, 1 / 60);
-    expect(runtime.invalidate, `idle frame ${i}`).toHaveBeenCalled();
-  }
+
+  const rig = play(3);
+  const bone = rig.byName.get(BONE.head)!;
+  const angleCheck = vi.spyOn(bone.quaternion, "angleTo");
+
+  runtime.invalidate.mockClear();
+  play(1);
+
+  expect(angleCheck).not.toHaveBeenCalled();
+  expect(runtime.invalidate).not.toHaveBeenCalled();
 });
+
+it.each(["Sit", "Stretch"] as const)("skips settled %s skeletal calculations", (motion) => {
+  render(<CharacterBody variant="male" height={1} motion={motion} />);
+
+  const rig = play(3);
+  const angleCheck = vi.spyOn(rig.byName.get(BONE.rUpperArm)!.quaternion, "angleTo");
+
+  runtime.invalidate.mockClear();
+  play(1);
+
+  expect(angleCheck).not.toHaveBeenCalled();
+  expect(runtime.invalidate).not.toHaveBeenCalled();
+});
+
+it("resumes skeletal animation from settled idle", () => {
+  const view = render(<CharacterBody variant="male" height={1} motion="Idle" />);
+  const rig = play(3);
+
+  view.rerender(<CharacterBody variant="male" height={1} motion="Walk" />);
+
+  runtime.invalidate.mockClear();
+  play(1);
+
+  expect(runtime.rigs).toHaveLength(1);
+  expect(runtime.rigs[0]).toBe(rig);
+  expect(runtime.invalidate).toHaveBeenCalled();
+});
+
+it("evaluates a replacement rig after settling", () => {
+  const view = render(<CharacterBody variant="male" height={1} motion="Idle" />);
+  const previous = play(3);
+
+  view.rerender(<CharacterBody variant="female" height={1} motion="Idle" />);
+
+  const replacement = runtime.rigs.at(-1)!;
+  expect(replacement).not.toBe(previous);
+
+  const angleCheck = vi.spyOn(replacement.byName.get(BONE.head)!.quaternion, "angleTo");
+
+  play(1);
+
+  expect(angleCheck).toHaveBeenCalled();
+});
+
+it("resumes playback when reduced motion is disabled", () => {
+  const view = render(<CharacterBody variant="male" height={1} motion="Dance" animated={false} />);
+
+  const rig = play(3);
+  const before = rig.byName.get(BONE.rUpperArm)!.quaternion.clone();
+
+  view.rerender(<CharacterBody variant="male" height={1} motion="Dance" animated={true} />);
+
+  runtime.invalidate.mockClear();
+  play(0.5);
+
+  expect(runtime.invalidate).toHaveBeenCalled();
+  expect(rig.byName.get(BONE.rUpperArm)!.quaternion.angleTo(before)).toBeGreaterThan(0.001);
+});
+
+it.each(["Walk", "Talk", "Wash", "Cook", "Collect", "Work", "Interact", "Dance"] as const)(
+  "keeps %s requesting animation frames",
+  (motion) => {
+    render(<CharacterBody variant="male" height={1} motion={motion} />);
+
+    play(3);
+
+    for (let i = 0; i < 60; i++) {
+      runtime.invalidate.mockClear();
+      runtime.frame!({ clock: { elapsedTime: 3 + i / 60 } }, 1 / 60);
+
+      expect(runtime.invalidate).toHaveBeenCalled();
+    }
+  },
+);
 
 it("settles a reduced-motion idle pose without scheduling an endless animation loop", () => {
   render(<CharacterBody variant="male" height={1} motion="Idle" animated={false} />);
@@ -165,7 +244,6 @@ it("holds a still dance pose with reduced motion", () => {
   expect(point(rig, BONE.rHand).distanceTo(hand)).toBeLessThan(0.001);
 });
 
-
 it("attaches worn back accessories to the animated upper spine", () => {
   render(
     <CharacterBody
@@ -177,4 +255,32 @@ it("attaches worn back accessories to the animated upper spine", () => {
   );
   const rig = runtime.rigs[0]!;
   expect(runtime.portals).toContain(rig.byName.get(BONE.spine2));
+});
+
+it.each(["Walk", "Talk", "Dance"] as const)(
+  "keeps requesting frames for looping %s playback",
+  (motion) => {
+    render(<CharacterBody variant="male" height={1} motion={motion} />);
+    play(3);
+
+    runtime.invalidate.mockClear();
+    play(0.5);
+
+    expect(runtime.invalidate).toHaveBeenCalled();
+  },
+);
+
+it("resumes frame invalidation when transitioning from settled idle to talking", () => {
+  const view = render(<CharacterBody variant="male" height={1} motion="Idle" />);
+  play(3);
+
+  runtime.invalidate.mockClear();
+  play(0.5);
+  expect(runtime.invalidate).not.toHaveBeenCalled();
+
+  view.rerender(<CharacterBody variant="male" height={1} motion="Talk" />);
+  runtime.invalidate.mockClear();
+  play(0.5);
+
+  expect(runtime.invalidate).toHaveBeenCalled();
 });

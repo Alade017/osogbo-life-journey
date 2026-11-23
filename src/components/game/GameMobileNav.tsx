@@ -32,6 +32,7 @@ export function GameMobileNav({
       </Link>
       <Link
         to="/map"
+        data-core-action="true"
         activeProps={{ className: "gbb-active" }}
         className="gbb-link"
         onClick={onNavigate}
@@ -41,16 +42,19 @@ export function GameMobileNav({
       </Link>
       <Link
         to="/jobs"
+        aria-label="Career Life"
+        data-core-action="true"
         activeProps={{ className: "gbb-active" }}
         className="gbb-link"
         onClick={onNavigate}
       >
         <Briefcase className="h-4.75 w-4.75" />
-        <span>Career Life</span>
+        <span>Career</span>
       </Link>
       <button
         type="button"
         className="gbb-link"
+        data-core-action="true"
         onClick={onInventoryOpen}
         aria-label="Open inventory"
       >

@@ -2,8 +2,9 @@ import { Component, type ReactNode } from "react";
 
 type VenueSceneBoundaryProps = {
   children: ReactNode;
-  onError: () => void;
-  /** Change when the destination scene changes so a prior failure cannot poison the next scene. */
+  onError?: () => void;
+  fallback?: ReactNode;
+  /** Change when the destination changes so a prior failure cannot poison the next scene. */
   resetKey?: string | number;
 };
 
@@ -36,10 +37,10 @@ export class VenueSceneBoundary extends Component<
   }
 
   override componentDidCatch() {
-    this.props.onError();
+    this.props.onError?.();
   }
 
   override render() {
-    return this.state.failed ? null : this.props.children;
+    return this.state.failed ? (this.props.fallback ?? null) : this.props.children;
   }
 }

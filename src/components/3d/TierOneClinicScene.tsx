@@ -1,5 +1,6 @@
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { WorldMaterial } from "./WorldScene";
+import { SceneBoxGeometryProvider, useSceneBoxGeometry } from "./scene-box-geometries";
 import {
   CLINIC_ROOMS,
   CLINIC_CORRIDORS,
@@ -16,9 +17,9 @@ function Box({
   size: [number, number, number];
   color?: string | undefined;
 }) {
+  const geometry = useSceneBoxGeometry(size);
   return (
-    <mesh position={position} castShadow receiveShadow>
-      <boxGeometry args={size} />
+    <mesh position={position} castShadow receiveShadow geometry={geometry}>
       <WorldMaterial tone="wall" color={color} />
     </mesh>
   );
@@ -86,7 +87,12 @@ function RoomProps({ room }: { room: ClinicRoom }) {
             <group key={x}>
               <Box position={[x, 1.1, 0.5]} size={[0.8, 2.2, 0.7]} color={WORLD_PALETTE.foliage} />
               {[0.6, 1.2, 1.8].map((y) => (
-                <Box key={y} position={[x, y, 0.95]} size={[0.65, 0.3, 0.2]} color={WORLD_PALETTE.linen} />
+                <Box
+                  key={y}
+                  position={[x, y, 0.95]}
+                  size={[0.65, 0.3, 0.2]}
+                  color={WORLD_PALETTE.linen}
+                />
               ))}
             </group>
           ))}
@@ -117,7 +123,7 @@ function RoomProps({ room }: { room: ClinicRoom }) {
     </group>
   );
 }
-export function TierOneClinicScene({
+function TierOneClinicContents({
   exterior = false,
   selectedRoom = "reception",
   onRoomSelect,
@@ -177,7 +183,12 @@ export function TierOneClinicScene({
           <Box position={[13, 1.2, 22]} size={[3, 2.4, 3]} color={WORLD_PALETTE.wall} />
           <Box position={[3, 1, 24]} size={[10, 0.1, 0.12]} color={WORLD_PALETTE.sign} />
           {[-16, 16].map((x) => (
-            <Box key={x} position={[x, 0.6, 4]} size={[0.2, 1.2, 40]} color={WORLD_PALETTE.concrete} />
+            <Box
+              key={x}
+              position={[x, 0.6, 4]}
+              size={[0.2, 1.2, 40]}
+              color={WORLD_PALETTE.concrete}
+            />
           ))}
           <Box position={[0, 0.6, -16]} size={[32, 1.2, 0.2]} color={WORLD_PALETTE.concrete} />
         </>
@@ -261,7 +272,11 @@ export function TierOneClinicScene({
           {[-1, 1].map((side) => (
             <group key={side}>
               <Box position={[side * 6.5, 1.6, 9]} size={[11, 3.2, 0.15]} />
-              <Box position={[side * 0.5, 1.1, 9.05]} size={[0.95, 2.2, 0.06]} color={WORLD_PALETTE.glass} />
+              <Box
+                position={[side * 0.5, 1.1, 9.05]}
+                size={[0.95, 2.2, 0.06]}
+                color={WORLD_PALETTE.glass}
+              />
               {[3, 7, 10].map((x) => (
                 <Box
                   key={x}
@@ -278,12 +293,20 @@ export function TierOneClinicScene({
             <WorldMaterial tone="concrete" />
           </mesh>
           {[-1.3, 1.3].map((x) => (
-            <Box key={x} position={[x, 0.9, 10.5]} size={[0.05, 0.05, 3]} color={WORLD_PALETTE.metal} />
+            <Box
+              key={x}
+              position={[x, 0.9, 10.5]}
+              size={[0.05, 0.05, 3]}
+              color={WORLD_PALETTE.metal}
+            />
           ))}
         </>
       ) : (
         fixtures?.map((f) => {
-          const p = (f.kind === "counter" ? [-8, 4] : f.kind === "seat" ? [7, 4] : [-9, -6]) as [number, number];
+          const p = (f.kind === "counter" ? [-8, 4] : f.kind === "seat" ? [7, 4] : [-9, -6]) as [
+            number,
+            number,
+          ];
           return (
             <group
               key={f.id}
@@ -295,12 +318,23 @@ export function TierOneClinicScene({
             >
               <mesh rotation={[-Math.PI / 2, 0, 0]}>
                 <ringGeometry args={[0.6, 0.75, 24]} />
-                <meshBasicMaterial color={selected === f.id ? WORLD_PALETTE.sign : WORLD_PALETTE.foliage} />
+                <meshBasicMaterial
+                  color={selected === f.id ? WORLD_PALETTE.sign : WORLD_PALETTE.foliage}
+                />
               </mesh>
             </group>
           );
         })
       )}
     </group>
+  );
+}
+
+/** Keep resources scoped to this clinic scene, including exterior and room transitions. */
+export function TierOneClinicScene(props: Parameters<typeof TierOneClinicContents>[0]) {
+  return (
+    <SceneBoxGeometryProvider>
+      <TierOneClinicContents {...props} />
+    </SceneBoxGeometryProvider>
   );
 }

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { CalendarDays, Zap } from "lucide-react";
+import { Building2, CalendarDays, Zap } from "lucide-react";
 import { LiveOsogboWeather } from "@/components/game/LiveOsogboWeather";
 import { Link } from "@tanstack/react-router";
 import { useWorldClock } from "@/hooks/use-world-clock";
@@ -12,7 +12,7 @@ import { useGameScreenAlerts } from "@/hooks/use-game-screen-alerts";
 import { useCityEvents } from "@/hooks/use-city-events";
 import { cityEventTransitions, type CityEventOccurrence } from "@/lib/city-event-service";
 
-export function WorldEnvironment() {
+export function WorldEnvironment({ immersive = false }: { immersive?: boolean }) {
   useGameAudioEvents();
   useGameScreenAlerts();
   const world = useWorldClock();
@@ -63,11 +63,32 @@ export function WorldEnvironment() {
     previousEvents.current = next;
   }, [eventQuery.data, eventQuery.isError]);
 
+  const conditions = (
+    <>
+      <LiveOsogboWeather compact={immersive} />
+      <span className="world-clock-label">
+        {immersive && <Building2 size={22} aria-hidden="true" />}
+        CITY · {formatGameTime(time)}
+      </span>
+    </>
+  );
+
   if (!world.data)
     return (
       <div className="world-environment" role="status">
-        <LiveOsogboWeather />
-        {world.isError ? "City conditions unavailable" : "Connecting to the city clock…"}
+        {immersive ? (
+          <div className="home-world-conditions">
+            <LiveOsogboWeather compact />
+            <span className="world-clock-label">
+              {world.isError ? "City clock unavailable" : "Connecting…"}
+            </span>
+          </div>
+        ) : (
+          <>
+            <LiveOsogboWeather />
+            {world.isError ? "City conditions unavailable" : "Connecting to the city clock…"}
+          </>
+        )}
         {world.isError && (
           <button type="button" onClick={() => void world.refetch()}>
             Retry
@@ -83,8 +104,7 @@ export function WorldEnvironment() {
       data-world-weather={weather}
       aria-label="Current world conditions"
     >
-      <LiveOsogboWeather />
-      <span className="world-clock-label">CITY · {formatGameTime(time)}</span>
+      {immersive ? <div className="home-world-conditions">{conditions}</div> : conditions}
       {outage && (
         <span className="world-condition world-outage">
           <Zap size={15} /> Home power outage · until 8 PM

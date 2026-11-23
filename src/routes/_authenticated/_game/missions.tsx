@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMissionClaim } from "@/hooks/use-mission-claim";
 import { useMissions } from "@/hooks/use-missions";
 import { createFileRoute } from "@tanstack/react-router";
@@ -19,16 +20,33 @@ function MissionsPage() {
   const { user } = Route.useRouteContext();
   const { data: missions, isLoading, isError, refetch, userId, characterId } = useMissions();
   const claim = useMissionClaim(userId, characterId);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
+
+  async function claimReward(id: string) {
+    setClaimingId(id);
+    try {
+      await claim.mutate(id);
+    } finally {
+      setClaimingId(null);
+    }
+  }
   if (isLoading) return <LoadingState />;
   const sorted = orderedMissions(missions ?? []);
+  const readyToClaim = sorted.filter((mission) => mission.status === "completed").length;
 
   return (
-    <div>
+    <div className="mission-progress-page">
       <PageHeader
         eyebrow="YOUR NEXT STEPS"
         title="Missions"
         subtitle={`${sorted.filter((m) => m.status === "claimed").length}/${sorted.length} completed`}
       />
+      {readyToClaim > 0 && (
+        <p className="mission-rewards-ready" role="status">
+          <Gift size={18} aria-hidden="true" />
+          {readyToClaim} mission reward{readyToClaim === 1 ? "" : "s"} ready to claim
+        </p>
+      )}
       <DailyTasks userId={user.id} />
       <LoginStreakSummary />
       <h2 className="mb-4 text-2xl font-bold">Lifetime missions</h2>
@@ -42,10 +60,13 @@ function MissionsPage() {
         {sorted.map((pm) => {
           const m = pm.mission!;
           const money = m.slug === "earn_10000";
+          const progressRatio = m.target > 0 ? Math.max(0, Math.min(1, pm.progress / m.target)) : 0;
+          const nearlyComplete =
+            pm.status !== "claimed" && pm.status !== "completed" && progressRatio >= 0.8;
           return (
             <div
               key={pm.id}
-              className={`game-panel border-l-4 p-5 ${pm.status === "completed" ? "border-l-sun" : "border-l-transparent"}`}
+              className={`game-panel mission-progress-card border-l-4 p-5 ${pm.status === "completed" ? "is-ready border-l-sun" : pm.status === "claimed" ? "is-claimed border-l-transparent" : nearlyComplete ? "is-near-goal border-l-primary" : "border-l-transparent"}`}
             >
               <div className="flex items-start justify-between gap-2">
                 <h3 className="text-xl font-bold">{m.title}</h3>
@@ -56,11 +77,36 @@ function MissionsPage() {
                 ) : pm.status === "completed" ? (
                   <Chip tone="clay">Ready!</Chip>
                 ) : (
-                  <Chip>In progress</Chip>
+                  <Chip>{nearlyComplete ? "Almost there" : "In progress"}</Chip>
                 )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{m.description}</p>
-              <div className="mt-4">
+              <ol className="mission-stage-path" aria-label={`${m.title} reward stages`}>
+                <li
+                  className={`mission-stage${pm.status === "completed" || pm.status === "claimed" ? " is-complete" : " is-current"}`}
+                  aria-current={
+                    pm.status !== "completed" && pm.status !== "claimed" ? "step" : undefined
+                  }
+                >
+                  <span className="mission-stage-node" aria-hidden="true" />
+                  <span>In progress</span>
+                </li>
+                <li
+                  className={`mission-stage${pm.status === "claimed" ? " is-complete" : pm.status === "completed" ? " is-current" : ""}`}
+                  aria-current={pm.status === "completed" ? "step" : undefined}
+                >
+                  <span className="mission-stage-node" aria-hidden="true" />
+                  <span>Ready to claim</span>
+                </li>
+                <li
+                  className={`mission-stage${pm.status === "claimed" ? " is-current" : ""}`}
+                  aria-current={pm.status === "claimed" ? "step" : undefined}
+                >
+                  <span className="mission-stage-node" aria-hidden="true" />
+                  <span>Claimed</span>
+                </li>
+              </ol>
+              <div className="mission-progress-track mt-4">
                 <StatBar
                   label={
                     money ? `${formatNaira(pm.progress)} / ${formatNaira(m.target)}` : "Progress"
@@ -70,8 +116,8 @@ function MissionsPage() {
                   tone="primary"
                 />
               </div>
-              <div className="mt-4 flex items-center justify-between gap-2">
-                <p className="flex items-center gap-1 text-sm font-semibold">
+              <div className="mission-reward-row mt-4 flex items-center justify-between gap-2">
+                <p className="mission-reward-value flex items-center gap-1 text-sm font-semibold">
                   <Gift className="h-4 w-4" /> {formatNaira(m.reward_money)}
                   {m.reward_xp ? ` · ${m.reward_xp} XP` : ""}
                 </p>
@@ -79,10 +125,12 @@ function MissionsPage() {
                   <Button
                     variant="default"
                     size="sm"
+                    className="mission-claim-action"
                     disabled={claim.isPending}
-                    onClick={() => claim.mutate(pm.id)}
+                    aria-busy={claimingId === pm.id}
+                    onClick={() => void claimReward(pm.id)}
                   >
-                    Claim reward
+                    {claimingId === pm.id ? "Claiming…" : "Claim reward"}
                   </Button>
                 )}
               </div>

@@ -195,7 +195,6 @@ function MarketAppContent({ characterId }: { characterId: string }) {
             <ShoppingBag aria-hidden="true" size={21} />
           </span>
           <div>
-            <span className="market-app-eyebrow">Osogbo marketplace</span>
             <h2>Market</h2>
             <p>Shop nearby, manage your stall, and discover local sellers.</p>
           </div>
@@ -235,6 +234,11 @@ function MarketAppContent({ characterId }: { characterId: string }) {
       </div>
 
       <div className="phone-sub-content">
+        {tab === "shops" && !shopsOpen && (
+          <p className="market-interaction-tip">
+            Choose a city shop to browse available goods and prices.
+          </p>
+        )}
         {tab === "players" ? (
           character?.user_id ? (
             <PublicStallDirectory key={character.user_id} accountId={character.user_id} />
@@ -754,6 +758,9 @@ function MarketAppContent({ characterId }: { characterId: string }) {
             <button type="button" className="market-app-back" onClick={() => setShopsOpen(false)}>
               ← Back to Market
             </button>
+            <p className="market-interaction-tip">
+              Choose a quantity, then review the total before buying.
+            </p>
             <div className="market-app-shop-summary flex items-center justify-between text-xs px-1">
               <span className="font-semibold text-muted-foreground">
                 Wallet Cash:{" "}
@@ -774,10 +781,20 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                     item &&
                     unitPrice > 0 &&
                     quantity >= minimumQuantity &&
-                    (offer.stock === null || offer.stock >= quantity);
+                    (offer.stock === null || offer.stock >= quantity) &&
+                    !quote.error;
+                  const purchaseIssue =
+                    !item || unitPrice <= 0
+                      ? "This item is not available for purchase."
+                      : offer.stock !== null && offer.stock < quantity
+                        ? "Not enough stock for the selected quantity."
+                        : quote.error;
 
                   return (
-                    <div key={offer.id} className="phone-card market-app-product p-3 space-y-2">
+                    <div
+                      key={offer.id}
+                      className="phone-card market-app-product market-app-offer p-3"
+                    >
                       <div className="flex items-start gap-2.5">
                         <span className="p-2 rounded-lg bg-primary/10 text-primary flex-none">
                           <ShoppingBag className="h-4 w-4" />
@@ -791,10 +808,19 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
+                      <div className="market-app-purchase-row flex items-center justify-between gap-2 pt-1 border-t border-border/40">
                         <div className="flex items-center gap-2">
-                          <label className="text-xs text-muted-foreground">Qty:</label>
+                          <label
+                            htmlFor={`market-quantity-${offer.id}`}
+                            className="text-xs text-muted-foreground"
+                          >
+                            Qty:
+                          </label>
                           <input
+                            id={`market-quantity-${offer.id}`}
+                            aria-describedby={
+                              purchaseIssue ? `market-purchase-issue-${offer.id}` : undefined
+                            }
                             type="number"
                             min={minimumQuantity}
                             max={item?.stackable ? item.max_stack : 1}
@@ -809,10 +835,18 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold">{formatNaira(quote.total)}</span>
+                          <span
+                            className="market-app-purchase-total text-xs font-bold"
+                            aria-label={`Total: ${formatNaira(quote.total)}`}
+                          >
+                            {formatNaira(quote.total)}
+                          </span>
                           <button
                             type="button"
                             disabled={!canBuy || purchase.isPending}
+                            aria-describedby={
+                              purchaseIssue ? `market-purchase-issue-${offer.id}` : undefined
+                            }
                             onClick={() =>
                               purchase.mutate({
                                 shopItemId: offer.id,
@@ -820,12 +854,20 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                                 requestId: crypto.randomUUID(),
                               })
                             }
-                            className="text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
+                            className="market-app-buy text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
                           >
                             Buy
                           </button>
                         </div>
                       </div>
+                      {purchaseIssue && (
+                        <p
+                          id={`market-purchase-issue-${offer.id}`}
+                          className="market-app-purchase-hint text-xs text-muted-foreground"
+                        >
+                          {purchaseIssue}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
