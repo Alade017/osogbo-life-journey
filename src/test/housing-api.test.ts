@@ -71,6 +71,29 @@ describe("unified housing API handlers", () => {
     expect(pay.status).toBe(200);
     expect(resolve.status).toBe(200);
     expect(calls.payRent).toHaveBeenCalledWith("player-1", requestId);
-    expect(calls.resolveOverdue).toHaveBeenCalledWith("player-1", "loan", requestId);
+    expect(calls.resolveOverdue).toHaveBeenCalledWith("player-1", "loan", requestId, null);
+  });
+
+  it("passes the rental kind to overdue resolution and refuses an unknown kind", async () => {
+    const { handlers, calls } = setup();
+    const stall = await handlers.postResolveOverdue(
+      new Request("https://game.test/api/housing/resolve-overdue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": requestId },
+        body: JSON.stringify({ option: "job", kind: "stall" }),
+      }),
+    );
+    expect(stall.status).toBe(200);
+    expect(calls.resolveOverdue).toHaveBeenCalledWith("player-1", "job", requestId, "stall");
+
+    const unknown = await handlers.postResolveOverdue(
+      new Request("https://game.test/api/housing/resolve-overdue", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": requestId },
+        body: JSON.stringify({ option: "job", kind: "garden" }),
+      }),
+    );
+    expect(unknown.status).toBe(400);
+    expect(calls.resolveOverdue).toHaveBeenCalledTimes(1);
   });
 });

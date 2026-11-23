@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { q, rpc } from "@/lib/game";
+import { q } from "@/lib/game";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
 import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
@@ -216,20 +216,6 @@ function GameLayout() {
     window.addEventListener("osogbo-open-housing", reopen);
     return () => window.removeEventListener("osogbo-open-housing", reopen);
   }, []);
-
-  useEffect(() => {
-    if (!character?.id) return;
-    void rpc
-      .processPropertyRent()
-      .then(() =>
-        Promise.all([
-          qc.invalidateQueries({ queryKey: ["wallet"] }),
-          qc.invalidateQueries({ queryKey: ["transactions"] }),
-          qc.invalidateQueries({ queryKey: ["rentStatus"] }),
-        ]),
-      )
-      .catch(() => {});
-  }, [character?.id, qc]);
 
   if (isError)
     return (

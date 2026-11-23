@@ -81,6 +81,16 @@ beforeAll(async () => {
   await db.exec(
     readFileSync("supabase/migrations/20261121234233_stall_stock_receipts.sql", "utf8"),
   );
+  // The new migration declares the shared-home row types, so their tables must exist first.
+  for (const file of [
+    "supabase/migrations/20261111024351_shared_home_tenancy_tables.sql",
+    "supabase/migrations/20261111024630_shared_home_join_leave.sql",
+    "supabase/migrations/20261111025428_shared_home_placements.sql",
+    "supabase/migrations/20261111025959_shared_home_tenant_space.sql",
+    "supabase/migrations/20261123040000_home_and_stall_together.sql",
+  ]) {
+    await db.exec(readFileSync(file, "utf8"));
+  }
 }, 180_000);
 
 beforeEach(async () => {

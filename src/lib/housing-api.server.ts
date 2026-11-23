@@ -1,3 +1,12 @@
+/** Which rental an overdue or relief action is for. Omitted means any, as before. */
+export type HousingKind = "home" | "stall";
+
+export function housingKindFrom(value: unknown): HousingKind | null {
+  if (value === undefined || value === null) return null;
+  if (value === "home" || value === "stall") return value;
+  throw new Error("INVALID_REQUEST");
+}
+
 type HousingApiDependencies = {
   authenticate: (request: Request) => Promise<string | null>;
   properties: (userId: string) => Promise<unknown>;
@@ -6,7 +15,12 @@ type HousingApiDependencies = {
   rent: (userId: string, houseTypeId: string, key: string) => Promise<unknown>;
   rentProperty: (userId: string, propertyId: string, key: string) => Promise<unknown>;
   payRent: (userId: string, key: string) => Promise<unknown>;
-  resolveOverdue: (userId: string, option: "loan" | "job", key: string) => Promise<unknown>;
+  resolveOverdue: (
+    userId: string,
+    option: "loan" | "job",
+    key: string,
+    kind?: HousingKind | null,
+  ) => Promise<unknown>;
   defer: (userId: string) => Promise<unknown>;
   home: (userId: string) => Promise<unknown>;
   mutateItem: (userId: string, payload: Record<string, unknown>) => Promise<unknown>;
@@ -41,7 +55,7 @@ const reasonByCode: Record<string, string> = {
   INCOME_TOO_LOW: "This home needs more weekly income or additional income sources.",
   UNKNOWN_HOUSE: "This home is no longer available. Refresh the list and choose another.",
   IDEMPOTENCY_CONFLICT: "This rent request key was already used for a different home.",
-  ALREADY_RENTING: "You already have an active rental.",
+  ALREADY_RENTING: "You already have a home. Sell it or move out before taking another.",
   HOUSE_INELIGIBLE: "You do not meet the requirements for this home.",
   NO_RENT_DUE: "There is no active rent payment due for this home.",
   OVERDUE_OPTION_UNAVAILABLE: "This overdue option is no longer available.",
@@ -125,9 +139,10 @@ export function createHousingApiHandlers(deps: HousingApiDependencies) {
         const body: unknown = await request.json().catch(() => null);
         if (!validBody(body) || (body["option"] !== "loan" && body["option"] !== "job"))
           throw new Error("INVALID_REQUEST");
+        const kind = housingKindFrom(body["kind"]);
         const key = request.headers.get("Idempotency-Key")?.trim();
         if (!uuid(key)) throw new Error("INVALID_IDEMPOTENCY_KEY");
-        return deps.resolveOverdue(userId, body["option"], key);
+        return deps.resolveOverdue(userId, body["option"], key, kind);
       }),
     postDefer: (request: Request) => withUser(request, deps.defer),
     getHome: (request: Request) => withUser(request, deps.home),
@@ -215,11 +230,12 @@ async function productionHandlers() {
       if (error) throw new Error(error.message);
       return data;
     },
-    resolveOverdue: async (userId, option, key) => {
+    resolveOverdue: async (userId, option, key, kind) => {
       const { data, error } = await housingRpc("resolve_property_overdue", {
         p_user_id: userId,
         p_option: option,
         p_request_id: key,
+        p_kind: kind ?? null,
       });
       if (error) throw new Error(error.message);
       return data;

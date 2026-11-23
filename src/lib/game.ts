@@ -611,7 +611,6 @@ export const rpc = {
       level: number;
     },
   promoteCurrentJob: async () => unwrap(await supabase.rpc("promote_current_job")) as Json,
-  processPropertyRent: async () => unwrap(await supabase.rpc("process_my_property_rent")) as Json,
   acquireProperty: async (args: { propertyId: string; tenure: "owned" | "rented" }) =>
     unwrap(
       await supabase.rpc("acquire_game_property", {
