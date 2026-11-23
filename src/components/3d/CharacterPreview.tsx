@@ -43,7 +43,7 @@ export function CharacterPreview({
       <Canvas
         dpr={[1, 1.5]}
         frameloop="demand"
-        shadows
+        shadows="percentage"
         camera={{ position: camera.position, fov: camera.fov, near: 0.1, far: 30 }}
         onCreated={({ camera: cam }) => cam.lookAt(...camera.target)}
         gl={{ antialias: interactive, powerPreference: "low-power" }}

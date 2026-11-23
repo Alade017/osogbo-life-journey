@@ -2,8 +2,9 @@ import { WorldSceneProvider, WorldSceneViewport } from "@/components/3d/WorldSce
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { q, rpc } from "@/lib/game";
+import { q } from "@/lib/game";
 import { GameDataUnavailable, LoadingState } from "@/components/game/ui";
+import { gateLoadingCopy } from "@/lib/game-loading-copy";
 import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { HomePlayerStatus } from "@/components/game/HomePlayerStatus";
@@ -221,30 +222,22 @@ function GameLayout() {
     return () => window.removeEventListener("osogbo-open-housing", reopen);
   }, []);
 
-  useEffect(() => {
-    if (!character?.id) return;
-    void rpc
-      .processPropertyRent()
-      .then(() =>
-        Promise.all([
-          qc.invalidateQueries({ queryKey: ["wallet"] }),
-          qc.invalidateQueries({ queryKey: ["transactions"] }),
-          qc.invalidateQueries({ queryKey: ["rentStatus"] }),
-        ]),
-      )
-      .catch(() => {});
-  }, [character?.id, qc]);
-
   if (isError)
     return (
       <GameDataUnavailable error={error} onRetry={() => void refetch()} isRetrying={isRefetching} />
     );
-  if (isLoading || !character)
+  if (isLoading || !character) {
+    const gate = gateLoadingCopy(pathname, visitingFriend);
     return (
       <div className="game-shell min-h-screen">
-        <LoadingState />
+        <LoadingState
+          title={gate.title}
+          detail={gate.detail}
+          queryKeys={[q.character().queryKey]}
+        />
       </div>
     );
+  }
 
   const player = playerStateFromRows({
     character,

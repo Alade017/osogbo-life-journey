@@ -4,6 +4,7 @@ import {
   placementPoint,
   packagePoint,
   roomObstacles,
+  runHomeEntryWalk,
   type RoomPoint,
   placementsOverlappingWalls,
   runHouseStairTransition,
@@ -81,6 +82,7 @@ import { ACTION_CATALOG, type LifeActionId } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
 import { canonicalHomeOptions } from "@/lib/living-cost-service";
+import { normalizeCanonicalHome, type CanonicalHome } from "@/lib/canonical-home";
 import { HouseSceneSkeleton } from "@/components/game/loading-skeletons";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -133,21 +135,6 @@ type HouseState = {
   inventory: HouseInventoryItem[];
 };
 type HouseStateSnapshot = { state: HouseState; source: "server" };
-type CanonicalHome = {
-  propertyId: string;
-  playerPropertyId: string;
-  houseTypeId: string;
-  name: string;
-  imageUrl: string | null;
-  district: string | null;
-  tenure: string;
-  status: string | null;
-  dueAt: string | null;
-  graceEndsAt: string | null;
-  rescueEndsAt: string | null;
-  weeklyRentMinor: number;
-  accessoryBand: string;
-};
 type CatalogItem = {
   id: string;
   category: string;
@@ -269,31 +256,6 @@ function formatRentDate(value: string | null | undefined) {
     dateStyle: "medium",
     timeZone: "Africa/Lagos",
   }).format(date);
-}
-
-function normalizeCanonicalHome(value: unknown): CanonicalHome | null {
-  if (
-    !isRecord(value) ||
-    typeof value["propertyId"] !== "string" ||
-    typeof value["playerPropertyId"] !== "string"
-  )
-    return null;
-  if (typeof value["houseTypeId"] !== "string" || typeof value["name"] !== "string") return null;
-  return {
-    propertyId: value["propertyId"],
-    playerPropertyId: value["playerPropertyId"],
-    houseTypeId: value["houseTypeId"],
-    name: value["name"],
-    imageUrl: typeof value["imageUrl"] === "string" ? value["imageUrl"] : null,
-    district: typeof value["district"] === "string" ? value["district"] : null,
-    tenure: typeof value["tenure"] === "string" ? value["tenure"] : "rented",
-    status: typeof value["status"] === "string" ? value["status"] : null,
-    dueAt: typeof value["dueAt"] === "string" ? value["dueAt"] : null,
-    graceEndsAt: typeof value["graceEndsAt"] === "string" ? value["graceEndsAt"] : null,
-    rescueEndsAt: typeof value["rescueEndsAt"] === "string" ? value["rescueEndsAt"] : null,
-    weeklyRentMinor: typeof value["weeklyRentMinor"] === "number" ? value["weeklyRentMinor"] : 0,
-    accessoryBand: typeof value["accessoryBand"] === "string" ? value["accessoryBand"] : "basic",
-  };
 }
 
 function legacyHouseState(value: unknown): HouseState | null {
@@ -927,12 +889,27 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           ),
         );
         if (path) {
-          const arrived = await movement.walk([exterior, [doorX, doorY, doorZ], ...path]);
-          if (!arrived) movement.place([doorX, doorY, doorZ]);
+          const arrived = await runHomeEntryWalk({
+            path: [exterior, [doorX, doorY, doorZ], ...path],
+            walk: movement.walk,
+            cancel: movement.cancel,
+            place: movement.place,
+            fallback: [doorX, doorY, doorZ],
+          });
+          if (!arrived)
+            toast.error(
+              "The walk into your home was interrupted. You are back at the entrance; try again.",
+            );
         } else {
           movement.place([doorX, doorY, doorZ]);
           toast.error("The entrance is blocked. Rearrange your furniture to clear the way.");
         }
+      } catch (error) {
+        movement.cancel();
+        movement.place([doorX, doorY, doorZ]);
+        toast.error(
+          error instanceof Error ? error.message : "The home entrance could not be completed.",
+        );
       } finally {
         setDoorOpen(false);
         setDoorInteracting(false);
@@ -1778,6 +1755,43 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       : [];
   return (
     <div className={`house-page house-page-fill${editing ? " is-editing" : ""}`}>
+      {character?.id &&
+        canonicalHome?.tenure === "rented" &&
+        (isOverdue || rentStatus === "due") && (
+          <section className="house-rent-notice" aria-label="Home rent">
+            <p role="status">
+              {rentStatusLabel[rentStatus] ?? "Rent due"}
+              {rentDueAt
+                ? ` · ${new Intl.DateTimeFormat("en-NG", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                    timeZone: "Africa/Lagos",
+                  }).format(new Date(rentDueAt))}`
+                : ""}
+            </p>
+            <button
+              type="button"
+              className="map-primary-button"
+              disabled={isOffline || payRent.isPending}
+              onClick={() => payRent.mutate()}
+            >
+              {payRent.isPending ? "Paying…" : "Pay rent"}
+            </button>
+          </section>
+        )}
+      {character?.id && canonicalHome?.tenure === "rented" && (
+        <HousingReliefPanel
+          characterId={character.id}
+          rentalKind="home"
+          rentStatus={rentStatus}
+          graceEndsAt={canonicalHome.graceEndsAt}
+          rescueEndsAt={canonicalHome.rescueEndsAt}
+          assetLabel="home"
+          offline={isOffline}
+          paying={payRent.isPending}
+          onPayRent={() => payRent.mutate()}
+        />
+      )}
       <div className="house-toolbar">
         <div className="house-scene-controls" role="group" aria-label="Home controls">
           {!editing && canonicalHome && (

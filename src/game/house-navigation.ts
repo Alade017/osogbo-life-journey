@@ -12,6 +12,48 @@ import {
 export type RoomPoint = [number, number, number];
 export type RoomObstacle = { x: number; z: number; w: number; d: number; wall?: boolean };
 
+/** Maximum time allowed for the scripted walk from the doorway into the home. */
+export const HOME_ENTRY_WALK_TIMEOUT_MS = 12_000;
+
+/**
+ * Run the entry walk with a bounded recovery path. A stalled/cancelled animation must
+ * never leave the global transition veil active indefinitely or strand the actor outside.
+ */
+export async function runHomeEntryWalk({
+  path,
+  walk,
+  cancel,
+  place,
+  fallback,
+  timeoutMs = HOME_ENTRY_WALK_TIMEOUT_MS,
+}: {
+  path: RoomPoint[];
+  walk: (path: RoomPoint[]) => Promise<boolean>;
+  cancel: () => void;
+  place: (point: RoomPoint) => void;
+  fallback: RoomPoint;
+  timeoutMs?: number;
+}): Promise<boolean> {
+  let timedOut = false;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutResult = new Promise<boolean>((resolve) => {
+    timeout = setTimeout(() => {
+      timedOut = true;
+      cancel();
+      place(fallback);
+      resolve(false);
+    }, timeoutMs);
+  });
+
+  try {
+    const arrived = await Promise.race([walk(path), timeoutResult]);
+    if (!arrived && !timedOut) place(fallback);
+    return arrived;
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout);
+  }
+}
+
 /** Keep the raised stair animation on the ground-floor scene, then land on a flat floor. */
 export async function runHouseStairTransition({
   stairs,
@@ -178,11 +220,46 @@ export function findRoomPath(
       (o) => Math.abs(x - o.x) < o.w / 2 + 0.2 && Math.abs(z - o.z) < o.d / 2 + 0.2,
     );
   };
-  const nearest = (p: RoomPoint) => {
+  const isBlocked = Array.from({ length: cols * rows }, (_, i) => blocked(i));
+  // Label each open region. A pocket walled in by furniture is too small to leave, so searching from
+  // inside it would fail every time. Such a character is routed from the largest open region instead.
+  const region = new Int32Array(cols * rows).fill(-1);
+  const regionSize: number[] = [];
+  for (let i = 0; i < cols * rows; i++) {
+    if (isBlocked[i] || region[i] !== -1) continue;
+    const id = regionSize.length;
+    let size = 0;
+    const stack = [i];
+    region[i] = id;
+    while (stack.length) {
+      const current = stack.pop()!;
+      size++;
+      const col = current % cols,
+        row = Math.floor(current / cols);
+      for (const [dc, dr] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        const c = col + dc!,
+          r = row + dr!;
+        if (c < 0 || r < 0 || c >= cols || r >= rows) continue;
+        const next = r * cols + c;
+        if (isBlocked[next] || region[next] !== -1) continue;
+        region[next] = id;
+        stack.push(next);
+      }
+    }
+    regionSize.push(size);
+  }
+  if (regionSize.length === 0) return null;
+  const largestRegion = regionSize.indexOf(Math.max(...regionSize));
+  const nearest = (p: RoomPoint, onlyRegion?: number) => {
     let best = -1,
       distance = Infinity;
     for (let i = 0; i < cols * rows; i++) {
-      if (blocked(i)) continue;
+      if (isBlocked[i] || (onlyRegion !== undefined && region[i] !== onlyRegion)) continue;
       const q = point(i),
         d = Math.hypot(q[0] - p[0], q[2] - p[2]);
       if (d < distance) {
@@ -192,12 +269,30 @@ export function findRoomPath(
     }
     return best;
   };
-  if (
-    !interact &&
-    (Math.abs(target[0]) > width / 2 - margin || Math.abs(target[2]) > depth / 2 - margin)
-  )
+  // A floor tap in the wall band (inside the room, closer to a wall than the walkway margin) walks to the
+  // nearest walkable spot instead of failing: the floor there is walkable, only the grid stops short of it.
+  let aim: RoomPoint = target;
+  if (!interact && Math.abs(target[0]) <= width / 2 && Math.abs(target[2]) <= depth / 2) {
+    const limitX = width / 2 - margin,
+      limitZ = depth / 2 - margin;
+    aim = [
+      Math.max(-limitX, Math.min(limitX, target[0])),
+      target[1],
+      Math.max(-limitZ, Math.min(limitZ, target[2])),
+    ];
+  }
+  if (!interact && (Math.abs(aim[0]) > width / 2 - margin || Math.abs(aim[2]) > depth / 2 - margin))
     return null;
-  const origin = nearest(start);
+  // Routes start in the largest open region, because a character walled into a pocket leaves from there.
+  // The exception: a target inside the same pocket as the character is reached from inside it.
+  const startCell = nearest(start);
+  const targetCell = nearest(aim);
+  const inSamePocket =
+    startCell >= 0 &&
+    targetCell >= 0 &&
+    region[startCell] === region[targetCell] &&
+    region[startCell] !== largestRegion;
+  const origin = nearest(start, inSamePocket ? region[startCell] : largestRegion);
   if (origin < 0) return null;
   // Search reachable space first, then choose the nearest reachable interaction spot.
   const queue = [origin],
@@ -217,7 +312,7 @@ export function findRoomPath(
         r = row + dr!;
       if (c < 0 || r < 0 || c >= cols || r >= rows) continue;
       const next = r * cols + c;
-      if (parents.has(next) || blocked(next)) continue;
+      if (parents.has(next) || isBlocked[next]) continue;
       parents.set(next, current);
       queue.push(next);
     }
@@ -226,7 +321,7 @@ export function findRoomPath(
     distance = Infinity;
   for (const i of queue) {
     const p = point(i),
-      d = Math.hypot(p[0] - target[0], p[2] - target[2]);
+      d = Math.hypot(p[0] - aim[0], p[2] - aim[2]);
     if (d >= distance) continue;
     if (
       interact &&
@@ -234,8 +329,8 @@ export function findRoomPath(
         if (!o.wall) return false;
         const samples = Math.max(1, Math.ceil(d / 0.04));
         for (let j = 0; j <= samples; j++) {
-          const x = p[0] + ((target[0] - p[0]) * j) / samples;
-          const z = p[2] + ((target[2] - p[2]) * j) / samples;
+          const x = p[0] + ((aim[0] - p[0]) * j) / samples;
+          const z = p[2] + ((aim[2] - p[2]) * j) / samples;
           if (Math.abs(x - o.x) < o.w / 2 && Math.abs(z - o.z) < o.d / 2) return true;
         }
         return false;
