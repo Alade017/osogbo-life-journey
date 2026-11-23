@@ -18,6 +18,7 @@ import { MALL_PROPS, type MallPropId, type MallTarget } from "@/game/mall-reacti
 import type { AvatarEquipment } from "@/components/game/Avatar";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
+import { SceneBoxGeometryProvider, useSceneBoxGeometry } from "./scene-box-geometries";
 
 /** A cosmetic item the player has placed on the floor. */
 export type PlacedProp = { id: MallPropId; position: WalkPoint };
@@ -84,8 +85,10 @@ function Block({
   color?: string | undefined;
   onClick?: (() => void) | undefined;
 }) {
+  const geometry = useSceneBoxGeometry(size);
   return (
     <mesh
+      geometry={geometry}
       position={at}
       castShadow
       receiveShadow
@@ -95,7 +98,7 @@ function Block({
         onClick();
       }}
     >
-      <boxGeometry args={size} />
+      
       <WorldMaterial tone={tone} {...(color === undefined ? {} : { color })} />
     </mesh>
   );
@@ -499,7 +502,7 @@ function FollowCamera({ sim }: { sim: { current: MallSim } }) {
 }
 
 /** The full mall scene: floor, fixtures, staff, the crowd, other players and the player. */
-export function OsunMall3D({
+function OsunMallContents({
   sim,
   people,
   playerMoving,
@@ -547,5 +550,14 @@ export function OsunMall3D({
         onMove={onMove}
       />
     </>
+  );
+}
+
+/** Each mounted mall owns its fixture geometry; NPC and interaction state stay local. */
+export function OsunMall3D(props: Parameters<typeof OsunMallContents>[0]) {
+  return (
+    <SceneBoxGeometryProvider>
+      <OsunMallContents {...props} />
+    </SceneBoxGeometryProvider>
   );
 }
