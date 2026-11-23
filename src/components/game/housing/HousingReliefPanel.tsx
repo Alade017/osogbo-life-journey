@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { formatNaira, q } from "@/lib/game";
 import {
   getHousingReliefState,
+  type HousingKind,
   housingReliefQueryKey,
   resolveHousingOverdue,
   submitHousingReliefAction,
@@ -15,6 +16,8 @@ type Props = {
   graceEndsAt: string | null;
   rescueEndsAt: string | null;
   assetLabel?: string;
+  /** The rental this panel belongs to, so relief for a home never shows on a stall and the reverse. */
+  rentalKind: HousingKind;
   offline: boolean;
   paying: boolean;
   onPayRent: () => void;
@@ -38,14 +41,15 @@ export function HousingReliefPanel({
   graceEndsAt,
   rescueEndsAt,
   assetLabel = "home",
+  rentalKind,
   offline,
   paying,
   onPayRent,
 }: Props) {
   const queryClient = useQueryClient();
   const relief = useQuery({
-    queryKey: housingReliefQueryKey(characterId),
-    queryFn: getHousingReliefState,
+    queryKey: housingReliefQueryKey(characterId, rentalKind),
+    queryFn: () => getHousingReliefState(rentalKind),
     enabled: !offline,
     retry: false,
     refetchInterval: (query) =>
@@ -63,11 +67,11 @@ export function HousingReliefPanel({
       hustleId?: string;
     }) =>
       kind === "loan" || kind === "job"
-        ? resolveHousingOverdue(kind)
-        : submitHousingReliefAction(kind, hustleId),
+        ? resolveHousingOverdue(kind, rentalKind)
+        : submitHousingReliefAction(kind, hustleId, rentalKind),
     onSuccess: async (_result, variables) => {
       await Promise.all([
-        queryClient.invalidateQueries({ queryKey: housingReliefQueryKey(characterId) }),
+        queryClient.invalidateQueries({ queryKey: housingReliefQueryKey(characterId, rentalKind) }),
         queryClient.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
         queryClient.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
         queryClient.invalidateQueries({ queryKey: ["housingMapProperties"] }),

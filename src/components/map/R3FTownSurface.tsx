@@ -1168,7 +1168,7 @@ export function R3FTownSurface(props: Props) {
         </div>
         <Canvas
           orthographic
-          shadows
+          shadows="percentage"
           frameloop="always"
           dpr={[1, 1.5]}
           gl={{ antialias: false, powerPreference: "low-power" }}

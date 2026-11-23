@@ -44,7 +44,7 @@ export const InteractiveMap = () => {
   return (
     <div className="absolute inset-0 z-0">
       <Canvas
-        shadows
+        shadows="percentage"
         gl={{ antialias: true, toneMapping: ACESFilmicToneMapping }}
         camera={{ position: [0, 15, 15], fov: 45, near: 0.1, far: 200 }}
         className="w-full h-full"
