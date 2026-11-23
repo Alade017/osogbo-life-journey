@@ -778,6 +778,11 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                     unitPrice > 0 &&
                     quantity >= minimumQuantity &&
                     (offer.stock === null || offer.stock >= quantity);
+                  const purchaseIssue = !item || unitPrice <= 0
+                    ? "This item is not available for purchase."
+                    : offer.stock !== null && offer.stock < quantity
+                      ? "Not enough stock for the selected quantity."
+                      : quote.error;
 
                   return (
                     <div key={offer.id} className="phone-card market-app-product p-3 space-y-2">
@@ -794,7 +799,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
+                      <div className="market-app-purchase-row flex items-center justify-between gap-2 pt-1 border-t border-border/40">
                         <div className="flex items-center gap-2">
                           <label htmlFor={`market-quantity-${offer.id}`} className="text-xs text-muted-foreground">Qty:</label>
                           <input
@@ -813,7 +818,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                           />
                         </div>
                         <div className="flex items-center gap-2">
-                          <span className="text-xs font-bold">{formatNaira(quote.total)}</span>
+                          <span className="market-app-purchase-total text-xs font-bold" aria-label={`Total: ${formatNaira(quote.total)}`}>{formatNaira(quote.total)}</span>
                           <button
                             type="button"
                             disabled={!canBuy || purchase.isPending}
@@ -830,6 +835,11 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                           </button>
                         </div>
                       </div>
+                      {purchaseIssue && (
+                        <p className="market-app-purchase-hint text-xs text-muted-foreground" role="status">
+                          {purchaseIssue}
+                        </p>
+                      )}
                     </div>
                   );
                 })}
