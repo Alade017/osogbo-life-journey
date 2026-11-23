@@ -667,8 +667,9 @@
   }
 }
 
-/* UI-17: Preference controls stay visually grouped within their section cards. */
-.sx-page .sx-card {
+/* UI-17: Preference controls stay visually grouped within their section cards.
+   Keep the distinct danger-section surface intact. */
+.sx-page .sx-card:not(.sx-card-danger) {
   border: 1px solid var(--border);
   border-radius: var(--shape-card);
   background: var(--card);
