@@ -1,0 +1,61 @@
+import { renderHook } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { useWorshipRowGeometry } from "@/components/3d/worship-row-geometry";
+
+describe("worship row geometry ownership", () => {
+  it("uses the original prayer-mat and pew dimensions", () => {
+    const mat = renderHook(() => useWorshipRowGeometry(true));
+    expect(mat.result.current.parameters).toMatchObject({ width: 1.5, height: 0.06, depth: 1.0 });
+    const pew = renderHook(() => useWorshipRowGeometry(false));
+    expect(pew.result.current.parameters).toMatchObject({ width: 3.6, height: 0.8, depth: 0.7 });
+    mat.unmount();
+    pew.unmount();
+  });
+
+  it("keeps geometry stable across rerenders, and disposes it on unmount", () => {
+    const hook = renderHook(() => useWorshipRowGeometry(true));
+    const original = hook.result.current;
+    const dispose = vi.spyOn(original, "dispose");
+    hook.rerender();
+    expect(hook.result.current).toBe(original);
+    expect(dispose).not.toHaveBeenCalled();
+    hook.unmount();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("does not dispose another hall's geometry when one hall unmounts", () => {
+    const first = renderHook(() => useWorshipRowGeometry(true));
+    const second = renderHook(() => useWorshipRowGeometry(true));
+    const firstGeometry = first.result.current;
+    const secondGeometry = second.result.current;
+    expect(firstGeometry).not.toBe(secondGeometry);
+    const firstDispose = vi.spyOn(firstGeometry, "dispose");
+    const secondDispose = vi.spyOn(secondGeometry, "dispose");
+    first.unmount();
+    expect(firstDispose).toHaveBeenCalledTimes(1);
+    expect(secondDispose).not.toHaveBeenCalled();
+    second.unmount();
+    expect(secondDispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("releases the old geometry after the row type changes", () => {
+    const hook = renderHook(({ isMosque }) => useWorshipRowGeometry(isMosque), {
+      initialProps: { isMosque: true },
+    });
+    const former = hook.result.current;
+    const dispose = vi.spyOn(former, "dispose");
+    hook.rerender({ isMosque: false });
+    expect(hook.result.current).not.toBe(former);
+    expect(dispose).toHaveBeenCalledTimes(1);
+    hook.unmount();
+  });
+
+  it("allocates fresh geometry after a hall is unmounted and remounted", () => {
+    const first = renderHook(() => useWorshipRowGeometry(false));
+    const original = first.result.current;
+    first.unmount();
+    const next = renderHook(() => useWorshipRowGeometry(false));
+    expect(next.result.current).not.toBe(original);
+    next.unmount();
+  });
+});

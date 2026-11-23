@@ -1,11 +1,12 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import { BoxGeometry, type Group } from "three";
+import type { Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
 import { shopperLook } from "@/game/mall-appearance";
 import type { WorshipLayout } from "@/game/worship-layouts";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
+import { useWorshipRowGeometry } from "./worship-row-geometry";
 
 const WALL_HEIGHT = 4;
 const WALL_THICKNESS = 0.4;
@@ -125,11 +126,7 @@ function Rows({ layout }: { layout: WorshipLayout }) {
   const isMosque = layout.faith === "mosque";
   // Share one geometry among row meshes in this mounted hall, not across scenes.
   // Each hall owns its geometry and disposes it only after all its rows unmount.
-  const geometry = useMemo(
-    () => new BoxGeometry(...(isMosque ? [1.5, 0.06, 1.0] : [3.6, 0.8, 0.7])),
-    [isMosque],
-  );
-  useEffect(() => () => geometry.dispose(), [geometry]);
+  const geometry = useWorshipRowGeometry(isMosque);
   return (
     <group>
       {layout.rows.flatMap((row) =>
