@@ -1427,3 +1427,31 @@
 .pi-profile .pi-xp.is-near-goal + .pi-stage-foot {
   border-color: color-mix(in srgb, var(--brand-royal) 25%, var(--border));
 }
+
+/* UI-13: Present action restrictions beside the corresponding inventory choices. */
+.pi-inventory .pi-action-guidance {
+  display: grid;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-button);
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.pi-inventory .pi-action-guidance p {
+  margin: 0;
+}
+
+/* UI-14: Keep selected item facts concise and mutually aligned. */
+.pi-inventory .pi-detail-facts {
+  gap: 0.5rem;
+}
+
+.pi-inventory .pi-detail-facts > div {
+  min-width: 0;
+}
