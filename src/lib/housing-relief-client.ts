@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 
+/** Which rental a relief panel is for. Omitted means any rental. */
+export type HousingKind = "home" | "stall";
+
 export type HousingReliefState = {
   notice: null | { cycleId: string; houseName: string; repossessedAt: string };
   hustles: Array<{
@@ -17,8 +20,11 @@ export type HousingReliefState = {
   jobOffer: null | { shiftPayMinor: number; shiftsTotal: number };
 };
 
-export const housingReliefQueryKey = (characterId: string) =>
-  ["housingRelief", characterId] as const;
+/** Without a kind this is a prefix that matches every rental's relief queries, so it can invalidate them all. */
+export const housingReliefQueryKey = (characterId: string, kind?: HousingKind) =>
+  kind
+    ? (["housingRelief", characterId, kind] as const)
+    : (["housingRelief", characterId] as const);
 
 export async function housingReliefFetch(path: string, init?: RequestInit): Promise<unknown> {
   const { data } = await supabase.auth.getSession();
@@ -38,8 +44,9 @@ export async function housingReliefFetch(path: string, init?: RequestInit): Prom
   return result;
 }
 
-export async function getHousingReliefState(): Promise<HousingReliefState> {
-  const value = await housingReliefFetch("/api/housing/rent-relief");
+export async function getHousingReliefState(kind?: HousingKind): Promise<HousingReliefState> {
+  const query = kind ? `?kind=${kind}` : "";
+  const value = await housingReliefFetch(`/api/housing/rent-relief${query}`);
   if (!value || typeof value !== "object" || !Array.isArray((value as HousingReliefState).hustles))
     throw new Error("Housing relief state is unavailable.");
   return value as HousingReliefState;
@@ -48,18 +55,19 @@ export async function getHousingReliefState(): Promise<HousingReliefState> {
 export async function submitHousingReliefAction(
   action: "apply" | "complete" | "drop" | "keep",
   hustleId?: string,
+  kind?: HousingKind,
 ) {
   return housingReliefFetch("/api/housing/rent-relief", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
-    body: JSON.stringify({ action, hustleId }),
+    body: JSON.stringify({ action, hustleId, kind }),
   });
 }
 
-export async function resolveHousingOverdue(option: "loan" | "job") {
+export async function resolveHousingOverdue(option: "loan" | "job", kind?: HousingKind) {
   return housingReliefFetch("/api/housing/resolve-overdue", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Idempotency-Key": crypto.randomUUID() },
-    body: JSON.stringify({ option }),
+    body: JSON.stringify({ option, kind }),
   });
 }
