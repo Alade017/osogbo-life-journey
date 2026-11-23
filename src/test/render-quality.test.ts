@@ -8,6 +8,11 @@ describe("selectWorldRenderQuality", () => {
     [{ memoryGB: 8, logicalCores: 8 }, "standard"],
     [{}, "standard"],
     [{ memoryGB: 0, logicalCores: 0 }, "standard"],
+    [{ memoryGB: 4.01, logicalCores: 5 }, "standard"],
+    [{ memoryGB: 4, logicalCores: 5 }, "performance"],
+    [{ memoryGB: 16, logicalCores: 4 }, "performance"],
+    [{ memoryGB: 16, logicalCores: 5 }, "standard"],
+    [{ memoryGB: undefined, logicalCores: undefined }, "standard"],
   ] as const)("selects quality for %j", (device, expected) => {
     expect(selectWorldRenderQuality(device)).toBe(expected);
   });

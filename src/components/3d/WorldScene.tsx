@@ -70,7 +70,9 @@ export function WorldLighting({
     const coarse = window.matchMedia("(pointer: coarse)").matches;
     FOLIAGE_SWAY.amplitude.value = foliageSwayAmplitude({ reducedMotion });
     if (reducedMotion) return;
-    const timer = window.setInterval(invalidate, 1000 / (coarse ? 10 : 15));
+    const timer = window.setInterval(() => {
+      if (!document.hidden) invalidate();
+    }, 1000 / (coarse ? 10 : 15));
     return () => {
       window.clearInterval(timer);
       FOLIAGE_SWAY.amplitude.value = 0;
