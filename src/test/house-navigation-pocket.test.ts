@@ -29,3 +29,12 @@ describe("findRoomPath when the character is walled into a pocket", () => {
     expect(path![0]).toEqual([expect.any(Number), 0.06, expect.any(Number)]);
   });
 });
+
+describe("floor taps inside the character's own pocket", () => {
+  it("walks to a free spot in the same pocket instead of reporting no clear path", () => {
+    const path = findRoomPath([0, 0.06, 0], [0.3, 0.06, 0.5], 6, 6, pocket);
+    expect(path).not.toBeNull();
+    const last = path![path!.length - 1]!;
+    expect(Math.hypot(last[0] - 0.3, last[2] - 0.5)).toBeLessThanOrEqual(0.35);
+  });
+});
