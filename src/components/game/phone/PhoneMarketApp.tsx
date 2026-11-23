@@ -777,7 +777,8 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                     item &&
                     unitPrice > 0 &&
                     quantity >= minimumQuantity &&
-                    (offer.stock === null || offer.stock >= quantity);
+                    (offer.stock === null || offer.stock >= quantity) &&
+                    !quote.error;
                   const purchaseIssue = !item || unitPrice <= 0
                     ? "This item is not available for purchase."
                     : offer.stock !== null && offer.stock < quantity
@@ -785,7 +786,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                       : quote.error;
 
                   return (
-                    <div key={offer.id} className="phone-card market-app-product p-3 space-y-2">
+                    <div key={offer.id} className="phone-card market-app-product market-app-offer p-3">
                       <div className="flex items-start gap-2.5">
                         <span className="p-2 rounded-lg bg-primary/10 text-primary flex-none">
                           <ShoppingBag className="h-4 w-4" />
@@ -804,6 +805,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                           <label htmlFor={`market-quantity-${offer.id}`} className="text-xs text-muted-foreground">Qty:</label>
                           <input
                             id={`market-quantity-${offer.id}`}
+                            aria-describedby={purchaseIssue ? `market-purchase-issue-${offer.id}` : undefined}
                             type="number"
                             min={minimumQuantity}
                             max={item?.stackable ? item.max_stack : 1}
@@ -822,6 +824,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                           <button
                             type="button"
                             disabled={!canBuy || purchase.isPending}
+                            aria-describedby={purchaseIssue ? `market-purchase-issue-${offer.id}` : undefined}
                             onClick={() =>
                               purchase.mutate({
                                 shopItemId: offer.id,
@@ -836,7 +839,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                         </div>
                       </div>
                       {purchaseIssue && (
-                        <p className="market-app-purchase-hint text-xs text-muted-foreground" role="status">
+                        <p id={`market-purchase-issue-${offer.id}`} className="market-app-purchase-hint text-xs text-muted-foreground">
                           {purchaseIssue}
                         </p>
                       )}
