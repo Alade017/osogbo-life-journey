@@ -12,6 +12,48 @@ import {
 export type RoomPoint = [number, number, number];
 export type RoomObstacle = { x: number; z: number; w: number; d: number; wall?: boolean };
 
+/** Maximum time allowed for the scripted walk from the doorway into the home. */
+export const HOME_ENTRY_WALK_TIMEOUT_MS = 12_000;
+
+/**
+ * Run the entry walk with a bounded recovery path. A stalled/cancelled animation must
+ * never leave the global transition veil active indefinitely or strand the actor outside.
+ */
+export async function runHomeEntryWalk({
+  path,
+  walk,
+  cancel,
+  place,
+  fallback,
+  timeoutMs = HOME_ENTRY_WALK_TIMEOUT_MS,
+}: {
+  path: RoomPoint[];
+  walk: (path: RoomPoint[]) => Promise<boolean>;
+  cancel: () => void;
+  place: (point: RoomPoint) => void;
+  fallback: RoomPoint;
+  timeoutMs?: number;
+}): Promise<boolean> {
+  let timedOut = false;
+  let timeout: ReturnType<typeof setTimeout> | undefined;
+  const timeoutResult = new Promise<boolean>((resolve) => {
+    timeout = setTimeout(() => {
+      timedOut = true;
+      cancel();
+      place(fallback);
+      resolve(false);
+    }, timeoutMs);
+  });
+
+  try {
+    const arrived = await Promise.race([walk(path), timeoutResult]);
+    if (!arrived && !timedOut) place(fallback);
+    return arrived;
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout);
+  }
+}
+
 /** Keep the raised stair animation on the ground-floor scene, then land on a flat floor. */
 export async function runHouseStairTransition({
   stairs,
