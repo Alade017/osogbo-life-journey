@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useMissionClaim } from "@/hooks/use-mission-claim";
 import { useMissions } from "@/hooks/use-missions";
 import { createFileRoute } from "@tanstack/react-router";
@@ -19,6 +20,16 @@ function MissionsPage() {
   const { user } = Route.useRouteContext();
   const { data: missions, isLoading, isError, refetch, userId, characterId } = useMissions();
   const claim = useMissionClaim(userId, characterId);
+  const [claimingId, setClaimingId] = useState<string | null>(null);
+
+  async function claimReward(id: string) {
+    setClaimingId(id);
+    try {
+      await claim.mutate(id);
+    } finally {
+      setClaimingId(null);
+    }
+  }
   if (isLoading) return <LoadingState />;
   const sorted = orderedMissions(missions ?? []);
   const readyToClaim = sorted.filter((mission) => mission.status === "completed").length;
@@ -69,6 +80,20 @@ function MissionsPage() {
                 )}
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{m.description}</p>
+              <ol className="mission-stage-path" aria-label={`${m.title} reward stages`}>
+                <li className={`mission-stage${pm.status === "completed" || pm.status === "claimed" ? " is-complete" : " is-current"}`} aria-current={pm.status !== "completed" && pm.status !== "claimed" ? "step" : undefined}>
+                  <span className="mission-stage-node" aria-hidden="true" />
+                  <span>In progress</span>
+                </li>
+                <li className={`mission-stage${pm.status === "claimed" ? " is-complete" : pm.status === "completed" ? " is-current" : ""}`} aria-current={pm.status === "completed" ? "step" : undefined}>
+                  <span className="mission-stage-node" aria-hidden="true" />
+                  <span>Ready to claim</span>
+                </li>
+                <li className={`mission-stage${pm.status === "claimed" ? " is-current" : ""}`} aria-current={pm.status === "claimed" ? "step" : undefined}>
+                  <span className="mission-stage-node" aria-hidden="true" />
+                  <span>Claimed</span>
+                </li>
+              </ol>
               <div className="mission-progress-track mt-4">
                 <StatBar
                   label={
@@ -90,9 +115,10 @@ function MissionsPage() {
                     size="sm"
                     className="mission-claim-action"
                     disabled={claim.isPending}
-                    onClick={() => claim.mutate(pm.id)}
+                    aria-busy={claimingId === pm.id}
+                    onClick={() => void claimReward(pm.id)}
                   >
-                    Claim reward
+                    {claimingId === pm.id ? "Claiming…" : "Claim reward"}
                   </Button>
                 )}
               </div>
