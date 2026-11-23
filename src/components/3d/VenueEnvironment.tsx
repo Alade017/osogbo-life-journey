@@ -1,3 +1,4 @@
+import { InteractionMarker } from "./InteractionMarker";
 import { useEffect, useMemo, useRef } from "react";
 import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
@@ -88,12 +89,12 @@ export function VenueEnvironment({
         const active = fixture.id === activeId;
         return (
           <group key={fixture.id}>
-            {active && (
-              <mesh position={[x, 0.02, z]} rotation={[-Math.PI / 2, 0, 0]}>
-                <ringGeometry args={[0.55, 0.66, 32]} />
-                <meshBasicMaterial color={accentColor} />
-              </mesh>
-            )}
+            <InteractionMarker
+              position={[x, 0.025, z]}
+              color={accentColor}
+              selected={active}
+              radius={0.66}
+            />
             <mesh
               position={[x, HOTSPOT_SIZE[1] / 2, z]}
               onClick={(event: ThreeEvent<MouseEvent>) => {

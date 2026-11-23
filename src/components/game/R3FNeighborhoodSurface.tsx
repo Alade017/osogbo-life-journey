@@ -1,3 +1,4 @@
+import { InteractionMarker } from "@/components/3d/InteractionMarker";
 import { NpcBody } from "@/components/3d/NpcBody";
 import { useRenderQuality } from "@/hooks/use-render-quality";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
@@ -12,7 +13,7 @@ import {
   type ReactNode,
   type MutableRefObject,
 } from "react";
-import { useGLTF } from "@react-three/drei";
+import { Line, useGLTF } from "@react-three/drei";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { fitFurniture } from "@/components/3d/VenueFurniture";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
@@ -428,6 +429,7 @@ export function R3FNeighborhoodSurface({
   onZoomChange,
   onGroundTap,
   groundTarget,
+  plannedRoute = [],
   commuteTarget = null,
   nearbyZoneId = null,
   targetedZoneId = null,
@@ -442,6 +444,8 @@ export function R3FNeighborhoodSurface({
 }: {
   onGroundTap: (point: { x: number; y: number }) => void;
   groundTarget: { x: number; y: number } | null;
+  /** Validated world-space route. Never render a straight shortcut through buildings. */
+  plannedRoute?: readonly { x: number; y: number }[] | undefined;
   /** Workplace beacon during an automatic commute; separate from the tapped destination. */
   commuteTarget?: { x: number; y: number } | null;
   players: readonly NeighborhoodPlayerView[];
@@ -486,6 +490,15 @@ export function R3FNeighborhoodSurface({
       (z - centerZ) * unit,
     ],
     [centerX, centerZ, unit],
+  );
+  const routePoints = useMemo(
+    () =>
+      plannedRoute.map((waypoint): [number, number, number] => {
+        const scene = toScene(waypoint, district.origin);
+        const [x, , z] = point(scene.x, scene.y);
+        return [x, 0.075, z];
+      }),
+    [plannedRoute, district.origin, point],
   );
   useEffect(() => {
     // Preserve the host's camera interface; network state stays React-owned.
@@ -907,6 +920,14 @@ export function R3FNeighborhoodSurface({
               const footprint = o.walkIn ? null : neighborhoodBuildingFootprint(o);
               return (
                 <group key={o.id}>
+                  {!overview && o.kind === "work" && (
+                    <InteractionMarker
+                      position={[point(o.x, o.y)[0], 0.035, point(o.x, o.y)[2]]}
+                      color={WORLD_PALETTE.sign}
+                      selected={Boolean(commuteTarget)}
+                      radius={WORLD_SCALE.character * 0.4}
+                    />
+                  )}
                   {footprint && (
                     <WorldHouse
                       detailed
@@ -997,6 +1018,16 @@ export function R3FNeighborhoodSurface({
             <planeGeometry args={[bounds.width * unit, bounds.height * unit]} />
             <meshBasicMaterial transparent opacity={0} depthWrite={false} />
           </mesh>
+          {groundTarget && plannedRoute.length > 1 && (
+            <Line
+              points={routePoints}
+              color={WORLD_PALETTE.sign}
+              lineWidth={2}
+              transparent
+              opacity={0.65}
+              raycast={() => null}
+            />
+          )}
           {groundTarget && <WaypointBeacon position={point(groundTarget.x, groundTarget.y)} />}
           {commuteTarget && <WaypointBeacon position={point(commuteTarget.x, commuteTarget.y)} />}
           {occlusionSubject && <BuildingOcclusion subject={occlusionSubject} />}

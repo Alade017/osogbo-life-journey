@@ -1,7 +1,13 @@
 import type { MovementIntent } from "./multiplayer-state.ts";
-import { canOccupyNeighborhoodPoint, PLAYER_WORLD_BOUNDS } from "./authoritative-movement.ts";
+import {
+  createNeighborhoodOccupancyChecker,
+  PLAYER_WORLD_BOUNDS,
+} from "./authoritative-movement.ts";
 import {
   toScene,
+  neighborhoodSceneBounds,
+  WORLD_SCALE,
+  type NeighborhoodRoad,
   type NeighborhoodObject,
   type NeighborhoodObstacle,
   type WorldPoint,
@@ -15,6 +21,8 @@ export const COMMUTE_ARRIVAL_PX = 40;
 export const COMMUTE_WAYPOINT_TOLERANCE = 0.05;
 /** Upper bound on search nodes so a blocked route fails quickly. */
 const MAX_SEARCH_NODES = 40000;
+/** Include the paved shoulder when preferring road access; collision extents stay unchanged. */
+const ROAD_SHOULDER_PX = 12;
 
 const DIRECTIONS: ReadonlyArray<readonly [number, number]> = [
   [1, 0],
@@ -28,12 +36,48 @@ export function commuteArrived(point: WorldPoint, origin: WorldPoint, target: Wo
   return Math.hypot(scene.x - target.x, scene.y - target.y) <= COMMUTE_ARRIVAL_PX;
 }
 
-type SearchNode = { point: WorldPoint; parent: string | null };
+type SearchNode = { point: WorldPoint; parent: string | null; cost: number };
+
+/** Binary heap; work per insertion stays bounded even on large district searches. */
+class RouteFrontier {
+  private entries: { key: string; score: number; cost: number }[] = [];
+  push(entry: { key: string; score: number; cost: number }) {
+    const entries = this.entries;
+    entries.push(entry);
+    let i = entries.length - 1;
+    while (i > 0) {
+      const parent = (i - 1) >> 1;
+      if (entries[parent]!.score <= entry.score) break;
+      entries[i] = entries[parent]!;
+      i = parent;
+    }
+    entries[i] = entry;
+  }
+  pop() {
+    const first = this.entries[0];
+    const last = this.entries.pop();
+    if (this.entries.length && last) {
+      let i = 0;
+      while (i * 2 + 1 < this.entries.length) {
+        let child = i * 2 + 1;
+        if (
+          child + 1 < this.entries.length &&
+          this.entries[child + 1]!.score < this.entries[child]!.score
+        )
+          child++;
+        if (last.score <= this.entries[child]!.score) break;
+        this.entries[i] = this.entries[child]!;
+        i = child;
+      }
+      this.entries[i] = last;
+    }
+    return first;
+  }
+}
 
 /**
- * Breadth-first search on a grid anchored at the start position. Every node and the midpoint of
- * every step must be free of solid obstacles, so the returned waypoints are a walkable path.
- * Returns the waypoints, starting with the start position, or null when no route exists.
+ * Collision-validated A*: prefer authored roads/access lanes without making yards impassable.
+ * Search is shared by client previews and authoritative server commutes. No direct fallback.
  */
 export function planCommuteRoute(
   start: WorldPoint,
@@ -41,50 +85,78 @@ export function planCommuteRoute(
   origin: WorldPoint,
   objects: readonly NeighborhoodObject[],
   obstacles: readonly NeighborhoodObstacle[] = [],
+  roads: readonly NeighborhoodRoad[] = [],
 ): WorldPoint[] | null {
-  const free = (point: WorldPoint) => canOccupyNeighborhoodPoint(point, origin, objects, obstacles);
+  const inBounds = (point: WorldPoint) =>
+    Number.isFinite(point.x) &&
+    Number.isFinite(point.y) &&
+    point.x >= PLAYER_WORLD_BOUNDS.minX &&
+    point.x <= PLAYER_WORLD_BOUNDS.maxX &&
+    point.y >= PLAYER_WORLD_BOUNDS.minY &&
+    point.y <= PLAYER_WORLD_BOUNDS.maxY;
+  if (!inBounds(start) || ![target.x, target.y, origin.x, origin.y].every(Number.isFinite))
+    return null;
+  const free = createNeighborhoodOccupancyChecker(origin, objects, obstacles);
   if (!free(start)) return null;
   if (commuteArrived(start, origin, target)) return [start];
-
-  const nodes = new Map<string, SearchNode>();
-  const queue: string[] = ["0,0"];
-  nodes.set("0,0", { point: start, parent: null });
-  let head = 0;
-
-  while (head < queue.length) {
-    const currentKey = queue[head++]!;
-    const current = nodes.get(currentKey)!;
-    const [ci, cj] = currentKey.split(",").map(Number) as [number, number];
-
+  const bounds = neighborhoodSceneBounds(origin);
+  const onRoad = (point: WorldPoint) => {
+    const scene = toScene(point, origin);
+    return roads.some((road) => {
+      const vertical = road.axis === "vertical";
+      const along = vertical ? scene.y : scene.x;
+      const across = vertical ? scene.x : scene.y;
+      return (
+        Math.abs(across - road.offset) <= road.width / 2 + ROAD_SHOULDER_PX &&
+        along >= (road.start ?? (vertical ? bounds.top : bounds.left)) &&
+        along <= (road.end ?? (vertical ? bounds.top + bounds.height : bounds.left + bounds.width))
+      );
+    });
+  };
+  const estimate = (point: WorldPoint) => {
+    const scene = toScene(point, origin);
+    return (
+      Math.max(0, Math.hypot(scene.x - target.x, scene.y - target.y) - COMMUTE_ARRIVAL_PX) /
+      (COMMUTE_GRID_STEP * WORLD_SCALE)
+    );
+  };
+  const nodes = new Map<string, SearchNode>([["0,0", { point: start, parent: null, cost: 0 }]]);
+  const frontier = new RouteFrontier();
+  frontier.push({ key: "0,0", score: estimate(start), cost: 0 });
+  let examined = 0;
+  for (let entry = frontier.pop(); entry; entry = frontier.pop()) {
+    const current = nodes.get(entry.key)!;
+    if (entry.cost !== current.cost) continue;
+    if (commuteArrived(current.point, origin, target)) return reconstruct(nodes, entry.key);
+    if (++examined > MAX_SEARCH_NODES) return null;
+    const [ci, cj] = entry.key.split(",").map(Number) as [number, number];
     for (const [di, dj] of DIRECTIONS) {
-      const i = ci + di;
-      const j = cj + dj;
+      const i = ci + di,
+        j = cj + dj;
       const key = `${i},${j}`;
-      if (nodes.has(key)) continue;
-      const point = {
-        x: start.x + i * COMMUTE_GRID_STEP,
-        y: start.y + j * COMMUTE_GRID_STEP,
-      };
-      if (
-        point.x < PLAYER_WORLD_BOUNDS.minX ||
-        point.x > PLAYER_WORLD_BOUNDS.maxX ||
-        point.y < PLAYER_WORLD_BOUNDS.minY ||
-        point.y > PLAYER_WORLD_BOUNDS.maxY
-      )
-        continue;
-      if (!free(point)) continue;
-      const midpoint = {
-        x: (current.point.x + point.x) / 2,
-        y: (current.point.y + point.y) / 2,
-      };
-      if (!free(midpoint)) continue;
-
-      nodes.set(key, { point, parent: currentKey });
-      if (commuteArrived(point, origin, target)) {
-        return reconstruct(nodes, key);
+      const point = { x: start.x + i * COMMUTE_GRID_STEP, y: start.y + j * COMMUTE_GRID_STEP };
+      if (!inBounds(point) || !free(point)) continue;
+      // Sample the whole step so a thin wall cannot fall between valid endpoints.
+      let clear = true;
+      for (let sample = 1; sample < 5; sample++) {
+        const t = sample / 5;
+        if (
+          !free({
+            x: current.point.x + (point.x - current.point.x) * t,
+            y: current.point.y + (point.y - current.point.y) * t,
+          })
+        ) {
+          clear = false;
+          break;
+        }
       }
-      if (nodes.size > MAX_SEARCH_NODES) return null;
-      queue.push(key);
+      if (!clear) continue;
+      const cost = current.cost + (roads.length && !onRoad(point) ? 2 : 1);
+      const previous = nodes.get(key);
+      if (previous && previous.cost <= cost) continue;
+      if (!previous && nodes.size >= MAX_SEARCH_NODES) continue;
+      nodes.set(key, { point, parent: entry.key, cost });
+      frontier.push({ key, score: cost + estimate(point), cost });
     }
   }
   return null;
@@ -136,6 +208,7 @@ export type CommuteContext = {
   origin: WorldPoint;
   objects: readonly NeighborhoodObject[];
   obstacles?: readonly NeighborhoodObstacle[];
+  roads?: readonly NeighborhoodRoad[];
 };
 
 export type CommutePlan = {
@@ -161,6 +234,7 @@ export function createCommutePlan(
     context.origin,
     context.objects,
     context.obstacles ?? [],
+    context.roads ?? [],
   );
   if (!route) return null;
   return {
@@ -182,6 +256,7 @@ function replan(plan: CommutePlan, position: WorldPoint, context: CommuteContext
     context.origin,
     context.objects,
     context.obstacles ?? [],
+    context.roads ?? [],
   );
   if (!route) return false;
   plan.route = route;

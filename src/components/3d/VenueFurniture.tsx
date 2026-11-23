@@ -1,3 +1,4 @@
+import { InteractionMarker } from "./InteractionMarker";
 import { useMemo } from "react";
 import { useGLTF } from "@react-three/drei";
 import { Box3, Vector3, type Group } from "three";
@@ -98,12 +99,7 @@ function LoadedFurniture({
   const fitted = useMemo(() => fitFurniture(gltf.scene, width), [gltf.scene, width]);
   return (
     <group onClick={onClick}>
-      {active && (
-        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.02, 0]}>
-          <circleGeometry args={[width * 0.62, 28]} />
-          <meshBasicMaterial color={accentColor} transparent opacity={0.45} depthWrite={false} />
-        </mesh>
-      )}
+      <InteractionMarker color={accentColor} selected={active} radius={width * 0.62} />
       <primitive object={fitted.copy} scale={fitted.scale} position={fitted.offset} />
     </group>
   );

@@ -6,7 +6,7 @@ type DeviceNavigator = Navigator & {
 };
 
 export function useRenderQuality() {
-  const [quality, setQuality] = useState<WorldRenderQuality>("standard");
+  const [quality, setQuality] = useState<WorldRenderQuality>("performance");
 
   useEffect(() => {
     const device = navigator as DeviceNavigator;
