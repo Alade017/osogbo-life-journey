@@ -227,10 +227,19 @@ export function findRoomPath(
     }
     return best;
   };
-  if (
-    !interact &&
-    (Math.abs(target[0]) > width / 2 - margin || Math.abs(target[2]) > depth / 2 - margin)
-  )
+  // A floor tap in the wall band (inside the room, closer to a wall than the walkway margin) walks to the
+  // nearest walkable spot instead of failing: the floor there is walkable, only the grid stops short of it.
+  let aim: RoomPoint = target;
+  if (!interact && Math.abs(target[0]) <= width / 2 && Math.abs(target[2]) <= depth / 2) {
+    const limitX = width / 2 - margin,
+      limitZ = depth / 2 - margin;
+    aim = [
+      Math.max(-limitX, Math.min(limitX, target[0])),
+      target[1],
+      Math.max(-limitZ, Math.min(limitZ, target[2])),
+    ];
+  }
+  if (!interact && (Math.abs(aim[0]) > width / 2 - margin || Math.abs(aim[2]) > depth / 2 - margin))
     return null;
   // Routes always start in the largest open region. A character standing in a smaller region is
   // walled off from the rest of the room, so the nearest cell in the largest region is where it leaves from.
@@ -263,7 +272,7 @@ export function findRoomPath(
     distance = Infinity;
   for (const i of queue) {
     const p = point(i),
-      d = Math.hypot(p[0] - target[0], p[2] - target[2]);
+      d = Math.hypot(p[0] - aim[0], p[2] - aim[2]);
     if (d >= distance) continue;
     if (
       interact &&
@@ -271,8 +280,8 @@ export function findRoomPath(
         if (!o.wall) return false;
         const samples = Math.max(1, Math.ceil(d / 0.04));
         for (let j = 0; j <= samples; j++) {
-          const x = p[0] + ((target[0] - p[0]) * j) / samples;
-          const z = p[2] + ((target[2] - p[2]) * j) / samples;
+          const x = p[0] + ((aim[0] - p[0]) * j) / samples;
+          const z = p[2] + ((aim[2] - p[2]) * j) / samples;
           if (Math.abs(x - o.x) < o.w / 2 && Math.abs(z - o.z) < o.d / 2) return true;
         }
         return false;
