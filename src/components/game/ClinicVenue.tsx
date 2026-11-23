@@ -86,7 +86,7 @@ export function ClinicVenue({ slug, locationName }: { slug: string; locationName
           <VenueSceneBoundary resetKey={slug} onError={unavailable}>
             <WorldCanvas
               onSceneError={unavailable}
-              shadows
+              shadows="percentage"
               frameloop="demand"
               dpr={[1, 1.25]}
               gl={{ antialias: false, powerPreference: "low-power" }}

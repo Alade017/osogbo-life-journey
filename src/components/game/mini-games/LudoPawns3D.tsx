@@ -129,7 +129,7 @@ export function LudoPawns3D({ pieces }: { pieces: readonly ScenePiece[] }) {
     <div className="lb-scene" aria-hidden="true">
       <Canvas
         orthographic
-        shadows
+        shadows="percentage"
         frameloop="demand"
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, powerPreference: "low-power" }}

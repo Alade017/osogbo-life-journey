@@ -78,7 +78,6 @@ vi.mock("@/lib/game", async (importOriginal) => ({
   q: Object.fromEntries(
     [
       "character",
-      "rentStatus",
       "jobs",
       "locations",
       "wallet",
@@ -93,7 +92,7 @@ vi.mock("@/lib/game", async (importOriginal) => ({
           if (name === "character") return testState.character;
           if (name === "locations") return testState.locations;
           if (name === "wallet") return testState.wallet;
-          return name === "rentStatus" ? null : [];
+          return [];
         },
       }),
     ]),

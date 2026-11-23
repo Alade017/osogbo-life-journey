@@ -8,6 +8,7 @@ import {
   type PropertySaleQuote,
 } from "@/lib/property-sale";
 import { formatNaira } from "@/lib/game";
+import "./property-sale.css";
 
 /** Lists the player's homes and stalls that an NPC buyer will take, with a confirm step. */
 export function PropertySalePanel() {

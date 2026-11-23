@@ -8,14 +8,14 @@ Home now registers with the existing retained renderer. Its room-overlay and fur
 
 ## URL contract
 
-| Search | Presentation |
-| --- | --- |
-| `hud=jobs` | Career Life in the existing phone |
-| `hud=map` | Existing phone places directory, with a link to the full city map |
-| `hud=phone` | Phone launcher |
-| `hud=inventory` | Existing inventory overlay |
-| `hud=phone&phoneApp=Messages` | Specific phone app |
-| `phoneSearch=...` | Encoded in-app search, where applicable |
+| Search                        | Presentation                                                      |
+| ----------------------------- | ----------------------------------------------------------------- |
+| `hud=jobs`                    | Career Life in the existing phone                                 |
+| `hud=map`                     | Existing phone places directory, with a link to the full city map |
+| `hud=phone`                   | Phone launcher                                                    |
+| `hud=inventory`               | Existing inventory overlay                                        |
+| `hud=phone&phoneApp=Messages` | Specific phone app                                                |
+| `phoneSearch=...`             | Encoded in-app search, where applicable                           |
 
 The URL is the source of truth for overlay visibility. Existing route search (including friend visits), pathname and fragment are preserved. HUD-only changes are excluded from the phone's world-travel detection, and Back/Forward restores the requested panel. Closing a panel replaces its HUD query state. Internal app navigation retains its existing history when the URL acknowledges the same selection; external history changes reconcile selection without stale app-history entries.
 

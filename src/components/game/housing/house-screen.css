@@ -3375,8 +3375,6 @@ button.house-task-status-action:disabled {
   }
 }
 
-
-
 /* OSOGBO LIFE home HUD refresh — compact glass controls around the existing 3D room. */
 .city-game.navigation-redesign.home-scene .house-page.house-page-fill {
   display: flex;
@@ -3481,7 +3479,8 @@ button.house-task-status-action:disabled {
   box-shadow: 0 5px 16px color-mix(in srgb, var(--primary) 18%, transparent);
 }
 
-.city-game.navigation-redesign.home-scene .house-toolbar
+.city-game.navigation-redesign.home-scene
+  .house-toolbar
   :is(.house-light-switch, .house-walls-switch, .house-floor-label) {
   position: static;
   inset: auto;
@@ -3594,7 +3593,8 @@ button.house-task-status-action:disabled {
     padding-inline: 12px;
   }
 
-  .city-game.navigation-redesign.home-scene .house-toolbar
+  .city-game.navigation-redesign.home-scene
+    .house-toolbar
     :is(.house-light-switch, .house-walls-switch) {
     flex-basis: 42px;
   }
@@ -3651,4 +3651,22 @@ button.house-task-status-action:disabled {
     animation: none !important;
     transition: none !important;
   }
+}
+
+/* Home rent notice: sits above the room, wraps on narrow screens, never widens the page. */
+.house-rent-notice {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 1rem;
+  margin: 0 0 0.75rem;
+  padding: 0.75rem 1rem;
+  min-width: 0;
+}
+
+.house-rent-notice p {
+  margin: 0;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }

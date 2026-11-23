@@ -43,8 +43,17 @@ const MAX_GROUP_NAME = 40;
 const MAX_GROUP_MESSAGE = 500;
 const PICTURE_TYPES = ["image/jpeg", "image/png", "image/webp"];
 
+const GROUP_ERROR_COPY: Readonly<Record<string, string>> = {
+  GROUP_NAME_TAKEN: "That group name is already taken. Choose another name.",
+  GROUP_NAME_INVALID: "Group names need 1 to 40 characters.",
+  GROUP_NEEDS_MEMBERS: "Add at least one friend to the group.",
+  GROUP_MEMBER_UNAVAILABLE: "One of the chosen friends cannot join this group.",
+};
+
 function errorText(error: unknown) {
-  return error instanceof Error ? error.message : "Something went wrong. Try again.";
+  if (!(error instanceof Error)) return "Something went wrong. Try again.";
+  const code = Object.keys(GROUP_ERROR_COPY).find((key) => error.message.includes(key));
+  return code ? GROUP_ERROR_COPY[code]! : error.message;
 }
 
 /** Group chats for the messages inbox: the Groups filter shows this instead of private chats. */

@@ -13,7 +13,8 @@ export function HousingRepossessionNotice({ characterId }: { characterId: string
   const queryClient = useQueryClient();
   const state = useQuery({
     queryKey: housingReliefQueryKey(characterId),
-    queryFn: getHousingReliefState,
+    // Every rental's notice; a repossession is acknowledged per cycle, so one shared notice is correct.
+    queryFn: () => getHousingReliefState(),
     enabled: typeof window !== "undefined",
     retry: false,
     refetchOnWindowFocus: true,

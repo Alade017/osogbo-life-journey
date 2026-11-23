@@ -64,7 +64,10 @@ export function WorldCharacter({
   const safe = normalizeAvatarAppearance(appearance, gender);
   const outfit = resolveNormalizedWornOutfit(safe, equipment);
   // Only inventory items with a supported 3D headwear model render on the rig.
-  safe.headwear = resolveEquippedHeadwear(equipment);
+  const equippedHeadwear = resolveEquippedHeadwear(equipment);
+  // Inventory headwear takes precedence, but an empty equipment slot must not erase
+  // the character's saved appearance from character creation.
+  if (equippedHeadwear > 0) safe.headwear = equippedHeadwear;
   if (outfit.hasWearables) safe.clothed = true;
   const h = WORLD_SCALE.character * ([0.92, 1, 1.06][safe.stature] ?? 1);
   const variant = body ?? bodyVariantFor(gender);
