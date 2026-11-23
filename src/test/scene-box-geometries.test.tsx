@@ -1,5 +1,5 @@
-import { render, cleanup } from "@testing-library/react";
-import { useEffect } from "react";
+import { render, cleanup, waitFor } from "@testing-library/react";
+import { StrictMode, useEffect } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSceneBoxGeometryCache, SceneBoxGeometryProvider, useSceneBoxGeometry } from "@/components/3d/scene-box-geometries";
 
@@ -64,7 +64,7 @@ describe("scene geometry provider lifecycle", () => {
     return null;
   }
 
-  it("reuses geometry on rerender and disposes it when its scene unmounts", () => {
+  it("reuses geometry on rerender and disposes it when its scene unmounts", async () => {
     const onGeometry = vi.fn();
     const view = render(
       <SceneBoxGeometryProvider>
@@ -81,10 +81,10 @@ describe("scene geometry provider lifecycle", () => {
     expect(onGeometry.mock.lastCall![0]).toBe(geometry);
     expect(dispose).not.toHaveBeenCalled();
     view.unmount();
-    expect(dispose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
   });
 
-  it("keeps sibling scene resources alive when another scene is removed", () => {
+  it("keeps sibling scene resources alive when another scene is removed", async () => {
     const onFirst = vi.fn();
     const onSecond = vi.fn();
     const first = render(
@@ -103,9 +103,19 @@ describe("scene geometry provider lifecycle", () => {
     const disposeFirst = vi.spyOn(firstGeometry, "dispose");
     const disposeSecond = vi.spyOn(secondGeometry, "dispose");
     first.unmount();
-    expect(disposeFirst).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(disposeFirst).toHaveBeenCalledTimes(1));
     expect(disposeSecond).not.toHaveBeenCalled();
     second.unmount();
-    expect(disposeSecond).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(disposeSecond).toHaveBeenCalledTimes(1));
+  });
+  it("keeps geometry alive through Strict Mode effect replay", async () => {
+    const onGeometry = vi.fn();
+    const view = render(<StrictMode><SceneBoxGeometryProvider><Consumer onGeometry={onGeometry} /></SceneBoxGeometryProvider></StrictMode>);
+    const geometry = onGeometry.mock.lastCall![0];
+    const dispose = vi.spyOn(geometry, "dispose");
+    await Promise.resolve();
+    expect(dispose).not.toHaveBeenCalled();
+    view.unmount();
+    await waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
   });
 });

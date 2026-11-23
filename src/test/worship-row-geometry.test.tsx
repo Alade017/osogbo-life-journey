@@ -1,4 +1,5 @@
-import { renderHook } from "@testing-library/react";
+import { renderHook, waitFor } from "@testing-library/react";
+import { StrictMode } from "react";
 import { describe, expect, it, vi } from "vitest";
 import { useWorshipRowGeometry } from "@/components/3d/worship-row-geometry";
 
@@ -12,7 +13,7 @@ describe("worship row geometry ownership", () => {
     pew.unmount();
   });
 
-  it("keeps geometry stable across rerenders, and disposes it on unmount", () => {
+  it("keeps geometry stable across rerenders, and disposes it on unmount", async () => {
     const hook = renderHook(() => useWorshipRowGeometry(true));
     const original = hook.result.current;
     const dispose = vi.spyOn(original, "dispose");
@@ -20,10 +21,10 @@ describe("worship row geometry ownership", () => {
     expect(hook.result.current).toBe(original);
     expect(dispose).not.toHaveBeenCalled();
     hook.unmount();
-    expect(dispose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
   });
 
-  it("does not dispose another hall's geometry when one hall unmounts", () => {
+  it("does not dispose another hall's geometry when one hall unmounts", async () => {
     const first = renderHook(() => useWorshipRowGeometry(true));
     const second = renderHook(() => useWorshipRowGeometry(true));
     const firstGeometry = first.result.current;
@@ -32,13 +33,13 @@ describe("worship row geometry ownership", () => {
     const firstDispose = vi.spyOn(firstGeometry, "dispose");
     const secondDispose = vi.spyOn(secondGeometry, "dispose");
     first.unmount();
-    expect(firstDispose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(firstDispose).toHaveBeenCalledTimes(1));
     expect(secondDispose).not.toHaveBeenCalled();
     second.unmount();
-    expect(secondDispose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(secondDispose).toHaveBeenCalledTimes(1));
   });
 
-  it("releases the old geometry after the row type changes", () => {
+  it("releases the old geometry after the row type changes", async () => {
     const hook = renderHook(({ isMosque }) => useWorshipRowGeometry(isMosque), {
       initialProps: { isMosque: true },
     });
@@ -46,7 +47,7 @@ describe("worship row geometry ownership", () => {
     const dispose = vi.spyOn(former, "dispose");
     hook.rerender({ isMosque: false });
     expect(hook.result.current).not.toBe(former);
-    expect(dispose).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
     hook.unmount();
   });
 
@@ -57,5 +58,14 @@ describe("worship row geometry ownership", () => {
     const next = renderHook(() => useWorshipRowGeometry(false));
     expect(next.result.current).not.toBe(original);
     next.unmount();
+  });
+  it("keeps worship geometry alive through Strict Mode effect replay", async () => {
+    const hook = renderHook(() => useWorshipRowGeometry(true), { wrapper: StrictMode });
+    const geometry = hook.result.current;
+    const dispose = vi.spyOn(geometry, "dispose");
+    await Promise.resolve();
+    expect(dispose).not.toHaveBeenCalled();
+    hook.unmount();
+    await waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
   });
 });
