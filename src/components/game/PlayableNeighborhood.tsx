@@ -46,6 +46,7 @@ import { canonicalHomeOptions } from "@/lib/living-cost-service";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import type { NetworkPlayerSnapshot } from "@/game/multiplayer-state";
 import { avatarAnimationForActivity } from "@/game/character-animation";
+import { publicWornEquipment } from "@/game/wearable-outfits";
 import {
   neighborhoodAreaForSlug,
   nearestInteraction,
@@ -373,6 +374,12 @@ export function PlayableNeighborhood() {
     };
   }, []);
   const characterQuery = useQuery(q.character());
+  // Keep the local player appearance tied to the latest authenticated equipment query.
+  // The room snapshot remains authoritative for movement and for every other player.
+  const equipmentQuery = useQuery({
+    ...q.equipment(),
+    enabled: !!characterQuery.data?.id,
+  });
   const walletQuery = useQuery(q.wallet());
   const locationsQuery = useQuery({
     ...q.locations(),
@@ -502,14 +509,19 @@ export function PlayableNeighborhood() {
   const actionAnimation = simulation.currentAction
     ? avatarAnimationForActivity(simulation.currentAction.animation)
     : undefined;
-  const scenePlayers = useMemo(
-    () =>
-      players.map((candidate) => ({
-        ...candidate,
-        ...(candidate.sessionId === sessionId && actionAnimation ? { actionAnimation } : {}),
-      })),
-    [actionAnimation, players, sessionId],
-  );
+  const scenePlayers = useMemo(() => {
+    const localEquipment =
+      equipmentQuery.data === undefined
+        ? null
+        : JSON.stringify(publicWornEquipment(equipmentQuery.data));
+    return players.map((candidate) => ({
+      ...candidate,
+      ...(candidate.sessionId === sessionId && localEquipment !== null
+        ? { equipment: localEquipment }
+        : {}),
+      ...(candidate.sessionId === sessionId && actionAnimation ? { actionAnimation } : {}),
+    }));
+  }, [actionAnimation, equipmentQuery.data, players, sessionId]);
   useEffect(() => setNpcPositionOverrides({}), [currentLocation?.id]);
   const locationIndexes = useMemo(() => {
     const slugById = new Map<string, string>();

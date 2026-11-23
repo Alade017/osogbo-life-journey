@@ -5040,7 +5040,6 @@ export type Database = {
           is_active: boolean;
           is_home: boolean;
           lease_ends_at: string | null;
-          next_rent_due_at: string | null;
           property_id: string;
           rent_amount: number | null;
           rent_period_days: number | null;
@@ -5056,7 +5055,6 @@ export type Database = {
           is_active?: boolean;
           is_home?: boolean;
           lease_ends_at?: string | null;
-          next_rent_due_at?: string | null;
           property_id: string;
           rent_amount?: number | null;
           rent_period_days?: number | null;
@@ -5072,7 +5070,6 @@ export type Database = {
           is_active?: boolean;
           is_home?: boolean;
           lease_ends_at?: string | null;
-          next_rent_due_at?: string | null;
           property_id?: string;
           rent_amount?: number | null;
           rent_period_days?: number | null;
@@ -5467,61 +5464,6 @@ export type Database = {
             columns: ["player_property_id"];
             isOneToOne: false;
             referencedRelation: "player_properties";
-            referencedColumns: ["id"];
-          },
-        ];
-      };
-      property_rent_ledger: {
-        Row: {
-          amount: number;
-          character_id: string;
-          due_at: string;
-          id: string;
-          paid_at: string | null;
-          player_property_id: string;
-          status: string;
-          user_id: string;
-        };
-        Insert: {
-          amount: number;
-          character_id: string;
-          due_at: string;
-          id?: string;
-          paid_at?: string | null;
-          player_property_id: string;
-          status?: string;
-          user_id: string;
-        };
-        Update: {
-          amount?: number;
-          character_id?: string;
-          due_at?: string;
-          id?: string;
-          paid_at?: string | null;
-          player_property_id?: string;
-          status?: string;
-          user_id?: string;
-        };
-        Relationships: [
-          {
-            foreignKeyName: "property_rent_ledger_character_id_fkey";
-            columns: ["character_id"];
-            isOneToOne: false;
-            referencedRelation: "characters";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "property_rent_ledger_player_property_id_fkey";
-            columns: ["player_property_id"];
-            isOneToOne: false;
-            referencedRelation: "player_properties";
-            referencedColumns: ["id"];
-          },
-          {
-            foreignKeyName: "property_rent_ledger_user_id_fkey";
-            columns: ["user_id"];
-            isOneToOne: false;
-            referencedRelation: "profiles";
             referencedColumns: ["id"];
           },
         ];
@@ -6664,7 +6606,7 @@ export type Database = {
         Returns: number;
       };
       apply_rent_relief_hustle: {
-        Args: { p_request_id: string; p_user_id: string };
+        Args: { p_kind?: string | null; p_request_id: string; p_user_id: string };
         Returns: Json;
       };
       block_player: { Args: { p_target_character_id: string }; Returns: Json };
@@ -7049,7 +6991,7 @@ export type Database = {
       housing_eligible_houses: { Args: { p_user_id: string }; Returns: Json };
       housing_map_properties: { Args: { p_user_id: string }; Returns: Json };
       housing_property_listings: { Args: { p_user_id: string }; Returns: Json };
-      housing_relief_state: { Args: { p_user_id: string }; Returns: Json };
+      housing_relief_state: { Args: { p_kind?: string | null; p_user_id: string }; Returns: Json };
       housing_rent: {
         Args: {
           p_house_type_id: string;
@@ -7112,7 +7054,6 @@ export type Database = {
       my_game_property_listings: { Args: never; Returns: Json };
       my_home_save: { Args: never; Returns: Json };
       my_home_visit_policy: { Args: never; Returns: Json };
-      my_property_rent_status: { Args: never; Returns: Json };
       mini_game_claim_forfeit: { Args: { p_table: string }; Returns: undefined };
       mini_game_create_table: { Args: { p_stake: number }; Returns: string };
       mini_game_create_whot_table: { Args: { p_stake: number }; Returns: string };
@@ -7227,7 +7168,6 @@ export type Database = {
       process_overdue_player_houses: { Args: never; Returns: number };
       promote_career: { Args: never; Returns: Json };
       promote_current_job: { Args: never; Returns: Json };
-      property_rent_status: { Args: never; Returns: Json };
       publish_npc_encounter: {
         Args: { p_action: string; p_npc_id: string };
         Returns: Json;
@@ -7305,7 +7245,7 @@ export type Database = {
         Returns: Json;
       };
       resolve_property_overdue: {
-        Args: { p_option: string; p_request_id: string; p_user_id: string };
+        Args: { p_kind?: string | null; p_option: string; p_request_id: string; p_user_id: string };
         Returns: Json;
       };
       respond_player_friend_request: {

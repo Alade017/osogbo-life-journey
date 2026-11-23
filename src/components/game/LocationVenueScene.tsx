@@ -242,7 +242,7 @@ function BasicLocationVenueScene({
             <WorldCanvas
               key={slug}
               onSceneError={() => setSceneStatus("fallback")}
-              shadows
+              shadows="percentage"
               frameloop="demand"
               dpr={[1, Math.min(1.25, quality.maxDpr)]}
               gl={{ antialias: false, powerPreference: "low-power" }}

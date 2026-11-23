@@ -152,7 +152,7 @@ export function CreateCharacter() {
       const { error } = await supabase.rpc("create_character", {
         p_name: cleanName,
         p_gender: gender,
-        p_appearance: { ...appearance, headwear: 0 },
+        p_appearance: { ...appearance },
         p_age: ageNumber,
         p_personality: personality,
         p_occupation: occupation || null,

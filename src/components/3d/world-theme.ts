@@ -85,7 +85,11 @@ export const ROOM_VIEW_PALETTE = {
 } as const;
 
 /** Camera distance for a room view, relative to the framed room. */
-export const ROOM_VIEW_CAMERA = { distanceScale: 0.9 } as const;
+export const ROOM_VIEW_CAMERA = {
+  distanceScale: 0.9,
+  minZoom: 0.82,
+  maxZoom: 1.18,
+} as const;
 
 export const WORLD_CAMERA = {
   fov: 42,
