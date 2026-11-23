@@ -666,3 +666,51 @@
     padding-inline: 0.45rem;
   }
 }
+
+/* UI-17: Preference controls stay visually grouped within their section cards. */
+.sx-page .sx-card {
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--card);
+}
+
+.sx-page .sx-card-body {
+  gap: 0.875rem;
+}
+
+.sx-page .sx-card-head,
+.sx-page .sx-row,
+.sx-page .sx-field {
+  min-width: 0;
+}
+
+.sx-page .sx-row + .sx-row {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+/* UI-18: Use the same selected, disabled and keyboard-focus language as other apps. */
+.sx-page .sx-tile-choice[aria-checked="true"] {
+  border-color: var(--brand-royal);
+  box-shadow: inset 0 0 0 1px var(--brand-royal);
+}
+
+.sx-page :is(.sx-tile-choice, .sx-btn-primary, .sx-btn-ghost, .sx-btn-danger):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sx-page :is(.sx-tile-choice, .sx-input, .sx-btn-primary, .sx-btn-ghost, .sx-btn-danger):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@container (max-width: 340px) {
+  .sx-page .sx-card {
+    min-width: 0;
+  }
+
+  .sx-page .sx-row {
+    flex-wrap: wrap;
+  }
+}
