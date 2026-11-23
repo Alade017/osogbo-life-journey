@@ -234,6 +234,9 @@ function MarketAppContent({ characterId }: { characterId: string }) {
       </div>
 
       <div className="phone-sub-content">
+        {tab === "shops" && !shopsOpen && (
+          <p className="market-interaction-tip">Choose a city shop to browse available goods and prices.</p>
+        )}
         {tab === "players" ? (
           character?.user_id ? (
             <PublicStallDirectory key={character.user_id} accountId={character.user_id} />
@@ -753,6 +756,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
             <button type="button" className="market-app-back" onClick={() => setShopsOpen(false)}>
               ← Back to Market
             </button>
+            <p className="market-interaction-tip">Choose a quantity, then review the total before buying.</p>
             <div className="market-app-shop-summary flex items-center justify-between text-xs px-1">
               <span className="font-semibold text-muted-foreground">
                 Wallet Cash:{" "}
