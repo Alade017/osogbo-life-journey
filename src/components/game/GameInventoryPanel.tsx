@@ -587,10 +587,12 @@ export function GameInventoryPanel() {
                   ) : (
                     <p className="pi-note">Item actions aren't available right now.</p>
                   )}
-                  {((useError && selectedUse) || (equipError && selectedSlot)) && (
-                    <p className="pi-note" role="status">
-                      {useError && selectedUse ? useError : equipError}
-                    </p>
+                  {(!!useError && !!selectedUse || !!equipError && !!selectedSlot || !!discardError) && (
+                    <div className="pi-action-guidance" role="status" aria-label="Item action restrictions">
+                      {selectedUse && useError && <p>Use: {useError}</p>}
+                      {selectedSlot && equipError && <p>Wear: {equipError}</p>}
+                      {discardError && <p>Discard: {discardError}</p>}
+                    </div>
                   )}
                 </>
               ) : (
