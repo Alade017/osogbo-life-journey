@@ -80,12 +80,14 @@ export function DailyTasks({ userId }: { userId: string }) {
       )}
       <div className="grid min-w-0 gap-4 md:grid-cols-3">
         {tasks.data?.tasks.map((task) => (
-          <article key={task.key} className="game-panel min-w-0 p-4">
+          <article key={task.key} className={`game-panel daily-task-card min-w-0 p-4${task.claimed ? " is-claimed" : task.completed ? " is-ready" : " is-in-progress"}`}>
             <h3 className="break-words text-lg font-bold">{task.title}</h3>
-            <p className="my-2 text-sm">
-              +{task.rewardXp} XP ·{" "}
-              {task.claimed ? "Claimed" : task.completed ? "Ready to claim" : "In progress"}
-            </p>
+            <div className="daily-task-reward my-2 text-sm">
+              <span>+{task.rewardXp} XP</span>
+              <span className={`daily-task-state${task.claimed ? " is-claimed" : task.completed ? " is-ready" : ""}`}>
+                {task.claimed ? "Claimed" : task.completed ? "Ready to claim" : "In progress"}
+              </span>
+            </div>
             <Button
               type="button"
               size="sm"
