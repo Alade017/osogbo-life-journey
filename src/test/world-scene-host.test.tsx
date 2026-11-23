@@ -178,3 +178,33 @@ it("lets camera-owning overviews explicitly retain their standalone renderer", (
   expect(screen.getByText("Standalone map")).toBeVisible();
   expect(document.querySelector(".persistent-world-renderer")).toBeNull();
 });
+
+it("carries explicit local providers inside scene content across a Home-to-street transition", async () => {
+  const Room = createContext("missing room provider");
+  function RoomContent() {
+    return <span>{useContext(Room)}</span>;
+  }
+  function Views({ home }: { home: boolean }) {
+    return (
+      <WorldSceneProvider>
+        <WorldSceneViewport />
+        <WorldCanvas key={home ? "home" : "street"}>
+          {home ? (
+            <Room.Provider value="Home furniture and overlay context">
+              <RoomContent />
+            </Room.Provider>
+          ) : (
+            <span>Street scene</span>
+          )}
+        </WorldCanvas>
+      </WorldSceneProvider>
+    );
+  }
+  const view = render(<Views home />);
+  const renderer = await screen.findByTestId("renderer");
+  expect(await screen.findByText("Home furniture and overlay context")).toBeVisible();
+  view.rerender(<Views home={false} />);
+  expect(await screen.findByText("Street scene")).toBeVisible();
+  expect(screen.getByTestId("renderer")).toBe(renderer);
+  expect(state.mounts).toBe(1);
+});

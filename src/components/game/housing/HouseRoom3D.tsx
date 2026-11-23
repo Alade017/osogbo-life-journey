@@ -1,3 +1,4 @@
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { useRenderQuality } from "@/hooks/use-render-quality";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
 import {
@@ -9,10 +10,10 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
-import { DoubleSide, Plane, Vector3, type Group } from "three";
+import { DoubleSide, Plane, Vector3, PerspectiveCamera, type Group } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
 import { homeFurnitureLabel } from "@/lib/home-furniture-label";
@@ -2084,6 +2085,12 @@ export function HouseRoom3D({
   onDraftMove,
 }: Props & { inputBlocked?: boolean }) {
   const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
+  const sceneCamera = useMemo(() => {
+    const camera = new PerspectiveCamera(42, 1, 0.1, 80);
+    camera.position.set(0, 4, 12);
+    camera.lookAt(0, 0, 0);
+    return camera;
+  }, []);
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
   const roomView = useMemo(
     () =>
@@ -2235,33 +2242,28 @@ export function HouseRoom3D({
   }, [waitingCouriers]);
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
-      <RoomOverlayContext.Provider value={overlayHost}>
-        <FurniturePaletteContext.Provider
-          value={
-            houseTypeId === "studio-flat"
-              ? STUDIO_FURNITURE_STYLE
-              : houseTypeId === "shared-room"
-                ? SHARED_FURNITURE_STYLE
-                : houseTypeId === "single-room" ||
-                    houseTypeId === "mini-flat" ||
-                    houseTypeId === "bungalow" ||
-                    houseTypeId === "duplex"
-                  ? PRIVATE_FURNITURE_STYLE
-                  : DEFAULT_FURNITURE_STYLE
-          }
-        >
-          <Canvas
-            style={{ touchAction: "none" }}
-            frameloop="demand"
-            dpr={[1, quality.maxDpr]}
-            shadows
-            camera={{
-              position: [0, 4, 12],
-              fov: 42,
-              near: 0.1,
-              far: 80,
-            }}
-            gl={{ antialias: false, powerPreference: "low-power" }}
+      <WorldCanvas
+        style={{ touchAction: "none" }}
+        frameloop="demand"
+        dpr={[1, quality.maxDpr]}
+        shadows
+        camera={sceneCamera}
+        gl={{ antialias: false, powerPreference: "low-power" }}
+      >
+        <RoomOverlayContext.Provider value={overlayHost}>
+          <FurniturePaletteContext.Provider
+            value={
+              houseTypeId === "studio-flat"
+                ? STUDIO_FURNITURE_STYLE
+                : houseTypeId === "shared-room"
+                  ? SHARED_FURNITURE_STYLE
+                  : houseTypeId === "single-room" ||
+                      houseTypeId === "mini-flat" ||
+                      houseTypeId === "bungalow" ||
+                      houseTypeId === "duplex"
+                    ? PRIVATE_FURNITURE_STYLE
+                    : DEFAULT_FURNITURE_STYLE
+            }
           >
             <WorldLighting size={Math.max(width, depth) * 1.5} dimmed={!lightOn} />
 
@@ -2526,9 +2528,9 @@ export function HouseRoom3D({
               distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 0.94}
               enabled={!inputBlocked && !activePreview}
             />
-          </Canvas>
-        </FurniturePaletteContext.Provider>
-      </RoomOverlayContext.Provider>
+          </FurniturePaletteContext.Provider>
+        </RoomOverlayContext.Provider>
+      </WorldCanvas>
       <div
         ref={overlayHost}
         style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2 }}
