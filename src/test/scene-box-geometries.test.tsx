@@ -1,5 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
-import { createSceneBoxGeometryCache } from "@/components/3d/scene-box-geometries";
+import { render, cleanup } from "@testing-library/react";
+import { useEffect } from "react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { createSceneBoxGeometryCache, SceneBoxGeometryProvider, useSceneBoxGeometry } from "@/components/3d/scene-box-geometries";
 
 describe("scene-owned box geometry", () => {
   it("reuses exactly matching dimensions without changing their geometry", () => {
@@ -42,5 +44,68 @@ describe("scene-owned box geometry", () => {
     const fresh = cache.get([2, 3, 4]);
     expect(fresh).not.toBe(geometry);
     cache.dispose();
+  });
+});
+
+afterEach(() => {
+  cleanup();
+});
+
+describe("scene geometry provider lifecycle", () => {
+  function Consumer({
+    onGeometry,
+  }: {
+    onGeometry: (geometry: ReturnType<typeof useSceneBoxGeometry>) => void;
+  }) {
+    const geometry = useSceneBoxGeometry([0.6, 0.12, 0.55]);
+    useEffect(() => {
+      onGeometry(geometry);
+    }, [geometry, onGeometry]);
+    return null;
+  }
+
+  it("reuses geometry on rerender and disposes it when its scene unmounts", () => {
+    const onGeometry = vi.fn();
+    const view = render(
+      <SceneBoxGeometryProvider>
+        <Consumer onGeometry={onGeometry} />
+      </SceneBoxGeometryProvider>,
+    );
+    const geometry = onGeometry.mock.lastCall![0];
+    const dispose = vi.spyOn(geometry, "dispose");
+    view.rerender(
+      <SceneBoxGeometryProvider>
+        <Consumer onGeometry={onGeometry} />
+      </SceneBoxGeometryProvider>,
+    );
+    expect(onGeometry.mock.lastCall![0]).toBe(geometry);
+    expect(dispose).not.toHaveBeenCalled();
+    view.unmount();
+    expect(dispose).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps sibling scene resources alive when another scene is removed", () => {
+    const onFirst = vi.fn();
+    const onSecond = vi.fn();
+    const first = render(
+      <SceneBoxGeometryProvider>
+        <Consumer onGeometry={onFirst} />
+      </SceneBoxGeometryProvider>,
+    );
+    const second = render(
+      <SceneBoxGeometryProvider>
+        <Consumer onGeometry={onSecond} />
+      </SceneBoxGeometryProvider>,
+    );
+    const firstGeometry = onFirst.mock.lastCall![0];
+    const secondGeometry = onSecond.mock.lastCall![0];
+    expect(firstGeometry).not.toBe(secondGeometry);
+    const disposeFirst = vi.spyOn(firstGeometry, "dispose");
+    const disposeSecond = vi.spyOn(secondGeometry, "dispose");
+    first.unmount();
+    expect(disposeFirst).toHaveBeenCalledTimes(1);
+    expect(disposeSecond).not.toHaveBeenCalled();
+    second.unmount();
+    expect(disposeSecond).toHaveBeenCalledTimes(1);
   });
 });
