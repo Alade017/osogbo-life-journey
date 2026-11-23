@@ -10,7 +10,15 @@ import { VenueSceneBoundary } from "./VenueSceneBoundary";
 import { WorldLoadingIndicator } from "./WorldLoadingIndicator";
 
 /** Local scene tour. Education eligibility, fees and completion stay in education RPCs. */
-export function SchoolCampusVenue({ slug, locationName }: { slug: string; locationName: string }) {
+export function SchoolCampusVenue({
+  slug,
+  locationName,
+  immersive = false,
+}: {
+  slug: string;
+  locationName: string;
+  immersive?: boolean | undefined;
+}) {
   const walk = useCampusWalkthrough(slug);
   const area = campusArea(walk.area);
   const heading = useId();
@@ -24,7 +32,10 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
     return () => window.clearTimeout(timer);
   }, []);
   return (
-    <section className="game-panel space-y-3 p-3 md:p-5" aria-labelledby={heading}>
+    <section
+      className={immersive ? "destination-venue-root" : "game-panel space-y-3 p-3 md:p-5"}
+      aria-labelledby={heading}
+    >
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm text-muted-foreground">{locationName}</p>
@@ -39,7 +50,12 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
           View courses
         </Link>
       </header>
-      <div role="group" aria-label="Campus areas" className="flex gap-2 overflow-x-auto pb-1">
+      <div
+        data-venue-toolbar
+        role="group"
+        aria-label="Campus areas"
+        className="flex gap-2 overflow-x-auto pb-1"
+      >
         {CAMPUS_AREAS.map((item) => (
           <button
             key={item.id}
@@ -55,7 +71,10 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
           </button>
         ))}
       </div>
-      <div className="relative h-[55svh] min-h-72 overflow-hidden rounded-lg border border-edge bg-muted">
+      <div
+        data-venue-viewport
+        className="relative h-[55svh] min-h-72 overflow-hidden rounded-lg border border-edge bg-muted"
+      >
         {status !== "fallback" && (
           <VenueSceneBoundary resetKey={slug} onError={unavailable}>
             <Canvas
@@ -72,7 +91,7 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
                 depth={area.depth}
                 stage
                 target={[0, 1.2, 0]}
-                zoom={1}
+                zoom={1.35}
               />
               <WorldLighting size={Math.max(area.width, area.depth)} />
               <SchoolCampusScene
@@ -101,7 +120,7 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
         )}
       </div>
       <p role="status" className="text-sm text-muted-foreground">
-        Local walkthrough · {walk.message}
+        {walk.message}
       </p>
       <p className="text-sm">{area.detail}</p>
     </section>

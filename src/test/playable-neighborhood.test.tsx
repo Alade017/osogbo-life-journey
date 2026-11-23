@@ -549,7 +549,7 @@ it("reports a bounded timeout when joining never resolves", async () => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(15_000);
   });
-  expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Retry connection" })).toBeEnabled();
   expect(screen.queryByText(/Connected ·/)).not.toBeInTheDocument();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1_500);
@@ -638,4 +638,17 @@ it("stops a failed route without sending direct movement through the blocked des
   await act(async () => new Promise((resolve) => setTimeout(resolve, 250)));
   const movement = joined.send.mock.calls.filter(([type]) => type === "move");
   expect(movement.every(([, intent]) => intent.x === 0 && intent.y === 0)).toBe(true);
+});
+
+it("shows the destination while the room is unavailable without accepting local movement", async () => {
+  state.join.mockRejectedValue(new Error("Failed to fetch"));
+  show();
+  await screen.findByText("Connection unavailable");
+  expect(screen.getByText("R3F neighbourhood")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Retry connection" })).toBeEnabled();
+  expect(state.scene.mock.lastCall?.[0].interactionTargets).toEqual([]);
+  expect(state.scene.mock.lastCall?.[0].playersRef.current).toEqual([]);
+  await act(async () => state.scene.mock.lastCall?.[0].onGroundTap({ x: 500, y: 300 }));
+  expect(state.scene.mock.lastCall?.[0].groundTarget).toBeNull();
+  expect(state.rpc).not.toHaveBeenCalled();
 });
