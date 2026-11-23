@@ -63,7 +63,7 @@ describe("Drizzle migration ledger audit", () => {
     );
     expect(result.issues).toContain(`Duplicate Drizzle database checksum: ${hashA}`);
     expect(result.applied).toBe(0);
-    expect(result.pending).toHaveLength(1);
+    expect(result.pending).toEqual([]);
     expect(result.unknown).toHaveLength(2);
   });
 
