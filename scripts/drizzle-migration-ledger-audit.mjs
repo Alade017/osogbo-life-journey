@@ -48,7 +48,11 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
       issues.push(`Invalid Drizzle journal migration entry: ${entry?.tag ?? "unknown"}`);
       continue;
     }
-    const normalized = { ...entry, when: Number(entry.when), hash: String(entry.hash).toLowerCase() };
+    const normalized = {
+      ...entry,
+      when: Number(entry.when),
+      hash: String(entry.hash).toLowerCase(),
+    };
     validEntries.push(normalized);
     addToIndex(journalTimestamps, normalized.when, normalized);
     addToIndex(journalHashes, normalized.hash, normalized);
@@ -58,7 +62,9 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
     const timestamp = Number(row?.created_at);
     const hash = String(row?.hash ?? "").toLowerCase();
     if (!Number.isSafeInteger(timestamp) || !/^[a-f0-9]{64}$/.test(hash)) {
-      issues.push(`Invalid Drizzle database ledger row at timestamp ${row?.created_at ?? "unknown"}`);
+      issues.push(
+        `Invalid Drizzle database ledger row at timestamp ${row?.created_at ?? "unknown"}`,
+      );
       continue;
     }
     const normalized = { ...row, created_at: timestamp, hash };
@@ -68,20 +74,16 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
   }
 
   for (const [timestamp, entries] of journalTimestamps) {
-    if (entries.length > 1)
-      issues.push(`Duplicate Drizzle journal timestamp: ${timestamp}`);
+    if (entries.length > 1) issues.push(`Duplicate Drizzle journal timestamp: ${timestamp}`);
   }
   for (const [hash, entries] of journalHashes) {
-    if (entries.length > 1)
-      issues.push(`Duplicate Drizzle journal checksum: ${hash}`);
+    if (entries.length > 1) issues.push(`Duplicate Drizzle journal checksum: ${hash}`);
   }
   for (const [timestamp, rows] of databaseTimestamps) {
-    if (rows.length > 1)
-      issues.push(`Duplicate Drizzle database timestamp: ${timestamp}`);
+    if (rows.length > 1) issues.push(`Duplicate Drizzle database timestamp: ${timestamp}`);
   }
   for (const [hash, rows] of databaseHashes) {
-    if (rows.length > 1)
-      issues.push(`Duplicate Drizzle database checksum: ${hash}`);
+    if (rows.length > 1) issues.push(`Duplicate Drizzle database checksum: ${hash}`);
   }
 
   for (const entry of validEntries) {
