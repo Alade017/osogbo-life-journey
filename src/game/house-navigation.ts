@@ -283,9 +283,16 @@ export function findRoomPath(
   }
   if (!interact && (Math.abs(aim[0]) > width / 2 - margin || Math.abs(aim[2]) > depth / 2 - margin))
     return null;
-  // Routes always start in the largest open region. A character standing in a smaller region is
-  // walled off from the rest of the room, so the nearest cell in the largest region is where it leaves from.
-  const origin = nearest(start, largestRegion);
+  // Routes start in the largest open region, because a character walled into a pocket leaves from there.
+  // The exception: a target inside the same pocket as the character is reached from inside it.
+  const startCell = nearest(start);
+  const targetCell = nearest(aim);
+  const inSamePocket =
+    startCell >= 0 &&
+    targetCell >= 0 &&
+    region[startCell] === region[targetCell] &&
+    region[startCell] !== largestRegion;
+  const origin = nearest(start, inSamePocket ? region[startCell] : largestRegion);
   if (origin < 0) return null;
   // Search reachable space first, then choose the nearest reachable interaction spot.
   const queue = [origin],

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useId, useState } from "react";
-import { Canvas } from "@react-three/fiber";
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
+import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
 import { TierOneClinicScene } from "@/components/3d/TierOneClinicScene";
 import { VenueVisitor } from "@/components/3d/VenueVisitor";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
@@ -31,6 +32,10 @@ export function ClinicVenue({
   const [visit, setVisit] = useState<ClinicVisit | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const unavailable = useCallback(() => setStatus("fallback"), []);
+  const ready = useCallback(
+    () => setStatus((status) => (status === "loading" ? "ready" : status)),
+    [],
+  );
   const cancel = walk.cancel;
   useEffect(() => {
     if (exterior) cancel();
@@ -93,12 +98,12 @@ export function ClinicVenue({
       >
         {status !== "fallback" && (
           <VenueSceneBoundary resetKey={slug} onError={unavailable}>
-            <Canvas
+            <WorldCanvas
+              onSceneError={unavailable}
               shadows="percentage"
               frameloop="demand"
               dpr={[1, 1.25]}
               gl={{ antialias: false, powerPreference: "low-power" }}
-              onCreated={() => setStatus("ready")}
               fallback={<p className="p-4">WebGL is unavailable. Use the clinic controls below.</p>}
               aria-label="Interactive 3D clinic"
             >
@@ -133,7 +138,8 @@ export function ClinicVenue({
                   uniformColor={WORLD_PALETTE.linen}
                 />
               )}
-            </Canvas>
+              <WorldSceneReady onReady={ready} />
+            </WorldCanvas>
           </VenueSceneBoundary>
         )}
         {status === "loading" && (

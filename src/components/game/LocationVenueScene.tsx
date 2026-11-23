@@ -34,7 +34,8 @@ const ClinicVenue = lazy(venueSceneLoaders.clinic);
 const OsunMallVenue = lazy(venueSceneLoaders.mall);
 const WorshipVenue = lazy(venueSceneLoaders.worship);
 const SchoolCampusVenue = lazy(venueSceneLoaders.campus);
-import { Canvas } from "@react-three/fiber";
+import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import {
@@ -64,13 +65,6 @@ import { VenueFurnitureStatus } from "./VenueFurnitureStatus";
 import { getVenueSceneIdentity } from "@/lib/venue-scene-identity";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
-
-function VenueSceneReady({ onReady }: { onReady: () => void }) {
-  useEffect(() => {
-    onReady();
-  }, [onReady]);
-  return null;
-}
 
 const FixtureModel = memo(function FixtureModel({
   fixture,
@@ -136,7 +130,7 @@ const FixtureModel = memo(function FixtureModel({
             accentColor={accentColor}
             onClick={handleClick}
           />
-          <VenueSceneReady onReady={handleReady} />
+          <WorldSceneReady onReady={handleReady} />
         </Suspense>
       </VenueSceneBoundary>
     </group>
@@ -244,8 +238,9 @@ function BasicLocationVenueScene({
       >
         {sceneStatus !== "fallback" && (
           <VenueSceneBoundary resetKey={slug} onError={() => setSceneStatus("fallback")}>
-            <Canvas
+            <WorldCanvas
               key={slug}
+              onSceneError={() => setSceneStatus("fallback")}
               shadows="percentage"
               frameloop="demand"
               dpr={[1, Math.min(1.25, quality.maxDpr)]}
@@ -372,9 +367,9 @@ function BasicLocationVenueScene({
                     ))}
                   </>
                 )}
-                <VenueSceneReady onReady={handleSceneReady} />
+                <WorldSceneReady onReady={handleSceneReady} />
               </Suspense>
-            </Canvas>
+            </WorldCanvas>
           </VenueSceneBoundary>
         )}
         {sceneStatus === "loading" && (

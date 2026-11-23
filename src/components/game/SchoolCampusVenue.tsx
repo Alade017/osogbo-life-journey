@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Canvas } from "@react-three/fiber";
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
+import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
 import { SchoolCampusScene } from "@/components/3d/SchoolCampusScene";
 import { VenueVisitor } from "@/components/3d/VenueVisitor";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
@@ -24,6 +25,10 @@ export function SchoolCampusVenue({
   const heading = useId();
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const unavailable = useCallback(() => setStatus("fallback"), []);
+  const ready = useCallback(
+    () => setStatus((status) => (status === "loading" ? "ready" : status)),
+    [],
+  );
   useEffect(() => {
     const timer = window.setTimeout(
       () => setStatus((previous) => (previous === "loading" ? "fallback" : previous)),
@@ -77,12 +82,12 @@ export function SchoolCampusVenue({
       >
         {status !== "fallback" && (
           <VenueSceneBoundary resetKey={slug} onError={unavailable}>
-            <Canvas
+            <WorldCanvas
+              onSceneError={unavailable}
               shadows="percentage"
               frameloop="demand"
               dpr={[1, 1.25]}
               gl={{ antialias: false, powerPreference: "low-power" }}
-              onCreated={() => setStatus("ready")}
               fallback={<p className="p-4">WebGL is unavailable. Use the campus controls below.</p>}
               aria-label="Interactive 3D school campus"
             >
@@ -104,7 +109,8 @@ export function SchoolCampusVenue({
                 }}
               />
               <VenueVisitor position={walk.position} facing={walk.facing} walking={walk.walking} />
-            </Canvas>
+              <WorldSceneReady onReady={ready} />
+            </WorldCanvas>
           </VenueSceneBoundary>
         )}
         {status === "loading" && (

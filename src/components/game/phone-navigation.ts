@@ -8,6 +8,7 @@ export type PhoneNavigationState = {
 
 export type PhoneNavigationAction =
   | { type: "open"; app: string; search?: string }
+  | { type: "restore"; app: string | null; search?: string }
   | { type: "back" }
   | { type: "home" }
   | { type: "close" };
@@ -62,6 +63,14 @@ export function reducePhoneNavigation(
   action: PhoneNavigationAction,
 ): PhoneNavigationState {
   switch (action.type) {
+    case "restore":
+      return state.app === action.app && state.search === action.search
+        ? state
+        : {
+            app: action.app,
+            ...(action.search ? { search: action.search } : {}),
+            history: [],
+          };
     case "open":
       return action.app === state.app && action.search === state.search
         ? state
