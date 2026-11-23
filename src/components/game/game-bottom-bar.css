@@ -286,3 +286,33 @@
     width: 44px;
   }
 }
+
+/* UI-15: Keep the established HUD order, with core actions easier to scan. */
+.gbb .gbb-link[data-core-action="true"] {
+  border-color: color-mix(in srgb, var(--primary) 28%, var(--border));
+  color: var(--foreground);
+  font-weight: 750;
+}
+
+.gbb .gbb-link[data-core-action="true"]:not(.gbb-active) svg {
+  color: var(--primary);
+}
+
+.gbb .gbb-link[data-core-action="true"].gbb-active {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.gbb .gbb-link[data-core-action="true"].gbb-active svg {
+  color: currentColor;
+}
+
+.gbb .gbb-link[data-core-action="true"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+/* Avoid overpowering a modal or the player's HUD idle state. */
+.game-shell.hud-idle .gbb:not(.is-open) .gbb-link[data-core-action="true"]:not(:focus-visible) {
+  box-shadow: none;
+}
