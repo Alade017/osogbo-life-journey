@@ -456,11 +456,16 @@ export function GameInventoryPanel() {
             </p>
           )}
 
+          {!requestedSlot && compatibleItems.length > 0 && !selectedItem && (
+            <p className="pi-interaction-tip">Select an item to see what you can do with it.</p>
+          )}
           <div className="pi-bag-layout">
             <div className="pi-bag" id="inventory-items">
               {compatibleItems.length === 0 && (
                 <p className="pi-bag-empty" role="status">
-                  {query ? "No items match your search." : "No items in this category."}
+                  {query
+                    ? "No items match your search. Try another name or clear the search."
+                    : "No items in this category. Try All items to browse your bag."}
                 </p>
               )}
               {compatibleItems.map((item) => {
@@ -593,7 +598,7 @@ export function GameInventoryPanel() {
                   <Package size={32} aria-hidden="true" />
                   <strong>Choose an item</strong>
                   <p className="pi-note">
-                    Select an item from your bag to preview it, check its details, or use it.
+                    Choose an item from your bag to see its details and available actions.
                   </p>
                 </div>
               )}
