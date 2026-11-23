@@ -1,5 +1,6 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useMemo, type ReactNode } from "react";
 import { BoxGeometry } from "three";
+import { useStrictSafeDisposal } from "./strict-safe-disposal";
 
 export type SceneBoxGeometryCache = {
   get(size: readonly [number, number, number]): BoxGeometry;
@@ -33,7 +34,7 @@ const SceneBoxContext = createContext<SceneBoxGeometryCache | null>(null);
 
 export function SceneBoxGeometryProvider({ children }: { children: ReactNode }) {
   const cache = useMemo(createSceneBoxGeometryCache, []);
-  useEffect(() => () => cache.dispose(), [cache]);
+  useStrictSafeDisposal(cache);
   return <SceneBoxContext.Provider value={cache}>{children}</SceneBoxContext.Provider>;
 }
 
