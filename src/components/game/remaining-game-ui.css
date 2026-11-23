@@ -871,3 +871,59 @@
   color: var(--brand-slate);
   overflow-wrap: anywhere;
 }
+
+/* UI-05: Keep the current balance and transfer action above secondary totals. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-history-disclosure {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-history-summary {
+  display: list-item;
+  padding: 0.8rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  color: var(--brand-ink);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-history-summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-history-disclosure[open] .wallet-lifetime-grid {
+  margin-top: var(--screen-section-gap);
+}
+
+/* UI-06: One clear primary balance and action, without changing account rules. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-balance-primary {
+  border-left-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 36%, var(--brand-cream));
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-action-primary {
+  min-height: 44px;
+  background: var(--brand-royal);
+  border-color: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-action-secondary {
+  min-height: 44px;
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--brand-ink);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.wallet-action-primary, .wallet-action-secondary):disabled {
+  opacity: 0.55;
+  box-shadow: none;
+}
+
+@media (max-width: 420px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.wallet-action-primary, .wallet-action-secondary) {
+    flex: 1 1 100%;
+  }
+}
