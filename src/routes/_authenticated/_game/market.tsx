@@ -55,7 +55,13 @@ export function MarketPage({
   });
 
   if (characterLoading || shopsLoading)
-    return <LoadingState title="Opening the market" detail="Loading your stall and the shops…" />;
+    return (
+      <LoadingState
+        title="Opening the market"
+        detail="Loading your stall and the shops…"
+        queryKeys={[q.character().queryKey, q.shopItems().queryKey]}
+      />
+    );
 
   return (
     <div className="space-y-5">

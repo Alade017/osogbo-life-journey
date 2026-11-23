@@ -138,7 +138,11 @@ function SocialPage() {
   }, [character?.current_location_id, qc]);
   if (characterLoading || npcsLoading || !character)
     return (
-      <LoadingState title="Opening your social life" detail="Loading your contacts and messages…" />
+      <LoadingState
+        title="Opening your social life"
+        detail="Loading your contacts and messages…"
+        queryKeys={[q.character().queryKey, q.npcs().queryKey]}
+      />
     );
   const time = simulation.gameTime;
   const placeBySlug = (slug: string) =>

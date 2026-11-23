@@ -100,7 +100,13 @@ export function PartyExperience({
   });
 
   if (characterLoading)
-    return <LoadingState title="Opening the party" detail="Loading your character…" />;
+    return (
+      <LoadingState
+        title="Opening the party"
+        detail="Loading your character…"
+        queryKeys={[q.character().queryKey]}
+      />
+    );
   if (!character)
     return <EmptyState title="No character yet" body="Create a character to join the party." />;
 
@@ -337,7 +343,13 @@ function ClubsTab({
   const clubs = venues.filter((venue) => venue.venue_kind === "club");
 
   if (isLoading)
-    return <LoadingState title="Opening the venues" detail="Loading the clubs and drinks…" />;
+    return (
+      <LoadingState
+        title="Opening the venues"
+        detail="Loading the clubs and drinks…"
+        queryKeys={[["partyVenues"], ["partyDrinks"], ["partyActivities"]]}
+      />
+    );
   if (clubs.length === 0)
     return <EmptyState title="No clubs open" body="Clubs will appear here when they open." />;
 
@@ -516,7 +528,14 @@ function DrinksTab({
   isLoading: boolean;
 }) {
   const buy = useInvalidatingMutation(partyRpc.buyDrink, "Drink bought.");
-  if (isLoading) return <LoadingState title="Opening the drinks" detail="Loading the club menu…" />;
+  if (isLoading)
+    return (
+      <LoadingState
+        title="Opening the drinks"
+        detail="Loading the club menu…"
+        queryKeys={[["partyDrinks"]]}
+      />
+    );
   const canBuy = inClub || Boolean(atEventCentre);
   return (
     <div className="grid gap-3">
@@ -585,7 +604,13 @@ function EventsTab({
   const eventCentres = venues.filter((v) => v.venue_kind === "event_center");
 
   if (events.isLoading)
-    return <LoadingState title="Opening the events" detail="Loading the city events…" />;
+    return (
+      <LoadingState
+        title="Opening the events"
+        detail="Loading the city events…"
+        queryKeys={[["partyEvents"]]}
+      />
+    );
   if (events.isError)
     return (
       <div className="game-panel grid gap-2 p-4" role="alert">

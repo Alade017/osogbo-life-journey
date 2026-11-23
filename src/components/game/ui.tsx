@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, type QueryKey } from "@tanstack/react-query";
+import { retryLoadingQueries } from "@/lib/query-retry";
 import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -7,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { SLOW_LOAD_AFTER_MS } from "@/lib/request-timeout";
 
-const SLOW_LOAD_DETAIL = "This is taking longer than usual. Check your connection, then try again.";
+const SLOW_LOAD_DETAIL = "This is taking longer than usual. Check your connection.";
 
 export function PageHeader({
   title,
@@ -101,17 +102,32 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
 
 /**
  * Loading screen for a game page. Each page names what it is opening. After a while it offers a
- * retry, which reloads every query on the page, instead of waiting silently.
+ * retry for the exact queries supplied by that page, instead of refreshing unrelated data.
  */
 export function LoadingState({
   title = "Loading your game",
   detail = "Preparing your world…",
+  queryKeys = [],
 }: {
   title?: string;
   detail?: string;
+  queryKeys?: readonly QueryKey[];
 }) {
   const queryClient = useQueryClient();
   const [slow, setSlow] = useState(false);
+  const [retrying, setRetrying] = useState(false);
+  const [retryError, setRetryError] = useState("");
+  async function retry() {
+    setRetrying(true);
+    setRetryError("");
+    try {
+      await retryLoadingQueries(queryClient, queryKeys);
+    } catch {
+      setRetryError("The retry could not complete. Check your connection and try again.");
+    } finally {
+      setRetrying(false);
+    }
+  }
   useEffect(() => {
     const timer = window.setTimeout(() => setSlow(true), SLOW_LOAD_AFTER_MS);
     return () => window.clearTimeout(timer);
@@ -121,11 +137,17 @@ export function LoadingState({
       <WorldLoadingIndicator
         presentation="screen"
         title={title}
-        detail={slow ? SLOW_LOAD_DETAIL : detail}
+        detail={retryError || (slow ? SLOW_LOAD_DETAIL : detail)}
         action={
-          slow ? (
-            <Button type="button" size="sm" onClick={() => void queryClient.invalidateQueries()}>
-              Try again
+          slow && queryKeys.length > 0 ? (
+            <Button
+              type="button"
+              size="sm"
+              disabled={retrying}
+              aria-busy={retrying}
+              onClick={() => void retry()}
+            >
+              {retrying ? "Retrying…" : "Try again"}
             </Button>
           ) : undefined
         }
