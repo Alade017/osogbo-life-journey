@@ -6860,6 +6860,11 @@ export type Database = {
       };
       get_social_groups_overview: { Args: never; Returns: Json };
       set_my_app_tile_style: { Args: { p_style: string }; Returns: Json };
+      my_property_sale_quotes: { Args: never; Returns: Json };
+      sell_property_to_npc: {
+        Args: { p_player_property_id: string; p_request_id: string };
+        Returns: Json;
+      };
       set_my_message_theme: { Args: { p_theme: string }; Returns: string };
       save_my_world_checkpoint: {
         Args: { p_world_x: number; p_world_y: number };
