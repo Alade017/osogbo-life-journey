@@ -15,6 +15,7 @@ import {
   getMyStallStock,
   payMarketStallRent,
   rentMarketStall,
+  marketStallErrorMessage,
   saveMyPlayerStall,
   STALL_CATEGORY_OPTIONS,
   type StallCategory,
@@ -129,7 +130,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
       await invalidateStallState();
       toast.success("You rented an Oja-Oba stall for one week.");
     },
-    onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
+    onError: (error: Error) => toast.error(marketStallErrorMessage(error)),
   });
   const payRentMutation = useMutation({
     mutationFn: () => payMarketStallRent(),
@@ -284,6 +285,11 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                   >
                     {rentMutation.isPending ? "Renting…" : "Rent a stall"}
                   </button>
+                  {rentMutation.isError && (
+                    <p role="alert" className="w-full text-xs text-destructive">
+                      {marketStallErrorMessage(rentMutation.error)}
+                    </p>
+                  )}
                 </div>
               )}
               {rentQuery.data && (

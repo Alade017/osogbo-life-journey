@@ -252,3 +252,23 @@ export async function purchasePlayerStallItem(input: {
   });
   return purchaseReceiptSchema.parse(response);
 }
+
+const MARKET_STALL_ERROR_COPY: Readonly<Record<string, string>> = {
+  ALREADY_RENTING:
+    "You already have an active rental. Manage your existing lease before renting a stall.",
+  INSUFFICIENT_FUNDS: "You do not have enough cash for the first week’s rent.",
+  MARKET_STALL_UNAVAILABLE: "This stall is not available to rent right now.",
+  REGISTERED_ACCOUNT_REQUIRED: "Create an account to rent a stall.",
+  REQUEST_ID_REQUIRED: "That request could not be sent. Try again.",
+  IDEMPOTENCY_CONFLICT: "That request was already used for something else. Try again.",
+};
+
+const MARKET_STALL_FALLBACK = "That change could not be completed. Try again.";
+
+/** Player-facing line for a failed stall action. Known server codes get plain copy, never the raw code. */
+export function marketStallErrorMessage(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  const codes = message.match(/\b[A-Z][A-Z0-9_]{2,}\b/g) ?? [];
+  const known = codes.find((candidate) => candidate in MARKET_STALL_ERROR_COPY);
+  return known ? MARKET_STALL_ERROR_COPY[known]! : MARKET_STALL_FALLBACK;
+}
