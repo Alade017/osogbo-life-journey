@@ -157,8 +157,8 @@ export function ProfilePage() {
         </div>
       </div>
 
-      <section className="pi-section" aria-labelledby="profile-badges-title">
-        <div className="pi-section-heading">
+      <details className="pi-section pi-badges-disclosure" aria-labelledby="profile-badges-title">
+        <summary className="pi-section-heading">
           <div>
             <p className="pi-eyebrow">Achievements</p>
             <h2 id="profile-badges-title">Badges</h2>
@@ -166,7 +166,7 @@ export function ProfilePage() {
           <span>
             {earned} / {badges.length} earned
           </span>
-        </div>
+        </summary>
         <ul className="pi-badges">
           {badges.map((badge) => {
             const Icon = BADGE_ICONS[badge.id];
@@ -193,7 +193,7 @@ export function ProfilePage() {
             );
           })}
         </ul>
-      </section>
+      </details>
 
       <nav className="pi-quick" aria-label="Profile actions">
         <button
