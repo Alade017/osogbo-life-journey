@@ -3,6 +3,7 @@ import { useThree, type ThreeEvent } from "@react-three/fiber";
 import { useAnimations, useGLTF } from "@react-three/drei";
 import { Box3, Group, LoopOnce, Vector3 } from "three";
 import type { VenueFixture } from "@/lib/location-venue-designs";
+import { startAnimationInvalidation } from "@/lib/animation-invalidation";
 
 /** The venue stage's walkable footprint, in metres. Models are scaled down to fit it, never up past 1.25×. */
 const STAGE_FOOTPRINT = { x: 9, z: 7 };
@@ -70,13 +71,11 @@ export function VenueEnvironment({
     }
     action.fadeIn(SHUTTER_FADE_SECONDS).play();
     actions[open ? "close" : "open"]?.fadeOut(SHUTTER_FADE_SECONDS);
-    // The stage renders on demand, so keep frames coming while the shutter moves.
-    const timer = window.setInterval(invalidate, 1000 / 30);
-    const stop = window.setTimeout(() => window.clearInterval(timer), clip.duration * 1000 + 300);
-    return () => {
-      window.clearInterval(timer);
-      window.clearTimeout(stop);
-    };
+    return startAnimationInvalidation({
+      action,
+      invalidate,
+      fadeSeconds: SHUTTER_FADE_SECONDS,
+    });
   }, [actions, open, shuttered, invalidate]);
 
   return (

@@ -566,3 +566,145 @@
     border-radius: 50%;
     overflow: hidden;
 }
+
+/* UI-05: Retain the established section order and form actions while
+   simplifying secondary card chrome. Works in the in-game phone container. */
+.sx-page .sx-card {
+  min-width: 0;
+  box-shadow: none;
+}
+
+.sx-page .sx-card-head {
+  min-width: 0;
+}
+
+.sx-page .sx-card-head p {
+  max-width: 58ch;
+  line-height: 1.45;
+}
+
+.sx-page .sx-card-body,
+.sx-page .sx-field,
+.sx-page .sx-inline {
+  min-width: 0;
+}
+
+/* UI-06: Clear selected tile state and consistent action hierarchy.
+   No hardcoded color values; all colors come from existing game tokens. */
+.sx-page .sx-tile-choice {
+  min-width: 0;
+  border-color: var(--border);
+  color: var(--foreground);
+  background: var(--card);
+}
+
+.sx-page .sx-tile-choice[aria-checked="true"] {
+  border-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 32%, var(--card));
+  box-shadow: inset 0 0 0 1px var(--brand-royal);
+}
+
+.sx-page .sx-tile-sample {
+  background: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.sx-page .sx-btn-primary:not(:disabled) {
+  border-color: var(--brand-royal);
+  background: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.sx-page .sx-btn-ghost:not(:disabled) {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--brand-ink);
+}
+
+.sx-page :is(.sx-tile-choice, .sx-btn-primary, .sx-btn-ghost, .sx-btn-danger):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sx-page :is(.sx-tile-choice, .sx-btn-primary, .sx-btn-ghost, .sx-btn-danger) {
+    transition: none;
+  }
+}
+
+/* UI-16: Reflect the persisted tile style and pending save without new defaults. */
+.sx-page .sx-tile-choice {
+  min-height: 112px;
+  grid-template-rows: auto auto auto;
+  align-content: center;
+}
+
+.sx-page .sx-tile-choice-state {
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  font-weight: 750;
+  line-height: 1.2;
+}
+
+.sx-page .sx-tile-choice[aria-checked="true"] .sx-tile-choice-state {
+  color: var(--brand-royal-deep);
+}
+
+.sx-page .sx-tile-save-status {
+  margin: 0.65rem 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.sx-page .sx-tile-choices[aria-busy="true"] .sx-tile-choice {
+  cursor: progress;
+}
+
+@container (max-width: 340px) {
+  .sx-page .sx-tile-choice {
+    padding-inline: 0.45rem;
+  }
+}
+
+/* UI-17: Preference controls stay visually grouped within their section cards.
+   Keep the distinct danger-section surface intact. */
+.sx-page .sx-card:not(.sx-card-danger) {
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card);
+  background: var(--card);
+}
+
+.sx-page .sx-card-body {
+  gap: 0.875rem;
+}
+
+.sx-page .sx-row {
+  min-width: 0;
+}
+
+.sx-page .sx-row + .sx-row {
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+/* UI-18: Use the same selected, disabled and keyboard-focus language as other apps. */
+.sx-page :is(.sx-tile-choice, .sx-btn-primary, .sx-btn-ghost, .sx-btn-danger):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.sx-page :is(.sx-tile-choice, .sx-input, .sx-btn-primary, .sx-btn-ghost, .sx-btn-danger):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@container (max-width: 340px) {
+  .sx-page .sx-card {
+    min-width: 0;
+  }
+
+  .sx-page .sx-row {
+    flex-wrap: wrap;
+  }
+}

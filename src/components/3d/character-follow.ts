@@ -13,16 +13,25 @@ export function followStep(
   delta: number,
   speed: number,
   catchUpRate: number,
+  output: Vec3 = [0, 0, 0],
 ): Vec3 {
   const dx = goal[0] - current[0];
   const dy = goal[1] - current[1];
   const dz = goal[2] - current[2];
   const distance = Math.hypot(dx, dy, dz);
-  if (distance === 0) return [goal[0], goal[1], goal[2]];
+  if (distance === 0) {
+    output[0] = goal[0];
+    output[1] = goal[1];
+    output[2] = goal[2];
+    return output;
+  }
   const eased = (1 - Math.exp(-Math.max(0, delta) * catchUpRate)) * distance;
   const step = Math.min(distance, Math.max(speed * Math.max(0, delta), eased));
   const scale = step / distance;
-  return [current[0] + dx * scale, current[1] + dy * scale, current[2] + dz * scale];
+  output[0] = current[0] + dx * scale;
+  output[1] = current[1] + dy * scale;
+  output[2] = current[2] + dz * scale;
+  return output;
 }
 
 /**
@@ -42,7 +51,40 @@ export function measuredSpeed(
 
 /** Convert rendered horizontal travel to a bounded gait playback rate. */
 export function walkingCadence(distance: number, delta: number, height: number): number {
-  if (![distance, delta, height].every(Number.isFinite) || distance <= 0 || delta <= 0 || height <= 0)
+  if (
+    !Number.isFinite(distance) ||
+    !Number.isFinite(delta) ||
+    !Number.isFinite(height) ||
+    distance <= 0 ||
+    delta <= 0 ||
+    height <= 0
+  )
     return 0;
-  return Math.min(CHARACTER_MOTION.walkMaxCadence, distance / delta / height / CHARACTER_MOTION.walkReferenceSpeed);
+  return Math.min(
+    CHARACTER_MOTION.walkMaxCadence,
+    distance / delta / height / CHARACTER_MOTION.walkReferenceSpeed,
+  );
+}
+
+/** Preserve shortest-angle turning while skipping trig for settled facing. */
+export function shortestFacingDifference(targetYaw: number, currentYaw: number): number {
+  const rawDifference = targetYaw - currentYaw;
+  return Math.abs(rawDifference) <= 0.002
+    ? rawDifference
+    : Math.atan2(Math.sin(rawDifference), Math.cos(rawDifference));
+}
+
+/** Preserve the existing destination-based look-at turn, limited to half the head-turn range. */
+export function lookAtBodyTurn(
+  targetX: number,
+  targetZ: number,
+  positionX: number,
+  positionZ: number,
+  facingYaw: number,
+): number {
+  const worldYaw = Math.atan2(targetX - positionX, targetZ - positionZ);
+  const difference = worldYaw - facingYaw;
+  const wrapped = Math.atan2(Math.sin(difference), Math.cos(difference));
+  const limit = CHARACTER_MOTION.headTurnLimit * 0.5;
+  return Math.max(-limit, Math.min(limit, wrapped));
 }

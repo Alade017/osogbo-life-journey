@@ -279,7 +279,12 @@ export function SettingsPage() {
         description="Choose how app icons look on your phone. This follows your account to any device."
         footer={<SavedPill show={saved === "app_tile_style"} />}
       >
-        <div className="sx-tile-choices" role="radiogroup" aria-label="App tile style">
+        <div
+          className="sx-tile-choices"
+          role="radiogroup"
+          aria-label="App tile style"
+          aria-busy={setTileStyle.isPending}
+        >
           {(["rounded", "circle"] as const).map((style) => {
             const selected = parseAppTileStyle(profile.app_tile_style) === style;
             return (
@@ -298,10 +303,18 @@ export function SettingsPage() {
                   <Sparkles size={16} />
                 </span>
                 <span>{style === "circle" ? "Circle" : "Rounded"}</span>
+                <span className="sx-tile-choice-state" aria-hidden="true">
+                  {selected ? "Selected" : "\u00a0"}
+                </span>
               </button>
             );
           })}
         </div>
+        {setTileStyle.isPending && (
+          <p className="sx-tile-save-status" role="status">
+            Saving your phone tile preference…
+          </p>
+        )}
       </Section>
 
       <Section

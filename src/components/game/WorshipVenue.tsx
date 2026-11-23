@@ -104,7 +104,7 @@ export function WorshipVenue({ slug, locationName }: { slug: string; locationNam
     <section aria-label={`${locationName} prayer hall`} className="relative">
       <div className="relative h-[calc(100dvh-7rem)] min-h-[24rem] overflow-hidden bg-muted">
         <Canvas
-          frameloop="always"
+          frameloop="demand"
           dpr={[1, 1.25]}
           gl={{ antialias: false, powerPreference: "low-power" }}
           camera={{ position: [0, 17, layout.hall.depth / 2 + 9], fov: 42 }}

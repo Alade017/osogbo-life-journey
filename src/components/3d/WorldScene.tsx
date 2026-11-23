@@ -48,6 +48,8 @@ export function WorldLighting({
   dimmed = false,
   animateFoliage = false,
   refined = false,
+  shadowMapSize,
+  contactShadows = true,
 }: {
   size?: number;
   dimmed?: boolean;
@@ -55,6 +57,8 @@ export function WorldLighting({
   animateFoliage?: boolean;
   /** Sky-and-ground fill and higher-quality sun shadows, for the neighbourhood view. */
   refined?: boolean;
+  shadowMapSize?: number;
+  contactShadows?: boolean;
 }) {
   const { invalidate } = useThree();
   useEffect(() => {
@@ -66,7 +70,12 @@ export function WorldLighting({
     const coarse = window.matchMedia("(pointer: coarse)").matches;
     FOLIAGE_SWAY.amplitude.value = foliageSwayAmplitude({ reducedMotion });
     if (reducedMotion) return;
-    const timer = window.setInterval(invalidate, 1000 / (coarse ? 10 : 15));
+    const timer = window.setInterval(
+      () => {
+        if (!document.hidden) invalidate();
+      },
+      1000 / (coarse ? 10 : 15),
+    );
     return () => {
       window.clearInterval(timer);
       FOLIAGE_SWAY.amplitude.value = 0;
@@ -75,6 +84,7 @@ export function WorldLighting({
   useFrame(({ clock }) => {
     if (animateFoliage) FOLIAGE_SWAY.time.value = clock.elapsedTime;
   });
+  const shadowResolution = shadowMapSize ?? (refined ? 2048 : 1024);
   return (
     <>
       <color attach="background" args={[WORLD_PALETTE.ground]} />
@@ -88,7 +98,7 @@ export function WorldLighting({
         intensity={refined ? 2.4 : dimmed ? 0.7 : 2}
         {...(refined ? { color: WORLD_LIGHT.sun } : {})}
         castShadow
-        shadow-mapSize={refined ? [2048, 2048] : [1024, 1024]}
+        shadow-mapSize={[shadowResolution, shadowResolution]}
         shadow-radius={refined ? 4 : 1}
         shadow-bias={-0.001}
         shadow-normalBias={0.04}
@@ -98,16 +108,18 @@ export function WorldLighting({
         shadow-camera-bottom={-size}
         shadow-camera-far={size * 3}
       />
-      <ContactShadows
-        position={[0, 0.015, 0]}
-        scale={size * 2}
-        opacity={0.28}
-        blur={2.5}
-        far={8}
-        resolution={256}
-        frames={Infinity}
-        color={WORLD_PALETTE.timber}
-      />
+      {contactShadows && (
+        <ContactShadows
+          position={[0, 0.015, 0]}
+          scale={size * 2}
+          opacity={0.28}
+          blur={2.5}
+          far={8}
+          resolution={256}
+          frames={Infinity}
+          color={WORLD_PALETTE.timber}
+        />
+      )}
     </>
   );
 }
@@ -266,11 +278,12 @@ export function WorldInstances({
   const mesh = useRef<InstancedMesh>(null);
   const { invalidate } = useThree();
   const animatedObject = useMemo(() => new Object3D(), []);
+  const isAnimated = Boolean(animate);
   useEffect(() => {
-    if (!animate) return;
+    if (!isAnimated) return;
     const timer = window.setInterval(invalidate, 1000 / 15);
     return () => window.clearInterval(timer);
-  }, [animate, invalidate]);
+  }, [isAnimated, invalidate]);
   useFrame(({ clock }) => {
     if (!animate || !mesh.current) return;
     items.forEach((item, index) => {
@@ -365,12 +378,17 @@ function TrafficLightSignal({
   const red = useRef<MeshBasicMaterial>(null);
   const amber = useRef<MeshBasicMaterial>(null);
   const green = useRef<MeshBasicMaterial>(null);
+  const lastSignalState = useRef<"stop" | "caution" | "go" | null>(null);
 
   useFrame(() => {
     const state = getSignalState(junctionId);
-    if (red.current) red.current.color.set(state === "stop" ? "#ef2929" : "#401b1b");
-    if (amber.current) amber.current.color.set(state === "caution" ? "#f59e0b" : "#49320d");
-    if (green.current) green.current.color.set(state === "go" ? "#22c55e" : "#173b27");
+    if (state === lastSignalState.current || !red.current || !amber.current || !green.current)
+      return;
+
+    red.current.color.set(state === "stop" ? "#ef2929" : "#401b1b");
+    amber.current.color.set(state === "caution" ? "#f59e0b" : "#49320d");
+    green.current.color.set(state === "go" ? "#22c55e" : "#173b27");
+    lastSignalState.current = state;
   });
 
   return (

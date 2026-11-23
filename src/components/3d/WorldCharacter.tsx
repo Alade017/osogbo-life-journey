@@ -1,4 +1,4 @@
-import { resolveEquippedHeadwear, resolveWornOutfit } from "@/game/wearable-outfits";
+import { resolveEquippedHeadwear, resolveNormalizedWornOutfit } from "@/game/wearable-outfits";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, Vector3, type Group } from "three";
@@ -7,7 +7,14 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WORLD_SCALE } from "./world-theme";
 import { CHARACTER_GROUND, CHARACTER_MOTION } from "./character-config";
 import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
-import { followStep, measuredSpeed, walkingCadence, type Vec3 } from "./character-follow";
+import {
+  followStep,
+  measuredSpeed,
+  shortestFacingDifference,
+  lookAtBodyTurn,
+  walkingCadence,
+  type Vec3,
+} from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -55,7 +62,7 @@ export function WorldCharacter({
   body?: BodyVariant | undefined;
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
-  const outfit = resolveWornOutfit(safe, gender, equipment);
+  const outfit = resolveNormalizedWornOutfit(safe, equipment);
   // Only inventory items with a supported 3D headwear model render on the rig.
   safe.headwear = resolveEquippedHeadwear(equipment);
   if (outfit.hasWearables) safe.clothed = true;
@@ -69,7 +76,13 @@ export function WorldCharacter({
   const walkingRef = useRef(false);
   // The root glides toward `position` each frame, so a new spot is walked to rather than jumped to.
   const root = useRef<Group>(null);
-  const goal = useRef(new Vector3(...position));
+  const goal = useRef<Vector3 | null>(null);
+  const goalPosition = goal.current ?? (goal.current = new Vector3(...position));
+  const [movementBuffers] = useState(() => ({
+    current: [0, 0, 0] as Vec3,
+    goal: [0, 0, 0] as Vec3,
+    output: [0, 0, 0] as Vec3,
+  }));
   // Speed of the server's last update, so the glide keeps pace with the walk rather than easing off.
   const speed = useRef(0);
   const updateAt = useRef(performance.now());
@@ -85,10 +98,10 @@ export function WorldCharacter({
     updateAt.current = now;
     previousGoal.current = position;
   }
-  goal.current.set(x, y, z);
+  goalPosition.set(x, y, z);
   useLayoutEffect(() => {
-    root.current?.position.copy(goal.current);
-  }, []);
+    root.current?.position.copy(goalPosition);
+  }, [goalPosition]);
   useEffect(() => {
     const media = window.matchMedia("(prefers-reduced-motion: reduce)");
     setReduced(media.matches);
@@ -96,10 +109,12 @@ export function WorldCharacter({
     media.addEventListener("change", change);
     return () => media.removeEventListener("change", change);
   }, []);
-  const lookKey = lookAt ? lookAt.map((value) => value.toFixed(2)).join(":") : "";
+  const lookX = lookAt?.[0];
+  const lookY = lookAt?.[1];
+  const lookZ = lookAt?.[2];
   useEffect(() => {
     invalidate();
-  }, [lookKey, invalidate]);
+  }, [lookX, lookY, lookZ, invalidate]);
   useEffect(() => {
     if (reduced && walkingRef.current) {
       walkingRef.current = false;
@@ -109,46 +124,87 @@ export function WorldCharacter({
   }, [x, y, z, animation, taskPose, reduced, invalidate]);
   const yaw = FACING_YAW[facing] ?? 0;
   const initialYaw = useRef(yaw);
-  useEffect(() => { invalidate(); }, [yaw, invalidate]);
+  const lookAtCache = useRef<{
+    targetX: number;
+    targetZ: number;
+    x: number;
+    z: number;
+    facingYaw: number;
+    turn: number;
+  } | null>(null);
+  useEffect(() => {
+    invalidate();
+  }, [yaw, invalidate]);
   useFrame((_state, delta) => {
     const rootGroup = root.current;
     if (rootGroup) {
-      const difference = Math.atan2(Math.sin(yaw - rootGroup.rotation.y), Math.cos(yaw - rootGroup.rotation.y));
+      const difference = shortestFacingDifference(yaw, rootGroup.rotation.y);
       if (Math.abs(difference) > 0.002) {
-        rootGroup.rotation.y += reduced ? difference : difference * blend(CHARACTER_MOTION.headTurnRate, delta);
+        rootGroup.rotation.y += reduced
+          ? difference
+          : difference * blend(CHARACTER_MOTION.headTurnRate, delta);
         invalidate();
       } else rootGroup.rotation.y = yaw;
     }
     let travelled = 0;
-    if (rootGroup && rootGroup.position.distanceTo(goal.current) > 0.001) {
+    if (rootGroup && rootGroup.position.distanceToSquared(goalPosition) > 0.000001) {
       const here = rootGroup.position;
+      const currentCoords = movementBuffers.current;
+      currentCoords[0] = here.x;
+      currentCoords[1] = here.y;
+      currentCoords[2] = here.z;
+
+      const goalCoords = movementBuffers.goal;
+      goalCoords[0] = goalPosition.x;
+      goalCoords[1] = goalPosition.y;
+      goalCoords[2] = goalPosition.z;
+
       const [nx, ny, nz] = followStep(
-        [here.x, here.y, here.z],
-        [goal.current.x, goal.current.y, goal.current.z],
+        currentCoords,
+        goalCoords,
         delta,
         speed.current,
         CHARACTER_MOTION.glideRate,
+        movementBuffers.output,
       );
       travelled = Math.hypot(nx - here.x, nz - here.z);
       rootGroup.position.set(nx, ny, nz);
       invalidate();
     }
     const travelling = !reduced && travelled > 0;
-    cadence.current = travelling ? walkingCadence(travelled, delta, h) : animation === "walk" ? 1 : 0;
+    cadence.current = travelling
+      ? walkingCadence(travelled, delta, h)
+      : animation === "walk"
+        ? 1
+        : 0;
     if (walkingRef.current !== travelling) {
       walkingRef.current = travelling;
       setWalking(travelling);
-      invalidate();
+      // Travel already requested a frame above; stopping needs its own invalidation.
+      if (!travelling) invalidate();
     }
     const group = bodyRef.current;
     if (!group) return;
     // A look at a nearby character turns the body a little, measured relative to its facing.
     let turn = 0;
     if (lookAt && !reduced) {
-      const worldYaw = Math.atan2(lookAt[0] - x, lookAt[2] - z);
-      const limit = CHARACTER_MOTION.headTurnLimit * 0.5;
-      const difference = worldYaw - (rootGroup?.rotation.y ?? yaw);
-      turn = MathUtils.clamp(Math.atan2(Math.sin(difference), Math.cos(difference)), -limit, limit);
+      const targetX = lookAt[0];
+      const targetZ = lookAt[2];
+      const facingYaw = rootGroup?.rotation.y ?? yaw;
+      const cached = lookAtCache.current;
+      if (
+        cached &&
+        cached.targetX === targetX &&
+        cached.targetZ === targetZ &&
+        cached.x === x &&
+        cached.z === z &&
+        cached.facingYaw === facingYaw
+      ) {
+        turn = cached.turn;
+      } else {
+        turn = lookAtBodyTurn(targetX, targetZ, x, z, facingYaw);
+        lookAtCache.current = { targetX, targetZ, x, z, facingYaw, turn };
+      }
     }
     if (Math.abs(group.rotation.y - turn) > 0.002) {
       group.rotation.y = MathUtils.lerp(

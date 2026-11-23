@@ -44,7 +44,9 @@ function WalletPage() {
     onSuccess: () => toast.success("Cash withdrawn from your bank."),
   });
   const numericAmount = Number(amount);
-  const transferError = amount ? amountError(numericAmount) : "Enter an amount to continue.";
+  const transferError = amount ? amountError(numericAmount) : null;
+  const depositError = amount ? amountError(numericAmount, funds.cash) : null;
+  const withdrawError = amount ? amountError(numericAmount, funds.bank) : null;
 
   function submitTransfer(action: typeof deposit | typeof withdraw, available: number) {
     const error = amountError(numericAmount, available);
@@ -55,7 +57,7 @@ function WalletPage() {
   if (isLoading) return <LoadingState />;
 
   return (
-    <div className="space-y-5">
+    <div className="wallet-page space-y-5">
       <PageHeader
         eyebrow="YOUR FINANCES"
         title="Bank & wallet"
@@ -73,8 +75,8 @@ function WalletPage() {
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>All balances are virtual in-game currency. They have no real-world value.</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
-        <div className="game-panel border-l-4 border-l-primary p-5">
+      <div className="wallet-balance-grid grid gap-4 sm:grid-cols-3">
+        <div className="game-panel wallet-balance-primary border-l-4 border-l-primary p-5">
           <p className="text-sm font-semibold text-muted-foreground">Cash</p>
           <p className="font-display text-3xl font-bold text-primary">{formatNaira(funds.cash)}</p>
         </div>
@@ -114,29 +116,41 @@ function WalletPage() {
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               placeholder="Enter whole Naira amount"
+              aria-invalid={!!transferError}
+              aria-describedby="wallet-transfer-help"
             />
+            <p
+              id="wallet-transfer-help"
+              className={`wallet-transfer-help text-xs ${transferError ? "text-destructive" : "text-muted-foreground"}`}
+            >
+              {transferError ??
+                "Enter a whole naira amount to move money between cash and your bank."}
+            </p>
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                className="rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50"
-                disabled={
-                  !!transferError || !!amountError(numericAmount, funds.cash) || deposit.isPending
-                }
+                className="wallet-action-primary rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50"
+                disabled={!amount || !!depositError || deposit.isPending}
                 onClick={() => submitTransfer(deposit, funds.cash)}
               >
                 Deposit cash
               </button>
               <button
                 type="button"
-                className="rounded-lg border-2 border-edge bg-secondary px-4 py-2 font-bold disabled:opacity-50"
-                disabled={
-                  !!transferError || !!amountError(numericAmount, funds.bank) || withdraw.isPending
-                }
+                className="wallet-action-secondary rounded-lg border-2 border-edge bg-secondary px-4 py-2 font-bold disabled:opacity-50"
+                disabled={!amount || !!withdrawError || withdraw.isPending}
                 onClick={() => submitTransfer(withdraw, funds.bank)}
               >
                 Withdraw cash
               </button>
             </div>
+            {amount && !transferError && (depositError || withdrawError) && (
+              <p className="wallet-transfer-limits text-xs text-muted-foreground" role="status">
+                {depositError && "Deposit exceeds available cash."}
+                {depositError && withdrawError && " "}
+                {withdrawError && "Withdrawal exceeds your bank balance."}
+              </p>
+            )}
             <p className="text-xs text-muted-foreground">Each transfer takes 3 minutes in game.</p>
           </>
         ) : bankAvailable && bankAccountLoading ? (
@@ -173,20 +187,23 @@ function WalletPage() {
         )}
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div className="game-panel p-5">
-          <p className="text-sm font-semibold text-muted-foreground">Lifetime income</p>
-          <p className="font-display text-2xl font-bold text-primary">
-            {formatNaira(wallet?.total_income)}
-          </p>
+      <details className="wallet-history-disclosure">
+        <summary className="wallet-history-summary">Lifetime financial overview</summary>
+        <div className="wallet-lifetime-grid grid gap-4 sm:grid-cols-2">
+          <div className="game-panel p-5">
+            <p className="text-sm font-semibold text-muted-foreground">Lifetime income</p>
+            <p className="font-display text-2xl font-bold text-primary">
+              {formatNaira(wallet?.total_income)}
+            </p>
+          </div>
+          <div className="game-panel p-5">
+            <p className="text-sm font-semibold text-muted-foreground">Lifetime expenses</p>
+            <p className="font-display text-2xl font-bold text-clay">
+              {formatNaira(wallet?.total_expenses)}
+            </p>
+          </div>
         </div>
-        <div className="game-panel p-5">
-          <p className="text-sm font-semibold text-muted-foreground">Lifetime expenses</p>
-          <p className="font-display text-2xl font-bold text-clay">
-            {formatNaira(wallet?.total_expenses)}
-          </p>
-        </div>
-      </div>
+      </details>
 
       <section aria-labelledby="transactions-heading">
         <h2 id="transactions-heading" className="mb-3 text-2xl font-bold">
@@ -200,11 +217,14 @@ function WalletPage() {
             body="Earn or spend money in the city to see activity here."
           />
         ) : (
-          <ul className="game-panel divide-y-2 divide-edge/10 p-0">
+          <ul className="game-panel wallet-transactions divide-y-2 divide-edge/10 p-0">
             {txs.map((transaction) => {
               const income = transaction.kind === "income";
               return (
-                <li key={transaction.id} className="flex items-center gap-3 p-4">
+                <li
+                  key={transaction.id}
+                  className="wallet-transaction-row flex items-center gap-3 p-4"
+                >
                   <span
                     className={`flex h-9 w-9 items-center justify-center rounded-lg border-2 border-edge ${income ? "bg-leaf" : "bg-clay text-clay-foreground"}`}
                   >
@@ -214,7 +234,7 @@ function WalletPage() {
                       <ArrowUpRight className="h-4 w-4" />
                     )}
                   </span>
-                  <div className="min-w-0 flex-1">
+                  <div className="wallet-transaction-info min-w-0 flex-1">
                     <p className="truncate font-semibold">
                       {transactionTitle(
                         transaction.transaction_type,
@@ -222,12 +242,16 @@ function WalletPage() {
                         transaction.category,
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {transaction.description} · {transaction.account} ·{" "}
-                      {new Date(transaction.created_at).toLocaleString("en-NG")}
-                    </p>
+                    <details className="wallet-transaction-details">
+                      <summary>Transaction details</summary>
+                      <div className="wallet-transaction-meta">
+                        {transaction.description && <p>{transaction.description}</p>}
+                        <p>Account: {transaction.account}</p>
+                        <p>Date: {new Date(transaction.created_at).toLocaleString("en-NG")}</p>
+                      </div>
+                    </details>
                   </div>
-                  <div className="text-right">
+                  <div className="wallet-transaction-amount text-right">
                     <p
                       className={`font-display font-bold ${
                         income

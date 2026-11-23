@@ -1,6 +1,7 @@
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { CAMPUS_DESKS, CAMPUS_STUDY_TABLES } from "@/game/campus-navigation";
 import { WorldMaterial } from "./WorldScene";
+import { SceneBoxGeometryProvider, useSceneBoxGeometry } from "./scene-box-geometries";
 import { CAMPUS_BUILDINGS, CAMPUS_PATHS, type CampusAreaId } from "@/game/school-campus";
 function Part({
   at,
@@ -11,9 +12,9 @@ function Part({
   size: [number, number, number];
   color?: string | undefined;
 }) {
+  const geometry = useSceneBoxGeometry(size);
   return (
-    <mesh position={at} castShadow receiveShadow>
-      <boxGeometry args={size} />
+    <mesh position={at} castShadow receiveShadow geometry={geometry}>
       <WorldMaterial tone="wall" color={color} />
     </mesh>
   );
@@ -78,11 +79,15 @@ function Frontage({ width, depth, color }: { width: number; depth: number; color
           color={WORLD_PALETTE.glass}
         />
       ))}
-      <Part at={[0, 2.9, depth / 2 + 0.5]} size={[width * 0.7, 0.12, 1.3]} color={WORLD_PALETTE.linen} />
+      <Part
+        at={[0, 2.9, depth / 2 + 0.5]}
+        size={[width * 0.7, 0.12, 1.3]}
+        color={WORLD_PALETTE.linen}
+      />
     </>
   );
 }
-export function SchoolCampusScene({
+function SchoolCampusContents({
   area,
   onAreaSelect,
   onWalkTo,
@@ -118,7 +123,11 @@ export function SchoolCampusScene({
         ))}
         {[-1, 1].map((side) => (
           <group key={side}>
-            <Part at={[side * 3.1, 1.7, 13]} size={[0.3, 3.4, 0.3]} color={WORLD_PALETTE.concrete} />
+            <Part
+              at={[side * 3.1, 1.7, 13]}
+              size={[0.3, 3.4, 0.3]}
+              color={WORLD_PALETTE.concrete}
+            />
             <Part at={[side * 10, 0.6, 14]} size={[12, 1.2, 0.2]} color={WORLD_PALETTE.wall} />
             <group position={[side * 12.5, 0, 7]}>
               <mesh position={[0, 1.3, 0]} castShadow>
@@ -132,7 +141,12 @@ export function SchoolCampusScene({
             </group>
             <Part at={[side * 6, 0.5, 5]} size={[2.5, 0.16, 0.7]} color={WORLD_PALETTE.timber} />
             {[-0.9, 0.9].map((x) => (
-              <Part key={x} at={[side * 6 + x, 0.25, 5]} size={[0.15, 0.5, 0.6]} color={WORLD_PALETTE.timber} />
+              <Part
+                key={x}
+                at={[side * 6 + x, 0.25, 5]}
+                size={[0.15, 0.5, 0.6]}
+                color={WORLD_PALETTE.timber}
+              />
             ))}
           </group>
         ))}
@@ -226,5 +240,14 @@ export function SchoolCampusScene({
         </>
       )}
     </group>
+  );
+}
+
+/** Geometry stays scoped to this mounted campus scene. */
+export function SchoolCampusScene(props: Parameters<typeof SchoolCampusContents>[0]) {
+  return (
+    <SceneBoxGeometryProvider>
+      <SchoolCampusContents {...props} />
+    </SceneBoxGeometryProvider>
   );
 }

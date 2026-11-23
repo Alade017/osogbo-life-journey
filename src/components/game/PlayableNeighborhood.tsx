@@ -86,7 +86,13 @@ import {
   socialActionsFor,
   type SocialAction,
 } from "@/lib/npc-simulation";
-import { hasBuildingVenueInterior, hasLocationVenueDesign } from "@/lib/location-venue-designs";
+import {
+  getLocationVenueDesign,
+  hasBuildingVenueInterior,
+  hasLocationVenueDesign,
+} from "@/lib/location-venue-designs";
+import { preloadVenueModule } from "@/components/game/venue-preloader";
+import { canPreloadVenueInBrowser } from "@/lib/venue-preload-policy";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import { JobsPage } from "@/routes/_authenticated/_game/jobs";
 import { MarketPage } from "@/routes/_authenticated/_game/market";
@@ -603,6 +609,25 @@ export function PlayableNeighborhood() {
   const hasSelectedVenueInterior = currentLocation
     ? hasBuildingVenueInterior(currentLocation.slug, selectedShopSlug)
     : false;
+  const shouldPrepareVenue =
+    (activePanel === "business" && businessView === "actions" && hasSelectedVenueInterior) ||
+    (activePanel === "work" && workView === "actions" && hasVenueInterior);
+  const venuePreloadSlug = currentLocation?.slug;
+  const venuePreloadName = currentLocation?.name;
+
+  useEffect(() => {
+    if (
+      !shouldPrepareVenue ||
+      !venuePreloadSlug ||
+      !venuePreloadName ||
+      !canPreloadVenueInBrowser()
+    ) {
+      return;
+    }
+    const venue = getLocationVenueDesign(venuePreloadSlug, venuePreloadName);
+    void preloadVenueModule(venuePreloadSlug, venue);
+  }, [shouldPrepareVenue, venuePreloadSlug, venuePreloadName]);
+
   const activityLandmarkId = Object.entries(MAP_LANDMARK_LOCATION_SLUG).find(
     ([, slug]) => !!slug && slug === currentLocation?.slug,
   )?.[0];

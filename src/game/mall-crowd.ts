@@ -25,6 +25,33 @@ export type MallShopper = {
   walker: MallWalker;
 };
 
+const shopperIndexes = new WeakMap<readonly MallShopper[], Map<string, MallShopper>>();
+
+/**
+ * Looks up a shopper in an immutable crowd snapshot.
+ * A new snapshot receives a new index.
+ */
+export function getShopperById(
+  shoppers: readonly MallShopper[],
+  id: string,
+): MallShopper | undefined {
+  let index = shopperIndexes.get(shoppers);
+
+  if (!index) {
+    index = new Map();
+
+    for (const shopper of shoppers) {
+      if (!index.has(shopper.id)) {
+        index.set(shopper.id, shopper);
+      }
+    }
+
+    shopperIndexes.set(shoppers, index);
+  }
+
+  return index.get(id);
+}
+
 /** The route for one shopper: entrance → browse spot → till queue → entrance. */
 export function buildShopperRoute(
   seed: number,
