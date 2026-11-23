@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { CloudRain, Moon, Sun } from "lucide-react";
+import { Cloud, CloudFog, CloudRain, CloudSun, Moon, Sun } from "lucide-react";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE, readOsogboWeather, weatherDescription } from "@/lib/osogbo-weather";
 
@@ -14,7 +14,18 @@ export function LiveOsogboWeather({ compact = false }: { compact?: boolean }) {
   });
   const current = weather.data;
   const stale = !!current && !!now && now.getTime() - current.updatedAt > 60 * 60_000;
-  const Icon = current && current.code >= 45 ? CloudRain : current?.isDay ? Sun : Moon;
+  const Icon =
+    current?.code === 3
+      ? Cloud
+      : current?.code === 2
+        ? CloudSun
+        : current && [45, 48].includes(current.code)
+          ? CloudFog
+          : current && current.code >= 51
+            ? CloudRain
+            : current?.isDay
+              ? Sun
+              : Moon;
   const updated = current
     ? new Intl.DateTimeFormat("en-NG", {
         hour: "2-digit",

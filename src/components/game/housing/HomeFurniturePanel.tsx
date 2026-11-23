@@ -3,11 +3,19 @@ import {
   Archive,
   Armchair,
   ArrowLeft,
+  BedDouble,
   ChevronRight,
+  CookingPot,
+  Flower2,
   Monitor,
   Move,
+  Package,
+  ShowerHead,
   Sparkles,
+  Toilet,
+  TvMinimal,
   X,
+  type LucideIcon,
 } from "lucide-react";
 import { homeFurnitureAction } from "@/lib/home-furniture-actions";
 import { homeFurnitureLabel } from "@/lib/home-furniture-label";
@@ -25,6 +33,17 @@ type Props = {
   onUse: (action: LifeActionId) => Promise<boolean>;
   onMove: () => void;
   onStore: () => Promise<void>;
+};
+
+const FURNITURE_ICONS: Partial<Record<LifeActionId, LucideIcon>> = {
+  sleep: BedDouble,
+  relax_sofa: Armchair,
+  cook: CookingPot,
+  shower: ShowerHead,
+  toilet: Toilet,
+  study_computer: Monitor,
+  watch_tv: TvMinimal,
+  tend_plant: Flower2,
 };
 
 /** Selection overview; activity configuration retains the existing authoritative task panel. */
@@ -50,7 +69,7 @@ export function HomeFurniturePanel({
   const label = homeFurnitureLabel(placement.item_id);
   const primary = homeFurnitureAction(placement.item_id);
   const action = primary ? ACTION_CATALOG[primary] : null;
-  const ItemIcon = primary === "watch_tv" ? Monitor : Armchair;
+  const ItemIcon = primary ? (FURNITURE_ICONS[primary] ?? Package) : Package;
   const working = pending || saving;
 
   useEffect(() => {
