@@ -246,7 +246,7 @@ function BasicLocationVenueScene({
           <VenueSceneBoundary resetKey={slug} onError={() => setSceneStatus("fallback")}>
             <Canvas
               key={slug}
-              shadows
+              shadows="percentage"
               frameloop="demand"
               dpr={[1, Math.min(1.25, quality.maxDpr)]}
               gl={{ antialias: false, powerPreference: "low-power" }}

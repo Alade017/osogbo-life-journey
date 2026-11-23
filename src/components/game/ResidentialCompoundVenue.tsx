@@ -55,7 +55,7 @@ export function ResidentialCompoundVenue({
         {status !== "fallback" && (
           <VenueSceneBoundary resetKey={homeTypeId ?? "default"} onError={unavailable}>
             <Canvas
-              shadows
+              shadows="percentage"
               frameloop="demand"
               dpr={[1, 1.25]}
               gl={{ antialias: false, powerPreference: "low-power" }}
