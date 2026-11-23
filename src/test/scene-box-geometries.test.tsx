@@ -1,5 +1,6 @@
 import { render, cleanup, waitFor } from "@testing-library/react";
 import { StrictMode, useEffect } from "react";
+import { BoxGeometry } from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createSceneBoxGeometryCache, SceneBoxGeometryProvider, useSceneBoxGeometry } from "@/components/3d/scene-box-geometries";
 
@@ -108,14 +109,25 @@ describe("scene geometry provider lifecycle", () => {
     second.unmount();
     await waitFor(() => expect(disposeSecond).toHaveBeenCalledTimes(1));
   });
-  it("keeps geometry alive through Strict Mode effect replay", async () => {
+  it("does not dispose geometry during the initial Strict Mode effect replay", async () => {
+    const dispose = vi.spyOn(BoxGeometry.prototype, "dispose");
     const onGeometry = vi.fn();
-    const view = render(<StrictMode><SceneBoxGeometryProvider><Consumer onGeometry={onGeometry} /></SceneBoxGeometryProvider></StrictMode>);
-    const geometry = onGeometry.mock.lastCall![0];
-    const dispose = vi.spyOn(geometry, "dispose");
-    await Promise.resolve();
-    expect(dispose).not.toHaveBeenCalled();
-    view.unmount();
-    await waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
+    const view = render(
+      <StrictMode>
+        <SceneBoxGeometryProvider>
+          <Consumer onGeometry={onGeometry} />
+        </SceneBoxGeometryProvider>
+      </StrictMode>,
+    );
+    try {
+      expect(onGeometry).toHaveBeenCalled();
+      await Promise.resolve();
+      expect(dispose).not.toHaveBeenCalled();
+      view.unmount();
+      await waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
+    } finally {
+      view.unmount();
+      dispose.mockRestore();
+    }
   });
 });

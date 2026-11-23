@@ -1,5 +1,6 @@
 import { renderHook, waitFor } from "@testing-library/react";
 import { StrictMode } from "react";
+import { BoxGeometry } from "three";
 import { describe, expect, it, vi } from "vitest";
 import { useWorshipRowGeometry } from "@/components/3d/worship-row-geometry";
 
@@ -59,13 +60,18 @@ describe("worship row geometry ownership", () => {
     expect(next.result.current).not.toBe(original);
     next.unmount();
   });
-  it("keeps worship geometry alive through Strict Mode effect replay", async () => {
+  it("does not dispose worship geometry during the initial Strict Mode effect replay", async () => {
+    const dispose = vi.spyOn(BoxGeometry.prototype, "dispose");
     const hook = renderHook(() => useWorshipRowGeometry(true), { wrapper: StrictMode });
-    const geometry = hook.result.current;
-    const dispose = vi.spyOn(geometry, "dispose");
-    await Promise.resolve();
-    expect(dispose).not.toHaveBeenCalled();
-    hook.unmount();
-    await waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
+    try {
+      expect(hook.result.current).toBeDefined();
+      await Promise.resolve();
+      expect(dispose).not.toHaveBeenCalled();
+      hook.unmount();
+      await waitFor(() => expect(dispose).toHaveBeenCalledTimes(1));
+    } finally {
+      hook.unmount();
+      dispose.mockRestore();
+    }
   });
 });
