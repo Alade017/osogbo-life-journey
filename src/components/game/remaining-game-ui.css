@@ -1035,3 +1035,19 @@
 .city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page .wallet-balance-grid > .game-panel p {
   overflow-wrap: anywhere;
 }
+
+/* UI-15: Distinguish core phone apps without changing launcher pages or order. */
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-important {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--primary-foreground) 32%, transparent),
+    0 3px 10px color-mix(in srgb, var(--brand-ink) 12%, transparent);
+}
+
+.phone-ui-refresh .phone-app .phone-app-icon.phone-app-important svg {
+  stroke-width: 2;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-ui-refresh .phone-app .phone-app-icon {
+    transition: none;
+  }
+}
