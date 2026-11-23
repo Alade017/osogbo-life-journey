@@ -370,3 +370,36 @@
 .market-app .market-app-section > .market-interaction-tip {
   margin: 0;
 }
+
+/* UI-13: Put the existing purchase restriction beside the Buy action. */
+.market-app .market-app-purchase-hint {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--shape-button);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* UI-14: One concise cost/action row rather than competing mini-panels. */
+.market-app .market-app-purchase-row {
+  flex-wrap: wrap;
+  min-width: 0;
+  gap: 0.65rem;
+}
+
+.market-app .market-app-purchase-row > div {
+  min-width: 0;
+}
+
+.market-app .market-app-purchase-total {
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 380px) {
+  .market-app .market-app-purchase-row > div:last-child {
+    margin-inline-start: auto;
+  }
+}
