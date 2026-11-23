@@ -3,7 +3,7 @@ import { CloudRain, Moon, Sun } from "lucide-react";
 import { useLiveClock } from "@/hooks/use-live-clock";
 import { OSOGBO_TIME_ZONE, readOsogboWeather, weatherDescription } from "@/lib/osogbo-weather";
 
-export function LiveOsogboWeather() {
+export function LiveOsogboWeather({ compact = false }: { compact?: boolean }) {
   const now = useLiveClock();
   const weather = useQuery({
     queryKey: ["osogboLiveWeather"],
@@ -28,11 +28,18 @@ export function LiveOsogboWeather() {
     <span className="world-condition" aria-label="Osogbo live weather">
       {current ? (
         <span
-          title={`Current model conditions for Osogbo. Updated ${updated} WAT${stale ? ". Update delayed" : ""}.`}
+          title={`Current model conditions for Osogbo. Updated ${updated} WAT${stale ? ". Update delayed" : ""}. Source: Open-Meteo.`}
           className="inline-flex flex-wrap items-center gap-1.5"
         >
           <Icon size={15} aria-hidden="true" />
-          Osogbo · {Math.round(current.temperature)}°C · {weatherDescription(current.code)}
+          {compact ? (
+            <span className="home-weather-copy">
+              <strong>{weatherDescription(current.code)}</strong>
+              <span>{Math.round(current.temperature)}°C · Osogbo</span>
+            </span>
+          ) : (
+            <>Osogbo · {Math.round(current.temperature)}°C · {weatherDescription(current.code)}</>
+          )}
           <small>
             · {current.isDay ? "Day" : "Night"} · {updated} WAT{stale ? " · Update delayed" : ""} ·
             Open-Meteo

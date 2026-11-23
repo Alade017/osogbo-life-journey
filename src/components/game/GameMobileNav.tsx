@@ -4,11 +4,13 @@ import type { ReactNode } from "react";
 
 export function GameMobileNav({
   hidden = false,
+  shortLabels = false,
   onNavigate,
   onInventoryOpen,
   children,
 }: {
   hidden?: boolean;
+  shortLabels?: boolean;
   onNavigate: () => void;
   onInventoryOpen: () => void;
   children?: ReactNode;
@@ -46,7 +48,7 @@ export function GameMobileNav({
         onClick={onNavigate}
       >
         <Briefcase className="h-4.75 w-4.75" />
-        <span>Career Life</span>
+        <span>{shortLabels ? "Career" : "Career Life"}</span>
       </Link>
       <button
         type="button"

@@ -60,7 +60,8 @@ import type {
   HousePlacement,
   HouseSlot,
 } from "@/components/game/housing/HouseRoomScene";
-import { HomeAccessoryPanel } from "@/components/game/housing/HomeAccessoryPanel";
+import { HomeFurniturePanel } from "@/components/game/housing/HomeFurniturePanel";
+import { HomeToolsMenu } from "@/components/game/housing/HomeToolsMenu";
 import { DrawerSheet } from "@/components/game/housing/DrawerSheet";
 import { drawerAction, fetchDrawerState, storableRows } from "@/lib/drawer";
 import { HouseRoomRenderer } from "@/components/game/housing/HouseRoomRenderer";
@@ -1333,10 +1334,27 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           activeFloor,
         )
       : [];
-  const startMove = (placement: HousePlacement) => {
-    if (isOffline || actionMutation.isPending || !editing || activeSleep) return;
+  const startMove = (placement: HousePlacement, enterEditing = false) => {
+    if (
+      isOffline ||
+      actionMutation.isPending ||
+      (!editing && !enterEditing) ||
+      activeSleep ||
+      taskBusy ||
+      houseOverdue ||
+      !isInsideHome ||
+      interactionLock.current ||
+      gameTime.busy ||
+      !gameTime.ready
+    )
+      return;
     const start = draftStartFor(placement, slots);
     if (!start) return;
+    movement.cancel();
+    setPinnedRoom(null);
+    setEditing(true);
+    setCatalogueOpen(false);
+    setSelectedPlacement(placement);
     setDraftMove({ placementId: placement.id, ...start });
   };
   useEffect(() => {
@@ -1613,7 +1631,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     ? Math.min(100, Math.round((displayedElapsed / Math.max(1, taskTiming.duration)) * 100))
     : 0;
 
-  const selectedAction = selectedPlacement ? homeFurnitureAction(selectedPlacement.item_id) : null;
   const avatarEquipment = (["head", "top", "bottom", "shoes", "accessory"] as const).flatMap(
     (slot) => (outfit[slot] ? [{ slot }] : []),
   );
@@ -1668,6 +1685,15 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             ? ("cook" as const)
             : undefined
       : undefined;
+  const selectedPoint = selectedPlacement
+    ? placementPoint(selectedPlacement, slots, roomWidth, roomDepth)
+    : null;
+  const selectedRoomLabel = selectedPoint
+    ? (roomViews.find((room) => roomViewContains(room, selectedPoint[0], selectedPoint[2]))?.label
+      ?? serverState?.house?.house_type.label
+      ?? "Home")
+    : "Home";
+
   if (characterLoading || (stateQuery.isLoading && !snapshot))
     return (
       <div className="house-page">
@@ -1783,74 +1809,80 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               </span>
             </button>
           )}
+        </div>
+        <HomeToolsMenu>
           <button
             className="house-edit-button house-edit-toggle"
             type="button"
             aria-label={editing ? "Close shop" : "Shop"}
             aria-pressed={editing}
-            disabled={taskBusy || (houseOverdue && !editing)}
+            disabled={taskBusy || actionMutation.isPending || (houseOverdue && !editing)}
             onClick={() => {
               movement.cancel();
               setPinnedRoom(null);
+              setCatalogueOpen(!editing);
+              setDraftMove(null);
               setEditing((value) => !value);
               setSelectedPlacement(null);
             }}
           >
             {editing ? "Done" : "Shop"}
           </button>
-        </div>
-        {!editing && (
-          <button
-            type="button"
-            className="house-icon-button house-light-switch"
-            aria-pressed={lightOn}
-            aria-label={lightOn ? "Turn the room light off" : "Turn the room light on"}
-            title={lightOn ? "Light on" : "Light off"}
-            disabled={isOffline || !character?.id || lightMutation.isPending}
-            onClick={() => lightMutation.mutate(!lightOn)}
-          >
-            {lightOn ? (
-              <Lightbulb size={20} aria-hidden="true" />
-            ) : (
-              <LightbulbOff size={20} aria-hidden="true" />
-            )}
-          </button>
-        )}
-        {!editing && (
-          <button
-            type="button"
-            className="house-icon-button house-walls-switch"
-            aria-label="Rearrange home"
-            title="Rearrange furniture and clear walking paths"
-            disabled={
-              isOffline ||
-              taskBusy ||
-              movement.walking ||
-              homePresence.isPending ||
-              outside.kind !== null ||
-              rearrange.isPending
-            }
-            aria-busy={rearrange.isPending}
-            onClick={() => rearrange.mutate()}
-          >
-            <RefreshCcwDot
-              size={20}
-              aria-hidden="true"
-              className={rearrange.isPending ? "animate-spin" : undefined}
-            />
-          </button>
-        )}
-        {editing && (
-          <label className="house-walls-option">
-            <input
-              type="checkbox"
-              checked={wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)}
-              disabled={isOffline || houseOverdue || wallsMutation.isPending}
-              onChange={(event) => wallsMutation.mutate(event.target.checked)}
-            />
-            Full walls
-          </label>
-        )}
+          {!editing && (
+            <button
+              type="button"
+              className="house-icon-button house-light-switch"
+              aria-pressed={lightOn}
+              aria-label={lightOn ? "Turn the room light off" : "Turn the room light on"}
+              title={lightOn ? "Light on" : "Light off"}
+              disabled={isOffline || !character?.id || lightMutation.isPending}
+              onClick={() => lightMutation.mutate(!lightOn)}
+            >
+              {lightOn ? (
+                <Lightbulb size={20} aria-hidden="true" />
+              ) : (
+                <LightbulbOff size={20} aria-hidden="true" />
+              )}
+              <span>Lights</span>
+            </button>
+          )}
+          {!editing && (
+            <button
+              type="button"
+              className="house-icon-button house-walls-switch"
+              aria-label="Rearrange home"
+              title="Rearrange furniture and clear walking paths"
+              disabled={
+                isOffline ||
+                taskBusy ||
+                movement.walking ||
+                homePresence.isPending ||
+                outside.kind !== null ||
+                rearrange.isPending
+              }
+              aria-busy={rearrange.isPending}
+              onClick={() => rearrange.mutate()}
+            >
+              <RefreshCcwDot
+                size={20}
+                aria-hidden="true"
+                className={rearrange.isPending ? "animate-spin" : undefined}
+              />
+              <span>Rearrange</span>
+            </button>
+          )}
+          {editing && (
+            <label className="house-walls-option">
+              <input
+                type="checkbox"
+                checked={wallsSetting ?? houseWallsDefaultClosed(house.house_type_id)}
+                disabled={isOffline || houseOverdue || wallsMutation.isPending}
+                onChange={(event) => wallsMutation.mutate(event.target.checked)}
+              />
+              Full walls
+            </label>
+          )}
+        </HomeToolsMenu>
         {!editing && roomViews.length > 0 && (
           <div className="house-room-views" role="group" aria-label="Room view">
             {roomViews.length > 4 ? (
@@ -1931,8 +1963,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             taskBusy ||
             rearrange.isPending ||
             outside.kind !== null ||
-            (!editing && (!isInsideHome || (!!selectedPlacement && !!selectedAction)))
+            (!editing && (!isInsideHome || !!selectedPlacement))
           }
+          selectedPlacementId={!editing ? selectedPlacement?.id ?? null : null}
           houseTypeId={house.house_type_id}
           lightOn={lightOn}
           wallsClosed={editing ? wallsSetting : false}
@@ -2113,25 +2146,43 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           onClose={() => setDrawerOpen(false)}
         />
       )}
-      {!editing && !taskBusy && selectedPlacement && selectedAction && (
-        <HomeAccessoryPanel
+      {!editing && !taskBusy && selectedPlacement && (
+        <HomeFurniturePanel
           key={selectedPlacement.id}
           placement={selectedPlacement}
+          roomLabel={selectedRoomLabel}
           disabledReason={
             isOffline
               ? "Reconnect to use this accessory."
-              : !isInsideHome
-                ? "Enter your home to use this accessory."
-                : !gameTime.ready
-                  ? "Connecting your character?"
-                  : gameTime.busy
-                    ? "Finish your current activity first."
-                    : null
+              : houseOverdue
+                ? "Pay overdue rent before changing or using this home."
+                : !isInsideHome
+                  ? "Enter your home to use this accessory."
+                  : !gameTime.ready
+                    ? "Connecting your character…"
+                    : gameTime.busy
+                      ? "Finish your current activity first."
+                      : null
           }
-          pending={!!usingPlacementId}
-          error={activityError}
+          pending={!!usingPlacementId || actionMutation.isPending}
+          error={activityError || apiError}
           onClose={() => setSelectedPlacement(null)}
           onUse={(action) => interactWithPlacement(selectedPlacement, action)}
+          onMove={() => startMove(selectedPlacement, true)}
+          onStore={async () => {
+            if (
+              isOffline ||
+              actionMutation.isPending ||
+              taskBusy ||
+              houseOverdue ||
+              !isInsideHome ||
+              !gameTime.ready ||
+              gameTime.busy ||
+              interactionLock.current
+            )
+              return;
+            await actionMutation.mutateAsync({ action: "remove", slot: selectedPlacement.slot });
+          }}
         />
       )}
 

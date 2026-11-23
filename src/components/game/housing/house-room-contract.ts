@@ -31,6 +31,8 @@ export type HouseRoomRendererProps = {
   accessoryBand: string;
   slots: HouseSlot[];
   placements: HousePlacement[];
+  /** Current item selection, used only for the world-space label. */
+  selectedPlacementId?: string | null;
   /** Room shown on its own (an id from houseRoomViews); omitted or null shows the whole home. */
   roomView?: string | null;
   characterName?: string;

@@ -13,7 +13,7 @@ import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { DoubleSide, Plane, Vector3, type Group } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
-import { homeFurnitureAction } from "@/lib/home-furniture-actions";
+import { homeFurnitureLabel } from "@/lib/home-furniture-label";
 import type { HousePlacement, HouseSlot } from "./HouseRoomScene";
 import {
   HOUSE_ROOM_SIZE as ROOM_SIZE,
@@ -2069,6 +2069,7 @@ export function HouseRoom3D({
   activityLabel = null,
   slots,
   placements: allPlacements,
+  selectedPlacementId = null,
   foodDeliveries = [],
   movingPlacement = null,
   editMode,
@@ -2426,31 +2427,49 @@ export function HouseRoom3D({
             {placements.map((placement) => {
               const slot = renderSlotForPlacement(placement, slots);
               if (!slot) return null;
+              const [x, , z] = hasRoomPosition(placement)
+                ? roomPercentToPosition(placement.x, placement.y, width, depth)
+                : slotPosition(slot, width, depth);
               return (
-                <SlotObject
-                  key={placement.id}
-                  slot={slot}
-                  placement={placement}
-                  width={width}
-                  depth={depth}
-                  editMode={editMode}
-                  moveEnabled={moveEnabled}
-                  inputBlocked={inputBlocked}
-                  dragPreview={activePreview}
-                  activeSlotType={
-                    activePreview
-                      ? (placements.find((item) => item.id === activePreview.placementId)
-                          ?.slot_type ?? null)
-                      : (movingPlacement?.slot_type ?? null)
-                  }
-                  onSelectPlacement={onSelectPlacement}
-                  onSelectSlot={onSelectSlot}
-                  onDragStart={onDragStart}
-                  onDragMove={onDragMove}
-                  onDragEnd={onDragEnd}
-                  onDragCancel={onDragCancel}
-                  suppressClick={suppressClick}
-                />
+                <group key={placement.id}>
+                  <SlotObject
+                    slot={slot}
+                    placement={placement}
+                    width={width}
+                    depth={depth}
+                    editMode={editMode}
+                    moveEnabled={moveEnabled}
+                    inputBlocked={inputBlocked}
+                    dragPreview={activePreview}
+                    activeSlotType={
+                      activePreview
+                        ? (placements.find((item) => item.id === activePreview.placementId)
+                            ?.slot_type ?? null)
+                        : (movingPlacement?.slot_type ?? null)
+                    }
+                    onSelectPlacement={onSelectPlacement}
+                    onSelectSlot={onSelectSlot}
+                    onDragStart={onDragStart}
+                    onDragMove={onDragMove}
+                    onDragEnd={onDragEnd}
+                    onDragCancel={onDragCancel}
+                    suppressClick={suppressClick}
+                  />
+                  {!editMode && selectedPlacementId === placement.id && (
+                    <Html
+                      position={[x, WORLD_SCALE.door * 0.8, z]}
+                      center
+                      portal={overlayHost}
+                      zIndexRange={[9, 0]}
+                      style={{ pointerEvents: "none" }}
+                    >
+                      <div className="home-world-selection">
+                        <strong>{homeFurnitureLabel(placement.item_id)}</strong>
+                        <span>Choose an action</span>
+                      </div>
+                    </Html>
+                  )}
+                </group>
               );
             })}
             {/* Empty slots (edit mode shows the "+" placeholders) */}
@@ -2513,18 +2532,16 @@ export function HouseRoom3D({
       />
       {!editMode && (
         <div className="house-keyboard-accessories" role="group" aria-label="Home accessories">
-          {placements
-            .filter((item) => homeFurnitureAction(item.item_id))
-            .map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                disabled={inputBlocked}
-                onClick={() => onSelectPlacement(item)}
-              >
-                Use {item.item_id.replaceAll("-", " ")}
-              </button>
-            ))}
+          {placements.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              disabled={inputBlocked}
+              onClick={() => onSelectPlacement(item)}
+            >
+              Select {homeFurnitureLabel(item.item_id)}
+            </button>
+          ))}
         </div>
       )}
       {editMode && (
