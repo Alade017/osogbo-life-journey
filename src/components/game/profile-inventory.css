@@ -1411,3 +1411,19 @@
     text-align: left;
   }
 }
+
+/* UI-11: A near-level-up signal, grounded in the existing XP calculation.
+   Static emphasis only: no artificial animation acceleration. */
+.pi-profile .pi-xp.is-near-goal {
+  background: color-mix(in srgb, var(--brand-royal) 19%, var(--brand-cream));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--brand-royal) 20%, transparent);
+}
+
+.pi-profile .pi-xp.is-near-goal > span {
+  background: var(--brand-royal);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-royal) 14%, transparent);
+}
+
+.pi-profile .pi-xp.is-near-goal + .pi-stage-foot {
+  border-color: color-mix(in srgb, var(--brand-royal) 25%, var(--border));
+}
