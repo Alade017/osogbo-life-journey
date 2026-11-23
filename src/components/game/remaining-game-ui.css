@@ -1051,3 +1051,115 @@
     transition: none;
   }
 }
+
+/* UI-19: Connect existing mission completion states without altering their source. */
+.mission-progress-page .mission-stage-path {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0;
+  margin: 1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mission-progress-page .mission-stage {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: start;
+  gap: 0.35rem;
+  min-width: 0;
+  padding: 0 0.2rem;
+  color: var(--muted-foreground);
+  font-size: 0.7rem;
+  font-weight: 650;
+  line-height: 1.35;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+
+.mission-progress-page .mission-stage:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 0.4rem;
+  left: calc(50% + 0.55rem);
+  width: calc(100% - 1.1rem);
+  height: 2px;
+  background: var(--border);
+}
+
+.mission-progress-page .mission-stage.is-complete::after {
+  background: var(--brand-royal);
+}
+
+.mission-progress-page .mission-stage-node {
+  display: block;
+  width: 0.85rem;
+  height: 0.85rem;
+  border: 2px solid var(--border);
+  border-radius: 50%;
+  background: var(--card);
+}
+
+.mission-progress-page .mission-stage.is-complete .mission-stage-node,
+.mission-progress-page .mission-stage.is-current .mission-stage-node {
+  border-color: var(--brand-royal);
+}
+
+.mission-progress-page .mission-stage.is-complete .mission-stage-node {
+  background: var(--brand-royal);
+}
+
+.mission-progress-page .mission-stage.is-current {
+  color: var(--brand-royal-deep);
+  font-weight: 800;
+}
+
+/* UI-19: Match Daily Tasks visual states to lifetime mission statuses. */
+.mission-progress-page .daily-task-card {
+  min-width: 0;
+  border-left: 3px solid var(--border);
+}
+
+.mission-progress-page .daily-task-card.is-ready {
+  border-left-color: var(--brand-royal);
+}
+
+.mission-progress-page .daily-task-card.is-claimed {
+  border-left-color: var(--success);
+}
+
+.mission-progress-page .daily-task-reward {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+}
+
+.mission-progress-page .daily-task-state {
+  color: var(--muted-foreground);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.mission-progress-page .daily-task-state.is-ready {
+  color: var(--brand-royal-deep);
+}
+
+.mission-progress-page .daily-task-state.is-claimed {
+  color: var(--foreground);
+}
+
+/* UI-20: Processing text reflects the real pending claim, never an invented timer. */
+.mission-progress-page .mission-claim-action[aria-busy="true"] {
+  cursor: progress;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mission-progress-page .mission-stage-path *,
+  .mission-progress-page .daily-task-card {
+    transition: none;
+    animation: none;
+  }
+}
