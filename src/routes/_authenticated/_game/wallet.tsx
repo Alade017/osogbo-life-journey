@@ -55,7 +55,7 @@ function WalletPage() {
   if (isLoading) return <LoadingState />;
 
   return (
-    <div className="space-y-5">
+    <div className="wallet-page space-y-5">
       <PageHeader
         eyebrow="YOUR FINANCES"
         title="Bank & wallet"
@@ -73,7 +73,7 @@ function WalletPage() {
         <Info className="mt-0.5 h-4 w-4 shrink-0" />
         <p>All balances are virtual in-game currency. They have no real-world value.</p>
       </div>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="wallet-balance-grid grid gap-4 sm:grid-cols-3">
         <div className="game-panel border-l-4 border-l-primary p-5">
           <p className="text-sm font-semibold text-muted-foreground">Cash</p>
           <p className="font-display text-3xl font-bold text-primary">{formatNaira(funds.cash)}</p>
@@ -173,7 +173,7 @@ function WalletPage() {
         )}
       </section>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="wallet-lifetime-grid grid gap-4 sm:grid-cols-2">
         <div className="game-panel p-5">
           <p className="text-sm font-semibold text-muted-foreground">Lifetime income</p>
           <p className="font-display text-2xl font-bold text-primary">
@@ -200,11 +200,11 @@ function WalletPage() {
             body="Earn or spend money in the city to see activity here."
           />
         ) : (
-          <ul className="game-panel divide-y-2 divide-edge/10 p-0">
+          <ul className="game-panel wallet-transactions divide-y-2 divide-edge/10 p-0">
             {txs.map((transaction) => {
               const income = transaction.kind === "income";
               return (
-                <li key={transaction.id} className="flex items-center gap-3 p-4">
+                <li key={transaction.id} className="wallet-transaction-row flex items-center gap-3 p-4">
                   <span
                     className={`flex h-9 w-9 items-center justify-center rounded-lg border-2 border-edge ${income ? "bg-leaf" : "bg-clay text-clay-foreground"}`}
                   >
@@ -214,7 +214,7 @@ function WalletPage() {
                       <ArrowUpRight className="h-4 w-4" />
                     )}
                   </span>
-                  <div className="min-w-0 flex-1">
+                  <div className="wallet-transaction-info min-w-0 flex-1">
                     <p className="truncate font-semibold">
                       {transactionTitle(
                         transaction.transaction_type,
@@ -227,7 +227,7 @@ function WalletPage() {
                       {new Date(transaction.created_at).toLocaleString("en-NG")}
                     </p>
                   </div>
-                  <div className="text-right">
+                  <div className="wallet-transaction-amount text-right">
                     <p
                       className={`font-display font-bold ${
                         income
