@@ -209,11 +209,6 @@ export const q = {
       queryKey: ["bankAccount"],
       queryFn: async () => parseBankAccount(unwrap(await supabase.rpc("my_bank_account"))),
     }),
-  rentStatus: () =>
-    queryOptions({
-      queryKey: ["rentStatus"],
-      queryFn: async () => unwrap(await supabase.rpc("my_property_rent_status")),
-    }),
   propertyListings: () =>
     queryOptions({
       queryKey: ["propertyListings"],

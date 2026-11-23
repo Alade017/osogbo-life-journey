@@ -123,6 +123,9 @@ beforeAll(async () => {
   await db.exec(
     readFileSync("supabase/migrations/20261123040000_home_and_stall_together.sql", "utf8"),
   );
+  await db.exec(
+    readFileSync("supabase/migrations/20261123130000_retire_legacy_property_rent.sql", "utf8"),
+  );
 }, 240_000);
 
 beforeEach(async () => {
@@ -237,10 +240,6 @@ describe("home and market stall together", () => {
       requestId(16),
     ]);
     await db.query("select public.rent_market_stall($1::uuid)", [requestId(17)]);
-    await db.query(
-      "update public.player_properties set next_rent_due_at = now() - interval '1 day' where user_id = $1",
-      [player],
-    );
     const before = await balance();
     const result = await db.query<{ result: { retired: boolean; paid: number } }>(
       "select public.process_my_property_rent() as result",
@@ -248,11 +247,17 @@ describe("home and market stall together", () => {
 
     expect(result.rows[0]?.result).toMatchObject({ retired: true, paid: 0 });
     expect(await balance()).toBe(before);
-    const ledger = await db.query<{ count: number }>(
-      "select count(*)::int as count from public.property_rent_ledger where user_id = $1",
-      [player],
+  });
+
+  it("the legacy rent ledger and tenancy due date are gone", async () => {
+    const ledger = await db.query<{ name: string | null }>(
+      "select to_regclass('public.property_rent_ledger')::text as name",
     );
-    expect(ledger.rows[0]?.count).toBe(0);
+    const column = await db.query<{ count: number }>(
+      "select count(*)::int as count from information_schema.columns where table_schema = 'public' and table_name = 'player_properties' and column_name = 'next_rent_due_at'",
+    );
+    expect(ledger.rows[0]?.name).toBeNull();
+    expect(column.rows[0]?.count).toBe(0);
   });
 
   it("relief is per kind: a stall overdue offers the stall relief and never the home's", async () => {

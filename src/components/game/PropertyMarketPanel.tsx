@@ -11,6 +11,7 @@ import {
   propertyMarketErrorMessage,
   type PropertyMarketListing,
 } from "@/lib/property-sale";
+import "./property-sale.css";
 
 /** Homes other players have listed, plus the player's own homes that they can list. */
 export function PropertyMarketPanel() {

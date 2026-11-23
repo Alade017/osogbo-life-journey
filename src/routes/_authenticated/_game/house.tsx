@@ -81,6 +81,7 @@ import { ACTION_CATALOG, type LifeActionId } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
 import { canonicalHomeOptions } from "@/lib/living-cost-service";
+import { normalizeCanonicalHome, type CanonicalHome } from "@/lib/canonical-home";
 import { HouseSceneSkeleton } from "@/components/game/loading-skeletons";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -133,21 +134,6 @@ type HouseState = {
   inventory: HouseInventoryItem[];
 };
 type HouseStateSnapshot = { state: HouseState; source: "server" };
-type CanonicalHome = {
-  propertyId: string;
-  playerPropertyId: string;
-  houseTypeId: string;
-  name: string;
-  imageUrl: string | null;
-  district: string | null;
-  tenure: string;
-  status: string | null;
-  dueAt: string | null;
-  graceEndsAt: string | null;
-  rescueEndsAt: string | null;
-  weeklyRentMinor: number;
-  accessoryBand: string;
-};
 type CatalogItem = {
   id: string;
   category: string;
@@ -269,31 +255,6 @@ function formatRentDate(value: string | null | undefined) {
     dateStyle: "medium",
     timeZone: "Africa/Lagos",
   }).format(date);
-}
-
-function normalizeCanonicalHome(value: unknown): CanonicalHome | null {
-  if (
-    !isRecord(value) ||
-    typeof value["propertyId"] !== "string" ||
-    typeof value["playerPropertyId"] !== "string"
-  )
-    return null;
-  if (typeof value["houseTypeId"] !== "string" || typeof value["name"] !== "string") return null;
-  return {
-    propertyId: value["propertyId"],
-    playerPropertyId: value["playerPropertyId"],
-    houseTypeId: value["houseTypeId"],
-    name: value["name"],
-    imageUrl: typeof value["imageUrl"] === "string" ? value["imageUrl"] : null,
-    district: typeof value["district"] === "string" ? value["district"] : null,
-    tenure: typeof value["tenure"] === "string" ? value["tenure"] : "rented",
-    status: typeof value["status"] === "string" ? value["status"] : null,
-    dueAt: typeof value["dueAt"] === "string" ? value["dueAt"] : null,
-    graceEndsAt: typeof value["graceEndsAt"] === "string" ? value["graceEndsAt"] : null,
-    rescueEndsAt: typeof value["rescueEndsAt"] === "string" ? value["rescueEndsAt"] : null,
-    weeklyRentMinor: typeof value["weeklyRentMinor"] === "number" ? value["weeklyRentMinor"] : 0,
-    accessoryBand: typeof value["accessoryBand"] === "string" ? value["accessoryBand"] : "basic",
-  };
 }
 
 function legacyHouseState(value: unknown): HouseState | null {

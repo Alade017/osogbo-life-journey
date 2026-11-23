@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira, q } from "@/lib/game";
@@ -8,6 +8,9 @@ import { loadOwnedHouses } from "@/lib/property-assets";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
 import { housingReliefQueryKey } from "@/lib/housing-relief-client";
 import { getMarketStallRentStatus, payMarketStallRent } from "@/lib/market-stall-service";
+import { canonicalHomeOptions } from "@/lib/living-cost-service";
+import { normalizeCanonicalHome } from "@/lib/canonical-home";
+import { payHomeRent } from "@/lib/home-rent-service";
 import { stallIncomeKey } from "@/lib/stall-income-service";
 import { pageMeta } from "@/lib/seo";
 import { HomeLink } from "@/components/game/HomeLink";
@@ -62,6 +65,15 @@ export function PropertyPage() {
     retry: false,
   });
   const business = useQuery(q.businessMarket());
+  // The active home, read from the same server record the home screen uses. A rented home is not in
+  // the owned list, so this is where its rent status and payment are shown.
+  const homeRent = useQuery({
+    ...canonicalHomeOptions(character?.id),
+    enabled: !!character?.id && !offline,
+    select: normalizeCanonicalHome,
+  });
+  const rentedHome = homeRent.data?.tenure === "rented" ? homeRent.data : null;
+  const payHomeKey = useRef<string | null>(null);
   useEffect(() => {
     const update = () => setOffline(!navigator.onLine);
     update();
@@ -109,10 +121,32 @@ export function PropertyPage() {
     },
     onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
   });
+  const payHome = useMutation({
+    mutationFn: () => {
+      const key = payHomeKey.current ?? crypto.randomUUID();
+      payHomeKey.current = key;
+      return payHomeRent(key);
+    },
+    onSuccess: async () => {
+      payHomeKey.current = null;
+      await Promise.all([
+        client.invalidateQueries({ queryKey: ["canonicalHousingHome"] }),
+        client.invalidateQueries({ queryKey: ["authoritativeHouseState"] }),
+        client.invalidateQueries({ queryKey: ["housingMapProperties"] }),
+        client.invalidateQueries({ queryKey: ["ownedHouses", character?.id] }),
+        client.invalidateQueries({ queryKey: housingReliefQueryKey(character?.id ?? "", "home") }),
+        client.invalidateQueries({ queryKey: q.wallet().queryKey }),
+        client.invalidateQueries({ queryKey: ["transactions"] }),
+      ]);
+      toast.success("Rent paid. Your home is current for another week.");
+    },
+    onError: (error: Error) => toast.error(error.message.replaceAll("_", " ")),
+  });
   const pending =
     characterQuery.isPending ||
     business.isPending ||
-    (Boolean(character?.id) && (houses.isPending || stalls.isPending || stallRent.isPending));
+    (Boolean(character?.id) &&
+      (houses.isPending || stalls.isPending || stallRent.isPending || homeRent.isLoading));
   const error =
     characterQuery.error ?? houses.error ?? stalls.error ?? stallRent.error ?? business.error;
   const homeRows = (houses.data ?? []).filter(
@@ -125,7 +159,8 @@ export function PropertyPage() {
       (stalls.data?.length ?? 0) +
       companyRows.length +
       shareRows.length +
-      (stallRent.data ? 1 : 0) ===
+      (stallRent.data ? 1 : 0) +
+      (rentedHome ? 1 : 0) ===
     0;
   const marketStallRentCard = (
     <section className="property-market-district" aria-label="Market stall rent">
@@ -187,6 +222,97 @@ export function PropertyPage() {
       </article>
     </section>
   );
+  const rentedHomeStatus: Record<string, string> = {
+    current: "Current",
+    active: "Current",
+    due: "Rent due",
+    grace: "In grace period",
+    rescue: "Overdue",
+    overdue: "Overdue",
+  };
+  const rentedHomeOverdue =
+    rentedHome?.status === "grace" ||
+    rentedHome?.status === "rescue" ||
+    rentedHome?.status === "overdue";
+  const rentedHomeCard = rentedHome ? (
+    <section className="property-market-district" aria-label="Rented home">
+      <h2>Rented home</h2>
+      <article className="property-market-card map-sheet">
+        <div className="property-market-card-body">
+          <h3>{rentedHome.name}</h3>
+          <p>
+            {formatNaira(rentedHome.weeklyRentMinor)} weekly ·{" "}
+            <span className="capitalize">
+              {rentedHomeStatus[rentedHome.status ?? ""] ?? "Rent due"}
+            </span>
+          </p>
+          {rentedHome.dueAt && (
+            <p>
+              Due{" "}
+              {new Intl.DateTimeFormat("en-NG", {
+                dateStyle: "medium",
+                timeStyle: "short",
+                timeZone: "Africa/Lagos",
+              }).format(new Date(rentedHome.dueAt))}
+              {" (Lagos)"}
+            </p>
+          )}
+          <small>
+            {rentedHome.status === "current"
+              ? "Your home is current. Paying early renews it for another week."
+              : rentedHomeOverdue
+                ? "Pay the overdue rent to keep this home. Rent relief options are below if you cannot pay now."
+                : "Pay the rent to renew your home for another week."}
+          </small>
+          <div className="property-market-actions">
+            {rentedHome.status === "current" ? (
+              <>
+                <HomeLink className="map-primary-button">Open Home</HomeLink>
+                <button
+                  type="button"
+                  className="map-primary-button"
+                  disabled={offline || payHome.isPending}
+                  onClick={() => payHome.mutate()}
+                >
+                  {payHome.isPending ? "Paying…" : "Pay early"}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="map-primary-button"
+                disabled={offline || payHome.isPending}
+                onClick={() => payHome.mutate()}
+              >
+                {payHome.isPending
+                  ? "Paying…"
+                  : rentedHomeOverdue
+                    ? "Pay overdue rent"
+                    : "Pay rent to renew"}
+              </button>
+            )}
+          </div>
+          {character?.id && (
+            <HousingReliefPanel
+              characterId={character.id}
+              rentalKind="home"
+              rentStatus={rentedHome.status ?? "unknown"}
+              graceEndsAt={rentedHome.graceEndsAt}
+              rescueEndsAt={rentedHome.rescueEndsAt}
+              assetLabel="home"
+              offline={offline}
+              paying={payHome.isPending}
+              onPayRent={() => payHome.mutate()}
+            />
+          )}
+        </div>
+      </article>
+    </section>
+  ) : homeRent.isError ? (
+    <p className="property-market-message" role="alert">
+      Your home rent could not be loaded. Reopen this page to try again.
+    </p>
+  ) : null;
   return (
     <main className="property-market-page">
       <header className="property-market-hero map-sheet">
@@ -229,10 +355,12 @@ export function PropertyPage() {
               Find Homes
             </Link>
           </div>
+          {rentedHomeCard}
           {marketStallRentCard}
         </>
       ) : (
         <>
+          {rentedHomeCard}
           {marketStallRentCard}
           {homeRows.length > 0 && (
             <section className="property-market-district">
