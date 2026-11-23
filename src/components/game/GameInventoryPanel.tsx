@@ -536,9 +536,10 @@ export function GameInventoryPanel() {
                     </div>
                   </dl>
                   {selectedItem.item ? (
-                    <div className="pi-detail-actions">
+                    <div className="pi-detail-actions" role="group" aria-label="Selected item actions">
                       {selectedUse && (
                         <Button
+                          className="pi-action-primary"
                           disabled={!!useError || inventoryMutationPending}
                           onClick={() => useItem.mutate(selectedItem.id)}
                         >
@@ -554,6 +555,7 @@ export function GameInventoryPanel() {
                       {selectedSlot && (
                         <Button
                           variant="secondary"
+                          className={selectedUse ? "pi-action-secondary" : "pi-action-primary"}
                           disabled={
                             equipmentLoading ||
                             equipmentError ||
@@ -570,6 +572,7 @@ export function GameInventoryPanel() {
                       )}
                       <Button
                         variant="outline"
+                        className="pi-action-destructive"
                         disabled={!!discardError || inventoryMutationPending}
                         onClick={() => setDiscardId(selectedItem.id)}
                       >
