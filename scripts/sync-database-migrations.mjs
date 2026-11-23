@@ -97,7 +97,7 @@ try {
         await tx`select prosrc,prosecdef from pg_proc where oid='public.is_advertisement_admin()'::regprocedure`;
       if (
         !fn.prosecdef ||
-        fn.prosrc.trim().replace(/\\s+/g, " ") !==
+        fn.prosrc.trim().replace(/\s+/g, " ") !==
           "select exists (select 1 from public.advertisement_admins where user_id = auth.uid())"
       )
         throw new Error(
