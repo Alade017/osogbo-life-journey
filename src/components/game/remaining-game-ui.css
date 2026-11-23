@@ -837,3 +837,37 @@
     text-align: left;
   }
 }
+
+/* UI-04: Transaction summaries stay scannable; metadata is revealed on demand.
+   Scope includes the wallet route only, not the separate in-phone Bank app. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-details {
+  margin-top: 0.4rem;
+  min-width: 0;
+  font-size: 0.8rem;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-details > summary {
+  display: list-item;
+  width: fit-content;
+  max-width: 100%;
+  color: var(--brand-royal-deep);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-details > summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transaction-meta {
+  display: grid;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: var(--shape-button);
+  background: var(--brand-porcelain);
+  color: var(--brand-slate);
+  overflow-wrap: anywhere;
+}
