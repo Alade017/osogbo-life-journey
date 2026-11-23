@@ -178,11 +178,46 @@ export function findRoomPath(
       (o) => Math.abs(x - o.x) < o.w / 2 + 0.2 && Math.abs(z - o.z) < o.d / 2 + 0.2,
     );
   };
-  const nearest = (p: RoomPoint) => {
+  const isBlocked = Array.from({ length: cols * rows }, (_, i) => blocked(i));
+  // Label each open region. A pocket walled in by furniture is too small to leave, so searching from
+  // inside it would fail every time. Such a character is routed from the largest open region instead.
+  const region = new Int32Array(cols * rows).fill(-1);
+  const regionSize: number[] = [];
+  for (let i = 0; i < cols * rows; i++) {
+    if (isBlocked[i] || region[i] !== -1) continue;
+    const id = regionSize.length;
+    let size = 0;
+    const stack = [i];
+    region[i] = id;
+    while (stack.length) {
+      const current = stack.pop()!;
+      size++;
+      const col = current % cols,
+        row = Math.floor(current / cols);
+      for (const [dc, dr] of [
+        [1, 0],
+        [-1, 0],
+        [0, 1],
+        [0, -1],
+      ]) {
+        const c = col + dc!,
+          r = row + dr!;
+        if (c < 0 || r < 0 || c >= cols || r >= rows) continue;
+        const next = r * cols + c;
+        if (isBlocked[next] || region[next] !== -1) continue;
+        region[next] = id;
+        stack.push(next);
+      }
+    }
+    regionSize.push(size);
+  }
+  if (regionSize.length === 0) return null;
+  const largestRegion = regionSize.indexOf(Math.max(...regionSize));
+  const nearest = (p: RoomPoint, onlyRegion?: number) => {
     let best = -1,
       distance = Infinity;
     for (let i = 0; i < cols * rows; i++) {
-      if (blocked(i)) continue;
+      if (isBlocked[i] || (onlyRegion !== undefined && region[i] !== onlyRegion)) continue;
       const q = point(i),
         d = Math.hypot(q[0] - p[0], q[2] - p[2]);
       if (d < distance) {
@@ -197,7 +232,9 @@ export function findRoomPath(
     (Math.abs(target[0]) > width / 2 - margin || Math.abs(target[2]) > depth / 2 - margin)
   )
     return null;
-  const origin = nearest(start);
+  // Routes always start in the largest open region. A character standing in a smaller region is
+  // walled off from the rest of the room, so the nearest cell in the largest region is where it leaves from.
+  const origin = nearest(start, largestRegion);
   if (origin < 0) return null;
   // Search reachable space first, then choose the nearest reachable interaction spot.
   const queue = [origin],
@@ -217,7 +254,7 @@ export function findRoomPath(
         r = row + dr!;
       if (c < 0 || r < 0 || c >= cols || r >= rows) continue;
       const next = r * cols + c;
-      if (parents.has(next) || blocked(next)) continue;
+      if (parents.has(next) || isBlocked[next]) continue;
       parents.set(next, current);
       queue.push(next);
     }
