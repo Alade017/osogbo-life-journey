@@ -1112,3 +1112,96 @@
 @media (max-height: 520px) and (orientation: landscape) {
   .pi-inventory .pi-canvas { height: clamp(180px, 48dvh, 260px); }
 }
+
+/* Inventory layout refinement: retain responsive cockpit, server-driven items,
+   equipment slots, preview renderers, category filters and dialog behavior. */
+.inventory-dialog-scroll {
+  container-type: inline-size;
+}
+
+.pi-inventory .pi-inventory-masthead,
+.pi-inventory .pi-bag-toolbar,
+.pi-inventory .pi-bag-layout,
+.pi-inventory .pi-section {
+  min-width: 0;
+}
+
+.pi-inventory .pi-bag-toolbar {
+  flex-wrap: wrap;
+}
+
+.pi-inventory .pi-inventory-search {
+  flex: 1 1 220px;
+  min-width: 0;
+}
+
+.pi-inventory .pi-bag {
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 138px), 1fr));
+  align-items: stretch;
+}
+
+.pi-inventory .pi-tile {
+  width: 100%;
+  min-width: 0;
+  align-content: start;
+  gap: 0.35rem;
+  transition: border-color var(--duration-control) ease, box-shadow var(--duration-control) ease;
+}
+
+.pi-inventory .pi-tile strong {
+  white-space: normal;
+  text-overflow: clip;
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+}
+
+.pi-inventory .pi-tile small {
+  overflow-wrap: anywhere;
+}
+
+.pi-inventory .pi-detail {
+  max-width: 100%;
+}
+
+.pi-inventory .pi-detail-facts > div {
+  min-width: 0;
+}
+
+.pi-inventory .pi-detail-actions > button {
+  flex: 1 1 130px;
+}
+
+@container (max-width: 620px) {
+  .pi-inventory .pi-bag-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .pi-inventory .pi-detail {
+    position: static;
+  }
+}
+
+@container (max-width: 380px) {
+  .pi-inventory .pi-bag {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pi-inventory .pi-detail-facts {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@container (max-width: 280px) {
+  .pi-inventory .pi-bag {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pi-inventory .pi-tile {
+    transition: none;
+  }
+}
