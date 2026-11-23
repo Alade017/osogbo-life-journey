@@ -32,6 +32,7 @@ export function GameMobileNav({
       </Link>
       <Link
         to="/map"
+        data-core-action="true"
         activeProps={{ className: "gbb-active" }}
         className="gbb-link"
         onClick={onNavigate}
@@ -41,6 +42,7 @@ export function GameMobileNav({
       </Link>
       <Link
         to="/jobs"
+        data-core-action="true"
         activeProps={{ className: "gbb-active" }}
         className="gbb-link"
         onClick={onNavigate}
@@ -51,6 +53,7 @@ export function GameMobileNav({
       <button
         type="button"
         className="gbb-link"
+        data-core-action="true"
         onClick={onInventoryOpen}
         aria-label="Open inventory"
       >
