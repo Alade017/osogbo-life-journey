@@ -35,7 +35,11 @@ it("provides a 50x40 compound, five exterior ATMs and genuinely different branch
     expect([layout.width, layout.depth]).toEqual([50, 40]);
     expect(layout.fixtures.filter((f) => f.action === "atm")).toHaveLength(5);
     expect(
-      new Set(layout.parts.map((part) => part.surface + ":" + (part.shape ?? "box"))).size +
+      new Set(
+        layout.parts.map(
+          (part) => part.surface + ":" + (part.shape ?? "box") + ":" + (part.color ?? ""),
+        ),
+      ).size +
         layout.signs.length +
         4,
     ).toBeLessThan(120);
@@ -90,11 +94,14 @@ it("adds about thirty percent usable floor area while keeping human-scale furnit
     const layout = buildBankWorld(branch, "hall");
     expect((layout.width * layout.depth) / (26 * 24)).toBeCloseTo(1.298, 2);
     expect(
-      layout.parts.find((part) => part.fixture?.startsWith("seat-") && part.surface === "dark")
+      layout.parts.find((part) => part.fixture?.startsWith("seat-") && part.surface === "leather")
         ?.size[0],
     ).toBe(0.62);
     const shell = buildBankWorld(branch, "grounds").parts.find(
-      (part) => part.surface === "wall" && part.blocking && part.size[1] === 8.5,
+      (part) =>
+        (part.surface === "wall" || part.surface === "cladding") &&
+        part.blocking &&
+        part.size[1] === 8.5,
     )!;
     expect([shell.size[0], shell.size[2]]).toEqual([layout.width, layout.depth]);
   }
@@ -108,7 +115,7 @@ it("keeps gate, ATM approach lanes and the enlarged building separate", () => {
       halfDepth: world.depth / 2,
     });
     expect(nav.route(world.spawn, [design.entranceX, BANK_WORLD.lotDepth / 2 - 1])).not.toBeNull();
-    expect(world.parts.some((part) => part.pitch !== undefined && part.position[1] > 8)).toBe(true);
+    expect(world.parts.some((part) => part.surface === "roof")).toBe(true);
     expect(world.parts.some((part) => part.shape === "sphere")).toBe(true);
     for (const part of world.parts.filter((part) => part.blocking)) {
       expect(Math.abs(part.position[0]) + part.size[0] / 2).toBeLessThanOrEqual(
@@ -125,11 +132,28 @@ it("keeps courtyard walkways and parking markings clickable without treating wal
   const layout = buildBankWorld("cedar-bank", "grounds");
   const path = layout.parts.find((part) => part.surface === "wall" && part.size[0] === 1.25)!;
   const paint = layout.parts.find((part) => part.surface === "marking")!;
-  const building = layout.parts.find((part) => part.surface === "wall" && part.size[1] === 8.5)!;
+  const building = layout.parts.find(
+    (part) => (part.surface === "wall" || part.surface === "cladding") && part.size[1] === 8.5,
+  )!;
   const roof = layout.parts.find((part) => part.position[1] > 8)!;
   expect(isBankWalkSurface(path)).toBe(true);
   expect(path.position[1] + path.size[1] / 2).toBeLessThanOrEqual(0.05);
   expect(isBankWalkSurface(paint)).toBe(true);
   expect(isBankWalkSurface(building)).toBe(false);
   expect(isBankWalkSurface(roof)).toBe(false);
+});
+
+it("keeps the reference landscaping and decorative cars out of the entrance and service approaches", () => {
+  for (const branch of Object.keys(BANK_BRANCH_DESIGNS) as BankSlug[]) {
+    const world = buildBankWorld(branch, "grounds");
+    expect(world.parts.some((part) => part.surface === "soil")).toBe(true);
+    expect(world.parts.some((part) => part.color && part.blocking)).toBe(true);
+    expect(world.fixtures.some((f) => /car|vehicle/.test(f.id))).toBe(false);
+    const nav = createBankNavigation(bankObstaclePolygons(world), {
+      halfWidth: world.width / 2,
+      halfDepth: world.depth / 2,
+    });
+    for (const car of world.parts.filter((part) => part.color && part.blocking))
+      expect(nav.canWalk([car.position[0], car.position[2]])).toBe(false);
+  }
 });

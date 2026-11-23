@@ -1,6 +1,17 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { CanvasTexture, Group, InstancedMesh, Object3D, SRGBColorSpace } from "three";
+import {
+  CanvasTexture,
+  DataTexture,
+  DoubleSide,
+  FrontSide,
+  Group,
+  InstancedMesh,
+  LinearFilter,
+  LinearMipmapLinearFilter,
+  Object3D,
+  SRGBColorSpace,
+} from "three";
 import {
   BANK_BRANCH_DESIGNS,
   BANK_WORLD,
@@ -11,6 +22,7 @@ import {
   type BankSurface,
   type BankWorldLayout,
 } from "@/game/bank-world-layout";
+import { bankMaterialStyle, bankTexturePixels } from "@/game/bank-materials";
 import type { BankSlug } from "@/lib/bank-branch-data";
 
 function BankSign({
@@ -54,6 +66,7 @@ function PartBatch({
   parts,
   surface,
   shape,
+  color,
   branch,
   onSelect,
   onWalk,
@@ -61,13 +74,26 @@ function PartBatch({
   parts: BankPart[];
   surface: BankSurface;
   shape: BankShape;
+  color: string | undefined;
   branch: BankSlug;
   onSelect: (id: string) => void;
   onWalk: (point: BankPoint) => void;
 }) {
   const ref = useRef<InstancedMesh>(null),
     { invalidate } = useThree();
-  const design = BANK_BRANCH_DESIGNS[branch];
+  const style = useMemo(() => bankMaterialStyle(branch, surface), [branch, surface]);
+  const texture = useMemo(() => {
+    if (!style.texture) return null;
+    const map = new DataTexture(bankTexturePixels(style.texture), 256, 256);
+    map.colorSpace = SRGBColorSpace;
+    map.magFilter = LinearFilter;
+    map.minFilter = LinearMipmapLinearFilter;
+    map.generateMipmaps = true;
+    map.anisotropy = 2;
+    map.needsUpdate = true;
+    return map;
+  }, [style.texture]);
+  useEffect(() => () => texture?.dispose(), [texture]);
   useLayoutEffect(() => {
     if (!ref.current) return;
     const object = new Object3D();
@@ -82,20 +108,6 @@ function PartBatch({
     ref.current.computeBoundingSphere();
     invalidate();
   }, [parts, invalidate]);
-  const colors: Record<BankSurface, string> = {
-    wall: design.wall,
-    brand: design.brand,
-    wood: design.wood,
-    floor: "#eeece7",
-    paving: "#a8aaa7",
-    metal: "#919ca5",
-    dark: "#26313a",
-    glass: "#a3c4ce",
-    screen: "#68bea9",
-    led: "#f4f8ff",
-    marking: "#f2eee1",
-    foliage: "#64805b",
-  };
   return (
     <instancedMesh
       ref={ref}
@@ -119,11 +131,14 @@ function PartBatch({
         <boxGeometry />
       )}
       <meshStandardMaterial
-        color={colors[surface]}
-        roughness={surface === "floor" ? 0.15 : surface === "metal" ? 0.3 : 0.8}
-        metalness={surface === "metal" ? 0.65 : 0}
+        color={color ?? style.color}
+        map={texture}
+        roughness={style.roughness}
+        metalness={style.metalness}
         transparent={surface === "glass"}
-        opacity={surface === "glass" ? 0.32 : 1}
+        opacity={surface === "glass" ? 0.28 : 1}
+        side={surface === "glass" ? DoubleSide : FrontSide}
+        forceSinglePass
         depthWrite={surface !== "glass"}
         emissive={surface === "led" ? "#f4f8ff" : surface === "screen" ? "#68bea9" : "#000000"}
         emissiveIntensity={surface === "led" ? 0.7 : surface === "screen" ? 0.3 : 0}
@@ -190,11 +205,19 @@ export function ProceduralBankArchitecture({
   onWalk?: (point: BankPoint) => void;
 }) {
   const batches = useMemo(() => {
-    const groups = new Map<string, { surface: BankSurface; shape: BankShape; parts: BankPart[] }>();
+    const groups = new Map<
+      string,
+      { surface: BankSurface; shape: BankShape; color?: string; parts: BankPart[] }
+    >();
     for (const part of layout.parts) {
       const shape = part.shape ?? "box",
-        key = part.surface + ":" + shape;
-      const batch = groups.get(key) ?? { surface: part.surface, shape, parts: [] };
+        key = part.surface + ":" + shape + ":" + (part.color ?? "");
+      const batch = groups.get(key) ?? {
+        surface: part.surface,
+        shape,
+        parts: [],
+        ...(part.color ? { color: part.color } : {}),
+      };
       batch.parts.push(part);
       groups.set(key, batch);
     }
@@ -202,12 +225,13 @@ export function ProceduralBankArchitecture({
   }, [layout]);
   return (
     <group name={`procedural-bank:${branch}:${layout.area}`}>
-      {batches.map(([key, { surface, shape, parts }]) => (
+      {batches.map(([key, { surface, shape, color, parts }]) => (
         <PartBatch
           key={key}
           parts={parts}
           surface={surface}
           shape={shape}
+          color={color}
           branch={branch}
           onSelect={onSelect}
           onWalk={onWalk}
@@ -220,7 +244,9 @@ export function ProceduralBankArchitecture({
         <SecurityDoors x={BANK_BRANCH_DESIGNS[branch].entranceX} open={doorsOpen} />
       )}
       <hemisphereLight
-        color={layout.area === "grounds" ? "#ffdfba" : "#f4f8ff"}
+        color={
+          layout.area === "grounds" ? "#ffdfba" : branch === "cedar-bank" ? "#fff0d7" : "#f4f8ff"
+        }
         groundColor="#657067"
         intensity={0.65}
       />
