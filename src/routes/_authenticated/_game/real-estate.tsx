@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira, q } from "@/lib/game";
 import { loadOwnedHouses } from "@/lib/property-assets";
+import { PropertySalePanel } from "@/components/game/PropertySalePanel";
 import { housingRequest } from "@/lib/housing-request";
 import { pageMeta } from "@/lib/seo";
 import { HomeLink } from "@/components/game/HomeLink";
@@ -168,6 +169,7 @@ export function RealEstatePage() {
 
   return (
     <div className="property-listings-page">
+      <PropertySalePanel />
       <header className="property-listings-hero">
         <p className="map-sheet-eyebrow">REAL ESTATE</p>
         <h1>Rent or buy a home</h1>
