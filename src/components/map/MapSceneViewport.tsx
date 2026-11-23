@@ -39,7 +39,7 @@ export function MapSceneViewport({ children, label }: { children: ReactNode; lab
             orthographic
             frameloop="demand"
             dpr={[1, 1.5]}
-            shadows
+            shadows="percentage"
             gl={{ antialias: true, powerPreference: "low-power" }}
             fallback={
               <p className="map-scene-message" role="alert">

@@ -2254,7 +2254,7 @@ export function HouseRoom3D({
             style={{ touchAction: "none" }}
             frameloop="demand"
             dpr={[1, quality.maxDpr]}
-            shadows
+            shadows="percentage"
             camera={{
               position: [0, 4, 12],
               fov: 42,

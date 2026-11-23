@@ -80,7 +80,7 @@ export function ClinicVenue({ slug, locationName }: { slug: string; locationName
         {status !== "fallback" && (
           <VenueSceneBoundary resetKey={slug} onError={unavailable}>
             <Canvas
-              shadows
+              shadows="percentage"
               frameloop="demand"
               dpr={[1, 1.25]}
               gl={{ antialias: false, powerPreference: "low-power" }}
