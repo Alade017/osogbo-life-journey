@@ -1,6 +1,6 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
-import type { Group } from "three";
+import { BoxGeometry, type Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
 import { shopperLook } from "@/game/mall-appearance";
 import type { WorshipLayout } from "@/game/worship-layouts";
@@ -123,18 +123,23 @@ function Focal({ layout }: { layout: WorshipLayout }) {
 /** Mats for a mosque, pews for a church, one block per entry in each row. */
 function Rows({ layout }: { layout: WorshipLayout }) {
   const isMosque = layout.faith === "mosque";
+  // Share one geometry among row meshes in this mounted hall, not across scenes.
+  // Each hall owns its geometry and disposes it only after all its rows unmount.
+  const geometry = useMemo(
+    () => new BoxGeometry(...(isMosque ? [1.5, 0.06, 1.0] : [3.6, 0.8, 0.7])),
+    [isMosque],
+  );
+  useEffect(() => () => geometry.dispose(), [geometry]);
   return (
     <group>
       {layout.rows.flatMap((row) =>
         row.xs.map((x) =>
           isMosque ? (
-            <mesh key={`mat-${row.z}-${x}`} position={[x, 0.03, row.z]} receiveShadow>
-              <boxGeometry args={[1.5, 0.06, 1.0]} />
+            <mesh key={`mat-${row.z}-${x}`} position={[x, 0.03, row.z]} receiveShadow geometry={geometry}>
               <meshStandardMaterial color={layout.palette.carpet} roughness={0.95} />
             </mesh>
           ) : (
-            <mesh key={`pew-${row.z}-${x}`} position={[x, 0.4, row.z]} castShadow receiveShadow>
-              <boxGeometry args={[3.6, 0.8, 0.7]} />
+            <mesh key={`pew-${row.z}-${x}`} position={[x, 0.4, row.z]} castShadow receiveShadow geometry={geometry}>
               <meshStandardMaterial color={layout.palette.wood} roughness={0.8} />
             </mesh>
           ),
