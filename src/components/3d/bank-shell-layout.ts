@@ -1,11 +1,51 @@
-import { Box3, Group, Vector3 } from "three";
+import { BANK_LOBBY } from "@/game/bank-lobby-navigation";
+import { Box3, Group, Mesh, Vector3 } from "three";
 type Position = [number, number, number];
-const LOBBY_WALK = { x: 5.7, z: 3.45 };
+const LOBBY_WALK = { x: BANK_LOBBY.halfWidth, z: BANK_LOBBY.halfDepth };
 const SHELL_HOTSPOTS: Record<string, "teller" | "seat"> = {
   "025-teller-counter": "teller",
   "026-bulletproof-screen": "teller",
   "033-waiting-chairs": "seat",
 };
+
+/** GLTFLoader sanitizes slash-separated material suffixes (counter/0 -> counter0). */
+export function bankPartMatches(name: string, prefix: string) {
+  return name === prefix || (/^\/?\d+$/.test(name.slice(prefix.length)) && name.startsWith(prefix));
+}
+
+function dominantFloorHeight(holder: Group) {
+  const levels = new Map<number, { area: number; height: number }>();
+  const a = new Vector3(),
+    b = new Vector3(),
+    c = new Vector3();
+  holder.traverse((part) => {
+    if (!(part instanceof Mesh) || !bankPartMatches(part.name, "000-lobby-floor-tile")) return;
+    const positions = part.geometry.getAttribute("position"),
+      index = part.geometry.index;
+    if (!positions) return;
+    for (let i = 0; i + 2 < (index?.count ?? positions.count); i += 3) {
+      a.fromBufferAttribute(positions, index ? index.getX(i) : i).applyMatrix4(part.matrixWorld);
+      b.fromBufferAttribute(positions, index ? index.getX(i + 1) : i + 1).applyMatrix4(
+        part.matrixWorld,
+      );
+      c.fromBufferAttribute(positions, index ? index.getX(i + 2) : i + 2).applyMatrix4(
+        part.matrixWorld,
+      );
+      if (Math.max(a.y, b.y, c.y) - Math.min(a.y, b.y, c.y) > 0.01) continue;
+      const area = Math.abs((b.x - a.x) * (c.z - a.z) - (b.z - a.z) * (c.x - a.x)) / 2;
+      if (area < 0.00001) continue;
+      const y = (a.y + b.y + c.y) / 3,
+        key = Math.round(y / 0.01),
+        old = levels.get(key) ?? { area: 0, height: 0 };
+      levels.set(key, { area: old.area + area, height: old.height + y * area });
+    }
+  });
+  const best = [...levels.values()].sort(
+    (a, b) => b.area - a.area || b.height / b.area - a.height / a.area,
+  )[0];
+  if (!best) throw new Error("The bank model has no identifiable lobby floor.");
+  return best.height / best.area;
+}
 
 type ShellHotspot = { place: "teller" | "seat"; centre: Position; size: Position };
 
@@ -23,8 +63,7 @@ export function fitBankShell(scene: Group) {
   for (const [name, place] of Object.entries(SHELL_HOTSPOTS)) {
     const box = new Box3();
     shell.traverse((part) => {
-      if (part.name === name || part.name.startsWith(name + "/"))
-        box.union(new Box3().setFromObject(part));
+      if (bankPartMatches(part.name, name)) box.union(new Box3().setFromObject(part));
     });
     if (box.isEmpty()) continue;
     const centre = box.getCenter(new Vector3());
@@ -52,5 +91,9 @@ export function fitBankShell(scene: Group) {
   // Centre the hall on the origin, with its floor at y = 0.
   holder.position.set(-centre.x, -placed.min.y, -centre.z);
 
-  return { holder, shell, hotspots };
+  holder.updateMatrixWorld(true);
+  const floorOffset = dominantFloorHeight(holder);
+  holder.position.y -= floorOffset;
+  holder.updateMatrixWorld(true);
+  return { holder, shell, hotspots, floorOffset };
 }

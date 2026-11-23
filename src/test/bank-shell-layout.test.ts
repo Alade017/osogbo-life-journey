@@ -23,7 +23,9 @@ it("finds imported bank hotspots whose names contain material-split suffixes", (
   expect(fitted.hotspots.map((h) => h.place).sort()).toEqual(["seat", "teller"]);
   expect(fitted.hotspots.find((h) => h.place === "teller")?.size[0]).toBe(5);
   const bounds = new Box3().setFromObject(fitted.holder);
-  expect(bounds.min.y).toBeCloseTo(0);
+  expect(bounds.min.y).toBeLessThan(0);
+  const floor = fitted.shell.children[0]!;
+  expect(new Box3().setFromObject(floor).max.y).toBeCloseTo(0);
   expect(bounds.max.x - bounds.min.x).toBeLessThanOrEqual(11.4 + 0.001);
   expect(bounds.max.z - bounds.min.z).toBeLessThanOrEqual(6.9 + 0.001);
   expect(shell.parent).toBeNull();

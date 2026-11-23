@@ -761,12 +761,12 @@ export function PlayableNeighborhood() {
     setCompoundOpen(true);
   };
   useEffect(() => {
-    if (!homeBound || nearbyObject?.kind !== "home") return;
+    if (connectionState !== "connected" || !homeBound || nearbyObject?.kind !== "home") return;
     setHomeBound(false);
     enterHome.mutate();
     // enterHome is stable for this render; the effect only reacts to arrival.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [homeBound, nearbyObject]);
+  }, [connectionState, homeBound, nearbyObject]);
 
   useEffect(() => {
     setDirections(new Set());
@@ -782,18 +782,37 @@ export function PlayableNeighborhood() {
     setNpcDialogue(null);
   }, [currentLocation?.id]);
 
+  // Discard input from the old room. Reconnecting must require a fresh movement intent.
+  useEffect(() => {
+    if (connectionState === "connected") return;
+    directionsRef.current = new Set();
+    setDirections(new Set());
+    lastIntentRef.current = "0:0";
+    autoWalkRouteRef.current = null;
+    groundTargetRef.current = null;
+    setGroundTarget(null);
+    setPendingTargetId(null);
+    setHomeBound(false);
+    dispatchZone(setPendingZoneId(null));
+    dispatchZone(closeZoneInteraction());
+    setActivePanel(null);
+    setCompoundOpen(false);
+  }, [connectionState, currentLocation?.id]);
+
   /** Career shifts ask the server to walk the character to work from this neighbourhood. */
   useEffect(() => {
     const requestCommute = (event: Event) => {
       const shiftId = (event as CustomEvent<{ shiftId?: unknown }>).detail?.shiftId;
-      if (typeof shiftId === "string") roomRef.current?.send("commute-to-work", { shiftId });
+      if (connectionState === "connected" && typeof shiftId === "string")
+        roomRef.current?.send("commute-to-work", { shiftId });
     };
     window.addEventListener("osun:commute-to-work", requestCommute);
     return () => window.removeEventListener("osun:commute-to-work", requestCommute);
-  }, [roomRef]);
+  }, [connectionState, roomRef]);
 
   /** Keyboard walking. Pressing a key cancels a tapped destination. */
   useEffect(() => {
+    if (connectionState !== "connected") return;
     const set = (event: KeyboardEvent, pressed: boolean) => {
       const direction = KEY_DIRECTIONS[event.code];
       if (!direction) return;
@@ -814,6 +833,7 @@ export function PlayableNeighborhood() {
       });
     };
     const down = (event: KeyboardEvent) => {
+      if (event.repeat) return;
       if (event.target instanceof HTMLElement && event.target.closest("input, textarea, select"))
         return;
       set(event, true);
@@ -825,7 +845,7 @@ export function PlayableNeighborhood() {
       window.removeEventListener("keydown", down);
       window.removeEventListener("keyup", up);
     };
-  }, []);
+  }, [connectionState]);
 
   /** Consume Walk Here / Board Keke navigation commands issued from the City Map. */
   const hasActivePlayer = Boolean(player);
@@ -890,7 +910,7 @@ export function PlayableNeighborhood() {
 
   /** Tapping or clicking the ground walks the character there. Panels hold them in place. */
   const tapGround = (point: { x: number; y: number }) => {
-    if (anyModalOpen) return;
+    if (connectionState !== "connected" || !playerRef.current || anyModalOpen) return;
     setPendingTargetId(null);
     dispatchZone(setPendingZoneId(null));
     setHomeBound(false);
