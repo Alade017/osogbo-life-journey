@@ -109,7 +109,7 @@ export function ProfilePage() {
             </span>
           </div>
           <div
-            className="pi-xp"
+            className={`pi-xp${xpPercent >= 80 ? " is-near-goal" : ""}`}
             role="progressbar"
             aria-label={`Progress to level ${player.level + 1}`}
             aria-valuemin={0}
