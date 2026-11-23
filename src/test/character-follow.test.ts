@@ -116,12 +116,9 @@ describe("walkingCadence", () => {
     [1, -0.1, 1],
     [1, 0.1, 0],
     [1, 0.1, -1],
-  ])(
-    "rejects invalid cadence inputs (%s, %s, %s)",
-    (distance, delta, height) => {
-      expect(walkingCadence(distance, delta, height)).toBe(0);
-    },
-  );
+  ])("rejects invalid cadence inputs (%s, %s, %s)", (distance, delta, height) => {
+    expect(walkingCadence(distance, delta, height)).toBe(0);
+  });
 });
 
 describe("shortestFacingDifference", () => {
@@ -169,10 +166,13 @@ describe("lookAtBodyTurn", () => {
       [-2, -3, 5, 1, Math.PI],
       [1, -4, -2, 5, -Math.PI / 2],
       [0, 0, 0, 0, Math.PI / 2],
-    ]) {
+    ] as const) {
       const yaw = Math.atan2(tx - x, tz - z);
       const diff = yaw - facing;
-      const expected = Math.max(-limit, Math.min(limit, Math.atan2(Math.sin(diff), Math.cos(diff))));
+      const expected = Math.max(
+        -limit,
+        Math.min(limit, Math.atan2(Math.sin(diff), Math.cos(diff))),
+      );
       expect(lookAtBodyTurn(tx, tz, x, z, facing)).toBeCloseTo(expected);
     }
   });

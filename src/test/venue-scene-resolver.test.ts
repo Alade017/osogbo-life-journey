@@ -35,21 +35,34 @@ describe("resolveVenueScene", () => {
   });
 
   it("preserves specialized scene priority", () => {
-    expect(resolveVenueScene("test-venue", {
-      ...base, scene: "clinic", civicService: "police",
-      retailInterior: true, environment: { url: "/test.glb" },
-    })).toBe("clinic");
+    expect(
+      resolveVenueScene("test-venue", {
+        ...base,
+        scene: "clinic",
+        civicService: "police",
+        retailInterior: true,
+        environment: { url: "/test.glb" },
+      }),
+    ).toBe("clinic");
   });
 
   it("prioritizes built interiors over GLTF environments", () => {
-    expect(resolveVenueScene("test-venue", {
-      ...base, retailInterior: true, environment: { url: "/test.glb" },
-    })).toBe("retail");
+    expect(
+      resolveVenueScene("test-venue", {
+        ...base,
+        retailInterior: true,
+        environment: { url: "/test.glb" },
+      }),
+    ).toBe("retail");
   });
 
   it("preserves bank priority over transport", () => {
-    expect(resolveVenueScene("test-venue", {
-      ...base, bankInterior: "teller-hall", transportPark: true,
-    })).toBe("bank");
+    expect(
+      resolveVenueScene("test-venue", {
+        ...base,
+        bankInterior: "teller-hall",
+        transportPark: true,
+      }),
+    ).toBe("bank");
   });
 });

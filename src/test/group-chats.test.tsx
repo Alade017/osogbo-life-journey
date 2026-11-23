@@ -10,6 +10,7 @@ const service = vi.hoisted(() => ({
   sendSocialGroupMessage: vi.fn(),
   leaveSocialGroup: vi.fn(),
   setGroupPrefs: vi.fn(),
+  addSocialGroupMember: vi.fn(),
   toggleGroupReaction: vi.fn(),
   getGroupMediaUrl: vi.fn(),
   sendGroupVoice: vi.fn(),
@@ -101,7 +102,8 @@ describe("group chats", () => {
     ]);
     service.setGroupPrefs.mockResolvedValue({ pinned: true, muted: false });
     renderGroups();
-    fireEvent.click(await screen.findByRole("button", { name: "Pin Market crew" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Options for Market crew" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pin Market crew" }));
     await waitFor(() => expect(service.setGroupPrefs).toHaveBeenCalledWith("group-1", true, false));
   });
 
@@ -119,9 +121,55 @@ describe("group chats", () => {
       },
     ]);
     renderGroups();
-    expect(await screen.findByRole("button", { name: "Unmute Quiet" })).toHaveAttribute(
+    fireEvent.click(await screen.findByRole("button", { name: "Options for Quiet" }));
+    expect(screen.getByRole("button", { name: "Unmute Quiet" })).toHaveAttribute(
       "aria-pressed",
       "true",
+    );
+  });
+
+  it("keeps pin and mute hidden until the row options are opened", async () => {
+    service.fetchSocialGroups.mockResolvedValue([
+      {
+        id: "group-3",
+        name: "Night owls",
+        memberCount: 2,
+        memberNames: ["Me", "Tunde"],
+        lastBody: null,
+        lastMessageAt: "2026-11-10T02:00:00Z",
+        pinned: false,
+        muted: false,
+      },
+    ]);
+    renderGroups();
+    await screen.findByText("Night owls");
+    expect(screen.queryByRole("button", { name: "Pin Night owls" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Mute Night owls" })).not.toBeInTheDocument();
+  });
+
+  it("adds a friend who is not yet in the group, then refreshes the list", async () => {
+    service.fetchSocialGroups.mockResolvedValue([
+      {
+        id: "group-4",
+        name: "Study club",
+        memberCount: 2,
+        memberNames: ["Me", "Tunde"],
+        lastBody: null,
+        lastMessageAt: "2026-11-10T02:00:00Z",
+        pinned: false,
+        muted: false,
+      },
+    ]);
+    service.fetchSocialGroupMessages.mockResolvedValue([]);
+    service.addSocialGroupMember.mockResolvedValue({ ok: true });
+    renderGroups();
+    fireEvent.click(await screen.findByRole("button", { name: /^Study club/ }));
+    fireEvent.click(await screen.findByRole("button", { name: "Add a member" }));
+
+    expect(screen.getByText("Ife")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /^Add$/ }));
+    await waitFor(() =>
+      expect(service.addSocialGroupMember).toHaveBeenCalledWith("group-4", "friend-2"),
     );
   });
 });

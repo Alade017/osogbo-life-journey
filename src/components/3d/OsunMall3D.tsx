@@ -3,7 +3,13 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Vector3, type Camera, type Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
 import type { WalkPoint } from "@/game/grid-walk-path";
-import { advanceCrowd, getShopperById, isPaying, MALL_CROWD_TARGET, type MallShopper } from "@/game/mall-crowd";
+import {
+  advanceCrowd,
+  getShopperById,
+  isPaying,
+  MALL_CROWD_TARGET,
+  type MallShopper,
+} from "@/game/mall-crowd";
 import { createWalker, stepWalker, type MallWalker } from "@/game/mall-movement";
 import {
   MALL_BOUNDS,
@@ -98,7 +104,6 @@ function Block({
         onClick();
       }}
     >
-      
       <WorldMaterial tone={tone} {...(color === undefined ? {} : { color })} />
     </mesh>
   );
@@ -484,7 +489,8 @@ function RemoteFigure({ person }: { person: MallPerson }) {
 function FollowCamera({ sim }: { sim: { current: MallSim } }) {
   const { camera } = useThree();
   const target = useRef(new Vector3());
-  const desired = useMemo(() => new Vector3(), []);
+  // Reused every frame so the camera follow does not allocate garbage on low-end phones.
+  const desired = useRef(new Vector3());
   useEffect(() => {
     if ("fov" in camera) {
       camera.fov = 40;
@@ -494,8 +500,8 @@ function FollowCamera({ sim }: { sim: { current: MallSim } }) {
   useFrame((_, delta) => {
     const [x, z] = sim.current.player.pos;
     target.current.set(x, 0, z);
-    desired.set(x, 14, z + 13);
-    camera.position.lerp(desired, Math.min(1, delta * 4));
+    desired.current.set(x, 14, z + 13);
+    camera.position.lerp(desired.current, Math.min(1, delta * 4));
     camera.lookAt(target.current.x, 0.8, target.current.z);
   });
   return null;

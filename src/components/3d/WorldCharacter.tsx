@@ -1,7 +1,4 @@
-import {
-  resolveEquippedHeadwear,
-  resolveNormalizedWornOutfit,
-} from "@/game/wearable-outfits";
+import { resolveEquippedHeadwear, resolveNormalizedWornOutfit } from "@/game/wearable-outfits";
 import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { MathUtils, Vector3, type Group } from "three";
@@ -10,7 +7,14 @@ import type { AvatarAnimationState, AvatarEquipment } from "@/components/game/Av
 import { WORLD_SCALE } from "./world-theme";
 import { CHARACTER_GROUND, CHARACTER_MOTION } from "./character-config";
 import { bodyVariantFor, CharacterBody, motionFor, type BodyVariant } from "./CharacterBody";
-import { followStep, measuredSpeed, shortestFacingDifference, lookAtBodyTurn, walkingCadence, type Vec3 } from "./character-follow";
+import {
+  followStep,
+  measuredSpeed,
+  shortestFacingDifference,
+  lookAtBodyTurn,
+  walkingCadence,
+  type Vec3,
+} from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
 
 export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
@@ -73,8 +77,7 @@ export function WorldCharacter({
   // The root glides toward `position` each frame, so a new spot is walked to rather than jumped to.
   const root = useRef<Group>(null);
   const goal = useRef<Vector3 | null>(null);
-  const goalPosition =
-    goal.current ?? (goal.current = new Vector3(...position));
+  const goalPosition = goal.current ?? (goal.current = new Vector3(...position));
   const [movementBuffers] = useState(() => ({
     current: [0, 0, 0] as Vec3,
     goal: [0, 0, 0] as Vec3,
@@ -121,14 +124,25 @@ export function WorldCharacter({
   }, [x, y, z, animation, taskPose, reduced, invalidate]);
   const yaw = FACING_YAW[facing] ?? 0;
   const initialYaw = useRef(yaw);
-  const lookAtCache = useRef<{ targetX: number; targetZ: number; x: number; z: number; facingYaw: number; turn: number } | null>(null);
-  useEffect(() => { invalidate(); }, [yaw, invalidate]);
+  const lookAtCache = useRef<{
+    targetX: number;
+    targetZ: number;
+    x: number;
+    z: number;
+    facingYaw: number;
+    turn: number;
+  } | null>(null);
+  useEffect(() => {
+    invalidate();
+  }, [yaw, invalidate]);
   useFrame((_state, delta) => {
     const rootGroup = root.current;
     if (rootGroup) {
       const difference = shortestFacingDifference(yaw, rootGroup.rotation.y);
       if (Math.abs(difference) > 0.002) {
-        rootGroup.rotation.y += reduced ? difference : difference * blend(CHARACTER_MOTION.headTurnRate, delta);
+        rootGroup.rotation.y += reduced
+          ? difference
+          : difference * blend(CHARACTER_MOTION.headTurnRate, delta);
         invalidate();
       } else rootGroup.rotation.y = yaw;
     }
@@ -158,7 +172,11 @@ export function WorldCharacter({
       invalidate();
     }
     const travelling = !reduced && travelled > 0;
-    cadence.current = travelling ? walkingCadence(travelled, delta, h) : animation === "walk" ? 1 : 0;
+    cadence.current = travelling
+      ? walkingCadence(travelled, delta, h)
+      : animation === "walk"
+        ? 1
+        : 0;
     if (walkingRef.current !== travelling) {
       walkingRef.current = travelling;
       setWalking(travelling);

@@ -1,8 +1,5 @@
 import { useEffect, useState } from "react";
-import {
-  selectWorldRenderQuality,
-  type WorldRenderQuality,
-} from "@/components/3d/render-quality";
+import { selectWorldRenderQuality, type WorldRenderQuality } from "@/components/3d/render-quality";
 
 type DeviceNavigator = Navigator & {
   deviceMemory?: number;

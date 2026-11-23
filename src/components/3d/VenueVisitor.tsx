@@ -20,7 +20,12 @@ export function VenueVisitor({
   }, [walking, invalidate]);
   const legs = useRef<(Group | null)[]>([]),
     arms = useRef<(Group | null)[]>([]);
-  const headings: Record<string, number> = { north: Math.PI, south: 0, east: Math.PI / 2, west: -Math.PI / 2 };
+  const headings: Record<string, number> = {
+    north: Math.PI,
+    south: 0,
+    east: Math.PI / 2,
+    west: -Math.PI / 2,
+  };
   const yaw = headings[facing] ?? 0;
   useFrame(({ clock }) => {
     const reduced =

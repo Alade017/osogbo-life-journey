@@ -114,9 +114,7 @@ it("preserves appearance fallback through the public resolver", () => {
 it("preserves the legacy starter outfit in the normalized resolver", () => {
   const safe = normalizeAvatarAppearance({ outfit: 3 }, "male");
   expect(
-    resolveNormalizedWornOutfit(safe, [
-      { slot: "top", item: { slug: "basic_outfit" } },
-    ]),
+    resolveNormalizedWornOutfit(safe, [{ slot: "top", item: { slug: "basic_outfit" } }]),
   ).toMatchObject({
     colors: ["#e8e0cc", "#27334a", "#22242a"],
     topCut: "tee",
@@ -138,9 +136,7 @@ it("rejects invalid equipment in the normalized resolver", () => {
     },
     { slot: "wallet", item: top.item },
   ];
-  expect(resolveNormalizedWornOutfit(safe, invalid)).toEqual(
-    resolveNormalizedWornOutfit(safe, []),
-  );
+  expect(resolveNormalizedWornOutfit(safe, invalid)).toEqual(resolveNormalizedWornOutfit(safe, []));
 });
 
 it("reflects equipment changes without stale outfit results", () => {

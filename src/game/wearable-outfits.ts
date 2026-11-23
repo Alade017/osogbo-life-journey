@@ -30,10 +30,7 @@ export function resolveWornOutfit(
   gender: string,
   equipment: readonly WearableEquipment[],
 ): WornOutfit {
-  return resolveNormalizedWornOutfit(
-    normalizeAvatarAppearance(appearance, gender),
-    equipment,
-  );
+  return resolveNormalizedWornOutfit(normalizeAvatarAppearance(appearance, gender), equipment);
 }
 
 export function resolveNormalizedWornOutfit(

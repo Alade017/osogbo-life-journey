@@ -4,7 +4,20 @@ import { WorldTrafficLights } from "@/components/3d/WorldScene";
 
 const frameMock = vi.hoisted(() => ({
   callbacks: [] as Array<() => void>,
+  refs: [] as Array<{ current: unknown }>,
 }));
+
+vi.mock("react", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("react")>();
+  return {
+    ...actual,
+    useRef: (initial: unknown) => {
+      const ref = actual.useRef(initial);
+      if (!frameMock.refs.includes(ref)) frameMock.refs.push(ref);
+      return ref;
+    },
+  };
+});
 
 vi.mock("@react-three/fiber", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@react-three/fiber")>()),
@@ -25,7 +38,9 @@ function mount(initial: "stop" | "caution" | "go" = "stop") {
       getSignalState={getSignalState}
     />,
   );
-  const materials = Array.from(view.container.querySelectorAll("meshbasicmaterial")) as MockMaterial[];
+  const materials = Array.from(
+    view.container.querySelectorAll("meshbasicmaterial"),
+  ) as MockMaterial[];
   expect(materials).toHaveLength(3);
   const setters = materials.map((material) => {
     const set = vi.fn();
@@ -34,18 +49,34 @@ function mount(initial: "stop" | "caution" | "go" = "stop") {
   });
   expect(frameMock.callbacks).toHaveLength(1);
   const frame = () => act(() => frameMock.callbacks[0]!());
+  const materialRefs = materials.map((material) => {
+    const ref = frameMock.refs.find((candidate) => candidate.current === material);
+    if (!ref) throw new Error("Traffic light material ref missing");
+    return ref;
+  });
   return {
     frame,
     setters,
     getSignalState,
-    setSignal: (next: "stop" | "caution" | "go") => { signal = next; },
-    removeMaterial: (index: number) => { materials[index]!.color = undefined as unknown as MockMaterial["color"]; },
-    restoreMaterial: (index: number) => { materials[index]!.color = { set: setters[index]! }; },
+    setSignal: (next: "stop" | "caution" | "go") => {
+      signal = next;
+    },
+    removeMaterial: (index: number) => {
+      materialRefs[index]!.current = null;
+    },
+    restoreMaterial: (index: number) => {
+      materialRefs[index]!.current = materials[index]!;
+    },
   };
 }
 
-beforeEach(() => { frameMock.callbacks = []; });
-afterEach(() => { cleanup(); });
+beforeEach(() => {
+  frameMock.callbacks = [];
+  frameMock.refs = [];
+});
+afterEach(() => {
+  cleanup();
+});
 
 describe("WorldTrafficLights material updates", () => {
   it("applies the initial scheduler signal", () => {

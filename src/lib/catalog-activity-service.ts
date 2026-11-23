@@ -1,3 +1,4 @@
+import { SIMULATION_REQUEST_TIMEOUT_MS, withTimeout } from "@/lib/request-timeout";
 import { supabase } from "@/integrations/supabase/client";
 import type { Json } from "@/integrations/supabase/types";
 import { parseSimulationSnapshot, type SimulationSnapshot } from "@/lib/simulation-service";
@@ -82,12 +83,16 @@ export async function performCatalogActivity(args: {
   activitySlug: string;
   requestId: string;
 }): Promise<CatalogActivityResult> {
-  const { data, error } = await supabase.rpc("perform_catalog_activity", {
-    p_session: args.session,
-    p_revision: args.revision,
-    p_activity_slug: args.activitySlug,
-    p_request_id: args.requestId,
-  });
+  const { data, error } = await withTimeout(
+    supabase.rpc("perform_catalog_activity", {
+      p_session: args.session,
+      p_revision: args.revision,
+      p_activity_slug: args.activitySlug,
+      p_request_id: args.requestId,
+    }),
+    SIMULATION_REQUEST_TIMEOUT_MS,
+    "The game server did not answer in time. Retrying.",
+  );
 
   if (error) {
     throw new Error(error.message);

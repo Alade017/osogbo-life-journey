@@ -17,6 +17,7 @@ const state = vi.hoisted(() => ({
   currentAction: null as { animation: string } | null,
   gameTime: { minute: 0, hour: 8, day: 1, weekday: 0 },
   npcRows: [] as Array<{ id: string }>,
+  npcRelationshipRows: [] as Array<Record<string, unknown>>,
   placeRows: [] as Array<{ location_id: string; category: string }>,
   shopRows: [] as Array<{ shop: { location_id: string; slug?: string } }>,
   jobRows: [] as Array<{ is_available: boolean; location_id: string }>,
@@ -80,6 +81,10 @@ vi.mock("@/lib/game", async (importOriginal) => {
         ],
       }),
       npcs: () => ({ queryKey: ["npcs"], queryFn: async () => state.npcRows }),
+      npcRelationships: () => ({
+        queryKey: ["npcRelationships"],
+        queryFn: async () => state.npcRelationshipRows,
+      }),
       places: () => ({ queryKey: ["places"], queryFn: async () => state.placeRows }),
       shopItems: () => ({ queryKey: ["shopItems"], queryFn: async () => state.shopRows }),
       jobs: () => ({ queryKey: ["jobs"], queryFn: async () => state.jobRows }),
@@ -160,6 +165,23 @@ vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
 // NPCs are only talkable once they have walked to their destination; the 3D
 // scene reports that through onNpcArrive, so the test reports it the same way.
 // The player then stands at that destination, as it would after walking there.
+// Row shape the npc table returns (see npcFromSavedDefinition), mirroring NPC_CATALOG
+// so the scheduled routine places Adeola at the market at 17:00.
+const adeolaRow = {
+  id: "npc-adeola",
+  name: "Adeola Akinyemi",
+  role: "Market trader",
+  personality: "warm",
+  home_location_id: null,
+  work_location_id: null,
+  routine: [
+    { start: 7, end: 16, place: "work", activity: "selling produce" },
+    { start: 16, end: 18, place: "market", activity: "picking up groceries" },
+    { start: 18, end: 24, place: "home", activity: "resting at home" },
+    { start: 0, end: 7, place: "home", activity: "sleeping" },
+  ],
+};
+
 async function settleNpcsAtDestination(joined: ReturnType<typeof room>) {
   const scene = state.scene.mock.lastCall?.[0] as
     | {
@@ -218,6 +240,7 @@ beforeEach(() => {
   state.homeReads = 0;
   state.gameTime = { minute: 0, hour: 8, day: 1, weekday: 0 };
   state.npcRows = [];
+  state.npcRelationshipRows = [];
   state.placeRows = [];
   state.shopRows = [];
   state.jobRows = [];
@@ -318,7 +341,7 @@ it("places and talks to a scheduled NPC through the server-authoritative interac
   state.location = "market";
   state.position = { x: 1.96875, y: 5.75 };
   state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
-  state.npcRows = [{ id: "npc-adeola" }];
+  state.npcRows = [adeolaRow];
   const joined = room("market");
   state.join.mockImplementation(async () => joined);
   state.rpc.mockResolvedValue({
@@ -350,7 +373,7 @@ it("opens an NPC conversation from a 3D target only when the player is within in
   state.location = "market";
   state.position = { x: 1.96875, y: 5.75 };
   state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
-  state.npcRows = [{ id: "npc-adeola" }];
+  state.npcRows = [adeolaRow];
   const joined = room("market");
   state.join.mockImplementation(async () => joined);
   show();
@@ -368,7 +391,7 @@ it("cancels a pending NPC approach when the player taps a different ground point
   state.location = "market";
   state.position = { x: 7, y: 6 };
   state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
-  state.npcRows = [{ id: "npc-adeola" }];
+  state.npcRows = [adeolaRow];
   const joined = room("market");
   state.join.mockImplementation(async () => joined);
   show();
@@ -403,7 +426,7 @@ it("does not allow a distant NPC target to bypass the proximity gate", async () 
   state.location = "market";
   state.position = { x: 7, y: 6 };
   state.gameTime = { minute: 0, hour: 17, day: 1, weekday: 0 };
-  state.npcRows = [{ id: "npc-adeola" }];
+  state.npcRows = [adeolaRow];
   show();
   await screen.findByText("R3F neighbourhood");
   const sceneProps = state.scene.mock.lastCall?.[0];

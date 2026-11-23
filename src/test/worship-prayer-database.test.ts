@@ -3,8 +3,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it } from "vitest";
 
-const prayerMigration = "supabase/migrations/20261119130000_worship_prayer_bonus.sql";
-const scheduleMigration = "supabase/migrations/20261119133000_worship_prayer_schedule.sql";
+const prayerMigration = "supabase/migrations/20261119125025_worship_prayer_bonus.sql";
+const scheduleMigration = "supabase/migrations/20261119153134_worship_prayer_schedule.sql";
 const alice = "11111111-1111-4111-8111-111111111111";
 const aliceCharacter = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const mosqueId = "99999999-aaaa-4aaa-8aaa-999999999999";

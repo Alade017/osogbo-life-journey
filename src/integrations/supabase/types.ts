@@ -5366,6 +5366,7 @@ export type Database = {
       profiles: {
         Row: {
           app_tile_style: string;
+          message_theme: string;
           created_at: string;
           dashboard_pins: Json;
           display_name: string | null;
@@ -5379,6 +5380,7 @@ export type Database = {
         };
         Insert: {
           app_tile_style?: string;
+          message_theme?: string;
           created_at?: string;
           dashboard_pins?: Json;
           display_name?: string | null;
@@ -5392,6 +5394,7 @@ export type Database = {
         };
         Update: {
           app_tile_style?: string;
+          message_theme?: string;
           created_at?: string;
           dashboard_pins?: Json;
           display_name?: string | null;
@@ -6857,6 +6860,22 @@ export type Database = {
       };
       get_social_groups_overview: { Args: never; Returns: Json };
       set_my_app_tile_style: { Args: { p_style: string }; Returns: Json };
+      my_property_sale_quotes: { Args: never; Returns: Json };
+      sell_property_to_npc: {
+        Args: { p_player_property_id: string; p_request_id: string };
+        Returns: Json;
+      };
+      list_property_for_sale: {
+        Args: { p_player_property_id: string; p_asking_minor: number };
+        Returns: Json;
+      };
+      cancel_property_listing: { Args: { p_listing_id: string }; Returns: Json };
+      property_market_listings: { Args: never; Returns: Json };
+      buy_property_listing: {
+        Args: { p_listing_id: string; p_request_id: string };
+        Returns: Json;
+      };
+      set_my_message_theme: { Args: { p_theme: string }; Returns: string };
       save_my_world_checkpoint: {
         Args: { p_world_x: number; p_world_y: number };
         Returns: Json;

@@ -3,18 +3,10 @@ import { VENUE_FURNITURE } from "@/lib/venue-furniture-assets";
 
 export type FurnitureResult = "ready" | "failed";
 
-export type FurnitureResults = Readonly<
-  Record<string, FurnitureResult | undefined>
->;
+export type FurnitureResults = Readonly<Record<string, FurnitureResult | undefined>>;
 
-export function getFurnitureKey(
-  fixture: VenueFixture,
-): string {
-  return JSON.stringify([
-    fixture.id,
-    fixture.kind,
-    VENUE_FURNITURE[fixture.kind]?.url ?? null,
-  ]);
+export function getFurnitureKey(fixture: VenueFixture): string {
+  return JSON.stringify([fixture.id, fixture.kind, VENUE_FURNITURE[fixture.kind]?.url ?? null]);
 }
 
 export function summarizeFurnitureReadiness(

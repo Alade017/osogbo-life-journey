@@ -2,10 +2,7 @@ import type { LocationVenueDesign } from "@/lib/location-venue-designs";
 import type { VenueSceneKind } from "@/lib/venue-scene-resolver";
 import { VENUE_FURNITURE } from "@/lib/venue-furniture-assets";
 
-export function getVenueAssetUrls(
-  sceneKind: VenueSceneKind,
-  venue: LocationVenueDesign,
-): string[] {
+export function getVenueAssetUrls(sceneKind: VenueSceneKind, venue: LocationVenueDesign): string[] {
   if (sceneKind === "environment") {
     return venue.environment ? [venue.environment.url] : [];
   }

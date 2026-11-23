@@ -25,10 +25,7 @@ export type MallShopper = {
   walker: MallWalker;
 };
 
-const shopperIndexes = new WeakMap<
-  readonly MallShopper[],
-  Map<string, MallShopper>
->();
+const shopperIndexes = new WeakMap<readonly MallShopper[], Map<string, MallShopper>>();
 
 /**
  * Looks up a shopper in an immutable crowd snapshot.

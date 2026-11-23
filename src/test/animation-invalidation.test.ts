@@ -1,11 +1,4 @@
-import {
-  afterEach,
-  beforeEach,
-  describe,
-  expect,
-  it,
-  vi,
-} from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { AnimationClip, AnimationMixer, Group } from "three";
 import { startAnimationInvalidation } from "@/lib/animation-invalidation";
@@ -113,10 +106,7 @@ describe("animation invalidation", () => {
     cleanup();
 
     expect(vi.getTimerCount()).toBe(0);
-    expect(removeListener).toHaveBeenCalledWith(
-      "finished",
-      expect.any(Function),
-    );
+    expect(removeListener).toHaveBeenCalledWith("finished", expect.any(Function));
 
     removeListener.mockRestore();
   });

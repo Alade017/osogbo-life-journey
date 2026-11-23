@@ -14,18 +14,10 @@ const DOOR_HALF_WIDTH = 1.1;
 const PRAYER_POSE_EPSILON = 0.001;
 
 /** Returns the next pose, snapping exactly to the target when settled. */
-export function nextPrayerPose(
-  current: number,
-  target: number,
-  delta: number,
-): number {
-  const next =
-    current +
-    (target - current) * Math.min(1, delta * 4);
+export function nextPrayerPose(current: number, target: number, delta: number): number {
+  const next = current + (target - current) * Math.min(1, delta * 4);
 
-  return Math.abs(target - next) <= PRAYER_POSE_EPSILON
-    ? target
-    : next;
+  return Math.abs(target - next) <= PRAYER_POSE_EPSILON ? target : next;
 }
 
 function Wall({
@@ -132,11 +124,22 @@ function Rows({ layout }: { layout: WorshipLayout }) {
       {layout.rows.flatMap((row) =>
         row.xs.map((x) =>
           isMosque ? (
-            <mesh key={`mat-${row.z}-${x}`} position={[x, 0.03, row.z]} receiveShadow geometry={geometry}>
+            <mesh
+              key={`mat-${row.z}-${x}`}
+              position={[x, 0.03, row.z]}
+              receiveShadow
+              geometry={geometry}
+            >
               <meshStandardMaterial color={layout.palette.carpet} roughness={0.95} />
             </mesh>
           ) : (
-            <mesh key={`pew-${row.z}-${x}`} position={[x, 0.4, row.z]} castShadow receiveShadow geometry={geometry}>
+            <mesh
+              key={`pew-${row.z}-${x}`}
+              position={[x, 0.4, row.z]}
+              castShadow
+              receiveShadow
+              geometry={geometry}
+            >
               <meshStandardMaterial color={layout.palette.wood} roughness={0.8} />
             </mesh>
           ),

@@ -1,10 +1,11 @@
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Newspaper, Trophy } from "lucide-react";
+import { Heart, Newspaper, Plus, Send, Trophy } from "lucide-react";
 import { PaletteSelect } from "@/components/ui/palette-select";
 import { loadGameUpdates, sortGameUpdates } from "@/lib/game-updates";
+import "./phone/phone-leaderboard.css";
 
 export type CommunityPhoneApp =
   "Calendar" | "Food Delivery" | "Okada Rides" | "Contribution" | "Leaderboard" | "Town News";
@@ -13,10 +14,6 @@ type TownRank = { rank: number; name: string; score: number };
 type TownPost = { id: string; category: string; title: string; body: string; created_at: string };
 type TownReaction = { post_id: string; user_id: string };
 type TownComment = { id: string; post_id: string; body: string; created_at: string };
-
-function AppCard({ children }: { children: ReactNode }) {
-  return <div className="phone-local-card">{children}</div>;
-}
 
 export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
   const queryClient = useQueryClient();
@@ -162,93 +159,115 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
       </div>
     );
 
+  const postCount = townPosts.data?.length ?? 0;
+  const updateCount = gameUpdates.data?.length ?? 0;
+  const reactionsFor = (postId: string) =>
+    reactions.data?.filter((reaction) => reaction.post_id === postId) ?? [];
+  const likedByMe = (postId: string) =>
+    reactionsFor(postId).some((reaction) => reaction.user_id === newsUser.data);
+
   return (
-    <div className="phone-local-app" aria-label="Town news feed">
-      <header>
-        <Newspaper aria-hidden="true" />
-        <span>
-          <strong>News feed</strong>
-          <small>Town updates</small>
+    <section className="town-news" aria-label="Town news feed">
+      <header className="town-news-hero">
+        <span className="town-news-hero-icon" aria-hidden="true">
+          <Newspaper />
         </span>
+        <div>
+          <strong>Town News</strong>
+          <small>
+            {postCount} town {postCount === 1 ? "post" : "posts"} · {updateCount} game{" "}
+            {updateCount === 1 ? "update" : "updates"}
+          </small>
+        </div>
       </header>
-      <section className="phone-news-section" aria-labelledby="phone-game-updates">
-        <h3 id="phone-game-updates">Game updates</h3>
-        {gameUpdates.isLoading && (
-          <AppCard>
-            <small>Loading game updates...</small>
-          </AppCard>
-        )}
+
+      <section className="town-news-section" aria-labelledby="phone-game-updates">
+        <h3 id="phone-game-updates" className="town-news-heading">
+          Game updates
+        </h3>
+        {gameUpdates.isLoading && <p className="town-news-state">Loading game updates…</p>}
         {gameUpdates.isError && (
-          <AppCard>
-            <small role="alert">Game updates could not be loaded.</small>
-          </AppCard>
+          <p className="town-news-state" role="alert">
+            Game updates could not be loaded.
+          </p>
         )}
-        {sortGameUpdates(gameUpdates.data ?? []).map((update) => (
-          <AppCard key={update.id}>
-            <small>
-              {update.app} ·{" "}
-              {new Date(`${update.publishedOn}T00:00:00`).toLocaleDateString("en-NG")}
-            </small>
-            <strong>{update.title}</strong>
-            <span>{update.summary}</span>
-          </AppCard>
-        ))}
+        <ul className="town-news-updates">
+          {sortGameUpdates(gameUpdates.data ?? []).map((update) => (
+            <li key={update.id} className="town-news-update">
+              <span className="town-news-tag">{update.app}</span>
+              <time dateTime={`${update.publishedOn}T00:00:00`}>
+                {new Date(`${update.publishedOn}T00:00:00`).toLocaleDateString("en-NG")}
+              </time>
+              <strong>{update.title}</strong>
+              <span>{update.summary}</span>
+            </li>
+          ))}
+        </ul>
       </section>
-      <div className="phone-local-list">
-        <h3 className="phone-news-section">Town posts</h3>
+
+      <section className="town-news-section" aria-labelledby="town-news-posts-heading">
+        <h3 id="town-news-posts-heading" className="town-news-heading">
+          Town posts
+        </h3>
         {townPosts.isLoading ? (
-          <AppCard>
-            <small>Loading town posts...</small>
-          </AppCard>
+          <p className="town-news-state">Loading town posts…</p>
         ) : townPosts.isError ? (
-          <AppCard>
-            <small role="alert">
-              Town posts are unavailable.{" "}
-              <button type="button" onClick={() => void townPosts.refetch()}>
-                Try again
-              </button>
-            </small>
-          </AppCard>
-        ) : townPosts.data?.length ? (
-          townPosts.data.map((post) => (
-            <AppCard key={post.id}>
-              <div>
-                <small>
-                  {post.category} · {new Date(post.created_at).toLocaleDateString("en-NG")}
-                </small>
-                <strong>{post.title}</strong>
-                <p>{post.body}</p>
-                <div className="phone-town-social">
-                  <button
-                    type="button"
-                    disabled={toggleReaction.isPending || !newsUser.data}
-                    aria-pressed={
-                      reactions.data?.some(
-                        (reaction) =>
-                          reaction.post_id === post.id && reaction.user_id === newsUser.data,
-                      ) ?? false
-                    }
-                    onClick={() =>
-                      toggleReaction.mutate({
-                        postId: post.id,
-                        reacted: !reactions.data?.some(
-                          (reaction) =>
-                            reaction.post_id === post.id && reaction.user_id === newsUser.data,
-                        ),
-                      })
-                    }
-                  >
-                    Like ·{" "}
-                    {reactions.data?.filter((reaction) => reaction.post_id === post.id).length ?? 0}
-                  </button>
-                  {comments.data
-                    ?.filter((comment) => comment.post_id === post.id)
-                    .map((comment) => (
-                      <p key={comment.id} className="phone-town-comment">
-                        {comment.body}
-                      </p>
-                    ))}
+          <p className="town-news-state" role="alert">
+            Town posts are unavailable.{" "}
+            <button
+              type="button"
+              className="town-news-retry"
+              onClick={() => void townPosts.refetch()}
+            >
+              Try again
+            </button>
+          </p>
+        ) : postCount ? (
+          <ul className="town-news-feed">
+            {townPosts.data?.map((post) => {
+              const liked = likedByMe(post.id);
+              const count = reactionsFor(post.id).length;
+              return (
+                <li key={post.id} className="town-news-card">
+                  <div className="town-news-meta">
+                    <span
+                      className={`town-news-chip town-news-chip-${post.category.toLowerCase()}`}
+                    >
+                      {post.category}
+                    </span>
+                    <time dateTime={post.created_at}>
+                      {new Date(post.created_at).toLocaleDateString("en-NG")}
+                    </time>
+                  </div>
+                  <h4 className="town-news-title">{post.title}</h4>
+                  <p className="town-news-body">{post.body}</p>
+                  <div className="town-news-actions">
+                    <button
+                      type="button"
+                      className="town-news-like"
+                      disabled={toggleReaction.isPending || !newsUser.data}
+                      aria-pressed={liked}
+                      onClick={() => toggleReaction.mutate({ postId: post.id, reacted: !liked })}
+                    >
+                      <Heart
+                        aria-hidden="true"
+                        className="town-news-heart"
+                        fill={liked ? "currentColor" : "none"}
+                      />
+                      <span>Like · {count}</span>
+                    </button>
+                  </div>
+                  {comments.data?.some((comment) => comment.post_id === post.id) && (
+                    <ul className="town-news-comments" aria-label={`Comments on ${post.title}`}>
+                      {comments.data
+                        .filter((comment) => comment.post_id === post.id)
+                        .map((comment) => (
+                          <li key={comment.id}>{comment.body}</li>
+                        ))}
+                    </ul>
+                  )}
                   <form
+                    className="town-news-comment-form"
                     onSubmit={(event) => {
                       event.preventDefault();
                       addComment.mutate(post.id);
@@ -264,35 +283,43 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
                           [post.id]: event.target.value,
                         }))
                       }
-                      placeholder="Add a comment"
+                      placeholder="Write a comment"
                     />
                     <button
                       type="submit"
+                      className="town-news-send"
+                      aria-label="Post comment"
                       disabled={addComment.isPending || !commentDrafts[post.id]?.trim()}
                     >
-                      Post
+                      <Send aria-hidden="true" />
                     </button>
                   </form>
-                </div>
-              </div>
-            </AppCard>
-          ))
+                </li>
+              );
+            })}
+          </ul>
         ) : (
-          <AppCard>
-            <small>No town posts yet. Share the first update.</small>
-          </AppCard>
+          <p className="town-news-state">No town posts yet. Share the first update.</p>
         )}
-      </div>
+      </section>
+
       <button
         type="button"
-        className="phone-local-action"
+        className="town-news-compose-toggle"
+        aria-expanded={showComposer}
         onClick={() => setShowComposer((value) => !value)}
       >
-        {showComposer ? "Close composer" : "Share a town update"}
+        {showComposer ? (
+          "Close composer"
+        ) : (
+          <>
+            <Plus aria-hidden="true" /> Share a town update
+          </>
+        )}
       </button>
       {showComposer && (
         <form
-          className="phone-town-composer"
+          className="town-news-composer"
           onSubmit={(event) => {
             event.preventDefault();
             createPost.mutate();
@@ -331,11 +358,11 @@ export function CommunityPhoneApps({ app }: { app: CommunityPhoneApp }) {
             />
           </label>
           {createPost.isError && <p role="alert">{createPost.error.message}</p>}
-          <button type="submit" className="phone-local-action" disabled={createPost.isPending}>
-            {createPost.isPending ? "Posting..." : "Post update"}
+          <button type="submit" className="town-news-submit" disabled={createPost.isPending}>
+            {createPost.isPending ? "Posting…" : "Post update"}
           </button>
         </form>
       )}
-    </div>
+    </section>
   );
 }

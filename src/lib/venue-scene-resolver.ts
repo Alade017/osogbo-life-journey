@@ -1,10 +1,20 @@
 import type { LocationVenueDesign } from "@/lib/location-venue-designs";
 
 export type VenueSceneKind =
-  | "mall" | "clinic" | "worship" | "campus"
-  | "civic" | "bank" | "transport" | "healthcare"
-  | "market" | "workplace" | "retail" | "food"
-  | "environment" | "generic";
+  | "mall"
+  | "clinic"
+  | "worship"
+  | "campus"
+  | "civic"
+  | "bank"
+  | "transport"
+  | "healthcare"
+  | "market"
+  | "workplace"
+  | "retail"
+  | "food"
+  | "environment"
+  | "generic";
 
 export function resolveVenueScene(
   slug: string,

@@ -131,24 +131,18 @@ it("settles animated idle without unnecessary frame invalidation", () => {
   expect(runtime.invalidate).not.toHaveBeenCalled();
 });
 
-it.each(["Sit", "Stretch"] as const)(
-  "skips settled %s skeletal calculations",
-  (motion) => {
-    render(<CharacterBody variant="male" height={1} motion={motion} />);
+it.each(["Sit", "Stretch"] as const)("skips settled %s skeletal calculations", (motion) => {
+  render(<CharacterBody variant="male" height={1} motion={motion} />);
 
-    const rig = play(3);
-    const angleCheck = vi.spyOn(
-      rig.byName.get(BONE.rUpperArm)!.quaternion,
-      "angleTo",
-    );
+  const rig = play(3);
+  const angleCheck = vi.spyOn(rig.byName.get(BONE.rUpperArm)!.quaternion, "angleTo");
 
-    runtime.invalidate.mockClear();
-    play(1);
+  runtime.invalidate.mockClear();
+  play(1);
 
-    expect(angleCheck).not.toHaveBeenCalled();
-    expect(runtime.invalidate).not.toHaveBeenCalled();
-  },
-);
+  expect(angleCheck).not.toHaveBeenCalled();
+  expect(runtime.invalidate).not.toHaveBeenCalled();
+});
 
 it("resumes skeletal animation from settled idle", () => {
   const view = render(<CharacterBody variant="male" height={1} motion="Idle" />);
@@ -173,10 +167,7 @@ it("evaluates a replacement rig after settling", () => {
   const replacement = runtime.rigs.at(-1)!;
   expect(replacement).not.toBe(previous);
 
-  const angleCheck = vi.spyOn(
-    replacement.byName.get(BONE.head)!.quaternion,
-    "angleTo",
-  );
+  const angleCheck = vi.spyOn(replacement.byName.get(BONE.head)!.quaternion, "angleTo");
 
   play(1);
 
@@ -184,36 +175,21 @@ it("evaluates a replacement rig after settling", () => {
 });
 
 it("resumes playback when reduced motion is disabled", () => {
-  const view = render(
-    <CharacterBody variant="male" height={1} motion="Dance" animated={false} />,
-  );
+  const view = render(<CharacterBody variant="male" height={1} motion="Dance" animated={false} />);
 
   const rig = play(3);
   const before = rig.byName.get(BONE.rUpperArm)!.quaternion.clone();
 
-  view.rerender(
-    <CharacterBody variant="male" height={1} motion="Dance" animated={true} />,
-  );
+  view.rerender(<CharacterBody variant="male" height={1} motion="Dance" animated={true} />);
 
   runtime.invalidate.mockClear();
   play(0.5);
 
   expect(runtime.invalidate).toHaveBeenCalled();
-  expect(
-    rig.byName.get(BONE.rUpperArm)!.quaternion.angleTo(before),
-  ).toBeGreaterThan(0.001);
+  expect(rig.byName.get(BONE.rUpperArm)!.quaternion.angleTo(before)).toBeGreaterThan(0.001);
 });
 
-it.each([
-  "Walk",
-  "Talk",
-  "Wash",
-  "Cook",
-  "Collect",
-  "Work",
-  "Interact",
-  "Dance",
-] as const)(
+it.each(["Walk", "Talk", "Wash", "Cook", "Collect", "Work", "Interact", "Dance"] as const)(
   "keeps %s requesting animation frames",
   (motion) => {
     render(<CharacterBody variant="male" height={1} motion={motion} />);
@@ -222,10 +198,7 @@ it.each([
 
     for (let i = 0; i < 60; i++) {
       runtime.invalidate.mockClear();
-      runtime.frame!(
-        { clock: { elapsedTime: 3 + i / 60 } },
-        1 / 60,
-      );
+      runtime.frame!({ clock: { elapsedTime: 3 + i / 60 } }, 1 / 60);
 
       expect(runtime.invalidate).toHaveBeenCalled();
     }
@@ -270,7 +243,6 @@ it("holds a still dance pose with reduced motion", () => {
   expect(runtime.invalidate).not.toHaveBeenCalled();
   expect(point(rig, BONE.rHand).distanceTo(hand)).toBeLessThan(0.001);
 });
-
 
 it("attaches worn back accessories to the animated upper spine", () => {
   render(

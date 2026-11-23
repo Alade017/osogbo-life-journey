@@ -1,20 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { VENUE_FURNITURE } from "@/lib/venue-furniture-assets";
 
-import {
-  getFurnitureKey,
-  summarizeFurnitureReadiness,
-} from "@/lib/venue-furniture-readiness";
+import { getFurnitureKey, summarizeFurnitureReadiness } from "@/lib/venue-furniture-readiness";
 
-import type {
-  VenueFixture,
-  VenueFixtureKind,
-} from "@/lib/location-venue-designs";
+import type { VenueFixture, VenueFixtureKind } from "@/lib/location-venue-designs";
 
-function fixture(
-  id: string,
-  kind: VenueFixtureKind,
-): VenueFixture {
+function fixture(id: string, kind: VenueFixtureKind): VenueFixture {
   return {
     id,
     kind,
@@ -29,9 +20,7 @@ describe("venue furniture readiness", () => {
   const seat = fixture("seat-a", "seat");
 
   it("counts supported fixtures as pending initially", () => {
-    expect(
-      summarizeFurnitureReadiness([table, seat], {}),
-    ).toEqual({
+    expect(summarizeFurnitureReadiness([table, seat], {})).toEqual({
       total: 2,
       pending: 2,
       ready: 0,
@@ -70,12 +59,9 @@ describe("venue furniture readiness", () => {
     const anotherTable = fixture("table-b", "table");
 
     expect(
-      summarizeFurnitureReadiness(
-        [table, anotherTable],
-        {
-          [getFurnitureKey(table)]: "ready",
-        },
-      ),
+      summarizeFurnitureReadiness([table, anotherTable], {
+        [getFurnitureKey(table)]: "ready",
+      }),
     ).toEqual({
       total: 2,
       pending: 1,
@@ -113,9 +99,7 @@ describe("venue furniture readiness", () => {
   });
 
   it("handles an empty fixture collection", () => {
-    expect(
-      summarizeFurnitureReadiness([], {}),
-    ).toEqual({
+    expect(summarizeFurnitureReadiness([], {})).toEqual({
       total: 0,
       pending: 0,
       ready: 0,
@@ -134,9 +118,7 @@ describe("venue furniture readiness", () => {
   it("excludes unsupported fixtures from readiness tracking", () => {
     const planter = fixture("plant-1", "planter");
 
-    expect(
-      summarizeFurnitureReadiness([planter], {}),
-    ).toEqual({
+    expect(summarizeFurnitureReadiness([planter], {})).toEqual({
       total: 0,
       pending: 0,
       ready: 0,

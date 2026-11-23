@@ -149,9 +149,17 @@ function HealthcareContents({
 
 /** The frontage and reception each own their resources when mounted independently. */
 export function HealthcareFrontage(props: Parameters<typeof HealthcareFrontageContents>[0]) {
-  return <SceneBoxGeometryProvider><HealthcareFrontageContents {...props} /></SceneBoxGeometryProvider>;
+  return (
+    <SceneBoxGeometryProvider>
+      <HealthcareFrontageContents {...props} />
+    </SceneBoxGeometryProvider>
+  );
 }
 
 export function HealthcareScene(props: Parameters<typeof HealthcareContents>[0]) {
-  return <SceneBoxGeometryProvider><HealthcareContents {...props} /></SceneBoxGeometryProvider>;
+  return (
+    <SceneBoxGeometryProvider>
+      <HealthcareContents {...props} />
+    </SceneBoxGeometryProvider>
+  );
 }

@@ -130,6 +130,33 @@ describe("real-player social panel", () => {
     expect(screen.queryByRole("button", { name: /Ayo/ })).not.toBeInTheDocument();
   }, 20_000);
 
+  it("shows incoming friend requests at the top of the phone People tab and accepts one", async () => {
+    mocks.getPlayerSocialOverview.mockResolvedValue({
+      friends: [],
+      incoming: [
+        {
+          id: "request-1",
+          character_id: "character-kemi",
+          player_name: "Kemi",
+          gender: "female",
+          appearance: {},
+          level: 2,
+          created_at: "2026-11-22T20:00:00Z",
+        },
+      ],
+      outgoing: [],
+      blocked: [],
+      conversations: [],
+    });
+    mocks.respondToFriendRequest.mockResolvedValue({ status: "friends" });
+    renderSocial({ initialTab: "players", phoneMode: true });
+    expect(await screen.findByText("Friend requests (1)")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Accept" }));
+    await waitFor(() =>
+      expect(mocks.respondToFriendRequest).toHaveBeenCalledWith("request-1", true),
+    );
+  });
+
   it("searches public player profiles and sends a friend request", async () => {
     renderSocial();
     fireEvent.change(screen.getByLabelText("Search player names"), {

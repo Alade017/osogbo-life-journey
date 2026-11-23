@@ -27,7 +27,8 @@ describe("createPreloadableLoader", () => {
   });
 
   it("allows another attempt after failure", async () => {
-    const load = vi.fn()
+    const load = vi
+      .fn()
       .mockRejectedValueOnce(new Error("Loading failed"))
       .mockResolvedValueOnce("scene");
     const preload = createPreloadableLoader(load);

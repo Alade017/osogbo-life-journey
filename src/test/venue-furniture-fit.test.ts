@@ -1,20 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
-import {
-  Box3,
-  BoxGeometry,
-  Group,
-  Mesh,
-  MeshBasicMaterial,
-} from "three";
+import { Box3, BoxGeometry, Group, Mesh, MeshBasicMaterial } from "three";
 
 import { fitFurniture } from "@/components/3d/VenueFurniture";
 
 function createSource() {
   const source = new Group();
-  const mesh = new Mesh(
-    new BoxGeometry(2, 4, 6),
-    new MeshBasicMaterial(),
-  );
+  const mesh = new Mesh(new BoxGeometry(2, 4, 6), new MeshBasicMaterial());
 
   mesh.position.set(3, 4, 5);
   source.add(mesh);

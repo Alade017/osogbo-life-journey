@@ -125,11 +125,7 @@ class NeighborhoodBoundary extends Component<{ children: ReactNode }, { failed: 
   }
 }
 
-function ResidentNpcAnimationScheduler({
-  active,
-}: {
-  active: boolean;
-}) {
+function ResidentNpcAnimationScheduler({ active }: { active: boolean }) {
   const { invalidate } = useThree();
 
   useEffect(() => {
@@ -353,7 +349,13 @@ function NeighborhoodNpcActor({
 
   return (
     <group ref={group}>
-      <NpcBody detail="resident" leftArm={leftArm} rightArm={rightArm} leftLeg={leftLeg} rightLeg={rightLeg} />
+      <NpcBody
+        detail="resident"
+        leftArm={leftArm}
+        rightArm={rightArm}
+        leftLeg={leftLeg}
+        rightLeg={rightLeg}
+      />
       <mesh
         position={[0, 0.92, 0]}
         onClick={(event) => {

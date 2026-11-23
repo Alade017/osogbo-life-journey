@@ -33,6 +33,12 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  fetchAccountMessageTheme,
+  readLocalMessageTheme,
+  saveAccountMessageTheme,
+  type MessageTheme,
+} from "@/lib/message-theme";
 import { useMessageWindow } from "@/hooks/use-message-window";
 import { Avatar } from "@/components/game/Avatar";
 import type { Appearance } from "@/components/game/Avatar";
@@ -702,13 +708,19 @@ export function PlayerSocial({
   const [activeChat, setActiveChat] = useState<ActiveChat | null>(null);
   const [statusBody, setStatusBody] = useState("");
   const [statusTheme, setStatusTheme] = useState<StatusTheme>("leaf");
-  const [messageTheme, setMessageTheme] = useState("porcelain");
+  const [messageTheme, setMessageTheme] = useState<MessageTheme>(readLocalMessageTheme);
   useEffect(() => {
-    try {
-      setMessageTheme(localStorage.getItem("osogbo-message-theme") ?? "porcelain");
-    } catch {
-      /* Default theme. */
-    }
+    let active = true;
+    void fetchAccountMessageTheme()
+      .then((theme) => {
+        if (active) setMessageTheme(theme);
+      })
+      .catch(() => {
+        /* Keep this browser's theme. */
+      });
+    return () => {
+      active = false;
+    };
   }, []);
   const [threadMenu, setThreadMenu] = useState<InboxConversation | null>(null);
   const [replyTarget, setReplyTarget] = useState<SocialMessage | null>(null);
@@ -1242,6 +1254,29 @@ export function PlayerSocial({
                 </div>
               </div>
             )}
+            {phoneMode && !!overview?.incoming.length && (
+              <section className="phone-people-requests" aria-labelledby="people-requests-title">
+                <h3 id="people-requests-title" className="phone-people-requests-title">
+                  Friend requests ({overview.incoming.length})
+                </h3>
+                {overview.incoming.map((request) => (
+                  <PlayerRow
+                    key={request.id}
+                    player={request}
+                    action={{
+                      label: "Accept",
+                      run: () => actionMutation.mutate({ kind: "accept", id: request.id }),
+                      disabled: actionMutation.isPending,
+                    }}
+                    secondaryAction={{
+                      label: "Decline",
+                      run: () => actionMutation.mutate({ kind: "reject", id: request.id }),
+                      disabled: actionMutation.isPending,
+                    }}
+                  />
+                ))}
+              </section>
+            )}
             <form
               onSubmit={submitSearch}
               className={phoneMode ? "phone-player-search" : "flex flex-wrap gap-2"}
@@ -1640,7 +1675,8 @@ export function PlayerSocial({
                       }}
                       aria-label="New message"
                     >
-                      <Plus size={19} />
+                      <Plus size={19} aria-hidden="true" />
+                      <span className="phone-new-message-label">New chat</span>
                     </button>
                   </div>
                   <div className="phone-inbox-filters" role="group" aria-label="Chat filters">
@@ -1919,12 +1955,11 @@ export function PlayerSocial({
                   type="button"
                   aria-pressed={messageTheme === choice.id}
                   onClick={() => {
-                    setMessageTheme(choice.id);
-                    try {
-                      localStorage.setItem("osogbo-message-theme", choice.id);
-                    } catch {
-                      /* Session theme remains available. */
-                    }
+                    const theme = choice.id as MessageTheme;
+                    setMessageTheme(theme);
+                    saveAccountMessageTheme(theme).catch((error: unknown) =>
+                      toast.error(error instanceof Error ? error.message : "Theme not saved"),
+                    );
                   }}
                 >
                   <span className={`message-theme-swatch theme-${choice.id}`} />
@@ -1958,6 +1993,14 @@ export function PlayerSocial({
             >
               <Users size={18} aria-hidden="true" />
               <span>People</span>
+              {!!overview?.incoming.length && (
+                <span
+                  className="phone-nav-badge"
+                  aria-label={`${overview.incoming.length} friend requests`}
+                >
+                  {overview.incoming.length}
+                </span>
+              )}
             </button>
             <button
               type="button"

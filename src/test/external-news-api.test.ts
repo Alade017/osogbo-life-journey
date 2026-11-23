@@ -22,4 +22,18 @@ describe("external news mapping", () => {
       source_name: "news.example",
     });
   });
+
+  it("reads GDELT compact seendate values as UTC instead of dropping the date", () => {
+    const [entry] = mapGdeltArticles("osun", {
+      articles: [
+        {
+          title: "Schools headline",
+          url: "https://news.example/schools",
+          domain: "news.example",
+          seendate: "20261116T080330Z",
+        },
+      ],
+    });
+    expect(entry?.published_at).toBe("2026-11-16T08:03:30.000Z");
+  });
 });

@@ -3,8 +3,8 @@ import { PGlite } from "@electric-sql/pglite";
 import { readFileSync } from "node:fs";
 import { afterAll, afterEach, beforeAll, beforeEach, expect, it } from "vitest";
 
-const fixMigration = "supabase/migrations/20261119064500_okada_ride_request_fix.sql";
-const presenceMigration = "supabase/migrations/20261119120000_osun_mall_presence.sql";
+const fixMigration = "supabase/migrations/20261119054601_okada_ride_request_fix.sql";
+const presenceMigration = "supabase/migrations/20261119114738_osun_mall_presence.sql";
 const alice = "11111111-1111-4111-8111-111111111111";
 const aliceCharacter = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
 const existingRequestId = "44444444-aaaa-4aaa-8aaa-444444444444";

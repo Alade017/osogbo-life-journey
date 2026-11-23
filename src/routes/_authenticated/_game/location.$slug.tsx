@@ -276,11 +276,7 @@ function LocationPage() {
       },
       travelAnimationDurationMs(travelState.estimatedMinutes ?? 1),
     );
-    if (
-      loc.type !== "bank" &&
-      meetsLevelRequirement &&
-      canPreloadVenueInBrowser()
-    ) {
+    if (loc.type !== "bank" && meetsLevelRequirement && canPreloadVenueInBrowser()) {
       const venue = getLocationVenueDesign(loc.slug, loc.name);
       void preloadVenueModule(loc.slug, venue, loc.id);
     }

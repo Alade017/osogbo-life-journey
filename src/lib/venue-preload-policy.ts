@@ -7,10 +7,7 @@ export function canPreloadVenue(connection?: PreloadConnection): boolean {
   if (connection?.saveData) {
     return false;
   }
-  return (
-    connection?.effectiveType !== "slow-2g" &&
-    connection?.effectiveType !== "2g"
-  );
+  return connection?.effectiveType !== "slow-2g" && connection?.effectiveType !== "2g";
 }
 
 export function canPreloadVenueInBrowser(): boolean {

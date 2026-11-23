@@ -1,6 +1,4 @@
-export function createPreloadableLoader<T>(
-  load: () => Promise<T>,
-): () => Promise<T> {
+export function createPreloadableLoader<T>(load: () => Promise<T>): () => Promise<T> {
   let pending: Promise<T> | undefined;
 
   return () => {

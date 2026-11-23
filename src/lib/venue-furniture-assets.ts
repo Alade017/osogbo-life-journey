@@ -15,4 +15,3 @@ export const VENUE_FURNITURE: Partial<Record<VenueFixtureKind, { url: string; wi
   screen: { url: `${DENTAL_KIT}/notice-board.glb`, width: 1.65 },
   display: { url: `${DENTAL_KIT}/notice-board.glb`, width: 1.35 },
 };
-

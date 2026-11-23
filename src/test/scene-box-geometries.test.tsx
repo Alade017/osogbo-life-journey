@@ -2,7 +2,11 @@ import { render, cleanup, waitFor } from "@testing-library/react";
 import { StrictMode, useEffect } from "react";
 import { BoxGeometry } from "three";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createSceneBoxGeometryCache, SceneBoxGeometryProvider, useSceneBoxGeometry } from "@/components/3d/scene-box-geometries";
+import {
+  createSceneBoxGeometryCache,
+  SceneBoxGeometryProvider,
+  useSceneBoxGeometry,
+} from "@/components/3d/scene-box-geometries";
 
 describe("scene-owned box geometry", () => {
   it("reuses exactly matching dimensions without changing their geometry", () => {

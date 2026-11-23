@@ -15,9 +15,12 @@ describe("preloadVenueModule", () => {
   });
 
   it("loads only the selected specialized scene", async () => {
-    await expect(preloadVenueModule("test-venue", {
-      ...base, scene: "clinic",
-    })).resolves.toBe(true);
+    await expect(
+      preloadVenueModule("test-venue", {
+        ...base,
+        scene: "clinic",
+      }),
+    ).resolves.toBe(true);
     expect(venueSceneLoaders.clinic).toHaveBeenCalledTimes(1);
     expect(venueSceneLoaders.bank).not.toHaveBeenCalled();
     expect(venueSceneLoaders.mall).not.toHaveBeenCalled();
@@ -25,9 +28,12 @@ describe("preloadVenueModule", () => {
 
   it("handles module-loading failure", async () => {
     vi.mocked(venueSceneLoaders.clinic).mockRejectedValueOnce(new Error("Module loading failed"));
-    await expect(preloadVenueModule("test-venue", {
-      ...base, scene: "clinic",
-    })).resolves.toBe(false);
+    await expect(
+      preloadVenueModule("test-venue", {
+        ...base,
+        scene: "clinic",
+      }),
+    ).resolves.toBe(false);
   });
 
   it("skips generic scenes", async () => {
@@ -38,15 +44,22 @@ describe("preloadVenueModule", () => {
   });
 
   it("skips environment-only scenes", async () => {
-    await expect(preloadVenueModule("test-venue", {
-      ...base, environment: { url: "/test.glb" },
-    })).resolves.toBe(false);
+    await expect(
+      preloadVenueModule("test-venue", {
+        ...base,
+        environment: { url: "/test.glb" },
+      }),
+    ).resolves.toBe(false);
   });
 
   it("preserves specialized scene priority", async () => {
-    await expect(preloadVenueModule("test-venue", {
-      ...base, scene: "clinic", bankInterior: "teller-hall",
-    })).resolves.toBe(true);
+    await expect(
+      preloadVenueModule("test-venue", {
+        ...base,
+        scene: "clinic",
+        bankInterior: "teller-hall",
+      }),
+    ).resolves.toBe(true);
     expect(venueSceneLoaders.clinic).toHaveBeenCalledTimes(1);
     expect(venueSceneLoaders.bank).not.toHaveBeenCalled();
   });

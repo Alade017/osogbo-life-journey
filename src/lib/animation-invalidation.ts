@@ -21,8 +21,6 @@ export function startAnimationInvalidation({
   let stopped = false;
   let finished = false;
 
-  let interval: number | undefined;
-  let timeout: number | undefined;
   let fadeTimer: number | undefined;
 
   function cleanup() {
@@ -51,12 +49,9 @@ export function startAnimationInvalidation({
 
   mixer.addEventListener("finished", onFinished);
 
-  interval = window.setInterval(invalidate, 1000 / ANIMATION_FPS);
+  const interval = window.setInterval(invalidate, 1000 / ANIMATION_FPS);
 
-  timeout = window.setTimeout(
-    cleanup,
-    durationMs + fadeMs + SAFETY_GRACE_MS,
-  );
+  const timeout = window.setTimeout(cleanup, durationMs + fadeMs + SAFETY_GRACE_MS);
 
   invalidate();
 

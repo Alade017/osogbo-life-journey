@@ -132,7 +132,9 @@ export function CharacterBody({
   const backOffset = useMemo(() => {
     const index = upperSpine ? rig.bones.indexOf(upperSpine) : -1;
     const inverse = rig.meshes[0]?.skeleton.boneInverses[index];
-    return inverse ? new Vector3().setFromMatrixPosition(inverse.clone().invert()).negate() : new Vector3();
+    return inverse
+      ? new Vector3().setFromMatrixPosition(inverse.clone().invert()).negate()
+      : new Vector3();
   }, [rig, upperSpine]);
   const phase = useRef({ motion, elapsed: 0 });
   const settledPose = useRef(false);

@@ -1,17 +1,11 @@
-import type {
-  FurnitureResult,
-  FurnitureResults,
-} from "@/lib/venue-furniture-readiness";
+import type { FurnitureResult, FurnitureResults } from "@/lib/venue-furniture-readiness";
 
 export type FurnitureRegistration = {
   token: symbol;
   result?: FurnitureResult;
 };
 
-export type FurnitureRegistry = ReadonlyMap<
-  string,
-  FurnitureRegistration
->;
+export type FurnitureRegistry = ReadonlyMap<string, FurnitureRegistration>;
 
 export function registerFurniture(
   registry: FurnitureRegistry,
@@ -20,10 +14,7 @@ export function registerFurniture(
 ): FurnitureRegistry {
   const current = registry.get(key);
 
-  if (
-    current?.token === registration.token &&
-    current?.result === registration.result
-  ) {
+  if (current?.token === registration.token && current?.result === registration.result) {
     return registry;
   }
 
@@ -41,11 +32,7 @@ export function reportFurnitureResult(
 ): FurnitureRegistry {
   const current = registry.get(key);
 
-  if (
-    !current ||
-    current.token !== token ||
-    current.result === result
-  ) {
+  if (!current || current.token !== token || current.result === result) {
     return registry;
   }
 
@@ -70,13 +57,8 @@ export function unregisterFurniture(
   return next;
 }
 
-export function getFurnitureResults(
-  registry: FurnitureRegistry,
-): FurnitureResults {
+export function getFurnitureResults(registry: FurnitureRegistry): FurnitureResults {
   return Object.fromEntries(
-    Array.from(registry, ([key, registration]) => [
-      key,
-      registration.result,
-    ]),
+    Array.from(registry, ([key, registration]) => [key, registration.result]),
   );
 }

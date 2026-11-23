@@ -77,6 +77,10 @@ beforeAll(async () => {
   await db.exec(
     readFileSync("drizzle/migrations/0077_market_stall_rent_categories_sales.sql", "utf8"),
   );
+  // This fixture replays the legacy stall migration after its Supabase dependencies.
+  await db.exec(
+    readFileSync("supabase/migrations/20261121234233_stall_stock_receipts.sql", "utf8"),
+  );
 }, 180_000);
 
 beforeEach(async () => {
@@ -317,4 +321,103 @@ describe("market stall rental, categories and sales", () => {
     expect((await db.query<{ id: string }>("select id from player_stalls")).rows).toEqual([]);
     await db.exec("reset role");
   });
+});
+
+it("replays stock transfers exactly once and rejects reuse with different inputs", async () => {
+  await call("public.rent_market_stall($1::uuid)", [requestId(101)]);
+  const item = await call<string>("(select id from inventory_items where slug='meat_pie')");
+  const transfer = () =>
+    call<{ quantity: number; duplicate: boolean }>(
+      "public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)",
+      [item, requestId(102)],
+    );
+  const [first, second] = await Promise.all([transfer(), transfer()]);
+  expect(first).toMatchObject({ quantity: 1, duplicate: false });
+  expect(second).toMatchObject({ quantity: 1, duplicate: true });
+  expect(
+    await call("(select quantity from player_inventory where user_id=$1 and item_id=$2)", [
+      seller,
+      item,
+    ]),
+  ).toBe(2);
+  await deny(
+    "select public.manage_my_stall_stock_request('add',$1::uuid,2,1400,$2::uuid)",
+    [item, requestId(102)],
+    "IDEMPOTENCY_CONFLICT",
+  );
+  await db.exec("set role authenticated");
+  await deny(
+    "select public.manage_my_stall_stock_request('add',$1::uuid,1,1400,null)",
+    [item],
+    "REQUEST_ID_REQUIRED",
+  );
+  await db.exec("reset role");
+});
+
+it("retains empty owner listings, permits restocking, and makes removal retryable", async () => {
+  await call("public.rent_market_stall($1::uuid)", [requestId(103)]);
+  const item = await call<string>("(select id from inventory_items where slug='meat_pie')");
+  const stock = await call<{ id: string }>(
+    "public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)",
+    [item, requestId(104)],
+  );
+  await call("public.manage_my_stall_stock_request('set_quantity',$1::uuid,0,null,$2::uuid)", [
+    stock.id,
+    requestId(105),
+  ]);
+  expect(await call("public.get_my_stall_stock()")).toEqual([
+    expect.objectContaining({ id: stock.id, quantity: 0 }),
+  ]);
+  await call("public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)", [
+    item,
+    requestId(106),
+  ]);
+  const remove = () =>
+    call("public.manage_my_stall_stock_request('remove',$1::uuid,null,null,$2::uuid)", [
+      stock.id,
+      requestId(107),
+    ]);
+  expect(await remove()).toMatchObject({ quantity: 0, duplicate: false });
+  expect(await remove()).toMatchObject({ quantity: 0, duplicate: true });
+  expect(
+    await call("(select quantity from player_inventory where user_id=$1 and item_id=$2)", [
+      seller,
+      item,
+    ]),
+  ).toBe(3);
+});
+
+it("rolls stock and inventory back if saving the stock receipt fails", async () => {
+  await call("public.rent_market_stall($1::uuid)", [requestId(108)]);
+  const item = await call<string>("(select id from inventory_items where slug='meat_pie')");
+  await db.exec(
+    "alter table economy_request_results add constraint deny_test_stock_receipt check(operation<>'market_stall_stock')",
+  );
+  await deny(
+    "select public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)",
+    [item, requestId(109)],
+    "deny_test_stock_receipt",
+  );
+  expect(
+    await call("(select quantity from player_inventory where user_id=$1 and item_id=$2)", [
+      seller,
+      item,
+    ]),
+  ).toBe(3);
+  expect(await call("public.get_my_stall_stock()")).toEqual([]);
+});
+
+it("keeps stock request receipts private to the owning character", async () => {
+  await call("public.rent_market_stall($1::uuid)", [requestId(110)]);
+  const item = await call<string>("(select id from inventory_items where slug='meat_pie')");
+  await call("public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)", [
+    item,
+    requestId(111),
+  ]);
+  await asUser(buyer);
+  await deny(
+    "select public.manage_my_stall_stock_request('add',$1::uuid,1,1400,$2::uuid)",
+    [item, requestId(111)],
+    "RENT_A_CURRENT_STALL",
+  );
 });

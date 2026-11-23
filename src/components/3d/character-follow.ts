@@ -60,7 +60,10 @@ export function walkingCadence(distance: number, delta: number, height: number):
     height <= 0
   )
     return 0;
-  return Math.min(CHARACTER_MOTION.walkMaxCadence, distance / delta / height / CHARACTER_MOTION.walkReferenceSpeed);
+  return Math.min(
+    CHARACTER_MOTION.walkMaxCadence,
+    distance / delta / height / CHARACTER_MOTION.walkReferenceSpeed,
+  );
 }
 
 /** Preserve shortest-angle turning while skipping trig for settled facing. */

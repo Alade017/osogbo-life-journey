@@ -24,6 +24,6 @@ export function getVenueSceneIdentity({
     venue.bankInterior ?? null,
     venue.civicService ?? null,
     venue.foodInterior ?? null,
-    sceneKind === "environment" ? venue.environment?.url ?? null : null,
+    sceneKind === "environment" ? (venue.environment?.url ?? null) : null,
   ]);
 }

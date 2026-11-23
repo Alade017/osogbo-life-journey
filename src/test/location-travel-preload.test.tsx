@@ -64,7 +64,10 @@ vi.mock("@/lib/game", () => {
 
 // Keep the route callbacks and state transitions; replace only the visual panel.
 vi.mock("@/components/game/TravelPanel", () => ({
-  TravelPanel: ({ onStart, state: travelState }: {
+  TravelPanel: ({
+    onStart,
+    state: travelState,
+  }: {
     onStart: () => void;
     state: { status: string };
   }) => (
@@ -99,25 +102,36 @@ afterEach(() => {
 });
 
 function show() {
-  client.setQueryData(["locations"], [{
-    id: "destination",
-    slug: state.slug,
-    name: "Test destination",
-    type: state.type,
-    level_required: 1,
-    travel_fare: 200,
-    travel_minutes: 10,
-    metadata: { available_transport_modes: ["danfo"] },
-  }]);
+  client.setQueryData(
+    ["locations"],
+    [
+      {
+        id: "destination",
+        slug: state.slug,
+        name: "Test destination",
+        type: state.type,
+        level_required: 1,
+        travel_fare: 200,
+        travel_minutes: 10,
+        metadata: { available_transport_modes: ["danfo"] },
+      },
+    ],
+  );
   client.setQueryData(["character"], {
-    id: "player", current_location_id: "origin", level: 5,
+    id: "player",
+    current_location_id: "origin",
+    level: 5,
   });
   client.setQueryData(["wallet"], { balance: state.balance });
   for (const key of ["places", "jobs", "myJobs", "courses", "myCourses", "playerSkills"]) {
     client.setQueryData([key], []);
   }
   const Page = Route.options.component!;
-  return render(<QueryClientProvider client={client}><Page /></QueryClientProvider>);
+  return render(
+    <QueryClientProvider client={client}>
+      <Page />
+    </QueryClientProvider>,
+  );
 }
 function selectDestination() {
   fireEvent.click(screen.getByRole("button", { name: "Choose destination" }));
@@ -128,7 +142,9 @@ async function confirmTravel() {
   });
 }
 async function finishTravelTimer() {
-  await act(async () => { await vi.advanceTimersByTimeAsync(5000); });
+  await act(async () => {
+    await vi.advanceTimersByTimeAsync(5000);
+  });
 }
 
 it("does not preload while browsing a destination", () => {

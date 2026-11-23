@@ -49,11 +49,11 @@ export function fitFurniture(source: Group, width: number) {
   return {
     copy,
     scale,
-    offset: [
-      -bounds.centerX * scale,
-      -bounds.minY * scale,
-      -bounds.centerZ * scale,
-    ] as [number, number, number],
+    offset: [-bounds.centerX * scale, -bounds.minY * scale, -bounds.centerZ * scale] as [
+      number,
+      number,
+      number,
+    ],
   };
 }
 

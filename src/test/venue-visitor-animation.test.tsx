@@ -1,6 +1,7 @@
 import { act, cleanup, render } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { VenueVisitor } from "@/components/3d/VenueVisitor";
+import { Euler } from "three";
 
 const mock = vi.hoisted(() => ({
   invalidate: vi.fn(),
@@ -17,12 +18,21 @@ vi.mock("@react-three/fiber", () => ({
 const position = [0, 0.06, 0] as const;
 function frame(time = 0.5) {
   if (!mock.frame) throw new Error("VenueVisitor frame callback missing");
+  // DOM refs stand in for Three.js groups in this component test.
+  for (const group of document.querySelectorAll("group")) {
+    if (!("rotation" in group)) {
+      Object.defineProperty(group, "rotation", { value: new Euler(), configurable: true });
+    }
+  }
   act(() => mock.frame?.({ clock: { elapsedTime: time } }));
 }
 beforeEach(() => {
   mock.invalidate.mockClear();
   mock.frame = null;
-  vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: false })));
+  vi.stubGlobal(
+    "matchMedia",
+    vi.fn(() => ({ matches: false })),
+  );
 });
 afterEach(() => {
   cleanup();
@@ -51,7 +61,10 @@ describe("VenueVisitor demand rendering", () => {
     expect(mock.invalidate).not.toHaveBeenCalled();
   });
   it("respects reduced-motion preferences", () => {
-    vi.stubGlobal("matchMedia", vi.fn(() => ({ matches: true })));
+    vi.stubGlobal(
+      "matchMedia",
+      vi.fn(() => ({ matches: true })),
+    );
     render(<VenueVisitor position={position} facing="south" walking />);
     mock.invalidate.mockClear();
     frame();

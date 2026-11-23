@@ -1,7 +1,7 @@
 import { createPreloadableLoader } from "@/lib/preloadable-loader";
 import type { VenueSceneKind } from "@/lib/venue-scene-resolver";
 
-export const venueSceneLoaders = {
+const loaders = {
   civic: createPreloadableLoader(() =>
     import("@/components/3d/CivicServiceScene").then((m) => ({ default: m.CivicServiceScene })),
   ),
@@ -38,7 +38,10 @@ export const venueSceneLoaders = {
   campus: createPreloadableLoader(() =>
     import("./SchoolCampusVenue").then((m) => ({ default: m.SchoolCampusVenue })),
   ),
-} satisfies Record<
+};
+
+// Check coverage after inference so each lazy loader retains its component's props.
+export const venueSceneLoaders = loaders satisfies Record<
   Exclude<VenueSceneKind, "environment" | "generic">,
   () => Promise<unknown>
 >;

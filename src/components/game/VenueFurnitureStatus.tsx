@@ -3,10 +3,7 @@ type VenueFurnitureStatusProps = {
   failed: number;
 };
 
-export function VenueFurnitureStatus({
-  pending,
-  failed,
-}: VenueFurnitureStatusProps) {
+export function VenueFurnitureStatus({ pending, failed }: VenueFurnitureStatusProps) {
   if (pending === 0 && failed === 0) {
     return null;
   }

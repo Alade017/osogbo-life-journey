@@ -6,24 +6,22 @@ type SpecializedVenueFallbackProps = {
   venue: LocationVenueDesign;
 };
 
-export function SpecializedVenueFallback({
-  locationName,
-  venue,
-}: SpecializedVenueFallbackProps) {
+export function SpecializedVenueFallback({ locationName, venue }: SpecializedVenueFallbackProps) {
   const headingId = useId();
 
   return (
     <section className="game-panel space-y-4 p-4 md:p-6" aria-labelledby={headingId}>
       <header>
         <p className="text-sm text-muted-foreground">{locationName}</p>
-        <h2 id={headingId} className="text-xl font-bold">{venue.name}</h2>
+        <h2 id={headingId} className="text-xl font-bold">
+          {venue.name}
+        </h2>
       </header>
 
       <div role="status" className="space-y-2 rounded-lg border border-edge bg-muted/50 p-4">
         <h3 className="font-semibold">Venue temporarily unavailable</h3>
         <p className="text-sm text-muted-foreground">
-          The interior could not be loaded.
-          You can still view the venue information below.
+          The interior could not be loaded. You can still view the venue information below.
         </p>
       </div>
 

@@ -11,28 +11,31 @@ describe("venue scene identity", () => {
   };
 
   it("distinguishes location slugs", () => {
-    expect(getVenueSceneIdentity({ ...base, slug: "different-location" }))
-      .not.toBe(getVenueSceneIdentity(base));
+    expect(getVenueSceneIdentity({ ...base, slug: "different-location" })).not.toBe(
+      getVenueSceneIdentity(base),
+    );
   });
 
   it("distinguishes server location IDs", () => {
-    expect(getVenueSceneIdentity({ ...base, locationId: "location-b" }))
-      .not.toBe(getVenueSceneIdentity(base));
+    expect(getVenueSceneIdentity({ ...base, locationId: "location-b" })).not.toBe(
+      getVenueSceneIdentity(base),
+    );
   });
 
   it("distinguishes shops within a location", () => {
-    expect(getVenueSceneIdentity({ ...base, shopSlug: "shop-a" }))
-      .not.toBe(getVenueSceneIdentity({ ...base, shopSlug: "shop-b" }));
+    expect(getVenueSceneIdentity({ ...base, shopSlug: "shop-a" })).not.toBe(
+      getVenueSceneIdentity({ ...base, shopSlug: "shop-b" }),
+    );
   });
 
   it("normalizes absent shop identity", () => {
-    expect(getVenueSceneIdentity({ ...base, shopSlug: null }))
-      .toBe(getVenueSceneIdentity(base));
+    expect(getVenueSceneIdentity({ ...base, shopSlug: null })).toBe(getVenueSceneIdentity(base));
   });
 
   it("distinguishes scene kinds", () => {
-    expect(getVenueSceneIdentity({ ...base, sceneKind: "market" }))
-      .not.toBe(getVenueSceneIdentity(base));
+    expect(getVenueSceneIdentity({ ...base, sceneKind: "market" })).not.toBe(
+      getVenueSceneIdentity(base),
+    );
   });
 
   it("distinguishes environment models", () => {
@@ -56,21 +59,25 @@ describe("venue scene identity", () => {
   });
 
   it("preserves identity when presentation changes", () => {
-    expect(getVenueSceneIdentity({
-      ...base,
-      venue: {
-        ...base.venue,
-        name: "Updated venue",
-        description: "Updated description",
-        accentColor: "#ffffff",
-      },
-    })).toBe(getVenueSceneIdentity(base));
+    expect(
+      getVenueSceneIdentity({
+        ...base,
+        venue: {
+          ...base.venue,
+          name: "Updated venue",
+          description: "Updated description",
+          accentColor: "#ffffff",
+        },
+      }),
+    ).toBe(getVenueSceneIdentity(base));
   });
 
   it("preserves identity when fixtures change", () => {
-    expect(getVenueSceneIdentity({
-      ...base,
-      venue: { ...base.venue, fixtures: [] },
-    })).toBe(getVenueSceneIdentity(base));
+    expect(
+      getVenueSceneIdentity({
+        ...base,
+        venue: { ...base.venue, fixtures: [] },
+      }),
+    ).toBe(getVenueSceneIdentity(base));
   });
 });

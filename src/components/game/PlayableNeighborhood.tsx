@@ -16,7 +16,7 @@ import {
   DoorOpen,
   Home,
   Landmark,
-  Map,
+  Map as MapIcon,
   MessageCircle,
   Store,
   Users,
@@ -33,6 +33,7 @@ import {
 import { PhoneBankApp } from "@/components/game/phone/PhoneBankApp";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
+import { neighbourhoodLoadingStage } from "@/components/game/neighbourhood-loading";
 import { NeighborhoodZoneModal } from "@/components/game/NeighborhoodZoneModal";
 import { FeatureTravelPanel } from "@/components/game/FeatureTravelPanel";
 import { GROUND_ARRIVE_DISTANCE, groundIntent } from "@/game/ground-intent";
@@ -78,7 +79,13 @@ import {
 import { isPlayableDistrict, playableDistrictForLocation } from "@/game/playable-district";
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
 import type { MovementDirection } from "@/lib/player-movement";
-import { NPC_CATALOG, npcActivityAt, npcFromSavedDefinition, socialActionsFor, type SocialAction } from "@/lib/npc-simulation";
+import {
+  NPC_CATALOG,
+  npcActivityAt,
+  npcFromSavedDefinition,
+  socialActionsFor,
+  type SocialAction,
+} from "@/lib/npc-simulation";
 import {
   getLocationVenueDesign,
   hasBuildingVenueInterior,
@@ -578,13 +585,7 @@ export function PlayableNeighborhood() {
         isMoving,
       };
     });
-  }, [
-    area.objects,
-    area.obstacles,
-    scheduledNpcs,
-    npcPositionOverrides,
-    simulation.paused,
-  ]);
+  }, [area.objects, area.obstacles, scheduledNpcs, npcPositionOverrides, simulation.paused]);
   const localPlaces =
     placesQuery.data?.filter((place) => place.location_id === currentLocation?.id) ?? [];
   const hasShopOffers =
@@ -609,12 +610,8 @@ export function PlayableNeighborhood() {
     ? hasBuildingVenueInterior(currentLocation.slug, selectedShopSlug)
     : false;
   const shouldPrepareVenue =
-    (activePanel === "business" &&
-      businessView === "actions" &&
-      hasSelectedVenueInterior) ||
-    (activePanel === "work" &&
-      workView === "actions" &&
-      hasVenueInterior);
+    (activePanel === "business" && businessView === "actions" && hasSelectedVenueInterior) ||
+    (activePanel === "work" && workView === "actions" && hasVenueInterior);
   const venuePreloadSlug = currentLocation?.slug;
   const venuePreloadName = currentLocation?.name;
 
@@ -700,7 +697,9 @@ export function PlayableNeighborhood() {
     nearbyObject?.kind === "npc"
       ? (activeNpcs.find((npc) => npc.id === nearbyObject.id) ?? null)
       : null;
-  const selectedNpc = selectedNpcId ? activeNpcs.find((npc) => npc.id === selectedNpcId) ?? null : nearbyNpc;
+  const selectedNpc = selectedNpcId
+    ? (activeNpcs.find((npc) => npc.id === selectedNpcId) ?? null)
+    : nearbyNpc;
   const npcInteraction = useGameAction(rpc.interactWithNpc, {
     onSuccess: (result) => {
       void queryClient.invalidateQueries({ queryKey: q.npcRelationships().queryKey });
@@ -1169,22 +1168,38 @@ export function PlayableNeighborhood() {
     setSelectedNpcId(null);
   };
   const relationship = npcRelationships.data?.find((row) => row.npc_id === selectedNpc?.id);
-  const canInteractWithNpc = !!selectedNpc && selectedNpc.available && !selectedNpc.isMoving &&
-    nearbyNpc?.id === selectedNpc.id && npcRelationships.isSuccess;
-  const eligibleNpcActions = socialActionsFor({
-    friendship: relationship?.friendship ?? 0,
-    romance: relationship?.romance ?? 0,
-    trust: relationship?.trust ?? 0,
-    conflict: relationship?.conflict ?? 0,
-    meetings: relationship?.meetings ?? 0,
-    lastInteractionDay: relationship?.last_interaction_day ?? null,
-    lastInteractionText: relationship?.last_interaction_text ?? null,
-  }, canInteractWithNpc);
+  const canInteractWithNpc =
+    !!selectedNpc &&
+    selectedNpc.available &&
+    !selectedNpc.isMoving &&
+    nearbyNpc?.id === selectedNpc.id &&
+    npcRelationships.isSuccess;
+  const eligibleNpcActions = socialActionsFor(
+    {
+      friendship: relationship?.friendship ?? 0,
+      romance: relationship?.romance ?? 0,
+      trust: relationship?.trust ?? 0,
+      conflict: relationship?.conflict ?? 0,
+      meetings: relationship?.meetings ?? 0,
+      lastInteractionDay: relationship?.last_interaction_day ?? null,
+      lastInteractionText: relationship?.last_interaction_text ?? null,
+    },
+    canInteractWithNpc,
+  );
   const npcActions: readonly { action: SocialAction; label: string }[] = [
     { action: "greet", label: "Say hello" },
     { action: "work", label: "Ask about work" },
     { action: "interests", label: "Talk about interests" },
   ];
+  const sceneReady = connectionState === "connected" && scene !== null;
+  const loadingStage = neighbourhoodLoadingStage({
+    pageLoading: false,
+    connection: connectionState,
+    connectionError,
+    hasDistrict: district !== null,
+    homeLoading: !!district?.personalHome && homeQuery.isLoading,
+    sceneReady,
+  });
   if (characterQuery.isLoading || locationsQuery.isLoading)
     return (
       <section className="neighborhood-page" aria-label="Playable neighborhood">
@@ -1230,20 +1245,14 @@ export function PlayableNeighborhood() {
               Tap the ground or a zone to walk
             </div>
           )}
-          {(connectionState === "connecting" ||
-            connectionState === "loading" ||
-            connectionState === "unavailable") && (
+          {loadingStage && (
             <div className="neighborhood-loading-overlay">
               <WorldLoadingIndicator
                 presentation="screen"
-                title="Entering the neighbourhood"
-                detail={
-                  connectionState === "unavailable"
-                    ? (connectionError ?? "Your connection is slow. Reconnecting automatically…")
-                    : "Fetching your neighbourhood and connecting to the game server…"
-                }
+                title={loadingStage.title}
+                detail={loadingStage.detail}
                 action={
-                  connectionError ? (
+                  loadingStage.retry ? (
                     <button
                       type="button"
                       className="world-loading-retry"
@@ -1257,456 +1266,451 @@ export function PlayableNeighborhood() {
             </div>
           )}
           {connectionState === "connected" &&
-            (district?.personalHome && homeQuery.isLoading ? (
-              <p className="neighborhood-loading">Checking the home entrance...</p>
-            ) : (
-              sessionId &&
-              district && (
-                <>
-                  <div className="neighborhood-stage">
-                    <Suspense
-                      fallback={
-                        <div className="neighborhood-loading-overlay">
-                          <WorldLoadingIndicator
-                            presentation="screen"
-                            title="Loading the neighbourhood"
-                            detail="Preparing the world scene…"
-                          />
-                        </div>
-                      }
-                    >
-                      {commuting && (
-                        <div className="commute-banner" role="status">
-                          Heading to work
-                        </div>
-                      )}
-                      <R3FNeighborhoodSurface
-                        key={`${currentLocation?.id}:${sessionId}`}
-                        onGroundTap={tapGround}
-                        district={district}
-                        players={scenePlayers}
-                        npcs={activeNpcs}
-                        selfSessionId={sessionId}
-                        homeTypeId={homeTypeId}
-                        zoom={zoom}
-                        onZoomChange={setZoom}
-                        groundTarget={groundTarget}
-                        commuteTarget={
-                          commuting
-                            ? (area.objects.find((object) => object.kind === "work") ?? null)
-                            : null
-                        }
-                        onScene={handleScene}
-                        interactionTargets={interactionTargets}
-                        onSelectTarget={selectWorldTarget}
-                        onNpcArrive={(id, x, y) =>
-                          setNpcPositionOverrides((current) => {
-                            const previous = current[id];
-
-                            if (previous?.x === x && previous?.y === y) {
-                              return current;
-                            }
-
-                            return {
-                              ...current,
-                              [id]: { x, y },
-                            };
-                          })
-                        }
-                        nearbyZoneId={nearbyZoneMatch?.zone.id ?? null}
-                        targetedZoneId={zoneState.pendingZoneId}
-                        zoneNpcs={zoneNpcs}
-                        nearbyZoneNpcId={nearbyZoneNpcMatch?.npc.id ?? null}
-                        targetedZoneNpcId={zoneState.pendingZoneId}
-                        onSelectZone={selectZoneTarget}
-                        onSelectZoneNpc={selectZoneTarget}
-                        onSelectFeature={(label) => setFeatureLabel(label)}
-                        onHoverZone={(id) => dispatchZone(setHoveredZoneId(id))}
-                      />
-                    </Suspense>
-                    {featureLabel && (
-                      <div
-                        role="dialog"
-                        aria-label={`${featureLabel} details`}
-                        className="fixed bottom-4 left-4 z-30 max-h-[70dvh] w-72 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border-2 border-edge bg-background/95 p-3 text-sm shadow-lg"
-                      >
-                        <h2 className="font-bold">{featureLabel}</h2>
-                        <p className="mt-1 text-muted-foreground">
-                          {currentLocation?.name ?? "This district"} plans{" "}
-                          {featureLabel.toLowerCase()} here.
-                        </p>
-                        <FeatureTravelPanel
-                          featureLabel={featureLabel}
-                          currentLocationId={currentLocation?.id}
-                          locations={locationsQuery.data ?? []}
-                          character={characterQuery.data}
-                          cash={walletQuery.data?.balance}
-                          navigate={navigate}
-                          queryClient={queryClient}
-                        />
-                        <div className="mt-3 flex items-center justify-end gap-2">
-                          <button
-                            type="button"
-                            className="font-semibold underline"
-                            onClick={() => setFeatureLabel(null)}
-                          >
-                            Close
-                          </button>
-                        </div>
+            !(district?.personalHome && homeQuery.isLoading) &&
+            sessionId &&
+            district && (
+              <>
+                <div className="neighborhood-stage">
+                  <Suspense fallback={null}>
+                    {commuting && (
+                      <div className="commute-banner" role="status">
+                        Heading to work
                       </div>
                     )}
-                    <Link to="/map" className="neighborhood-map-shortcut">
-                      <Map size={16} aria-hidden="true" /> Explore 3D map
-                    </Link>
+                    <R3FNeighborhoodSurface
+                      key={`${currentLocation?.id}:${sessionId}`}
+                      onGroundTap={tapGround}
+                      district={district}
+                      players={scenePlayers}
+                      npcs={activeNpcs}
+                      selfSessionId={sessionId}
+                      homeTypeId={homeTypeId}
+                      zoom={zoom}
+                      onZoomChange={setZoom}
+                      groundTarget={groundTarget}
+                      commuteTarget={
+                        commuting
+                          ? (area.objects.find((object) => object.kind === "work") ?? null)
+                          : null
+                      }
+                      onScene={handleScene}
+                      interactionTargets={interactionTargets}
+                      onSelectTarget={selectWorldTarget}
+                      onNpcArrive={(id, x, y) =>
+                        setNpcPositionOverrides((current) => {
+                          const previous = current[id];
+
+                          if (previous?.x === x && previous?.y === y) {
+                            return current;
+                          }
+
+                          return {
+                            ...current,
+                            [id]: { x, y },
+                          };
+                        })
+                      }
+                      nearbyZoneId={nearbyZoneMatch?.zone.id ?? null}
+                      targetedZoneId={zoneState.pendingZoneId}
+                      zoneNpcs={zoneNpcs}
+                      nearbyZoneNpcId={nearbyZoneNpcMatch?.npc.id ?? null}
+                      targetedZoneNpcId={zoneState.pendingZoneId}
+                      onSelectZone={selectZoneTarget}
+                      onSelectZoneNpc={selectZoneTarget}
+                      onSelectFeature={(label) => setFeatureLabel(label)}
+                      onHoverZone={(id) => dispatchZone(setHoveredZoneId(id))}
+                    />
+                  </Suspense>
+                  {featureLabel && (
                     <div
-                      className="neighborhood-zoom-controls"
-                      aria-label="Neighborhood map controls"
+                      role="dialog"
+                      aria-label={`${featureLabel} details`}
+                      className="fixed bottom-4 left-4 z-30 max-h-[70dvh] w-72 max-w-[calc(100vw-2rem)] overflow-y-auto rounded-lg border-2 border-edge bg-background/95 p-3 text-sm shadow-lg"
                     >
-                      <Link to="/map" aria-label="City map">
-                        <Map size={16} aria-hidden="true" />
-                      </Link>
+                      <h2 className="font-bold">{featureLabel}</h2>
+                      <p className="mt-1 text-muted-foreground">
+                        {currentLocation?.name ?? "This district"} plans{" "}
+                        {featureLabel.toLowerCase()} here.
+                      </p>
+                      <FeatureTravelPanel
+                        featureLabel={featureLabel}
+                        currentLocationId={currentLocation?.id}
+                        locations={locationsQuery.data ?? []}
+                        character={characterQuery.data}
+                        cash={walletQuery.data?.balance}
+                        navigate={navigate}
+                        queryClient={queryClient}
+                      />
+                      <div className="mt-3 flex items-center justify-end gap-2">
+                        <button
+                          type="button"
+                          className="font-semibold underline"
+                          onClick={() => setFeatureLabel(null)}
+                        >
+                          Close
+                        </button>
+                      </div>
                     </div>
-                    {(nearbyZoneMatch || nearbyZoneNpcMatch || nearbyObject) && (
-                      <button
-                        type="button"
-                        className="neighborhood-interaction"
-                        disabled={
-                          !nearbyZoneMatch &&
-                          !nearbyZoneNpcMatch &&
-                          nearbyObject?.kind === "home" &&
-                          enteringHome
-                        }
-                        onClick={openInteraction}
-                        aria-label={
-                          nearbyZoneMatch
-                            ? nearbyZoneMatch.zone.promptLabel
-                            : nearbyZoneNpcMatch
-                              ? `Chat with ${nearbyZoneNpcMatch.npc.name}`
-                              : nearbyObject?.kind === "npc"
-                                ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
-                                : nearbyObject?.kind === "home"
-                                  ? "Enter your home"
-                                  : `Interact with ${nearbyObject?.name ?? ""}`
-                        }
-                      >
-                        {nearbyZoneMatch ? (
-                          <Store size={17} aria-hidden="true" />
-                        ) : nearbyZoneNpcMatch ? (
-                          <MessageCircle size={17} aria-hidden="true" />
-                        ) : nearbyObject?.kind === "home" ? (
-                          <Home size={17} aria-hidden="true" />
-                        ) : nearbyObject?.kind === "market" ? (
-                          <Store size={17} aria-hidden="true" />
-                        ) : nearbyObject?.kind === "work" ? (
-                          <BriefcaseBusiness size={17} aria-hidden="true" />
-                        ) : (
-                          <MessageCircle size={17} aria-hidden="true" />
-                        )}
-                        {nearbyZoneMatch
-                          ? nearbyZoneMatch.zone.promptLabel
-                          : nearbyZoneNpcMatch
-                            ? `Chat · ${nearbyZoneNpcMatch.npc.name.split("·")[0]?.trim()}`
-                            : nearbyObject?.kind === "home"
-                              ? enteringHome
-                                ? "Opening your home..."
-                                : "Enter your home"
-                              : nearbyObject?.kind === "npc"
-                                ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
-                                : nearbyObject?.kind === "work"
-                                  ? `Work at ${nearbyObject.name}`
-                                  : `Explore ${nearbyObject?.name ?? ""}`}
-                        <kbd>E</kbd>
-                      </button>
-                    )}
+                  )}
+                  <Link to="/map" className="neighborhood-map-shortcut">
+                    <MapIcon size={16} aria-hidden="true" /> Explore 3D map
+                  </Link>
+                  <div
+                    className="neighborhood-zoom-controls"
+                    aria-label="Neighborhood map controls"
+                  >
+                    <Link to="/map" aria-label="City map">
+                      <MapIcon size={16} aria-hidden="true" />
+                    </Link>
                   </div>
-                  {(activeNpcs.length > 0 || zoneNpcs.length > 0) && (
+                  {(nearbyZoneMatch || nearbyZoneNpcMatch || nearbyObject) && (
                     <button
                       type="button"
-                      className="neighborhood-people-toggle"
-                      aria-expanded={peopleOpen}
-                      aria-controls="neighborhood-people-panel"
-                      onClick={() => setPeopleOpen((open) => !open)}
+                      className="neighborhood-interaction"
+                      disabled={
+                        !nearbyZoneMatch &&
+                        !nearbyZoneNpcMatch &&
+                        nearbyObject?.kind === "home" &&
+                        enteringHome
+                      }
+                      onClick={openInteraction}
+                      aria-label={
+                        nearbyZoneMatch
+                          ? nearbyZoneMatch.zone.promptLabel
+                          : nearbyZoneNpcMatch
+                            ? `Chat with ${nearbyZoneNpcMatch.npc.name}`
+                            : nearbyObject?.kind === "npc"
+                              ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
+                              : nearbyObject?.kind === "home"
+                                ? "Enter your home"
+                                : `Interact with ${nearbyObject?.name ?? ""}`
+                      }
                     >
-                      <Users size={16} aria-hidden="true" />
-                      People · {activeNpcs.length + zoneNpcs.length}
+                      {nearbyZoneMatch ? (
+                        <Store size={17} aria-hidden="true" />
+                      ) : nearbyZoneNpcMatch ? (
+                        <MessageCircle size={17} aria-hidden="true" />
+                      ) : nearbyObject?.kind === "home" ? (
+                        <Home size={17} aria-hidden="true" />
+                      ) : nearbyObject?.kind === "market" ? (
+                        <Store size={17} aria-hidden="true" />
+                      ) : nearbyObject?.kind === "work" ? (
+                        <BriefcaseBusiness size={17} aria-hidden="true" />
+                      ) : (
+                        <MessageCircle size={17} aria-hidden="true" />
+                      )}
+                      {nearbyZoneMatch
+                        ? nearbyZoneMatch.zone.promptLabel
+                        : nearbyZoneNpcMatch
+                          ? `Chat · ${nearbyZoneNpcMatch.npc.name.split("·")[0]?.trim()}`
+                          : nearbyObject?.kind === "home"
+                            ? enteringHome
+                              ? "Opening your home..."
+                              : "Enter your home"
+                            : nearbyObject?.kind === "npc"
+                              ? `Talk with ${nearbyNpc?.name ?? nearbyObject.name}`
+                              : nearbyObject?.kind === "work"
+                                ? `Work at ${nearbyObject.name}`
+                                : `Explore ${nearbyObject?.name ?? ""}`}
+                      <kbd>E</kbd>
                     </button>
                   )}
-                  {(activeNpcs.length > 0 || zoneNpcs.length > 0) && peopleOpen && (
-                    <section
-                      id="neighborhood-people-panel"
-                      className="neighborhood-people"
-                      aria-label="People in this neighbourhood"
-                    >
-                      <div className="neighborhood-people-heading">
-                        <strong>People around here</strong>
-                        <span>Tap anyone to walk over &amp; chat</span>
-                      </div>
-                      <div className="neighborhood-people-list">
-                        {zoneNpcs.map((zNpc) => {
-                          const isNearby = nearbyZoneNpcMatch?.npc.id === zNpc.id;
-                          return (
+                </div>
+                {(activeNpcs.length > 0 || zoneNpcs.length > 0) && (
+                  <button
+                    type="button"
+                    className="neighborhood-people-toggle"
+                    aria-expanded={peopleOpen}
+                    aria-controls="neighborhood-people-panel"
+                    onClick={() => setPeopleOpen((open) => !open)}
+                  >
+                    <Users size={16} aria-hidden="true" />
+                    People · {activeNpcs.length + zoneNpcs.length}
+                  </button>
+                )}
+                {(activeNpcs.length > 0 || zoneNpcs.length > 0) && peopleOpen && (
+                  <section
+                    id="neighborhood-people-panel"
+                    className="neighborhood-people"
+                    aria-label="People in this neighbourhood"
+                  >
+                    <div className="neighborhood-people-heading">
+                      <strong>People around here</strong>
+                      <span>Tap anyone to walk over &amp; chat</span>
+                    </div>
+                    <div className="neighborhood-people-list">
+                      {zoneNpcs.map((zNpc) => {
+                        const isNearby = nearbyZoneNpcMatch?.npc.id === zNpc.id;
+                        return (
+                          <button
+                            key={zNpc.id}
+                            type="button"
+                            className="neighborhood-person"
+                            onClick={() => {
+                              setPeopleOpen(false);
+                              selectZoneTarget(zNpc.id);
+                            }}
+                          >
+                            <span className="neighborhood-person-copy">
+                              <strong>{zNpc.name}</strong>
+                              <span>
+                                {zNpc.role} · {zNpc.zoneTag.replace("_", " ")}
+                              </span>
+                            </span>
+                            <span className="neighborhood-person-action">
+                              {isNearby ? "Chat" : "Walk over"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                      {activeNpcs.map((npc) => {
+                        const isNearby = nearbyObject?.id === npc.id;
+                        return (
+                          <button
+                            key={npc.id}
+                            type="button"
+                            className="neighborhood-person"
+                            onClick={() => selectWorldTarget(npc.id)}
+                            disabled={npc.isMoving || !npc.available}
+                            aria-label={
+                              isNearby
+                                ? `Talk with ${npc.name}, ${npc.activity}`
+                                : `${npc.name}, ${npc.activity}. Move closer to interact`
+                            }
+                          >
+                            <span className="neighborhood-person-copy">
+                              <strong>{npc.name}</strong>
+                              <span>
+                                {npc.role} · {npc.activity}
+                              </span>
+                            </span>
+                            <span className="neighborhood-person-action">
+                              {npc.isMoving
+                                ? "On the move"
+                                : !npc.available
+                                  ? "Resting"
+                                  : isNearby
+                                    ? "Talk"
+                                    : "Move closer"}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </section>
+                )}
+                {enterHome.isError && (
+                  <p className="neighborhood-error" role="alert">
+                    {enterHome.error.message}
+                  </p>
+                )}
+                {district.personalHome && homeQuery.isError && (
+                  <p className="neighborhood-error" role="alert">
+                    Your home information could not be loaded. Movement is available, but home entry
+                    is temporarily disabled.
+                  </p>
+                )}
+                {(npcQuery.isError ||
+                  placesQuery.isError ||
+                  shopItemsQuery.isError ||
+                  jobsQuery.isError) && (
+                  <p className="neighborhood-error" role="alert">
+                    Some nearby interactions could not be loaded.{" "}
+                    {npcQuery.error?.message ??
+                      placesQuery.error?.message ??
+                      shopItemsQuery.error?.message ??
+                      jobsQuery.error?.message}
+                  </p>
+                )}
+                {(npcQuery.isLoading ||
+                  placesQuery.isLoading ||
+                  shopItemsQuery.isLoading ||
+                  jobsQuery.isLoading) && (
+                  <p className="neighborhood-loading" role="status">
+                    Checking for supported nearby interactions...
+                  </p>
+                )}
+                <Dialog open={activePanel !== null} onOpenChange={closeInteraction}>
+                  <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
+                    <DialogTitle>
+                      {activePanel === "npc"
+                        ? (selectedNpc?.name ?? "Neighbour")
+                        : (selectedBuildingName ?? currentLocation?.name ?? "Nearby services")}
+                    </DialogTitle>
+                    <DialogDescription>
+                      {activePanel === "npc"
+                        ? selectedNpc
+                          ? `${selectedNpc.role} · ${selectedNpc.activity}`
+                          : "This neighbour is no longer available here."
+                        : "Choose a service supported by this location. Close this panel to return to the same spot."}
+                    </DialogDescription>
+                    {activePanel === "business" && (
+                      <>
+                        {businessView === "actions" && (
+                          <div className="grid gap-3 sm:grid-cols-2">
+                            {hasSelectedVenueInterior && (
+                              <button
+                                type="button"
+                                className="neighborhood-action-card"
+                                onClick={() => setBusinessView("interior")}
+                              >
+                                <DoorOpen size={18} aria-hidden="true" />
+                                Explore venue interior
+                              </button>
+                            )}
+                            {activityLandmarkId && (
+                              <a
+                                className="neighborhood-action-card"
+                                href={
+                                  "/map?landmark=" +
+                                  encodeURIComponent(activityLandmarkId) +
+                                  "&details=1"
+                                }
+                              >
+                                <Landmark size={18} aria-hidden="true" />
+                                View official place activities
+                              </a>
+                            )}
+                            {hasSelectedShopOffers && (
+                              <button
+                                type="button"
+                                className="neighborhood-action-card"
+                                onClick={() => setBusinessView("shops")}
+                              >
+                                <Store size={18} aria-hidden="true" />
+                                Browse {selectedBuildingName ?? "local"} shop offers
+                              </button>
+                            )}
+                            {selectedShopSlug === null && (
+                              <p className="text-sm text-muted-foreground">
+                                This stall does not have its own server-backed shop catalogue yet.
+                                Browse the main Oja-Oba stalls for the currently available market
+                                offers.
+                              </p>
+                            )}
+                            {hasBankServices && (
+                              <button
+                                type="button"
+                                className="neighborhood-action-card"
+                                onClick={() => setBusinessView("bank")}
+                              >
+                                <Landmark size={18} aria-hidden="true" />
+                                Access bank services
+                              </button>
+                            )}
+                            {!hasShopOffers && hasLocalBusinesses && (
+                              <p className="text-sm text-muted-foreground">
+                                This location has shops, but no purchasable offers are available in
+                                the existing shop catalog.
+                              </p>
+                            )}
+                          </div>
+                        )}
+                        {businessView === "interior" && currentLocation && (
+                          <>
                             <button
-                              key={zNpc.id}
                               type="button"
-                              className="neighborhood-person"
-                              onClick={() => {
-                                setPeopleOpen(false);
-                                selectZoneTarget(zNpc.id);
-                              }}
+                              className="neighborhood-map-link w-fit"
+                              onClick={() => setBusinessView("actions")}
                             >
-                              <span className="neighborhood-person-copy">
-                                <strong>{zNpc.name}</strong>
-                                <span>
-                                  {zNpc.role} · {zNpc.zoneTag.replace("_", " ")}
-                                </span>
-                              </span>
-                              <span className="neighborhood-person-action">
-                                {isNearby ? "Chat" : "Walk over"}
-                              </span>
+                              Exit to the neighborhood
                             </button>
-                          );
-                        })}
-                        {activeNpcs.map((npc) => {
-                          const isNearby = nearbyObject?.id === npc.id;
-                          return (
+                            <LocationVenueScene
+                              slug={currentLocation.slug}
+                              locationName={currentLocation.name}
+                              {...(hasBankServices
+                                ? { onBankServices: () => setBusinessView("bank") }
+                                : {})}
+                              {...(hasSelectedShopOffers
+                                ? { onBrowseMarket: () => setBusinessView("shops") }
+                                : {})}
+                            />
+                          </>
+                        )}
+                        {businessView === "shops" && (
+                          <>
                             <button
-                              key={npc.id}
                               type="button"
-                              className="neighborhood-person"
-                              onClick={() => selectWorldTarget(npc.id)}
-                              disabled={npc.isMoving || !npc.available}
-                              aria-label={
-                                isNearby
-                                  ? `Talk with ${npc.name}, ${npc.activity}`
-                                  : `${npc.name}, ${npc.activity}. Move closer to interact`
-                              }
+                              className="neighborhood-map-link w-fit"
+                              onClick={() => setBusinessView("actions")}
                             >
-                              <span className="neighborhood-person-copy">
-                                <strong>{npc.name}</strong>
-                                <span>
-                                  {npc.role} · {npc.activity}
-                                </span>
-                              </span>
-                              <span className="neighborhood-person-action">
-                                {npc.isMoving
-                                  ? "On the move"
-                                  : !npc.available
-                                    ? "Resting"
-                                    : isNearby
-                                      ? "Talk"
-                                      : "Move closer"}
-                              </span>
+                              Back to building actions
                             </button>
-                          );
-                        })}
-                      </div>
-                    </section>
-                  )}
-                  {enterHome.isError && (
-                    <p className="neighborhood-error" role="alert">
-                      {enterHome.error.message}
-                    </p>
-                  )}
-                  {district.personalHome && homeQuery.isError && (
-                    <p className="neighborhood-error" role="alert">
-                      Your home information could not be loaded. Movement is available, but home
-                      entry is temporarily disabled.
-                    </p>
-                  )}
-                  {(npcQuery.isError ||
-                    placesQuery.isError ||
-                    shopItemsQuery.isError ||
-                    jobsQuery.isError) && (
-                    <p className="neighborhood-error" role="alert">
-                      Some nearby interactions could not be loaded.{" "}
-                      {npcQuery.error?.message ??
-                        placesQuery.error?.message ??
-                        shopItemsQuery.error?.message ??
-                        jobsQuery.error?.message}
-                    </p>
-                  )}
-                  {(npcQuery.isLoading ||
-                    placesQuery.isLoading ||
-                    shopItemsQuery.isLoading ||
-                    jobsQuery.isLoading) && (
-                    <p className="neighborhood-loading" role="status">
-                      Checking for supported nearby interactions...
-                    </p>
-                  )}
-                  <Dialog open={activePanel !== null} onOpenChange={closeInteraction}>
-                    <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-4xl">
-                      <DialogTitle>
-                        {activePanel === "npc"
-                          ? (selectedNpc?.name ?? "Neighbour")
-                          : (selectedBuildingName ?? currentLocation?.name ?? "Nearby services")}
-                      </DialogTitle>
-                      <DialogDescription>
-                        {activePanel === "npc"
-                          ? selectedNpc
-                            ? `${selectedNpc.role} · ${selectedNpc.activity}`
-                            : "This neighbour is no longer available here."
-                          : "Choose a service supported by this location. Close this panel to return to the same spot."}
-                      </DialogDescription>
-                      {activePanel === "business" && (
-                        <>
-                          {businessView === "actions" && (
-                            <div className="grid gap-3 sm:grid-cols-2">
-                              {hasSelectedVenueInterior && (
-                                <button
-                                  type="button"
-                                  className="neighborhood-action-card"
-                                  onClick={() => setBusinessView("interior")}
-                                >
-                                  <DoorOpen size={18} aria-hidden="true" />
-                                  Explore venue interior
-                                </button>
-                              )}
-                              {activityLandmarkId && (
-                                <a
-                                  className="neighborhood-action-card"
-                                  href={
-                                    "/map?landmark=" +
-                                    encodeURIComponent(activityLandmarkId) +
-                                    "&details=1"
-                                  }
-                                >
-                                  <Landmark size={18} aria-hidden="true" />
-                                  View official place activities
-                                </a>
-                              )}
-                              {hasSelectedShopOffers && (
-                                <button
-                                  type="button"
-                                  className="neighborhood-action-card"
-                                  onClick={() => setBusinessView("shops")}
-                                >
-                                  <Store size={18} aria-hidden="true" />
-                                  Browse {selectedBuildingName ?? "local"} shop offers
-                                </button>
-                              )}
-                              {selectedShopSlug === null && (
-                                <p className="text-sm text-muted-foreground">
-                                  This stall does not have its own server-backed shop catalogue yet.
-                                  Browse the main Oja-Oba stalls for the currently available market
-                                  offers.
-                                </p>
-                              )}
-                              {hasBankServices && (
-                                <button
-                                  type="button"
-                                  className="neighborhood-action-card"
-                                  onClick={() => setBusinessView("bank")}
-                                >
-                                  <Landmark size={18} aria-hidden="true" />
-                                  Access bank services
-                                </button>
-                              )}
-                              {!hasShopOffers && hasLocalBusinesses && (
-                                <p className="text-sm text-muted-foreground">
-                                  This location has shops, but no purchasable offers are available
-                                  in the existing shop catalog.
-                                </p>
-                              )}
-                            </div>
-                          )}
-                          {businessView === "interior" && currentLocation && (
-                            <>
+                            <MarketPage shopSlug={selectedShopSlug ?? null} />
+                          </>
+                        )}
+                        {businessView === "bank" && (
+                          <>
+                            <button
+                              type="button"
+                              className="neighborhood-map-link w-fit"
+                              onClick={() => setBusinessView("actions")}
+                            >
+                              Back to building actions
+                            </button>
+                            <PhoneBankApp />
+                          </>
+                        )}
+                      </>
+                    )}
+                    {activePanel === "work" && (
+                      <>
+                        {workView === "actions" ? (
+                          <>
+                            {hasVenueInterior && (
                               <button
                                 type="button"
-                                className="neighborhood-map-link w-fit"
-                                onClick={() => setBusinessView("actions")}
+                                className="neighborhood-action-card mb-4"
+                                onClick={() => setWorkView("interior")}
                               >
-                                Exit to the neighborhood
+                                <DoorOpen size={18} aria-hidden="true" />
+                                Explore workplace interior
                               </button>
-                              <LocationVenueScene
-                                slug={currentLocation.slug}
-                                locationName={currentLocation.name}
-                                {...(hasBankServices
-                                  ? { onBankServices: () => setBusinessView("bank") }
-                                  : {})}
-                                {...(hasSelectedShopOffers
-                                  ? { onBrowseMarket: () => setBusinessView("shops") }
-                                  : {})}
-                              />
-                            </>
-                          )}
-                          {businessView === "shops" && (
-                            <>
-                              <button
-                                type="button"
-                                className="neighborhood-map-link w-fit"
-                                onClick={() => setBusinessView("actions")}
-                              >
-                                Back to building actions
-                              </button>
-                              <MarketPage shopSlug={selectedShopSlug ?? null} />
-                            </>
-                          )}
-                          {businessView === "bank" && (
-                            <>
-                              <button
-                                type="button"
-                                className="neighborhood-map-link w-fit"
-                                onClick={() => setBusinessView("actions")}
-                              >
-                                Back to building actions
-                              </button>
-                              <PhoneBankApp />
-                            </>
-                          )}
-                        </>
-                      )}
-                      {activePanel === "work" && (
-                        <>
-                          {workView === "actions" ? (
-                            <>
-                              {hasVenueInterior && (
-                                <button
-                                  type="button"
-                                  className="neighborhood-action-card mb-4"
-                                  onClick={() => setWorkView("interior")}
-                                >
-                                  <DoorOpen size={18} aria-hidden="true" />
-                                  Explore workplace interior
-                                </button>
-                              )}
-                              <JobsPage />
-                            </>
-                          ) : currentLocation ? (
-                            <>
-                              <button
-                                type="button"
-                                className="neighborhood-map-link w-fit"
-                                onClick={() => setWorkView("actions")}
-                              >
-                                Exit to the neighborhood
-                              </button>
-                              <LocationVenueScene
-                                slug={currentLocation.slug}
-                                locationName={currentLocation.name}
-                                {...(selectedShopSlug !== undefined
-                                  ? { shopSlug: selectedShopSlug }
-                                  : {})}
-                              />
-                            </>
-                          ) : null}
-                        </>
-                      )}
-                      {activePanel === "npc" && selectedNpc && (
-                        <div className="space-y-3">
-                          <p className="text-sm text-muted-foreground">
-                            {selectedNpc.name} is {selectedNpc.activity}. Conversations are checked
-                            by the game server for this location and time.
-                          </p>
-                          <div className="flex flex-wrap gap-2">
-                            {npcActions.filter(({ action }) => eligibleNpcActions.includes(action)).map(({ action, label }) => (
+                            )}
+                            <JobsPage />
+                          </>
+                        ) : currentLocation ? (
+                          <>
+                            <button
+                              type="button"
+                              className="neighborhood-map-link w-fit"
+                              onClick={() => setWorkView("actions")}
+                            >
+                              Exit to the neighborhood
+                            </button>
+                            <LocationVenueScene
+                              slug={currentLocation.slug}
+                              locationName={currentLocation.name}
+                              {...(selectedShopSlug !== undefined
+                                ? { shopSlug: selectedShopSlug }
+                                : {})}
+                            />
+                          </>
+                        ) : null}
+                      </>
+                    )}
+                    {activePanel === "npc" && selectedNpc && (
+                      <div className="space-y-3">
+                        <p className="text-sm text-muted-foreground">
+                          {selectedNpc.name} is {selectedNpc.activity}. Conversations are checked by
+                          the game server for this location and time.
+                        </p>
+                        <div className="flex flex-wrap gap-2">
+                          {npcActions
+                            .filter(({ action }) => eligibleNpcActions.includes(action))
+                            .map(({ action, label }) => (
                               <button
                                 key={action}
                                 type="button"
                                 className="neighborhood-action-card"
                                 disabled={npcInteraction.isPending || !canInteractWithNpc}
                                 onClick={() => {
-                                  if (!canInteractWithNpc || npcInteraction.isPending || !eligibleNpcActions.includes(action)) return;
+                                  if (
+                                    !canInteractWithNpc ||
+                                    npcInteraction.isPending ||
+                                    !eligibleNpcActions.includes(action)
+                                  )
+                                    return;
                                   npcInteraction.mutate({
                                     npcId: selectedNpc.id,
                                     action,
@@ -1718,97 +1722,97 @@ export function PlayableNeighborhood() {
                                 {npcInteraction.isPending ? "Speaking..." : label}
                               </button>
                             ))}
-                          </div>
-                          {npcDialogue && (
-                            <p className="rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
-                              {npcDialogue}
-                            </p>
-                          )}
-                          {npcInteraction.error && (
-                            <p className="text-sm text-destructive" role="alert">
-                              {npcInteraction.error.message}
-                            </p>
-                          )}
                         </div>
-                      )}
-                    </DialogContent>
-                  </Dialog>
-                  <NeighborhoodZoneModal
-                    open={zoneModalOpen}
-                    onOpenChange={(open) => {
-                      if (!open) dispatchZone(closeZoneInteraction());
-                    }}
-                    zone={activeZoneSpec}
-                    npc={activeZoneNpc}
-                    pocketBalance={pocketBalance}
-                    bankBalance={bankBalance}
-                    needs={effectiveNeeds}
-                    currentLocationId={currentLocation?.id}
-                    currentLocationSlug={currentLocation?.slug}
-                    npcTip={zoneState.lastNpcTip}
-                    onNpcTipSelect={handleNpcTipSelect}
-                  />
-                  <Dialog
-                    open={compoundOpen}
-                    onOpenChange={(open) => {
-                      if (open) openCompound();
-                      else setCompoundOpen(false);
-                    }}
-                  >
-                    <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-5xl">
-                      <DialogTitle className="sr-only">Residential compound</DialogTitle>
-                      <DialogDescription className="sr-only">
-                        Explore the courtyard, facilities and private home entrances.
-                      </DialogDescription>
-                      <Suspense
-                        fallback={
-                          <WorldLoadingIndicator
-                            title="Opening the compound"
-                            detail="Preparing the courtyard…"
-                          />
-                        }
-                      >
-                        <ResidentialCompoundVenue
-                          homeTypeId={homeTypeId}
-                          enteringHome={enteringHome || homeBound}
-                          {...(district?.personalHome && homeTypeId && !homeQuery.isError
-                            ? {
-                                onEnterHome: () => {
-                                  setCompoundOpen(false);
-                                  activateHome();
-                                },
-                              }
-                            : {})}
+                        {npcDialogue && (
+                          <p className="rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
+                            {npcDialogue}
+                          </p>
+                        )}
+                        {npcInteraction.error && (
+                          <p className="text-sm text-destructive" role="alert">
+                            {npcInteraction.error.message}
+                          </p>
+                        )}
+                      </div>
+                    )}
+                  </DialogContent>
+                </Dialog>
+                <NeighborhoodZoneModal
+                  open={zoneModalOpen}
+                  onOpenChange={(open) => {
+                    if (!open) dispatchZone(closeZoneInteraction());
+                  }}
+                  zone={activeZoneSpec}
+                  npc={activeZoneNpc}
+                  pocketBalance={pocketBalance}
+                  bankBalance={bankBalance}
+                  needs={effectiveNeeds}
+                  currentLocationId={currentLocation?.id}
+                  currentLocationSlug={currentLocation?.slug}
+                  npcTip={zoneState.lastNpcTip}
+                  onNpcTipSelect={handleNpcTipSelect}
+                />
+                <Dialog
+                  open={compoundOpen}
+                  onOpenChange={(open) => {
+                    if (open) openCompound();
+                    else setCompoundOpen(false);
+                  }}
+                >
+                  <DialogContent className="max-h-[92svh] overflow-y-auto sm:max-w-5xl">
+                    <DialogTitle className="sr-only">Residential compound</DialogTitle>
+                    <DialogDescription className="sr-only">
+                      Explore the courtyard, facilities and private home entrances.
+                    </DialogDescription>
+                    <Suspense
+                      fallback={
+                        <WorldLoadingIndicator
+                          title="Opening the compound"
+                          detail="Preparing the courtyard…"
                         />
-                      </Suspense>
-                    </DialogContent>
-                  </Dialog>
-                  <div className="neighborhood-controls-row">
-                    {district?.personalHome && (
-                      <button
-                        type="button"
-                        className="neighborhood-go-home"
-                        disabled={enteringHome || homeBound}
-                        onClick={openCompound}
-                      >
-                        Explore compound
-                      </button>
-                    )}
-                    {homeTypeId && (
-                      <button
-                        type="button"
-                        className="neighborhood-go-home"
-                        disabled={enteringHome || homeBound}
-                        aria-busy={enteringHome || homeBound}
-                        onClick={() => activateHome()}
-                      >
-                        {enteringHome || homeBound ? "Going home…" : "Go home"}
-                      </button>
-                    )}
-                  </div>
-                </>
-              )
-            ))}
+                      }
+                    >
+                      <ResidentialCompoundVenue
+                        key={homeTypeId ?? "default"}
+                        homeTypeId={homeTypeId}
+                        enteringHome={enteringHome || homeBound}
+                        {...(district?.personalHome && homeTypeId && !homeQuery.isError
+                          ? {
+                              onEnterHome: () => {
+                                setCompoundOpen(false);
+                                activateHome();
+                              },
+                            }
+                          : {})}
+                      />
+                    </Suspense>
+                  </DialogContent>
+                </Dialog>
+                <div className="neighborhood-controls-row">
+                  {district?.personalHome && (
+                    <button
+                      type="button"
+                      className="neighborhood-go-home"
+                      disabled={enteringHome || homeBound}
+                      onClick={openCompound}
+                    >
+                      Explore compound
+                    </button>
+                  )}
+                  {homeTypeId && (
+                    <button
+                      type="button"
+                      className="neighborhood-go-home"
+                      disabled={enteringHome || homeBound}
+                      aria-busy={enteringHome || homeBound}
+                      onClick={() => activateHome()}
+                    >
+                      {enteringHome || homeBound ? "Going home…" : "Go home"}
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
         </div>
       )}
       <p className="sr-only" aria-live="polite">

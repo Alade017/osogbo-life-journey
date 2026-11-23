@@ -9,8 +9,7 @@ const sceneMock = vi.hoisted(() => ({
 }));
 
 vi.mock("@/components/game/venue-scene-loaders", async (importOriginal) => {
-  const actual =
-    await importOriginal<typeof import("@/components/game/venue-scene-loaders")>();
+  const actual = await importOriginal<typeof import("@/components/game/venue-scene-loaders")>();
 
   function loader(kind: string) {
     return async () => ({
@@ -116,7 +115,9 @@ describe("specialized venue error isolation", () => {
 
     render(
       <>
-        <button type="button" onClick={onOutsideClick}>Outside control</button>
+        <button type="button" onClick={onOutsideClick}>
+          Outside control
+        </button>
         <VenueSceneBoundary onError={onError}>
           <BrokenScene />
         </VenueSceneBoundary>
@@ -126,5 +127,35 @@ describe("specialized venue error isolation", () => {
     expect(onError).toHaveBeenCalled();
     fireEvent.click(screen.getByRole("button", { name: "Outside control" }));
     expect(onOutsideClick).toHaveBeenCalledTimes(1);
+  });
+
+  it("keeps a fallback until the destination reset key changes, without requiring an error callback", () => {
+    function Scene({ broken }: { broken: boolean }) {
+      if (broken) throw new Error("Destination failed");
+      return <div>Recovered destination</div>;
+    }
+
+    const { rerender } = render(
+      <VenueSceneBoundary resetKey="clinic" fallback={<p>Destination unavailable</p>}>
+        <Scene broken />
+      </VenueSceneBoundary>,
+    );
+    expect(screen.getByText("Destination unavailable")).toBeInTheDocument();
+
+    rerender(
+      <VenueSceneBoundary resetKey="clinic" fallback={<p>Destination unavailable</p>}>
+        <Scene broken={false} />
+      </VenueSceneBoundary>,
+    );
+    expect(screen.getByText("Destination unavailable")).toBeInTheDocument();
+    expect(screen.queryByText("Recovered destination")).not.toBeInTheDocument();
+
+    rerender(
+      <VenueSceneBoundary resetKey="campus" fallback={<p>Destination unavailable</p>}>
+        <Scene broken={false} />
+      </VenueSceneBoundary>,
+    );
+    expect(screen.getByText("Recovered destination")).toBeInTheDocument();
+    expect(screen.queryByText("Destination unavailable")).not.toBeInTheDocument();
   });
 });
