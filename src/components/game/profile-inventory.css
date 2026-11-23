@@ -1302,3 +1302,53 @@
     gap: 0.5rem;
   }
 }
+
+/* UI-07 / UI-08: Clear, predictable action hierarchy in the inventory.
+   Selection and action handlers remain driven by the existing component. */
+.pi-inventory .pi-detail-actions {
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.pi-inventory .pi-detail-actions > button {
+  min-width: 0;
+  min-height: 44px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.pi-inventory .pi-detail-actions .pi-action-primary:not(:disabled) {
+  color: var(--primary-foreground);
+  border-color: var(--brand-royal);
+  background: var(--brand-royal);
+  font-weight: 800;
+}
+
+.pi-inventory .pi-detail-actions .pi-action-secondary:not(:disabled) {
+  color: var(--brand-royal-deep);
+  border-color: var(--brand-mist);
+  background: var(--brand-cream);
+}
+
+.pi-inventory .pi-detail-actions .pi-action-destructive {
+  color: var(--destructive);
+  border-color: var(--border);
+  background: var(--card);
+}
+
+.pi-inventory .pi-detail-actions > button:disabled {
+  opacity: 0.55;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.pi-inventory .pi-detail-actions > button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@container (max-width: 420px) {
+  .pi-inventory .pi-detail-actions > button {
+    flex: 1 1 100%;
+  }
+}
