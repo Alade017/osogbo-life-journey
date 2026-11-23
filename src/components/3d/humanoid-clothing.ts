@@ -1,3 +1,4 @@
+import { CHARACTER_GROUND } from "./character-config";
 import type { TopCut } from "@/game/wearable-outfits";
 import {
   BufferGeometry,
@@ -27,8 +28,12 @@ function collarBoundary(x: number): number {
 }
 
 const armBones = new Set<string>([
-  BONE.lUpperArm, BONE.rUpperArm, BONE.lForearm,
-  BONE.rForearm, BONE.lHand, BONE.rHand,
+  BONE.lUpperArm,
+  BONE.rUpperArm,
+  BONE.lForearm,
+  BONE.rForearm,
+  BONE.lHand,
+  BONE.rHand,
 ]);
 const ARM_WEIGHT_THRESHOLD = 0.25;
 
@@ -74,9 +79,15 @@ export function createFittedClothing(
     const vertex = (i: number): Vertex => {
       const bones = new Map<number, number>();
       for (let j = 0; j < 4; j++) {
-        const bone = skin.getComponent(i, j), weight = weights.getComponent(i, j);
-        if (Number.isInteger(bone) && bone >= 0 && bone < body.skeleton.bones.length &&
-            Number.isFinite(weight) && weight > 0)
+        const bone = skin.getComponent(i, j),
+          weight = weights.getComponent(i, j);
+        if (
+          Number.isInteger(bone) &&
+          bone >= 0 &&
+          bone < body.skeleton.bones.length &&
+          Number.isFinite(weight) &&
+          weight > 0
+        )
           bones.set(bone, (bones.get(bone) ?? 0) + weight);
       }
       return {
@@ -97,10 +108,7 @@ export function createFittedClothing(
         for (const [bone, w] of v.bones)
           if (armBones.has(body.skeleton.bones[bone]?.name ?? "")) armWeight += w / 3;
       const arm = armWeight > ARM_WEIGHT_THRESHOLD;
-      let shirt = clip(
-        tri,
-        (v) => v.p[1]! - shirtLowerBoundary(arm, cut),
-      );
+      let shirt = clip(tri, (v) => v.p[1]! - shirtLowerBoundary(arm, cut));
       shirt = clip(shirt, (v) => collarBoundary(v.p[0]!) - v.p[1]!);
       add(shirt, 0);
       if (!arm) {
@@ -129,7 +137,12 @@ export function createFittedClothing(
         const normal = new Vector3(...(v.n as [number, number, number])).normalize();
         // Give the basic outfit a fabric silhouette rather than skin-tight paint.
         // Keep the clearance small enough for the shared skeleton and mobile camera.
-        const ease = group === 0 ? GARMENT_FIT.clearance.top : group === 1 ? GARMENT_FIT.clearance.bottom : GARMENT_FIT.clearance.shoes;
+        const ease =
+          group === 0
+            ? GARMENT_FIT.clearance.top
+            : group === 1
+              ? GARMENT_FIT.clearance.bottom
+              : GARMENT_FIT.clearance.shoes;
         const hemFlare = group === 0 && v.p[1]! < 0.56 ? 0.004 : 0;
         positions.push(
           v.p[0]! + normal.x * (ease + hemFlare),
@@ -172,7 +185,7 @@ export function createFittedClothing(
   const mesh = new SkinnedMesh(geometry, materials);
   mesh.name = "fitted-character-outfit";
   mesh.bind(body.skeleton, body.bindMatrix);
-  mesh.castShadow = true;
+  mesh.castShadow = CHARACTER_GROUND.castShadow;
   mesh.receiveShadow = true;
   return mesh;
 }
@@ -202,8 +215,7 @@ export function createVisibleSkin(body: SkinnedMesh, cut: TopCut = "tee") {
           x = p.getX(v);
         return (
           (!arm && y <= GARMENT_FIT.waist) ||
-          (y >= shirtLowerBoundary(arm, cut) &&
-            y <= collarBoundary(x))
+          (y >= shirtLowerBoundary(arm, cut) && y <= collarBoundary(x))
         );
       });
       if (!covered) indices.push(i, i + 1, i + 2);
@@ -218,7 +230,7 @@ export function createVisibleSkin(body: SkinnedMesh, cut: TopCut = "tee") {
   }
   const mesh = new SkinnedMesh(geometry, body.material);
   mesh.bind(body.skeleton, body.bindMatrix);
-  mesh.castShadow = true;
+  mesh.castShadow = CHARACTER_GROUND.castShadow;
   mesh.receiveShadow = true;
   return mesh;
 }

@@ -1,7 +1,8 @@
+import { fitBankShell } from "./bank-shell-layout";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
-import { Box3, Group, Plane, Vector3 } from "three";
+import { Group, Plane, Vector3 } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { Scene } from "@/components/3d/Scene";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
@@ -24,54 +25,6 @@ const LOBBY_WALK = { x: 5.7, z: 3.45 };
 const BANK_ATM_URL = "/models/environments/market-and-bank/atm-kiosk.glb";
 const ATM_POSITION: Position = [4.6, 0, 2.5];
 /** Model parts that open an activity when clicked, matched by the names in the model file. */
-const SHELL_HOTSPOTS: Record<string, "teller" | "seat"> = {
-  "025-teller-counter": "teller",
-  "026-bulletproof-screen": "teller",
-  "033-waiting-chairs": "seat",
-};
-
-type ShellHotspot = { place: "teller" | "seat"; centre: Position; size: Position };
-
-/**
- * Turns the shell so its long side runs across the lobby, scales it to fit the walkable floor,
- * and reads each hotspot's bounds from the model's own named parts.
- */
-function fitBankShell(scene: Group) {
-  const shell = scene.clone(true);
-  const holder = new Group();
-  holder.add(shell);
-  holder.updateMatrixWorld(true);
-
-  const hotspots: ShellHotspot[] = [];
-  for (const [name, place] of Object.entries(SHELL_HOTSPOTS)) {
-    const part = shell.getObjectByName(name);
-    if (!part) continue;
-    const box = new Box3().setFromObject(part);
-    const centre = box.getCenter(new Vector3());
-    const size = box.getSize(new Vector3());
-    hotspots.push({
-      place,
-      centre: [centre.x, centre.y, centre.z],
-      size: [size.x, size.y, size.z],
-    });
-  }
-
-  // Turn a quarter, then scale so the rotated footprint fits the walkable floor.
-  holder.rotation.y = Math.PI / 2;
-  holder.updateMatrixWorld(true);
-  const turned = new Box3().setFromObject(holder);
-  const turnedSize = turned.getSize(new Vector3());
-  const fit = Math.min((LOBBY_WALK.x * 2) / turnedSize.x, (LOBBY_WALK.z * 2) / turnedSize.z);
-  holder.scale.setScalar(fit);
-  holder.updateMatrixWorld(true);
-  const placed = new Box3().setFromObject(holder);
-  const centre = placed.getCenter(new Vector3());
-  // Centre the hall on the origin, with its floor at y = 0.
-  holder.position.set(-centre.x, -placed.min.y, -centre.z);
-
-  return { holder, shell, hotspots };
-}
-
 function LobbyArchitecture({
   onInteract,
   onWalk,
@@ -92,6 +45,7 @@ function LobbyArchitecture({
   }, [invalidate]);
 
   const walkOnFloor = (event: ThreeEvent<MouseEvent>) => {
+    if (event.delta > 5) return;
     event.stopPropagation();
     const point = event.ray.intersectPlane(FLOOR, new Vector3());
     if (!point) return;
@@ -111,6 +65,7 @@ function LobbyArchitecture({
       <group
         position={ATM_POSITION}
         onClick={(event: ThreeEvent<MouseEvent>) => {
+          if (event.delta > 5) return;
           event.stopPropagation();
           onInteract("atm");
         }}
@@ -124,6 +79,7 @@ function LobbyArchitecture({
               key={`${hotspot.place}-${hotspot.centre.join(",")}`}
               position={hotspot.centre}
               onClick={(event: ThreeEvent<MouseEvent>) => {
+                if (event.delta > 5) return;
                 event.stopPropagation();
                 onInteract(hotspot.place);
               }}
@@ -376,6 +332,17 @@ export function BankLobbyFallback({
   );
 }
 
+function BankCameraFraming() {
+  const { camera, size, invalidate } = useThree();
+  useLayoutEffect(() => {
+    if (!("isOrthographicCamera" in camera)) return;
+    camera.zoom = Math.max(10, Math.min(size.width / 15, size.height / 13, 60));
+    camera.updateProjectionMatrix();
+    invalidate();
+  }, [camera, size.width, size.height, invalidate]);
+  return null;
+}
+
 export function BankLobbyScene({
   branch,
   bankName,
@@ -397,13 +364,11 @@ export function BankLobbyScene({
 }) {
   const [sceneFailed, setSceneFailed] = useState(false);
   const [sceneReady, setSceneReady] = useState(false);
-  const [loadingProgress, setLoadingProgress] = useState(0);
   const [destination, setDestination] = useState<Position>(BANK_ENTRANCE);
   const handleReady = useCallback(() => setSceneReady(true), []);
   const retry = useCallback(() => {
     setSceneFailed(false);
     setSceneReady(false);
-    setLoadingProgress(0);
   }, []);
   const fallback = (
     <BankLobbyFallback bankName={bankName} onRetry={retry} onInteract={onInteract} />
@@ -411,22 +376,15 @@ export function BankLobbyScene({
 
   useEffect(() => {
     if (sceneReady || sceneFailed) return;
-    const startedAt = Date.now();
-    const timer = window.setInterval(() => {
-      const elapsed = Date.now() - startedAt;
-      setLoadingProgress(Math.min(95, Math.round((elapsed / 10_000) * 95)));
-      if (elapsed >= 10_000) {
-        window.clearInterval(timer);
-        setSceneFailed(true);
-      }
-    }, 100);
-    return () => window.clearInterval(timer);
+    const timer = window.setTimeout(() => setSceneFailed(true), 10_000);
+    return () => window.clearTimeout(timer);
   }, [sceneFailed, sceneReady]);
 
   if (sceneFailed) return fallback;
 
   return (
     <div
+      data-bank-viewport
       className="h-[min(62vh,560px)] min-h-[340px] overflow-hidden rounded-xl border border-border bg-[#e7e2d7] sm:min-h-[420px]"
       aria-label={`${bankName} interactive lobby`}
     >
@@ -436,14 +394,11 @@ export function BankLobbyScene({
         fallback={fallback}
         loadingFallback={
           <Html center>
-            <WorldLoadingIndicator
-              title="Entering the bank"
-              detail="Preparing the lobby"
-              progress={loadingProgress}
-            />
+            <WorldLoadingIndicator title="Entering the bank" detail="Preparing the lobby" />
           </Html>
         }
       >
+        <BankCameraFraming />
         <BankLobbyModel
           branch={branch}
           bankName={bankName}

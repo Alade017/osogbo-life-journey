@@ -1,3 +1,4 @@
+import { useDestinationSceneFrame } from "@/hooks/use-destination-scene-frame";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useReducer, useRef } from "react";
@@ -47,7 +48,6 @@ export const Route = createFileRoute("/_authenticated/_game/location/$slug")({
 
 function LocationPage() {
   const navigate = useNavigate();
-  const destinationFrame = useRef<HTMLDivElement>(null);
   const { data: worldTime } = useWorldClock();
   const gameTime = worldTime ?? INITIAL_GAME_TIME;
   const weather = weatherForDay(gameTime.day);
@@ -126,6 +126,7 @@ function LocationPage() {
   const conditions = travelConditionAdjustment(travelState.mode, gameTime, weather);
   const travelMessage = [routeMessage, conditions.explanation].filter(Boolean).join(" ") || null;
   const isHere = hasAuthoritativeLocationArrival(character?.current_location_id, loc?.id);
+  const destinationFrame = useDestinationSceneFrame(isHere);
   const meetsLevelRequirement = !!character && !!loc && character.level >= loc.level_required;
   const localPlaces = places?.filter((place) => place.location_id === loc?.id) ?? [];
   const localJobs = jobs?.filter((job) => job.location_id === loc?.id && job.is_available) ?? [];
@@ -216,22 +217,6 @@ function LocationPage() {
     const target = destinationSceneRoute(loc);
     if (target) void navigate({ ...target, replace: true });
   }, [isHere, loc, navigate]);
-
-  useEffect(() => {
-    if (!isHere || !destinationFrame.current) return;
-    const frame = destinationFrame.current;
-    const environment = frame.closest(".game-shell")?.querySelector(".world-environment");
-    if (!environment) return;
-    const measure = () =>
-      frame.style.setProperty(
-        "--destination-top",
-        `${Math.max(0, environment.getBoundingClientRect().bottom)}px`,
-      );
-    measure();
-    const observer = typeof ResizeObserver === "undefined" ? null : new ResizeObserver(measure);
-    observer?.observe(environment);
-    return () => observer?.disconnect();
-  }, [isHere]);
 
   function selectDestination() {
     travelPreflight.current = null;

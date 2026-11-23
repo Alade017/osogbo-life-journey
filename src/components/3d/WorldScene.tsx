@@ -115,8 +115,8 @@ export function WorldLighting({
         <ContactShadows
           position={[0, 0.015, 0]}
           scale={size * 2}
-          opacity={0.28}
-          blur={2.5}
+          opacity={0.1}
+          blur={3}
           far={8}
           resolution={256}
           frames={Infinity}

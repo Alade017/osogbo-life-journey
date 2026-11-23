@@ -56,8 +56,12 @@ export function Camera({
         enablePan={mapControls}
         enableZoom
         enableRotate={!mapControls}
-        mouseButtons={{ LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.DOLLY }}
-        touches={{ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }}
+        mouseButtons={{
+          LEFT: mapControls ? MOUSE.PAN : MOUSE.ROTATE,
+          MIDDLE: MOUSE.DOLLY,
+          RIGHT: mapControls ? MOUSE.DOLLY : MOUSE.PAN,
+        }}
+        touches={{ ONE: mapControls ? TOUCH.PAN : TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN }}
         zoomToCursor={mapControls}
         screenSpacePanning={mapControls}
         keyPanSpeed={16}
