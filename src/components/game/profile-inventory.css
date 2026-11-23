@@ -1455,3 +1455,56 @@
 .pi-inventory .pi-detail-facts > div {
   min-width: 0;
 }
+
+/* UI-17: Keep equipped slots, bag items and item details in distinct regions. */
+.pi-inventory .pi-slots {
+  gap: 0.75rem;
+}
+
+.pi-inventory .pi-slot,
+.pi-inventory .pi-tile,
+.pi-inventory .pi-detail {
+  border: 1px solid var(--border);
+  background: var(--card);
+}
+
+.pi-inventory .pi-detail {
+  min-width: 0;
+  gap: 0.75rem;
+}
+
+.pi-inventory .pi-detail-facts {
+  padding-block: 0.75rem;
+  border-block: 1px solid var(--border);
+}
+
+.pi-inventory .pi-detail-actions {
+  gap: 0.5rem;
+}
+
+/* UI-18: Matching states and focus cues across filters, item tiles and slot actions. */
+.pi-inventory :is(.pi-slot.is-selected, .pi-tile[aria-pressed="true"], .pi-filters button[aria-pressed="true"]) {
+  border-color: var(--brand-royal);
+}
+
+.pi-inventory :is(.pi-chip-btn-primary, .pi-detail-actions .pi-action-primary):not(:disabled) {
+  background: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.pi-inventory :is(.pi-filters button, .pi-chip-btn, .pi-tile, .pi-detail-clear):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.pi-inventory :is(.pi-chip-btn, .pi-detail-actions > button):disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pi-inventory .pi-tile,
+  .pi-inventory .pi-detail-actions > button {
+    transition: none;
+  }
+}
