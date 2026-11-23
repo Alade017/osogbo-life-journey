@@ -4,6 +4,7 @@ import {
   placementPoint,
   packagePoint,
   roomObstacles,
+  runHomeEntryWalk,
   type RoomPoint,
   placementsOverlappingWalls,
   runHouseStairTransition,
@@ -888,12 +889,25 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           ),
         );
         if (path) {
-          const arrived = await movement.walk([exterior, [doorX, doorY, doorZ], ...path]);
-          if (!arrived) movement.place([doorX, doorY, doorZ]);
+          const arrived = await runHomeEntryWalk({
+            path: [exterior, [doorX, doorY, doorZ], ...path],
+            walk: movement.walk,
+            cancel: movement.cancel,
+            place: movement.place,
+            fallback: [doorX, doorY, doorZ],
+          });
+          if (!arrived)
+            toast.error("The walk into your home was interrupted. You are back at the entrance; try again.");
         } else {
           movement.place([doorX, doorY, doorZ]);
           toast.error("The entrance is blocked. Rearrange your furniture to clear the way.");
         }
+      } catch (error) {
+        movement.cancel();
+        movement.place([doorX, doorY, doorZ]);
+        toast.error(
+          error instanceof Error ? error.message : "The home entrance could not be completed.",
+        );
       } finally {
         setDoorOpen(false);
         setDoorInteracting(false);
