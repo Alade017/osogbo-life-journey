@@ -648,6 +648,180 @@ export const FUEL_AND_GO_AREA: NeighborhoodArea = {
   },
 };
 
+/**
+ * Residential districts built from scripts/blender/neighborhood_environments.py. The collision
+ * obstacles below are the same footprints the GLB environment was authored on, so the model and
+ * movement agree. Regenerate both together rather than editing one by hand.
+ */
+export const ATIKU_AREA: NeighborhoodArea = {
+  slug: "atiku",
+  name: "Greenbank Estates",
+  objects: [
+    { id: "home", name: "Greenbank homes", kind: "home", shopSlug: null, x: 707, y: 233 },
+    { id: "market", name: "Greenbank Provisions", kind: "market", shopSlug: null, x: 467, y: 233 },
+    { id: "work", name: "Greenbank opportunities", kind: "work", shopSlug: null, x: 493, y: 367 },
+    {
+      id: "npc",
+      name: "Neighbour in Greenbank Estates",
+      kind: "npc",
+      shopSlug: null,
+      x: 293,
+      y: 332,
+    },
+  ],
+  roads: [
+    { id: "greenbank-avenue", axis: "horizontal", offset: 300, width: 160, type: "arterial" },
+    { id: "greenbank-cross-street", axis: "vertical", offset: 560, width: 107, type: "street" },
+  ],
+  obstacles: [
+    { id: "atiku-compound-nw", kind: "compound", x: 187, y: 127, width: 267, height: 187 },
+    { id: "atiku-compound-sw", kind: "compound", x: 187, y: 473, width: 267, height: 187 },
+    { id: "atiku-compound-ne", kind: "compound", x: 707, y: 127, width: 160, height: 187 },
+    { id: "atiku-compound-se", kind: "compound", x: 707, y: 473, width: 160, height: 187 },
+    {
+      id: "atiku-provisions",
+      kind: "shop",
+      label: "Greenbank Provisions",
+      x: 467,
+      y: 113,
+      width: 107,
+      height: 160,
+    },
+    { id: "atiku-pos-kiosk", kind: "kiosk", label: "POS", x: 493, y: 420, width: 40, height: 40 },
+    { id: "atiku-tree-0", kind: "tree", x: 27, y: 17, width: 24, height: 24 },
+    { id: "atiku-tree-1", kind: "tree", x: 27, y: 583, width: 24, height: 24 },
+    { id: "atiku-tree-2", kind: "tree", x: 773, y: 17, width: 24, height: 24 },
+    { id: "atiku-tree-3", kind: "tree", x: 773, y: 583, width: 24, height: 24 },
+    {
+      id: "district-feature-0",
+      kind: "landmark",
+      label: "Housing",
+      x: 367,
+      y: 120,
+      width: 60,
+      height: 40,
+    },
+    {
+      id: "district-feature-1",
+      kind: "landmark",
+      label: "Community",
+      x: 400,
+      y: 500,
+      width: 60,
+      height: 40,
+    },
+  ],
+  environment: {
+    url: "/models/environments/neighborhoods/greenbank-estates.glb",
+    x: 400,
+    y: 300,
+    width: 800,
+    height: 600,
+  },
+  style: {
+    ground: 0xd9c9ad,
+    grid: 0xcbbd9f,
+    road: 0x777872,
+    paving: 0xc5b9a5,
+    marking: 0xeee6d5,
+    verticalRoad: { x: 560, width: 107 },
+    horizontalRoad: { y: 300, height: 160 },
+  },
+};
+
+export const OKE_FIA_AREA: NeighborhoodArea = {
+  slug: "oke-fia",
+  name: "Hillview Quarter",
+  objects: [
+    { id: "home", name: "Hillview homes", kind: "home", shopSlug: null, x: 600, y: 233 },
+    { id: "market", name: "Hillview Mini-Mart", kind: "market", shopSlug: null, x: 293, y: 207 },
+    { id: "work", name: "Estate Security Post", kind: "work", shopSlug: null, x: 213, y: 220 },
+    {
+      id: "npc",
+      name: "Gardener in Hillview Quarter",
+      kind: "npc",
+      shopSlug: null,
+      x: 507,
+      y: 340,
+    },
+  ],
+  roads: [
+    { id: "hillview-boulevard", axis: "horizontal", offset: 300, width: 213, type: "arterial" },
+    { id: "hillview-service-road", axis: "vertical", offset: 400, width: 67, type: "street" },
+  ],
+  obstacles: [
+    { id: "oke-fia-compound-ne", kind: "compound", x: 600, y: 87, width: 293, height: 173 },
+    { id: "oke-fia-compound-se", kind: "compound", x: 600, y: 513, width: 293, height: 173 },
+    { id: "oke-fia-compound-sw", kind: "compound", x: 160, y: 513, width: 213, height: 173 },
+    {
+      id: "oke-fia-estate-mini-mart",
+      kind: "shop",
+      label: "Hillview Mini-Mart",
+      x: 293,
+      y: 73,
+      width: 107,
+      height: 107,
+    },
+    {
+      id: "oke-fia-gatehouse",
+      kind: "landmark",
+      label: "Estate Security Post",
+      x: 173,
+      y: 73,
+      width: 107,
+      height: 107,
+    },
+    { id: "oke-fia-pos-kiosk", kind: "kiosk", label: "POS", x: 320, y: 473, width: 40, height: 40 },
+    { id: "oke-fia-tree-0", kind: "tree", x: 67, y: 33, width: 24, height: 24 },
+    { id: "oke-fia-tree-1", kind: "tree", x: 27, y: 460, width: 24, height: 24 },
+    { id: "oke-fia-tree-2", kind: "tree", x: 773, y: 460, width: 24, height: 24 },
+    { id: "oke-fia-tree-3", kind: "tree", x: 768, y: 20, width: 24, height: 24 },
+    {
+      id: "district-feature-0",
+      kind: "landmark",
+      label: "Eateries",
+      x: 60,
+      y: 120,
+      width: 60,
+      height: 40,
+    },
+    {
+      id: "district-feature-1",
+      kind: "landmark",
+      label: "Small Shops",
+      x: 330,
+      y: 530,
+      width: 60,
+      height: 40,
+    },
+    {
+      id: "district-feature-2",
+      kind: "landmark",
+      label: "Gym",
+      x: 150,
+      y: 160,
+      width: 60,
+      height: 40,
+    },
+  ],
+  environment: {
+    url: "/models/environments/neighborhoods/hillview-quarter.glb",
+    x: 400,
+    y: 300,
+    width: 800,
+    height: 600,
+  },
+  style: {
+    ground: 0xa8bd8c,
+    grid: 0x9db07f,
+    road: 0x777872,
+    paving: 0xc5b9a5,
+    marking: 0xeee6d5,
+    verticalRoad: { x: 400, width: 67 },
+    horizontalRoad: { y: 300, height: 213 },
+  },
+};
+
 const generatedAreas = Object.fromEntries(
   [
     ...Object.values(OSOGBO_WORLD_NODES),
@@ -658,6 +832,8 @@ const generatedAreas = Object.fromEntries(
 export const NEIGHBORHOOD_AREAS: Readonly<Record<string, NeighborhoodArea>> = {
   ...generatedAreas,
   [FUEL_AND_GO_AREA.slug]: FUEL_AND_GO_AREA,
+  [ATIKU_AREA.slug]: ATIKU_AREA,
+  [OKE_FIA_AREA.slug]: OKE_FIA_AREA,
   [CITY_CENTRE_AREA.slug]: CITY_CENTRE_AREA,
   [OJA_OBA_AREA.slug]: OJA_OBA_AREA,
 };
@@ -667,7 +843,12 @@ export const NEIGHBORHOOD_OBJECTS = CITY_CENTRE_AREA.objects;
  * Places kept as hand-built layouts (custom GLB environment or bespoke zones). Every other place
  * with a landmark in the town data is walked from that data.
  */
-const HAND_BUILT_SLUGS: ReadonlySet<string> = new Set([FUEL_AND_GO_AREA.slug, OJA_OBA_AREA.slug]);
+const HAND_BUILT_SLUGS: ReadonlySet<string> = new Set([
+  FUEL_AND_GO_AREA.slug,
+  OJA_OBA_AREA.slug,
+  ATIKU_AREA.slug,
+  OKE_FIA_AREA.slug,
+]);
 const townAreaCache = new Map<string, NeighborhoodArea>();
 
 function townAreaForSlug(slug: string): NeighborhoodArea | null {

@@ -4,6 +4,7 @@ import { STREET_SIZE } from "@/game/district-streets";
 import { neighborhoodAreaForLocation, type NeighborhoodArea } from "@/game/neighborhood-model";
 
 const DISTRICTS = Object.keys(DISTRICT_FEATURES);
+const HAND_BUILT_RESIDENTIAL: ReadonlySet<string> = new Set(["atiku", "oke-fia"]);
 
 function streetFor(slug: string): NeighborhoodArea {
   return neighborhoodAreaForLocation({ slug, name: slug, map_category: "commercial" });
@@ -75,6 +76,8 @@ describe("district houses", () => {
   it("places several houses beside the roads of every district, clear of other blocks", async () => {
     const { HOUSE_BLOCK } = await import("@/game/district-streets");
     for (const slug of DISTRICTS) {
+      // Hand-built residential layouts author their own house footprints (see neighborhood-model).
+      if (HAND_BUILT_RESIDENTIAL.has(slug)) continue;
       const area = streetFor(slug);
       const houses = (area.obstacles ?? []).filter((o) => o.id.startsWith("district-house-"));
       expect(houses.length, slug).toBeGreaterThanOrEqual(4);
