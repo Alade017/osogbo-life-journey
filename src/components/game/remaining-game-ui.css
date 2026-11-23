@@ -927,3 +927,85 @@
     flex: 1 1 100%;
   }
 }
+
+/* UI-11 / UI-12: Mission status hierarchy for both full-page and phone views.
+   No change to mission order, claim eligibility or reward amounts. */
+.mission-progress-page .mission-progress-card {
+  min-width: 0;
+  transition: border-color 150ms ease, box-shadow 150ms ease;
+}
+
+.mission-progress-page .mission-progress-card.is-near-goal {
+  border-left-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 22%, var(--card));
+}
+
+.mission-progress-page .mission-progress-card.is-ready {
+  border-left-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 40%, var(--card));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--brand-royal) 22%, transparent);
+}
+
+.mission-progress-page .mission-progress-card.is-claimed {
+  box-shadow: none;
+}
+
+.mission-progress-page .mission-rewards-ready {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-block: 0.75rem 1rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 28%, var(--border));
+  border-radius: var(--shape-card);
+  background: color-mix(in srgb, var(--color-primary-soft) 28%, var(--card));
+  color: var(--brand-royal-deep);
+  font-weight: 750;
+}
+
+.mission-progress-page .mission-reward-row {
+  flex-wrap: wrap;
+}
+
+.mission-progress-page .mission-reward-value {
+  min-width: 0;
+  flex-wrap: wrap;
+  overflow-wrap: anywhere;
+}
+
+.mission-progress-page .mission-progress-card.is-ready .mission-reward-value {
+  color: var(--brand-royal-deep);
+}
+
+.mission-progress-page .mission-claim-action {
+  min-height: 44px;
+  margin-inline-start: auto;
+  color: var(--primary-foreground);
+  background: var(--brand-royal);
+  border-color: var(--brand-royal);
+  font-weight: 800;
+}
+
+.mission-progress-page .mission-claim-action:disabled {
+  opacity: 0.55;
+}
+
+.mission-progress-page .mission-claim-action:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+@media (max-width: 420px) {
+  .mission-progress-page .mission-claim-action {
+    width: 100%;
+    margin-inline-start: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .mission-progress-page .mission-progress-card,
+  .mission-progress-page .mission-progress-track [class*="transition"] {
+    transition: none;
+  }
+}
