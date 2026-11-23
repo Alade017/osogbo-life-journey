@@ -432,6 +432,7 @@ export function GameInventoryPanel() {
                 key={category}
                 type="button"
                 aria-pressed={activeCategory === category}
+                aria-label={`${category === "all" ? "All items" : INVENTORY_CATEGORY_LABELS[category]} filter${activeCategory === category ? ", active" : ""}`}
                 onClick={() => setActiveCategory(category)}
               >
                 {category === "all" ? "All items" : INVENTORY_CATEGORY_LABELS[category]}
@@ -470,6 +471,8 @@ export function GameInventoryPanel() {
                     type="button"
                     className="pi-tile"
                     aria-pressed={selectedId === item.id}
+                    aria-controls="inventory-selected-item-details"
+                    aria-label={`${item.item?.name ?? "Item"}, ${INVENTORY_CATEGORY_LABELS[normalizeInventoryCategory(item.item)]}, quantity ${item.quantity}${selectedId === item.id ? ", selected" : ""}`}
                     onClick={() => {
                       setSelectedId(item.id);
                       if (window.matchMedia("(max-width: 760px)").matches) {
@@ -486,6 +489,7 @@ export function GameInventoryPanel() {
                       <InventoryTileArt slug={item.item?.slug} Icon={Icon} />
                     </span>
                     <strong>{item.item?.name}</strong>
+                    {selectedId === item.id && <span className="pi-tile-selected">Selected</span>}
                     <small>
                       {INVENTORY_CATEGORY_LABELS[normalizeInventoryCategory(item.item)]} · ×
                       {item.quantity}
@@ -497,6 +501,7 @@ export function GameInventoryPanel() {
 
             <aside
               ref={detailRef}
+              id="inventory-selected-item-details"
               className="pi-detail"
               aria-live="polite"
               aria-label="Selected item details"
@@ -510,7 +515,12 @@ export function GameInventoryPanel() {
                       label={selectedItem.item?.name ?? "Item"}
                     />
                   )}
-                  <p className="pi-eyebrow">Item details</p>
+                  <div className="pi-detail-heading">
+                    <p className="pi-eyebrow">Item details</p>
+                    <button type="button" className="pi-detail-clear" onClick={() => setSelectedId(null)}>
+                      Clear selection
+                    </button>
+                  </div>
                   <h2>{selectedItem.item?.name}</h2>
                   <p className="pi-sub">{selectedItem.item?.description}</p>
                   <dl className="pi-detail-facts">
