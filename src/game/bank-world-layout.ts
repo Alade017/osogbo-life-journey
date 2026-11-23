@@ -16,6 +16,7 @@ export type BankSurface =
   | "led"
   | "marking"
   | "foliage";
+export type BankShape = "box" | "cylinder" | "sphere";
 export type BankPoint = [number, number, number];
 export interface BankPart {
   position: BankPoint;
@@ -24,6 +25,8 @@ export interface BankPart {
   blocking: boolean;
   fixture?: string;
   yaw?: number;
+  pitch?: number;
+  shape?: BankShape;
 }
 export interface BankFixture {
   id: string;
@@ -73,10 +76,16 @@ export const BANK_BRANCH_DESIGNS = {
   },
 } as const;
 export const BANK_WORLD = {
-  lotWidth: 45,
-  lotDepth: 35,
-  hallWidth: 26,
-  hallDepth: 24,
+  lotWidth: 50,
+  lotDepth: 40,
+  hallWidth: 30,
+  hallDepth: 27,
+  buildingOffsetZ: -5,
+  stairX: 12,
+  innerDoorZ: 9.7,
+  outerDoorZ: 12.7,
+  scannerZ: 11.2,
+  tellerZ: -9,
   floorHeight: 4.5,
   storeys: 2,
   scanMilliseconds: 1500,
@@ -90,15 +99,19 @@ export function buildBankWorld(
 ): BankWorldLayout {
   const d = BANK_BRANCH_DESIGNS[branch];
   const exterior = area === "grounds";
+  const halfWidth = BANK_WORLD.hallWidth / 2,
+    halfDepth = BANK_WORLD.hallDepth / 2;
+  const front = BANK_WORLD.buildingOffsetZ + halfDepth,
+    back = BANK_WORLD.buildingOffsetZ - halfDepth;
   const layout: BankWorldLayout = {
     area,
-    width: exterior ? 45 : 26,
-    depth: exterior ? 35 : 24,
+    width: exterior ? BANK_WORLD.lotWidth : BANK_WORLD.hallWidth,
+    depth: exterior ? BANK_WORLD.lotDepth : BANK_WORLD.hallDepth,
     spawn: exterior
-      ? [d.entranceX, arrivalFrom === "hall" ? 9.5 : 11]
+      ? [d.entranceX, front + (arrivalFrom === "hall" ? 2 : 4)]
       : area === "hall" && arrivalFrom !== "upstairs"
-        ? [d.entranceX, 10]
-        : [d.stairSide * 10, 5],
+        ? [d.entranceX, BANK_WORLD.outerDoorZ - 1]
+        : [d.stairSide * BANK_WORLD.stairX, 5],
     parts: [],
     fixtures: [],
     signs: [],
@@ -111,7 +124,16 @@ export function buildBankWorld(
     fixture?: string,
     yaw = 0,
   ) => {
-    layout.parts.push({ surface, position, size, blocking, yaw, ...(fixture ? { fixture } : {}) });
+    const part: BankPart = {
+      surface,
+      position,
+      size,
+      blocking,
+      yaw,
+      ...(fixture ? { fixture } : {}),
+    };
+    layout.parts.push(part);
+    return part;
   };
   const sign = (text: string, position: BankPoint, width = 3) =>
     layout.signs.push({ text, position, width });
@@ -151,83 +173,207 @@ export function buildBankWorld(
     add("dark", [x, 2.55, z + 0.2], [0.18, 0.12, 0.18]);
   };
   const plant = (x: number, z: number) => {
-    add("wood", [x, 0.3, z], [0.7, 0.6, 0.7], true);
-    add("foliage", [x, 1.1, z], [0.8, 1.2, 0.8]);
+    add("wood", [x, 0.3, z], [0.8, 0.6, 0.8], true).shape = "cylinder";
+    add("foliage", [x, 1.05, z], [0.95, 1.2, 0.95]).shape = "sphere";
   };
 
   if (exterior) {
-    add("paving", [0, -0.12, 0], [45, 0.24, 35]);
-    // The solid footprint is also the route obstacle; the front door is an explicit transition.
-    add("wall", [0, 4.25, -5], [26, 8.5, 24], true);
-    add("brand", [0, 4.5, 7.08], [26.25, 0.45, 0.25]);
-    add("wall", [0, 8.7, -5], [26.6, 0.4, 24.6]);
+    const lotX = BANK_WORLD.lotWidth / 2,
+      lotZ = BANK_WORLD.lotDepth / 2;
+    add("paving", [0, -0.12, 0], [layout.width, 0.24, layout.depth]);
+    // This footprint matches the enlarged playable interior exactly.
+    add(
+      "wall",
+      [0, 4.25, BANK_WORLD.buildingOffsetZ],
+      [BANK_WORLD.hallWidth, 8.5, BANK_WORLD.hallDepth],
+      true,
+    );
+    add("brand", [0, 0.45, front + 0.08], [BANK_WORLD.hallWidth, 0.75, 0.16]);
+    add("brand", [0, 4.5, front + 0.12], [BANK_WORLD.hallWidth + 0.25, 0.4, 0.25]);
+    add(
+      "wall",
+      [0, 8.65, BANK_WORLD.buildingOffsetZ],
+      [BANK_WORLD.hallWidth + 0.6, 0.3, BANK_WORLD.hallDepth + 0.6],
+    );
+    // An inset roof deck, parapets and tilted solar modules break up the former blank slab.
+    add(
+      "paving",
+      [0, 8.84, BANK_WORLD.buildingOffsetZ],
+      [BANK_WORLD.hallWidth - 1.2, 0.08, BANK_WORLD.hallDepth - 1.2],
+    );
+    for (const side of [-1, 1]) {
+      add(
+        "wall",
+        [side * (halfWidth + 0.15), 9.1, BANK_WORLD.buildingOffsetZ],
+        [0.25, 0.8, BANK_WORLD.hallDepth + 0.5],
+      );
+      add(
+        "metal",
+        [side * (halfWidth + 0.15), 9.53, BANK_WORLD.buildingOffsetZ],
+        [0.3, 0.06, BANK_WORLD.hallDepth + 0.6],
+      );
+    }
+    for (const z of [front + 0.15, back - 0.15]) {
+      add("wall", [0, 9.1, z], [BANK_WORLD.hallWidth + 0.5, 0.8, 0.25]);
+      add("metal", [0, 9.53, z], [BANK_WORLD.hallWidth + 0.6, 0.06, 0.3]);
+    }
+    for (const x of [-8, -4, 0, 4, 8])
+      for (const z of [back + 5, back + 10]) {
+        add("metal", [x, 9.02, z], [3.35, 0.12, 2.55]);
+        add("dark", [x, 9.18, z], [3.2, 0.08, 2.4]).pitch = -0.18;
+        for (const dx of [-0.8, 0, 0.8])
+          add("metal", [x + dx, 9.2, z], [0.025, 0.025, 2.35]).pitch = -0.18;
+      }
+    add("wall", [-10, 9.5, front - 5], [3.2, 1.3, 3.6]);
+    for (const x of [-10.7, -9.3]) add("metal", [x, 10.2, front - 5], [0.7, 0.12, 1.6]);
+    // Windows, sill bands, sun-shade fins and downpipes continue onto both side elevations.
+    for (const side of [-1, 1]) {
+      for (const y of [2, 6.3])
+        for (let z = back + 3; z < front - 2; z += 4.4) {
+          add("glass", [side * (halfWidth + 0.08), y, z], [0.08, 2.3, 3.1]);
+          add("wall", [side * (halfWidth + 0.2), y - 1.2, z], [0.3, 0.12, 3.3]);
+          for (const dz of [-1.55, 0, 1.55])
+            add("metal", [side * (halfWidth + 0.15), y, z + dz], [0.07, 2.4, 0.055]);
+        }
+      for (const z of [back + 1, back + 9, front - 1])
+        add(
+          d.profile === "colonnade" ? "wood" : "brand",
+          [side * (halfWidth + 0.2), 4.3, z],
+          [0.25, 7.5, 0.2],
+        );
+      add(
+        "brand",
+        [side * (halfWidth + 0.12), 4.5, BANK_WORLD.buildingOffsetZ],
+        [0.22, 0.3, BANK_WORLD.hallDepth],
+      );
+      add("metal", [side * (halfWidth + 0.3), 4, back + 0.6], [0.1, 8, 0.1]).shape = "cylinder";
+    }
     for (const y of [2, 6.4])
-      for (let x = -11; x <= 11; x += 3.1) {
+      for (let x = -13; x <= 13; x += 3.25) {
         if (y === 2 && Math.abs(x - d.entranceX) < 2.5) continue;
-        add("glass", [x, y, 7.15], [2.45, 2.6, 0.08]);
-        for (const dx of [-1.22, 0, 1.22]) add("metal", [x + dx, y, 7.22], [0.055, 2.7, 0.06]);
+        add("glass", [x, y, front + 0.15], [2.6, 2.6, 0.08]);
+        add("wall", [x, y - 1.4, front + 0.25], [2.85, 0.15, 0.3]);
+        for (const dx of [-1.3, 0, 1.3])
+          add("metal", [x + dx, y, front + 0.22], [0.055, 2.7, 0.06]);
       }
-    if (d.profile === "colonnade")
-      for (const x of [-10, -5, 5, 10]) add("wood", [x, 2, 7.9], [0.55, 4, 0.55], true);
-    else {
-      add("brand", [-11.8, 4.15, 7.35], [1.2, 8.3, 0.45]);
-      add("glass", [10.8, 6.3, 7.35], [4, 3.5, 0.12]);
+    if (d.profile === "colonnade") {
+      for (const x of [-2.4, 2.4])
+        for (const z of [front + 0.4, front + 2.3]) {
+          add("wood", [x, 1.65, z], [0.4, 3.3, 0.4], true);
+          add("wall", [x, 0.2, z], [0.65, 0.4, 0.65], true);
+        }
+      add("brand", [0, 3.45, front + 1.4], [5.7, 0.3, 3.4]);
+      add("wall", [0, 3.67, front + 1.4], [5.9, 0.15, 3.5]);
+      for (const x of [-6.5, 6.5]) add("wood", [x, 6.4, front + 0.35], [0.35, 3.4, 0.45]);
+      add("brand", [0, 9.45, front + 0.25], [10.5, 0.6, 0.35]);
+    } else {
+      for (const x of [d.entranceX - 2.4, d.entranceX + 2.4])
+        add("brand", [x, 4.4, front + 0.4], [0.65, 8.8, 0.7]);
+      add("brand", [d.entranceX, 3.5, front + 1.3], [6.1, 0.24, 3.3]);
+      add("metal", [d.entranceX, 3.7, front + 1.4], [6.5, 0.12, 3.4]);
+      add("glass", [10.6, 6.4, front + 0.55], [6.8, 3.2, 0.5]);
+      add("brand", [10.6, 8.15, front + 0.65], [7.2, 0.25, 0.7]);
+      for (const x of [8, 9.8, 11.6, 13.4]) add("metal", [x, 6.4, front + 0.84], [0.06, 3.3, 0.06]);
     }
-    const entrance = fixture("entrance", "Enter banking hall", [d.entranceX, 8.4], "hall");
-    add("dark", [d.entranceX, 1.5, 7.22], [3.5, 3, 0.16], false, entrance);
-    add("glass", [d.entranceX, 1.5, 7.33], [3.1, 2.85, 0.1], false, entrance);
-    add("metal", [d.entranceX, 1.5, 7.43], [0.06, 2.9, 0.05]);
-    add("brand", [d.entranceX, 3.2, 8.1], [5.5, 0.2, 2.8]);
-    sign(d.name.toUpperCase(), [0, 5.05, 7.42], 13);
-    sign("ATM • 24 HOURS", [d.galleryStart + 4, 3.15, 8.05], 8);
-    for (let i = 0; i < 5; i++) atm(d.galleryStart + i * 2, 7.5, i);
-    add("brand", [d.galleryStart + 4, 2.95, 8.3], [10.6, 0.18, 2.4]);
+    const entrance = fixture("entrance", "Enter banking hall", [d.entranceX, front + 1.4], "hall");
+    add("dark", [d.entranceX, 1.5, front + 0.22], [3.4, 3, 0.16], false, entrance);
+    add("glass", [d.entranceX, 1.5, front + 0.33], [3.1, 2.85, 0.1], false, entrance);
+    for (const dx of [-1.6, 0, 1.6])
+      add("metal", [d.entranceX + dx, 1.5, front + 0.43], [0.06, 2.95, 0.05], false, entrance);
+    for (const dx of [-0.18, 0.18])
+      add("metal", [d.entranceX + dx, 1.35, front + 0.5], [0.05, 0.7, 0.08], false, entrance);
+    sign(d.name.toUpperCase(), [0, 5.05, front + 0.6], 13);
+    // The separate ATM gallery has its own canopy, lighting and unobstructed approach lane.
+    for (let i = 0; i < 5; i++) atm(d.galleryStart + i * 2, front + 0.55, i);
+    const galleryX = d.galleryStart + 4;
+    add("brand", [galleryX, 2.95, front + 1.35], [10.6, 0.18, 2.4]);
+    add("metal", [galleryX, 3.09, front + 1.35], [10.8, 0.1, 2.5]);
+    sign("ATM • 24 HOURS", [galleryX, 2.76, front + 2.58], 8);
     for (const x of [d.galleryStart - 1, d.galleryStart + 9])
-      add("metal", [x, 1.45, 9.2], [0.12, 2.9, 0.12], true);
-    // Eight or ten parking bays flank the pedestrian spine; no fake parked vehicles.
-    for (const side of [-1, 1])
-      for (let i = 0; i < d.parkingBays / 2; i++) {
-        const z = -6 + i * 3.4,
-          x = side * 17.5;
-        add("marking", [x, 0.015, z], [5, 0.025, 0.08]);
-        add("marking", [x + side * 2.5, 0.015, z + 1.6], [0.08, 0.025, 3.3]);
-        add("metal", [side * 13.9, 0.4, z], [0.18, 0.8, 0.18], true);
+      add("metal", [x, 1.45, front + 2.3], [0.12, 2.9, 0.12], true);
+    for (let i = 0; i < 5; i++)
+      add("led", [d.galleryStart + i * 2, 2.82, front + 1.25], [0.7, 0.04, 0.6]);
+    add("wall", [d.entranceX, 0.025, front + 5.3], [2.2, 0.05, 9]);
+    // Parking bays stay outside the building, with a clear side pedestrian path and low kerbs.
+    for (const side of [-1, 1]) {
+      const px = side * (halfWidth + 5);
+      for (let i = 0; i <= d.parkingBays / 2; i++)
+        add("marking", [px, 0.015, back + 8 + i * 3.2], [5, 0.025, 0.08]);
+      add(
+        "marking",
+        [px + side * 2.5, 0.015, back + 8 + d.parkingBays * 0.8],
+        [0.08, 0.025, d.parkingBays * 1.6],
+      );
+      add("wall", [side * (halfWidth + 1.7), 0.025, -1], [1.25, 0.05, layout.depth - 9]);
+      for (const z of [-10, -3, 4])
+        add("metal", [side * (halfWidth + 2.35), 0.45, z], [0.2, 0.9, 0.2], true).shape =
+          "cylinder";
+      for (const z of [-8, 8]) {
+        add("metal", [side * (lotX - 1.3), 2, z], [0.12, 4, 0.12], true).shape = "cylinder";
+        add("metal", [side * (lotX - 1.3), 4, z], [0.45, 0.2, 0.7]);
+        add("led", [side * (lotX - 1.3), 3.87, z], [0.4, 0.04, 0.6]);
       }
-    add("marking", [d.entranceX, 0.02, 12], [2.2, 0.025, 6]);
-    for (const side of [-1, 1]) add("metal", [side * 22.25, 1.1, 0], [0.16, 2.2, 35], true);
-    for (const [x, w] of [
-      [-12.5, 19],
-      [12.5, 19],
-    ] as const)
-      add("metal", [x, 1.1, 17.2], [w, 2.2, 0.15], true);
-    add("metal", [0, 0.7, 17.1], [5.8, 0.08, 0.08]);
-    add("wall", [-17.5, 1.4, 13.4], [3.5, 2.8, 3], true);
-    add("glass", [-17.5, 1.8, 15], [2.5, 1.1, 0.05]);
-    sign("SECURITY", [-17.5, 2.65, 15], 3);
-    add("wall", [18, 1.4, -13], [6, 2.8, 6], true);
-    add("brand", [18, 3, -13], [6.3, 0.2, 6.3]);
-    for (const x of [16.5, 19.5]) {
-      add("dark", [x, 1, -13], [2, 1.5, 3]);
-      add("metal", [x, 2.1, -13], [0.3, 1.2, 0.3]);
     }
-    sign("POWER / INVERTER", [18, 2.3, -9.92], 5);
-    for (const x of [-20, 20]) for (const z of [-8, 4]) plant(x, z);
+    // Low masonry and spaced rails make the compound readable without hiding the frontage.
+    for (const side of [-1, 1]) {
+      add("wall", [side * (lotX - 0.25), 0.3, 0], [0.3, 0.6, layout.depth], true);
+      for (let z = -lotZ + 0.6; z < lotZ; z += 1.3)
+        add("metal", [side * (lotX - 0.25), 1.1, z], [0.06, 1.1, 0.06]);
+      add("metal", [side * (lotX - 0.25), 1.7, 0], [0.08, 0.07, layout.depth]);
+    }
+    const gateZ = lotZ - 0.4,
+      leftEnd = d.entranceX - 3.7,
+      rightStart = d.entranceX + 3.7;
+    for (const [left, right] of [
+      [-lotX, leftEnd],
+      [rightStart, lotX],
+    ] as const) {
+      const center = (left + right) / 2,
+        width = right - left;
+      add("wall", [center, 0.3, gateZ], [width, 0.6, 0.3], true);
+      add("metal", [center, 1.65, gateZ], [width, 0.08, 0.1]);
+      for (let x = left + 0.3; x < right; x += 1.3)
+        add("metal", [x, 1.05, gateZ], [0.06, 1.2, 0.06]);
+    }
+    // The sliding gate is parked alongside the fence, leaving the entrance visibly open.
+    add("metal", [leftEnd - 3, 1, gateZ - 0.18], [6, 1.7, 0.12]);
+    const boothX = -lotX + 4,
+      boothZ = lotZ - 4.3;
+    add("wall", [boothX, 1.4, boothZ], [3.5, 2.8, 3], true);
+    add("brand", [boothX, 2.9, boothZ], [3.9, 0.2, 3.4]);
+    add("glass", [boothX, 1.8, boothZ + 1.55], [2.7, 1.15, 0.06]);
+    sign("SECURITY", [boothX, 2.65, boothZ + 1.62], 3);
+    const utilityX = lotX - 4.3;
+    add("wall", [utilityX, 1.4, back + 3.5], [6, 2.8, 6], true);
+    add("brand", [utilityX, 3, back + 3.5], [6.3, 0.2, 6.3]);
+    for (const x of [utilityX - 1.4, utilityX + 1.4]) {
+      add("dark", [x, 1, back + 3.5], [2, 1.5, 3]);
+      add("metal", [x, 2.1, back + 3.5], [0.3, 1.2, 0.3]);
+    }
+    sign("POWER / INVERTER", [utilityX, 2.3, back + 6.6], 5);
+    for (const x of [-lotX + 2, lotX - 2]) for (const z of [back + 1, 6, 12]) plant(x, z);
+    for (const x of [-lotX + 2, lotX - 2]) {
+      add("wood", [x, 1.25, 15], [0.22, 2.5, 0.22], true).shape = "cylinder";
+      add("foliage", [x, 3, 15], [2.4, 3, 2.4]).shape = "sphere";
+    }
     return layout;
   }
 
-  add("floor", [0, -0.1, 0], [26, 0.2, 24]);
-  for (let x = -12; x <= 12; x += 2) add("metal", [x, 0.003, 0], [0.012, 0.004, 24]);
-  for (let z = -11; z <= 11; z += 2) add("metal", [0, 0.003, z], [26, 0.004, 0.012]);
-  add("wall", [0, 2.25, -11.8], [26, 4.5, 0.25], true);
-  add("wall", [-12.8, 2.25, 0], [0.25, 4.5, 24], true);
-  add("wall", [12.8, 0.35, 0], [0.25, 0.7, 24], true);
+  add("floor", [0, -0.1, 0], [layout.width, 0.2, layout.depth]);
+  for (let x = -halfWidth + 1; x < halfWidth; x += 2)
+    add("metal", [x, 0.003, 0], [0.012, 0.004, layout.depth]);
+  for (let z = -halfDepth + 1; z < halfDepth; z += 2)
+    add("metal", [0, 0.003, z], [layout.width, 0.004, 0.012]);
+  add("wall", [0, 2.25, -halfDepth + 0.2], [layout.width, 4.5, 0.25], true);
+  add("wall", [-halfWidth + 0.2, 2.25, 0], [0.25, 4.5, layout.depth], true);
+  add("wall", [halfWidth - 0.2, 0.35, 0], [0.25, 0.7, layout.depth], true);
   // Ceiling lights sit along the rear/side soffits, leaving the playable cutaway unobscured.
-  for (const x of [-10, -5, 0, 5, 10]) {
-    add("wall", [x, 4.2, -10.8], [2, 0.3, 1.5]);
-    add("led", [x, 4, -10.8], [1.6, 0.03, 1.2]);
+  for (const x of [-12, -6, 0, 6, 12]) {
+    add("wall", [x, 4.2, -halfDepth + 0.85], [2, 0.3, 1.5]);
+    add("led", [x, 4, -halfDepth + 0.85], [1.6, 0.03, 1.2]);
   }
-  for (const z of [-8, -3, 2, 7]) add("glass", [-12.64, 2.6, z], [0.05, 2.4, 3]);
-  const sx = d.stairSide * 10;
+  for (const z of [-9, -3.5, 2, 7.5]) add("glass", [-halfWidth + 0.36, 2.6, z], [0.05, 2.4, 3]);
+  const sx = d.stairSide * BANK_WORLD.stairX;
   const stair = fixture(
     "stairs",
     area === "hall" ? "Upstairs customer care" : "Downstairs banking hall",
@@ -246,19 +392,26 @@ export function buildBankWorld(
   sign(area === "hall" ? "CUSTOMER CARE ↑" : "BANKING HALL ↓", [sx, 3.3, 3.6], 3.4);
 
   if (area === "hall") {
-    const entry = d.entranceX;
+    const entry = d.entranceX,
+      scanZ = BANK_WORLD.scannerZ,
+      tellerZ = BANK_WORLD.tellerZ;
     for (const x of [entry - 2.05, entry + 2.05])
-      add("glass", [x, 1.8, 9.4], [0.12, 3.6, 3.2], true);
-    add("metal", [entry, 2.8, 9.4], [4.2, 0.22, 0.3]);
-    add("metal", [entry - 1.5, 1.35, 9.4], [0.16, 2.7, 0.3], true);
-    add("metal", [entry + 1.5, 1.35, 9.4], [0.16, 2.7, 0.3], true);
-    const out = fixture("exit", "Leave hall for ATM gallery", [entry, 10.7], "grounds");
-    add("brand", [entry + 2.8, 0.7, 9.2], [1.2, 1.4, 1], true, out);
-    computer(entry + 2.8, 9.2, 1.4);
-    sign("SECURITY SCAN", [entry, 3.1, 9.5], 3.5);
+      add("glass", [x, 1.8, scanZ], [0.12, 3.6, 3.2], true);
+    add("metal", [entry, 2.8, scanZ], [4.2, 0.22, 0.3]);
+    add("metal", [entry - 1.5, 1.35, scanZ], [0.16, 2.7, 0.3], true);
+    add("metal", [entry + 1.5, 1.35, scanZ], [0.16, 2.7, 0.3], true);
+    const out = fixture(
+      "exit",
+      "Leave hall for ATM gallery",
+      [entry, BANK_WORLD.outerDoorZ - 0.4],
+      "grounds",
+    );
+    add("brand", [entry + 2.8, 0.7, scanZ - 0.2], [1.2, 1.4, 1], true, out);
+    computer(entry + 2.8, scanZ - 0.2, 1.4);
+    sign("SECURITY SCAN", [entry, 3.1, scanZ + 0.1], 3.5);
     // Five or six screened teller positions across a sixteen metre service line.
-    add("brand", [0, 2.1, -11.55], [18, 3.8, 0.15]);
-    sign(d.name.toUpperCase(), [0, 3, -11.35], 10);
+    add("brand", [0, 2.1, -halfDepth + 0.45], [18, 3.8, 0.15]);
+    sign(d.name.toUpperCase(), [0, 3, -halfDepth + 0.65], 10);
     const count = d.tellers,
       spacing = 16 / count;
     for (let i = 0; i < count; i++) {
@@ -266,45 +419,45 @@ export function buildBankWorld(
         id = fixture(
           `teller-${i}`,
           i === count - 1 ? "Corporate teller" : `Cash teller ${i + 1}`,
-          [x, -5.1],
+          [x, tellerZ + 1.9],
           "teller",
         );
-      add("wood", [x, 0.6, -7], [spacing - 0.05, 1.2, 1.15], true, id);
-      add("metal", [x, 1.23, -7], [spacing, 0.1, 1.3], false, id);
-      add("glass", [x, 1.95, -7.1], [spacing - 0.12, 1.35, 0.06], false, id);
-      add("metal", [x - spacing / 2, 1.95, -7.1], [0.07, 1.5, 0.07]);
-      add("metal", [x, 1.32, -6.65], [0.55, 0.04, 0.4]);
-      computer(x, -7.5, 1.28);
-      add("dark", [x + 0.7, 1.42, -7.2], [0.45, 0.25, 0.35]);
-      add("dark", [x - 0.6, 1.4, -6.8], [0.18, 0.2, 0.25]);
+      add("wood", [x, 0.6, tellerZ], [spacing - 0.05, 1.2, 1.15], true, id);
+      add("metal", [x, 1.23, tellerZ], [spacing, 0.1, 1.3], false, id);
+      add("glass", [x, 1.95, tellerZ - 0.1], [spacing - 0.12, 1.35, 0.06], false, id);
+      add("metal", [x - spacing / 2, 1.95, tellerZ - 0.1], [0.07, 1.5, 0.07]);
+      add("metal", [x, 1.32, tellerZ + 0.35], [0.55, 0.04, 0.4]);
+      computer(x, tellerZ - 0.5, 1.28);
+      add("dark", [x + 0.7, 1.42, tellerZ - 0.2], [0.45, 0.25, 0.35]);
+      add("dark", [x - 0.6, 1.4, tellerZ + 0.2], [0.18, 0.2, 0.25]);
     }
-    const seatX = -d.stairSide * 5;
-    for (const z of [0, 2, 4])
+    const seatX = -d.stairSide * 6;
+    for (const z of [-0.5, 2, 4.5])
       for (const dx of [-1, 0, 1]) {
         const x = seatX + dx * 0.9,
           id = fixture(`seat-${x}-${z}`, "Waiting chair", [x, z + 1], "seat");
         chair(x, z, id);
       }
-    const kiosk = fixture("ticket", "Queue and teller services", [entry, 6.2], "teller");
-    add("brand", [entry + 0.9, 0.65, 5.5], [0.6, 1.3, 0.55], true, kiosk);
-    add("screen", [entry + 0.9, 1.35, 5.8], [0.5, 0.4, 0.04], false, kiosk);
-    sign("ACCOUNT & CASH SERVICES", [0, 3.1, -6.95], 7);
+    const kiosk = fixture("ticket", "Queue and teller services", [entry, 8.2], "teller");
+    add("brand", [entry + 0.9, 0.65, 7.5], [0.6, 1.3, 0.55], true, kiosk);
+    add("screen", [entry + 0.9, 1.35, 7.8], [0.5, 0.4, 0.04], false, kiosk);
+    sign("ACCOUNT & CASH SERVICES", [0, 3.1, tellerZ + 0.05], 7);
     for (const x of [-1.6, 1.6])
       for (const z of [-3, -1, 1]) {
         add("metal", [x, 0.5, z], [0.08, 1, 0.08], true);
         add("dark", [x, 0.9, z + 0.8], [0.04, 0.06, 1.6]);
       }
-    const formsX = d.stairSide * 5;
-    add("wood", [formsX, 1.1, 2], [2.8, 0.15, 1.2], true);
-    add("metal", [formsX, 0.55, 2], [0.12, 1.1, 0.9]);
-    for (const dx of [-0.7, 0, 0.7]) add("marking", [formsX + dx, 1.19, 2.15], [0.4, 0.01, 0.55]);
-    for (const x of [-11, 11]) plant(x, -9.8);
+    const formsX = d.stairSide * 6;
+    add("wood", [formsX, 1.1, 3], [2.8, 0.15, 1.2], true);
+    add("metal", [formsX, 0.55, 3], [0.12, 1.1, 0.9]);
+    for (const dx of [-0.7, 0, 0.7]) add("marking", [formsX + dx, 1.19, 3.15], [0.4, 0.01, 0.55]);
+    for (const x of [-13, 13]) plant(x, -11);
     return layout;
   }
 
   // Four account-opening cubicles, with a different orientation and glazing rhythm per branch.
   for (let i = 0; i < 4; i++) {
-    const x = d.profile === "colonnade" ? -7 + i * 4.5 : -6 + i * 4,
+    const x = d.profile === "colonnade" ? -8 + i * 5.5 : -8 + i * 6,
       z = d.profile === "colonnade" ? 3 : i % 2 ? 4 : 1.5;
     const id = fixture(`care-${i}`, `Customer care desk ${i + 1}`, [x, z + 1.5], "teller");
     desk(x, z, id);
@@ -312,20 +465,20 @@ export function buildBankWorld(
     add("brand", [x - 1.7, 1.3, z], [0.09, 0.25, 2.5]);
   }
   // Loan/advisory room is architectural only until real server-backed products are available.
-  for (const x of [-9.5, -4.5]) add("glass", [x, 1.5, -3.5], [3, 3, 0.08], true);
-  add("glass", [-2.9, 1.5, -7.4], [0.08, 3, 8], true);
-  add("wood", [-7, 0.8, -7], [4, 0.15, 1.8], true);
-  for (const x of [-8.2, -5.8]) for (const z of [-8.4, -5.6]) chair(x, z);
-  sign("CREDIT & WEALTH ADVISORY", [-7, 3, -3.35], 7);
-  const manager = fixture("manager-desk", "Account relationship desk", [3, -4.5], "teller");
-  desk(3, -6, manager, 3.5);
-  add("brand", [3, 2.3, -11.5], [6, 3, 0.15]);
-  sign("BRANCH MANAGER", [3, 3, -11.25], 5);
-  add("wall", [10, 1.8, -8], [4, 3.6, 6], true);
-  add("metal", [10, 1.6, -4.91], [2.3, 3.2, 0.16], true);
-  sign("RESTRICTED • VAULT / SERVER", [10, 3.5, -4.78], 4);
-  plant(-11, 9);
-  plant(11, 9);
+  for (const x of [-10.5, -5.5]) add("glass", [x, 1.5, -3.5], [3, 3, 0.08], true);
+  add("glass", [-3.9, 1.5, -8.4], [0.08, 3, 9.8], true);
+  add("wood", [-8, 0.8, -8], [4, 0.15, 1.8], true);
+  for (const x of [-9.2, -6.8]) for (const z of [-9.4, -6.6]) chair(x, z);
+  sign("CREDIT & WEALTH ADVISORY", [-8, 3, -3.35], 7);
+  const manager = fixture("manager-desk", "Account relationship desk", [3, -5.5], "teller");
+  desk(3, -7, manager, 3.5);
+  add("brand", [3, 2.3, -halfDepth + 0.3], [6, 3, 0.15]);
+  sign("BRANCH MANAGER", [3, 3, -halfDepth + 0.55], 5);
+  add("wall", [12, 1.8, -9], [4.4, 3.6, 7.4], true);
+  add("metal", [12, 1.6, -5.2], [2.3, 3.2, 0.16], true);
+  sign("RESTRICTED • VAULT / SERVER", [12, 3.5, -5.08], 4);
+  plant(-13, 10);
+  plant(13, 10);
   return layout;
 }
 
@@ -349,4 +502,9 @@ export function bankObstaclePolygons(layout: BankWorldLayout): BankObstaclePolyg
           ] as const,
       );
     });
+}
+
+/** Low floor finishes and painted markings must pass clicks to walking, regardless of material. */
+export function isBankWalkSurface(part: BankPart): boolean {
+  return !part.blocking && part.position[1] + part.size[1] / 2 <= 0.12;
 }

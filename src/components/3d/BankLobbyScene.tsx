@@ -172,7 +172,10 @@ function BankWorld({
         key: person.id,
         name: person.name,
         appearance: person.appearance,
-        target: [i === 0 ? -5 : i === 1 ? 5 : -8, i < 2 ? -9 : 7] as WalkPoint,
+        target: [
+          i === 0 ? -5 : i === 1 ? 5 : -8,
+          i < 2 ? BANK_WORLD.tellerZ - 1.8 : 7,
+        ] as WalkPoint,
       })),
       ...players.slice(0, 5).map((person, i) => ({
         key: person.characterId,

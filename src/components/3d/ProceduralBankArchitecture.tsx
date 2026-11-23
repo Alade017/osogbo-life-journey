@@ -3,6 +3,9 @@ import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { CanvasTexture, Group, InstancedMesh, Object3D, SRGBColorSpace } from "three";
 import {
   BANK_BRANCH_DESIGNS,
+  BANK_WORLD,
+  isBankWalkSurface,
+  type BankShape,
   type BankPart,
   type BankPoint,
   type BankSurface,
@@ -50,12 +53,14 @@ function BankSign({
 function PartBatch({
   parts,
   surface,
+  shape,
   branch,
   onSelect,
   onWalk,
 }: {
   parts: BankPart[];
   surface: BankSurface;
+  shape: BankShape;
   branch: BankSlug;
   onSelect: (id: string) => void;
   onWalk: (point: BankPoint) => void;
@@ -69,7 +74,7 @@ function PartBatch({
     parts.forEach((part, i) => {
       object.position.set(...part.position);
       object.scale.set(...part.size);
-      object.rotation.set(0, part.yaw ?? 0, 0);
+      object.rotation.set(part.pitch ?? 0, part.yaw ?? 0, 0);
       object.updateMatrix();
       ref.current!.setMatrixAt(i, object.matrix);
     });
@@ -103,11 +108,16 @@ function PartBatch({
         if (!part) return;
         event.stopPropagation();
         if (part.fixture) onSelect(part.fixture);
-        else if ((surface === "floor" || surface === "paving") && !part.blocking)
-          onWalk([event.point.x, 0, event.point.z]);
+        else if (isBankWalkSurface(part)) onWalk([event.point.x, 0, event.point.z]);
       }}
     >
-      <boxGeometry />
+      {shape === "cylinder" ? (
+        <cylinderGeometry args={[0.5, 0.5, 1, 10]} />
+      ) : shape === "sphere" ? (
+        <icosahedronGeometry args={[0.5, 1]} />
+      ) : (
+        <boxGeometry />
+      )}
       <meshStandardMaterial
         color={colors[surface]}
         roughness={surface === "floor" ? 0.15 : surface === "metal" ? 0.3 : 0.8}
@@ -144,7 +154,7 @@ function SecurityDoors({ x, open }: { x: number; open: boolean }) {
   useEffect(invalidate, [open, invalidate]);
   return (
     <>
-      {[8, 11].map((z, i) => (
+      {[BANK_WORLD.innerDoorZ, BANK_WORLD.outerDoorZ].map((z, i) => (
         <group key={z} ref={i === 0 ? first : second} position={[x - 1.3, 0, z]}>
           <mesh position={[1.3, 1.3, 0]}>
             <boxGeometry args={[2.6, 2.6, 0.07]} />
@@ -180,21 +190,24 @@ export function ProceduralBankArchitecture({
   onWalk?: (point: BankPoint) => void;
 }) {
   const batches = useMemo(() => {
-    const groups = new Map<BankSurface, BankPart[]>();
+    const groups = new Map<string, { surface: BankSurface; shape: BankShape; parts: BankPart[] }>();
     for (const part of layout.parts) {
-      const batch = groups.get(part.surface) ?? [];
-      batch.push(part);
-      groups.set(part.surface, batch);
+      const shape = part.shape ?? "box",
+        key = part.surface + ":" + shape;
+      const batch = groups.get(key) ?? { surface: part.surface, shape, parts: [] };
+      batch.parts.push(part);
+      groups.set(key, batch);
     }
-    return [...groups];
+    return [...groups.entries()];
   }, [layout]);
   return (
     <group name={`procedural-bank:${branch}:${layout.area}`}>
-      {batches.map(([surface, parts]) => (
+      {batches.map(([key, { surface, shape, parts }]) => (
         <PartBatch
-          key={surface}
+          key={key}
           parts={parts}
           surface={surface}
+          shape={shape}
           branch={branch}
           onSelect={onSelect}
           onWalk={onWalk}

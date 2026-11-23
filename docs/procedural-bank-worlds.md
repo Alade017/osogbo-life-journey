@@ -6,15 +6,19 @@ The bank rebuild uses the supplied **Osun Commercial Bank Environment & Technica
 
 `src/game/bank-world-layout.ts` owns dimensions, solid parts, fixtures, entrances, standing slots and signs. `ProceduralBankArchitecture` batches repeated geometry by material. `BankLobbyScene` keeps one Canvas mounted while switching between the courtyard, hall and first-floor cutaway. An upper-floor cutaway is normalized to ground height for its camera; the exterior still shows the two physical storeys and 4.5 m floor division.
 
-| Section         | Cedar                                                                                                      | Meridian                                                   |
-| --------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Identity        | Emerald, warm timber and cream                                                                             | Navy, pale stone and glass                                 |
-| Frontage        | Symmetrical colonnade and central entrance                                                                 | Glass wing and offset entrance                             |
-| Courtyard       | 8 parking bays                                                                                             | 10 parking bays                                            |
-| Teller line     | 5 windows                                                                                                  | 6 windows                                                  |
-| Staircase       | Left side                                                                                                  | Right side                                                 |
-| Customer care   | Four aligned cubicles                                                                                      | Four staggered cubicles                                    |
-| Shared compound | 45 × 35 m, five exterior ATMs, CCTV details, gate/security booth, power annex, shaded walkway and bollards | Same functions with the branch's own palette and placement |
+The revised interior is 30 × 27 m (810 m² per floor), enlarged from 26 × 24 m (624 m²). Furniture keeps its existing dimensions. The matching exterior footprint and 50 × 40 m compound preserve room for parking, side paths and the exterior ATM gallery. Dimensions supersede the original specification in response to the requested larger interiors.
+
+| Section         | Cedar                                                                                                      | Meridian                                                     |
+| --------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| Identity        | Emerald, warm timber and cream                                                                             | Navy, pale stone and glass                                   |
+| Frontage        | Central timber portico, stepped parapet and symmetrical entrance                                           | Navy entrance frame, projecting glass wing and offset canopy |
+| Courtyard       | 8 parking bays                                                                                             | 10 parking bays                                              |
+| Teller line     | 5 windows                                                                                                  | 6 windows                                                    |
+| Staircase       | Left side                                                                                                  | Right side                                                   |
+| Customer care   | Four aligned cubicles                                                                                      | Four staggered cubicles                                      |
+| Shared compound | 50 × 40 m, five exterior ATMs, CCTV details, gate/security booth, power annex, shaded walkway and bollards | Same functions with the branch's own palette and placement   |
+
+Exterior refinements include side-elevation windows and sill bands, downpipes, inset roof decks and parapets, tilted solar modules, separate entrance/ATM canopies, open gate geometry, parking stripes outside the utility annex, kerbed side paths, lighting columns and rounded planters/trees. Box, cylinder and faceted-sphere shapes remain instanced by material and shape.
 
 The ground floor includes the security vestibule, metal-detector frame, waiting chairs, writing/forms table, queue-service kiosk, screened teller windows, cash trays, workstations and counting/POS props. Upstairs includes account desks, a meeting/advisory room, manager desk and a blocked vault/server section. Linked chairs, stanchions, lights, workstations and bollards share instanced material batches rather than allocating a separate draw per prop.
 
