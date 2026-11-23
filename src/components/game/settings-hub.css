@@ -566,3 +566,68 @@
     border-radius: 50%;
     overflow: hidden;
 }
+
+/* UI-05: Retain the established section order and form actions while
+   simplifying secondary card chrome. Works in the in-game phone container. */
+.sx-page .sx-card {
+  min-width: 0;
+  box-shadow: none;
+}
+
+.sx-page .sx-card-head {
+  min-width: 0;
+}
+
+.sx-page .sx-card-head p {
+  max-width: 58ch;
+  line-height: 1.45;
+}
+
+.sx-page .sx-card-body,
+.sx-page .sx-field,
+.sx-page .sx-inline {
+  min-width: 0;
+}
+
+/* UI-06: Clear selected tile state and consistent action hierarchy.
+   No hardcoded color values; all colors come from existing game tokens. */
+.sx-page .sx-tile-choice {
+  min-width: 0;
+  border-color: var(--border);
+  color: var(--foreground);
+  background: var(--card);
+}
+
+.sx-page .sx-tile-choice[aria-checked="true"] {
+  border-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 32%, var(--card));
+  box-shadow: inset 0 0 0 1px var(--brand-royal);
+}
+
+.sx-page .sx-tile-sample {
+  background: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.sx-page .sx-btn-primary:not(:disabled) {
+  border-color: var(--brand-royal);
+  background: var(--brand-royal);
+  color: var(--primary-foreground);
+}
+
+.sx-page .sx-btn-ghost:not(:disabled) {
+  border-color: var(--border);
+  background: var(--card);
+  color: var(--brand-ink);
+}
+
+.sx-page :is(.sx-tile-choice, .sx-btn-primary, .sx-btn-ghost, .sx-btn-danger):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sx-page :is(.sx-tile-choice, .sx-btn-primary, .sx-btn-ghost, .sx-btn-danger) {
+    transition: none;
+  }
+}
