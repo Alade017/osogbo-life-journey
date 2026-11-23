@@ -1689,9 +1689,10 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     ? placementPoint(selectedPlacement, slots, roomWidth, roomDepth)
     : null;
   const selectedRoomLabel = selectedPoint
-    ? (roomViews.find((room) => roomViewContains(room, selectedPoint[0], selectedPoint[2]))?.label
-      ?? serverState?.house?.house_type.label
-      ?? "Home")
+    ? (roomViews.find((room) => roomViewContains(room, selectedPoint[0], selectedPoint[2]))
+        ?.label ??
+      serverState?.house?.house_type.label ??
+      "Home")
     : "Home";
 
   if (characterLoading || (stateQuery.isLoading && !snapshot))
@@ -1965,7 +1966,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             outside.kind !== null ||
             (!editing && (!isInsideHome || !!selectedPlacement))
           }
-          selectedPlacementId={!editing ? selectedPlacement?.id ?? null : null}
+          selectedPlacementId={!editing ? (selectedPlacement?.id ?? null) : null}
           houseTypeId={house.house_type_id}
           lightOn={lightOn}
           wallsClosed={editing ? wallsSetting : false}

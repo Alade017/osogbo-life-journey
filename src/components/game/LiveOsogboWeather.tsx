@@ -38,7 +38,9 @@ export function LiveOsogboWeather({ compact = false }: { compact?: boolean }) {
               <span>{Math.round(current.temperature)}°C · Osogbo</span>
             </span>
           ) : (
-            <>Osogbo · {Math.round(current.temperature)}°C · {weatherDescription(current.code)}</>
+            <>
+              Osogbo · {Math.round(current.temperature)}°C · {weatherDescription(current.code)}
+            </>
           )}
           <small>
             · {current.isDay ? "Day" : "Night"} · {updated} WAT{stale ? " · Update delayed" : ""} ·

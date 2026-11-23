@@ -19,7 +19,8 @@
   overflow: hidden;
 }
 
-.game-shell.city-game.navigation-redesign.home-hud :is(.city-game-frame, .city-game-content, .city-game-main) {
+.game-shell.city-game.navigation-redesign.home-hud
+  :is(.city-game-frame, .city-game-content, .city-game-main) {
   width: 100%;
   height: 100%;
   min-height: 0;
@@ -161,7 +162,9 @@
   font-weight: 700;
   white-space: nowrap;
 }
-.game-shell.city-game.navigation-redesign.home-hud > .world-environment > :is(.world-event, [role="status"], .world-outage) {
+.game-shell.city-game.navigation-redesign.home-hud
+  > .world-environment
+  > :is(.world-event, [role="status"], .world-outage) {
   flex: 0 1 auto;
   width: max-content;
   max-width: 40%;
@@ -250,7 +253,9 @@
   margin-left: auto;
   pointer-events: auto;
 }
-.game-shell.city-game.navigation-redesign.home-hud .home-dashboard :is(.hd-icon-button, .hd-balance) {
+.game-shell.city-game.navigation-redesign.home-hud
+  .home-dashboard
+  :is(.hd-icon-button, .hd-balance) {
   min-height: 72px;
   border: 1px solid var(--home-edge);
   border-radius: 24px;
@@ -373,7 +378,9 @@
   list-style: none;
   cursor: pointer;
 }
-.game-shell.city-game.navigation-redesign.home-hud .home-tools-menu > summary::-webkit-details-marker {
+.game-shell.city-game.navigation-redesign.home-hud
+  .home-tools-menu
+  > summary::-webkit-details-marker {
   display: none;
 }
 .game-shell.city-game.navigation-redesign.home-hud .home-tools-content {
@@ -395,7 +402,9 @@
   color: var(--foreground);
   box-shadow: var(--home-shadow);
 }
-.game-shell.city-game.navigation-redesign.home-hud .home-tools-menu:not([open]) > .home-tools-content {
+.game-shell.city-game.navigation-redesign.home-hud
+  .home-tools-menu:not([open])
+  > .home-tools-content {
   display: none;
 }
 .game-shell.city-game.navigation-redesign.home-hud .home-tools-content .house-edit-toggle {
@@ -403,7 +412,9 @@
   grid-column: 1 / -1;
   min-height: 44px;
 }
-.game-shell.city-game.navigation-redesign.home-hud .home-tools-content :is(.house-light-switch, .house-walls-switch) {
+.game-shell.city-game.navigation-redesign.home-hud
+  .home-tools-content
+  :is(.house-light-switch, .house-walls-switch) {
   position: static;
   inset: auto;
   display: grid;
@@ -559,7 +570,10 @@
   font-size: 12px;
   font-weight: 750;
 }
-.game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) svg {
+.game-shell.city-game.navigation-redesign.home-hud
+  > .gbb:not(.is-open)
+  :is(.gbb-link, .gbb-phone)
+  svg {
   flex: none;
   width: 26px;
   height: 26px;
@@ -568,7 +582,10 @@
   background: color-mix(in srgb, var(--primary) 12%, var(--card));
   color: var(--primary);
 }
-.game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) .gbb-phone .phone-launcher-icon {
+.game-shell.city-game.navigation-redesign.home-hud
+  > .gbb:not(.is-open)
+  .gbb-phone
+  .phone-launcher-icon {
   width: 26px;
   height: 26px;
 }
@@ -577,7 +594,9 @@
   inset: auto var(--home-gutter) calc(var(--home-bottom) + 112px) auto;
   max-width: min(370px, calc(100% - 2 * var(--home-gutter)));
 }
-.game-shell.city-game.navigation-redesign.home-hud aside.game-needs-rail[aria-label] .game-needs-toggle {
+.game-shell.city-game.navigation-redesign.home-hud
+  aside.game-needs-rail[aria-label]
+  .game-needs-toggle {
   min-height: 64px;
   gap: 14px;
   padding: 10px 20px;
@@ -594,8 +613,10 @@
   min-height: 34px;
   font-size: 13px;
 }
-.game-shell.city-game.navigation-redesign.home-hud:has(.home-tools-menu[open]) aside.game-needs-rail,
-.game-shell.city-game.navigation-redesign.home-hud:is(.phone-open, .hud-menu-open) .home-player-status {
+.game-shell.city-game.navigation-redesign.home-hud:has(.home-tools-menu[open])
+  aside.game-needs-rail,
+.game-shell.city-game.navigation-redesign.home-hud:is(.phone-open, .hud-menu-open)
+  .home-player-status {
   visibility: hidden;
   pointer-events: none;
 }
@@ -711,10 +732,16 @@
   text-align: left;
   cursor: pointer;
 }
-.game-shell.city-game.navigation-redesign.home-hud .home-furniture-actions > button > svg:first-child {
+.game-shell.city-game.navigation-redesign.home-hud
+  .home-furniture-actions
+  > button
+  > svg:first-child {
   flex: none;
 }
-.game-shell.city-game.navigation-redesign.home-hud .home-furniture-actions > button > svg:last-child {
+.game-shell.city-game.navigation-redesign.home-hud
+  .home-furniture-actions
+  > button
+  > svg:last-child {
   flex: none;
   width: 14px;
   margin-left: auto;
@@ -846,7 +873,9 @@
   border-radius: 24px;
   background: var(--home-blue-glass);
   color: var(--primary-foreground);
-  box-shadow: 0 0 0 2px var(--primary), var(--home-shadow);
+  box-shadow:
+    0 0 0 2px var(--primary),
+    var(--home-shadow);
   text-align: center;
 }
 .game-shell.city-game.navigation-redesign.home-hud .home-world-selection::after {
@@ -892,14 +921,26 @@
 .game-shell.city-game.navigation-redesign.home-hud .house-edit-panel {
   bottom: calc(var(--game-dock-space) + 12px);
 }
-.game-shell.city-game.navigation-redesign.home-hud:has(.house-edit-panel) :is(.home-player-status, .game-needs-rail),
-.game-shell.city-game.navigation-redesign.home-hud:has(.house-placement-bar) :is(.home-player-status, .game-needs-rail) {
+.game-shell.city-game.navigation-redesign.home-hud:has(.house-edit-panel)
+  :is(.home-player-status, .game-needs-rail),
+.game-shell.city-game.navigation-redesign.home-hud:has(.house-placement-bar)
+  :is(.home-player-status, .game-needs-rail) {
   visibility: hidden;
 }
-.game-shell.city-game.navigation-redesign.home-hud .house-page.is-editing:has(.house-placement-bar) .house-catalogue {
+.game-shell.city-game.navigation-redesign.home-hud
+  .house-page.is-editing:has(.house-placement-bar)
+  .house-catalogue {
   display: none;
 }
-.game-shell.city-game.navigation-redesign.home-hud :is(.home-furniture-panel, .home-tools-menu, .house-toolbar, .home-player-status, .world-environment) :is(button, a, summary, select):focus-visible,
+.game-shell.city-game.navigation-redesign.home-hud
+  :is(
+    .home-furniture-panel,
+    .home-tools-menu,
+    .house-toolbar,
+    .home-player-status,
+    .world-environment
+  )
+  :is(button, a, summary, select):focus-visible,
 .game-shell.city-game.navigation-redesign.home-hud .home-player-status:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 3px;
@@ -924,12 +965,16 @@
   .game-shell.city-game.navigation-redesign.home-hud aside.game-needs-rail[aria-label] {
     bottom: calc(var(--home-bottom) + var(--home-dock-height) + 14px);
   }
-  .game-shell.city-game.navigation-redesign.home-hud aside.game-needs-rail[aria-label] .game-needs-toggle {
+  .game-shell.city-game.navigation-redesign.home-hud
+    aside.game-needs-rail[aria-label]
+    .game-needs-toggle {
     min-height: 58px;
     gap: 8px;
     padding: 8px 14px;
   }
-  .game-shell.city-game.navigation-redesign.home-hud .house-toolbar :is(.house-scene-controls, .home-tools-menu) {
+  .game-shell.city-game.navigation-redesign.home-hud
+    .house-toolbar
+    :is(.house-scene-controls, .home-tools-menu) {
     bottom: calc(var(--home-bottom) + var(--home-dock-height) + 90px);
   }
   .game-shell.city-game.navigation-redesign.home-hud .home-selection-toast {
@@ -937,12 +982,16 @@
   }
   .game-shell.city-game.navigation-redesign.home-hud .home-furniture-panel {
     width: min(430px, 48vw);
-    max-height: calc(100dvh - var(--home-panel-top) - var(--home-bottom) - var(--home-dock-height) - 174px);
+    max-height: calc(
+      100dvh - var(--home-panel-top) - var(--home-bottom) - var(--home-dock-height) - 174px
+    );
   }
   .game-shell.city-game.navigation-redesign.home-hud .home-dashboard .hd-area {
     flex-basis: 300px;
   }
-  .game-shell.city-game.navigation-redesign.home-hud .home-dashboard :is(.hd-icon-button, .hd-balance) {
+  .game-shell.city-game.navigation-redesign.home-hud
+    .home-dashboard
+    :is(.hd-icon-button, .hd-balance) {
     min-height: 60px;
   }
   .game-shell.city-game.navigation-redesign.home-hud .home-dashboard .hd-icon-button {
@@ -988,7 +1037,9 @@
     width: 18px;
     height: 18px;
   }
-  .game-shell.city-game.navigation-redesign.home-hud > .world-environment > :is(.world-event, [role="status"], .world-outage) {
+  .game-shell.city-game.navigation-redesign.home-hud
+    > .world-environment
+    > :is(.world-event, [role="status"], .world-outage) {
     width: 100%;
     max-width: none;
     min-height: 32px;
@@ -1107,7 +1158,9 @@
     padding: 5px;
     border-radius: 24px;
   }
-  .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) {
+  .game-shell.city-game.navigation-redesign.home-hud
+    > .gbb:not(.is-open)
+    :is(.gbb-link, .gbb-phone) {
     flex-direction: column;
     gap: 4px;
     padding: 4px 2px;
@@ -1115,7 +1168,10 @@
     font-size: 10px;
   }
   .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) .gbb-link span,
-  .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) .gbb-phone .phone-compact-label {
+  .game-shell.city-game.navigation-redesign.home-hud
+    > .gbb:not(.is-open)
+    .gbb-phone
+    .phone-compact-label {
     position: static;
     width: auto;
     height: auto;
@@ -1123,7 +1179,10 @@
     clip: auto;
     opacity: 1;
   }
-  .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) svg {
+  .game-shell.city-game.navigation-redesign.home-hud
+    > .gbb:not(.is-open)
+    :is(.gbb-link, .gbb-phone)
+    svg {
     width: 22px;
     height: 22px;
   }
@@ -1155,7 +1214,9 @@
   .game-shell.city-game.navigation-redesign.home-hud aside.game-needs-rail[aria-label] {
     max-width: calc(100% - 180px);
   }
-  .game-shell.city-game.navigation-redesign.home-hud aside.game-needs-rail[aria-label] .game-needs-toggle {
+  .game-shell.city-game.navigation-redesign.home-hud
+    aside.game-needs-rail[aria-label]
+    .game-needs-toggle {
     min-height: 52px;
     max-width: 100%;
     gap: 5px;
@@ -1165,7 +1226,9 @@
   .game-shell.city-game.navigation-redesign.home-hud .game-needs-trigger-copy {
     display: none;
   }
-  .game-shell.city-game.navigation-redesign.home-hud aside.game-needs-rail[aria-label] .game-needs-urgent-pill {
+  .game-shell.city-game.navigation-redesign.home-hud
+    aside.game-needs-rail[aria-label]
+    .game-needs-urgent-pill {
     min-width: 0;
     min-height: 28px;
     padding-inline: 5px;
@@ -1175,7 +1238,10 @@
     inset: auto var(--home-gutter) calc(var(--home-bottom) + var(--home-dock-height) + 12px);
     width: auto;
     max-width: none;
-    max-height: min(58dvh, calc(100dvh - var(--home-top) - var(--home-bottom) - var(--home-dock-height) - 210px));
+    max-height: min(
+      58dvh,
+      calc(100dvh - var(--home-top) - var(--home-bottom) - var(--home-dock-height) - 210px)
+    );
     border-radius: 24px;
   }
   .game-shell.city-game.navigation-redesign.home-hud .home-furniture-heading {
@@ -1194,11 +1260,15 @@
     padding: 10px;
     border-radius: 16px;
   }
-  .game-shell.city-game.navigation-redesign.home-hud .home-furniture-actions > button > svg:first-child {
+  .game-shell.city-game.navigation-redesign.home-hud
+    .home-furniture-actions
+    > button
+    > svg:first-child {
     width: 22px;
     height: 22px;
   }
-  .game-shell.city-game.navigation-redesign.home-hud:has(.home-furniture-panel) :is(.game-needs-rail, .home-player-status, .house-scene-controls, .home-tools-menu) {
+  .game-shell.city-game.navigation-redesign.home-hud:has(.home-furniture-panel)
+    :is(.game-needs-rail, .home-player-status, .house-scene-controls, .home-tools-menu) {
     visibility: hidden;
     pointer-events: none;
   }
@@ -1228,7 +1298,10 @@
   .game-shell.city-game.navigation-redesign.home-hud .home-furniture-actions {
     gap: 8px;
   }
-  .game-shell.city-game.navigation-redesign.home-hud .home-furniture-actions > button > svg:last-child {
+  .game-shell.city-game.navigation-redesign.home-hud
+    .home-furniture-actions
+    > button
+    > svg:last-child {
     display: none;
   }
 }
@@ -1247,12 +1320,16 @@
     width: auto;
     max-width: 55%;
   }
-  .game-shell.city-game.navigation-redesign.home-hud > .world-environment > :is(.world-event, [role="status"], .world-outage) {
+  .game-shell.city-game.navigation-redesign.home-hud
+    > .world-environment
+    > :is(.world-event, [role="status"], .world-outage) {
     width: auto;
     max-width: 40%;
   }
   .game-shell.city-game.navigation-redesign.home-hud .home-world-conditions,
-  .game-shell.city-game.navigation-redesign.home-hud > .world-environment > :is(.world-event, [role="status"], .world-outage) {
+  .game-shell.city-game.navigation-redesign.home-hud
+    > .world-environment
+    > :is(.world-event, [role="status"], .world-outage) {
     min-height: 36px;
     padding-block: 6px;
     font-size: 11px;
@@ -1260,7 +1337,9 @@
   .game-shell.city-game.navigation-redesign.home-hud .home-dashboard .hd-status {
     top: calc(var(--home-top) + 46px);
   }
-  .game-shell.city-game.navigation-redesign.home-hud .home-dashboard :is(.hd-area, .hd-icon-button, .hd-balance) {
+  .game-shell.city-game.navigation-redesign.home-hud
+    .home-dashboard
+    :is(.hd-area, .hd-icon-button, .hd-balance) {
     min-height: 44px;
     border-radius: 14px;
   }
@@ -1282,9 +1361,12 @@
   .game-shell.city-game.navigation-redesign.home-hud .home-furniture-panel {
     inset: var(--home-panel-top) var(--home-gutter) auto auto;
     width: min(390px, 48vw);
-    max-height: calc(100dvh - var(--home-panel-top) - var(--home-bottom) - var(--home-dock-height) - 12px);
+    max-height: calc(
+      100dvh - var(--home-panel-top) - var(--home-bottom) - var(--home-dock-height) - 12px
+    );
   }
-  .game-shell.city-game.navigation-redesign.home-hud:has(.home-furniture-panel) :is(.game-needs-rail, .home-player-status, .house-scene-controls, .home-tools-menu) {
+  .game-shell.city-game.navigation-redesign.home-hud:has(.home-furniture-panel)
+    :is(.game-needs-rail, .home-player-status, .house-scene-controls, .home-tools-menu) {
     visibility: hidden;
     pointer-events: none;
   }
@@ -1300,6 +1382,12 @@
   }
 }
 @keyframes home-furniture-enter {
-  from { opacity: 0; translate: 0 8px; }
-  to { opacity: 1; translate: 0 0; }
+  from {
+    opacity: 0;
+    translate: 0 8px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
 }
