@@ -1,5 +1,6 @@
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { WorldMaterial } from "./WorldScene";
+import { SceneBoxGeometryProvider, useSceneBoxGeometry } from "./scene-box-geometries";
 import {
   CLINIC_ROOMS,
   CLINIC_CORRIDORS,
@@ -16,9 +17,9 @@ function Box({
   size: [number, number, number];
   color?: string | undefined;
 }) {
+  const geometry = useSceneBoxGeometry(size);
   return (
-    <mesh position={position} castShadow receiveShadow>
-      <boxGeometry args={size} />
+    <mesh position={position} castShadow receiveShadow geometry={geometry}>
       <WorldMaterial tone="wall" color={color} />
     </mesh>
   );
@@ -117,7 +118,7 @@ function RoomProps({ room }: { room: ClinicRoom }) {
     </group>
   );
 }
-export function TierOneClinicScene({
+function TierOneClinicContents({
   exterior = false,
   selectedRoom = "reception",
   onRoomSelect,
@@ -302,5 +303,14 @@ export function TierOneClinicScene({
         })
       )}
     </group>
+  );
+}
+
+/** Keep resources scoped to this clinic scene, including exterior and room transitions. */
+export function TierOneClinicScene(props: Parameters<typeof TierOneClinicContents>[0]) {
+  return (
+    <SceneBoxGeometryProvider>
+      <TierOneClinicContents {...props} />
+    </SceneBoxGeometryProvider>
   );
 }
