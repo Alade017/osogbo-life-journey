@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import { marketStallErrorMessage } from "@/lib/market-stall-service";
 
 describe("market stall error messages", () => {
-  it("explains a stall rent blocked by an active home rental", () => {
+  it("explains an existing rental without assuming it is a home", () => {
     const message = marketStallErrorMessage(new Error("ALREADY_RENTING"));
-    expect(message).toBe("You already rent a home. End that rental before you rent a stall.");
+    expect(message).toBe(
+      "You already have an active rental. Manage your existing lease before renting a stall.",
+    );
     expect(message).not.toContain("ALREADY_RENTING");
+    expect(message).not.toMatch(/home|end that rental/i);
   });
 
   it("finds the code inside a longer server message", () => {

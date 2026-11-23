@@ -254,7 +254,8 @@ export async function purchasePlayerStallItem(input: {
 }
 
 const MARKET_STALL_ERROR_COPY: Readonly<Record<string, string>> = {
-  ALREADY_RENTING: "You already rent a home. End that rental before you rent a stall.",
+  ALREADY_RENTING:
+    "You already have an active rental. Manage your existing lease before renting a stall.",
   INSUFFICIENT_FUNDS: "You do not have enough cash for the first week’s rent.",
   MARKET_STALL_UNAVAILABLE: "This stall is not available to rent right now.",
   REGISTERED_ACCOUNT_REQUIRED: "Create an account to rent a stall.",
