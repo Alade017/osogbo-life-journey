@@ -36,6 +36,7 @@ export function Scene({
   zoom,
   animated = false,
   mapControls = false,
+  minZoom,
   onError,
   fallback,
   loadingFallback,
@@ -44,6 +45,7 @@ export function Scene({
   zoom?: number;
   animated?: boolean;
   mapControls?: boolean;
+  minZoom?: number;
   onError?: (error: Error) => void;
   fallback?: ReactNode;
   loadingFallback?: ReactNode;
@@ -71,7 +73,11 @@ export function Scene({
         style={{ width: "100%", height: "100%" }}
       >
         <color attach="background" args={[sceneSky]} />
-        <Camera zoom={zoom ?? 38} mapControls={mapControls} />
+        <Camera
+          zoom={zoom ?? 38}
+          mapControls={mapControls}
+          {...(minZoom === undefined ? {} : { minZoom })}
+        />
         <Lights />
         <Suspense
           fallback={

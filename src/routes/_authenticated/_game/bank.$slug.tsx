@@ -316,6 +316,7 @@ function BankPage() {
             appearance={appearance}
             gender={character?.gender ?? "nonbinary"}
             reducedMotion={profile.data?.reduced_motion ?? false}
+            interactionBlocked={servicesOpen}
             onInteract={interact}
           />
         </>

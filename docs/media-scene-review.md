@@ -1,5 +1,7 @@
 # Bank and mall scene review
 
+> The bank import-repair details below record the earlier implementation. The bank GLBs and their fitting/collision helpers have since been replaced by the code-built branch worlds documented in [procedural-bank-worlds.md](procedural-bank-worlds.md). Mall, shared-shadow and neighborhood findings remain applicable.
+
 ## Evidence
 
 The supplied 22-second recording (`72010.mp4`) shows the bank world inside a document-like, scrollable card with instructions, account panels, presence and staff below it. The bank screenshot is scrolled far enough that the world is mostly above the viewport. The clinic screenshot shows the same card-style presentation with excessive empty canvas around a distant model; the direct-arrival branch already addresses that clinic/destination layout.

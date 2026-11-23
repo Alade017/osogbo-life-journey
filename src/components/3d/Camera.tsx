@@ -7,9 +7,11 @@ import { clampTownTarget } from "@/lib/town-grid";
 export function Camera({
   zoom = 38,
   mapControls = false,
+  minZoom = 18,
 }: {
   zoom?: number;
   mapControls?: boolean;
+  minZoom?: number;
 }) {
   const controls = useRef<OrbitControlsImpl>(null);
   useEffect(() => {
@@ -65,7 +67,7 @@ export function Camera({
         zoomToCursor={mapControls}
         screenSpacePanning={mapControls}
         keyPanSpeed={16}
-        minZoom={mapControls ? 20 : 18}
+        minZoom={mapControls ? 20 : minZoom}
         maxZoom={mapControls ? 64 : 80}
         minPolarAngle={mapControls ? 0.86 : 0.6}
         maxPolarAngle={mapControls ? 0.86 : 1.1}

@@ -167,3 +167,53 @@
   background: var(--card);
   font-weight: 700;
 }
+
+.bank-world-controls,
+.bank-scene-message {
+  position: absolute;
+  z-index: 6;
+  left: var(--destination-gutter, 12px);
+  max-width: min(430px, calc(100% - 24px));
+  border: 1px solid var(--border);
+  border-radius: var(--shape-card, 16px);
+  padding: 10px 12px;
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--card) 95%, transparent);
+  box-shadow: var(--elevation-card);
+}
+.bank-world-controls {
+  bottom: var(--destination-bottom, 12px);
+  display: grid;
+  gap: 8px;
+  max-height: 30dvh;
+  overflow: auto;
+  overscroll-behavior: contain;
+  font-size: 0.8rem;
+}
+.bank-world-controls button {
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--background);
+  font-weight: 600;
+}
+.bank-world-controls button:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+.bank-world-controls summary {
+  min-height: 24px;
+  cursor: pointer;
+}
+.bank-scene-message {
+  top: calc(var(--destination-top, 0px) + 154px);
+  pointer-events: none;
+  font-size: 0.8rem;
+}
+@media (max-width: 480px) {
+  .bank-world-controls {
+    max-width: calc(100% - 24px);
+    font-size: 0.75rem;
+  }
+}

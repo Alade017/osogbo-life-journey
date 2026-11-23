@@ -1,295 +1,225 @@
-import { bankPartMatches, fitBankShell } from "./bank-shell-layout";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
-import { useGLTF } from "@react-three/drei";
-import { Group, Plane, Vector3 } from "three";
-import { WorldCharacter } from "@/components/3d/WorldCharacter";
-import { Scene } from "@/components/3d/Scene";
-import { SceneHtml as Html } from "@/components/3d/SceneHtml";
-import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
+import { useFrame, useThree } from "@react-three/fiber";
+import { Group } from "three";
+import { Scene } from "./Scene";
+import { WorldCharacter } from "./WorldCharacter";
+import { ProceduralBankArchitecture } from "./ProceduralBankArchitecture";
 import {
-  BANK_LOBBY,
-  createBankNavigation,
-  type BankNavigation,
-} from "@/game/bank-lobby-navigation";
-import { bankCollisionPolygons } from "./bank-collision-polygons";
+  BANK_WORLD,
+  bankObstaclePolygons,
+  buildBankWorld,
+  type BankArea,
+  type BankFixture,
+  type BankWorldLayout,
+} from "@/game/bank-world-layout";
+import { createBankNavigation } from "@/game/bank-lobby-navigation";
 import { createWalker, stepWalker, type MallWalker } from "@/game/mall-movement";
+import type { WalkPoint } from "@/game/grid-walk-path";
 import type { Appearance } from "@/game/avatar-appearance";
 import { BANK_BRANCH_STAFF, type BankSlug } from "@/lib/bank-branch-data";
 
-type Position = [number, number, number];
-
-/** Where the player stands when entering the bank. */
-const BANK_ENTRANCE: Position = [1.5, 0.06, 3];
 type OnlineBankPlayer = { characterId: string; name: string };
-const FLOOR = new Plane(new Vector3(0, 1, 0), 0);
+type Command = { id: string; serial: number } | null;
+type Interaction = "teller" | "atm" | "seat";
 
-/** The bank hall shell from the supplied environment models. */
-const BANK_SHELL_URL = "/models/environments/market-and-bank/bank-vault-hall.glb";
-/** The walkable lobby, in metres from its centre. The shell is fitted inside this rectangle. */
-const LOBBY_WALK = { x: BANK_LOBBY.halfWidth, z: BANK_LOBBY.halfDepth };
-/** The ATM kiosk model and where it stands in the walkable lobby, in lobby coordinates. */
-const BANK_ATM_URL = "/models/environments/market-and-bank/atm-kiosk.glb";
-const ATM_POSITION: Position = [4.6, 0, 2.5];
-/** Model parts that open an activity when clicked, matched by the names in the model file. */
-function LobbyArchitecture({
-  fitted,
-  atm,
-  onInteract,
-  onWalk,
-}: {
-  fitted: ReturnType<typeof fitBankShell>;
-  atm: Group;
-  onInteract: (place: "teller" | "atm" | "seat") => void;
-  onWalk: (position: Position) => void;
-}) {
-  const walkOnFloor = (event: ThreeEvent<MouseEvent>) => {
-    if (event.delta > 5) return;
-    event.stopPropagation();
-    const point = event.ray.intersectPlane(FLOOR, new Vector3());
-    if (point) onWalk([point.x, 0.06, point.z]);
-  };
-  return (
-    <group>
-      {/* The imported hall has an incomplete floor footprint. Continue it under the entire lobby. */}
-      <mesh position={[0, -0.005, 0]} rotation={[-Math.PI / 2, 0, 0]} onClick={walkOnFloor}>
-        <planeGeometry args={[LOBBY_WALK.x * 2, LOBBY_WALK.z * 2]} />
-        <meshStandardMaterial color="#d8d2c6" roughness={0.9} />
-      </mesh>
-      <primitive
-        object={atm}
-        onClick={(event: ThreeEvent<MouseEvent>) => {
-          if (event.delta > 5) return;
-          event.stopPropagation();
-          onInteract("atm");
-        }}
-      />
-      <primitive
-        object={fitted.holder}
-        onClick={(event: ThreeEvent<MouseEvent>) => {
-          if (event.delta > 5) return;
-          event.stopPropagation();
-          // Pick the visible geometry, not a large invisible box spanning unrelated furniture.
-          const name = event.object.name;
-          if (
-            bankPartMatches(name, "025-teller-counter") ||
-            bankPartMatches(name, "026-bulletproof-screen")
-          )
-            onInteract("teller");
-          else if (bankPartMatches(name, "033-waiting-chairs")) onInteract("seat");
-          else if (bankPartMatches(name, "000-lobby-floor-tile")) walkOnFloor(event);
-        }}
-      />
-    </group>
-  );
+function BankCameraFraming({ layout }: { layout: BankWorldLayout }) {
+  const { camera, size, invalidate } = useThree();
+  useLayoutEffect(() => {
+    if (!("isOrthographicCamera" in camera)) return;
+    camera.zoom = Math.max(
+      2,
+      Math.min(
+        size.width / ((layout.width + layout.depth) * 0.78),
+        size.height / ((layout.width + layout.depth) * 0.64),
+        40,
+      ),
+    );
+    camera.updateProjectionMatrix();
+    invalidate();
+  }, [camera, size.width, size.height, layout, invalidate]);
+  return null;
 }
-
-function WalkingPlayer({
-  name,
+function BankWorld({
+  branch,
+  layout,
+  command,
+  scanning,
+  interactionBlocked,
+  reducedMotion,
+  playerName,
   appearance,
   gender,
-  destination,
-  reducedMotion,
-  navigation,
-  onBlocked,
+  players,
+  onSelect,
+  onArrive,
+  onMessage,
+  onPosition,
+  onReady,
 }: {
-  name: string;
+  branch: BankSlug;
+  layout: BankWorldLayout;
+  command: Command;
+  scanning: boolean;
+  interactionBlocked: boolean;
+  reducedMotion: boolean;
+  playerName: string;
   appearance: Appearance;
   gender: string;
-  destination: Position;
-  reducedMotion: boolean;
-  navigation: BankNavigation;
-  onBlocked: (blocked: boolean) => void;
+  players: OnlineBankPlayer[];
+  onSelect: (id: string) => void;
+  onArrive: (fixture: BankFixture) => void;
+  onMessage: (message: string) => void;
+  onPosition: (position: WalkPoint) => void;
+  onReady: () => void;
 }) {
-  const group = useRef<Group>(null);
-  const [walking, setWalking] = useState(false);
-  const walker = useRef<MallWalker | null>(null);
-  const { invalidate } = useThree();
+  const navigation = useMemo(
+    () =>
+      createBankNavigation(bankObstaclePolygons(layout), {
+        halfWidth: layout.width / 2,
+        halfDepth: layout.depth / 2,
+      }),
+    [layout],
+  );
+  const consumedCommand = useRef<number | null>(null);
+  const group = useRef<Group>(null),
+    walker = useRef<MallWalker | null>(null),
+    pending = useRef<BankFixture | null>(null);
+  const [walking, setWalking] = useState(false),
+    { invalidate } = useThree();
+  const spawn = useMemo(() => navigation.nearest(layout.spawn), [navigation, layout]);
   useLayoutEffect(() => {
-    const spawn = navigation.nearest([BANK_ENTRANCE[0], BANK_ENTRANCE[2]]);
-    if (!spawn) throw new Error("The bank has no clear entrance.");
-    group.current?.position.set(spawn[0], 0.06, spawn[1]);
+    if (!spawn) throw new Error("The bank entrance has no clear standing space.");
+    group.current?.position.set(spawn[0], 0.04, spawn[1]);
+    onPosition(spawn);
     invalidate();
-  }, [navigation, invalidate]);
+  }, [spawn, onPosition, invalidate]);
+  useEffect(onReady, [onReady]);
   useEffect(() => {
-    const current = group.current?.position;
-    if (!current) return;
-    const path = navigation.route([current.x, current.z], [destination[0], destination[2]]);
+    if (!interactionBlocked) return;
     walker.current = null;
+    pending.current = null;
     setWalking(false);
-    onBlocked(!path);
-    if (!path) return;
-    if (reducedMotion) current.set(destination[0], 0.06, destination[2]);
-    else if (Math.hypot(current.x - destination[0], current.z - destination[2]) > 0.06) {
-      walker.current = createWalker([current.x, current.z], path);
+  }, [interactionBlocked]);
+  const startWalk = useCallback(
+    (target: WalkPoint, fixture: BankFixture | null) => {
+      const current = group.current?.position;
+      if (!current || scanning || interactionBlocked) return;
+      const path = navigation.route([current.x, current.z], target);
+      walker.current = null;
+      pending.current = null;
+      setWalking(false);
+      if (!path) {
+        onMessage("That route is blocked. Choose a clear floor tile or another approach.");
+        return;
+      }
+      onMessage("");
+      if (reducedMotion || Math.hypot(current.x - target[0], current.z - target[1]) < 0.05) {
+        current.set(target[0], 0.04, target[1]);
+        onPosition(target);
+        if (fixture) onArrive(fixture);
+        invalidate();
+        return;
+      }
+      const points = path.filter(
+        (point, index) =>
+          index > 0 && Math.hypot(point[0] - current.x, point[1] - current.z) > 0.01,
+      );
+      walker.current = createWalker([current.x, current.z], points);
+      pending.current = fixture;
       setWalking(true);
-    }
-    invalidate();
-  }, [destination, reducedMotion, navigation, invalidate, onBlocked]);
+      invalidate();
+    },
+    [
+      navigation,
+      scanning,
+      interactionBlocked,
+      reducedMotion,
+      onMessage,
+      onPosition,
+      onArrive,
+      invalidate,
+    ],
+  );
+  useEffect(() => {
+    if (!command || scanning || consumedCommand.current === command.serial) return;
+    consumedCommand.current = command.serial;
+    const fixture = layout.fixtures.find((item) => item.id === command.id);
+    if (fixture) startWalk(fixture.point, fixture);
+  }, [command, layout, startWalk, scanning]);
   useFrame((_, delta) => {
-    if (!group.current || !walker.current || walker.current.done) return;
-    const previous = walker.current.pos;
-    const next = stepWalker(walker.current, Math.min(delta, 0.1));
+    if (!walker.current || walker.current.done || !group.current) return;
+    const previous = walker.current.pos,
+      next = stepWalker(walker.current, Math.min(delta, 0.1));
     walker.current = next;
-    group.current.position.set(next.pos[0], 0.06, next.pos[1]);
+    group.current.position.set(next.pos[0], 0.04, next.pos[1]);
+    onPosition(next.pos);
     const dx = next.pos[0] - previous[0],
       dz = next.pos[1] - previous[1];
     if (Math.hypot(dx, dz) > 0.0001) group.current.rotation.y = Math.atan2(dx, dz);
-    if (next.done) setWalking(false);
-    else invalidate();
+    if (next.done) {
+      setWalking(false);
+      const fixture = pending.current;
+      pending.current = null;
+      if (fixture) onArrive(fixture);
+    } else invalidate();
   });
-  return (
-    <group ref={group}>
-      <WorldCharacter
-        name={name}
-        appearance={appearance}
-        gender={gender}
-        position={[0, 0, 0]}
-        animation={walking && !reducedMotion ? "walk" : "idle"}
-      />
-    </group>
-  );
-}
-
-function LobbyCharacters({
-  navigation,
-  branch,
-  players,
-  onInteract,
-}: {
-  branch: BankSlug;
-  navigation: BankNavigation;
-  players: OnlineBankPlayer[];
-  onInteract: (place: "teller" | "atm" | "seat") => void;
-}) {
-  const visitorCount = Math.min(players.length, 5);
-  const positions = useMemo(() => {
-    const occupied: Array<readonly [number, number]> = [[BANK_ENTRANCE[0], BANK_ENTRANCE[2]]];
+  const people = useMemo(() => {
+    if (layout.area !== "hall") return [];
+    const occupied: WalkPoint[] = [spawn ?? layout.spawn];
+    const staff = BANK_BRANCH_STAFF[branch];
     const targets = [
-      ...BANK_BRANCH_STAFF[branch].map((staff) => [staff.position[0], staff.position[2]] as const),
-      [-4.5, 2.15] as const,
-      ...Array.from(
-        { length: visitorCount },
-        (_, index) => [-2.2 + (index % 3) * 1.35, 1.25 + Math.floor(index / 3) * 0.85] as const,
-      ),
+      ...staff.map((person, i) => ({
+        key: person.id,
+        name: person.name,
+        appearance: person.appearance,
+        target: [i === 0 ? -5 : i === 1 ? 5 : -8, i < 2 ? -9 : 7] as WalkPoint,
+      })),
+      ...players.slice(0, 5).map((person, i) => ({
+        key: person.characterId,
+        name: person.name,
+        appearance: {} as Appearance,
+        target: [-4 + i * 1.5, 3] as WalkPoint,
+      })),
     ];
-    return targets.map((target) => {
-      const point = navigation.nearest(target, occupied);
-      if (!point) throw new Error("The bank has no clear standing area.");
-      occupied.push(point);
-      return [point[0], 0.06, point[1]] as Position;
+    return targets.flatMap((person) => {
+      const position = navigation.nearest(person.target, occupied);
+      if (!position) return [];
+      occupied.push(position);
+      return [{ ...person, position }];
     });
-  }, [branch, navigation, visitorCount]);
+  }, [layout, branch, players, navigation, spawn]);
   return (
     <>
-      {BANK_BRANCH_STAFF[branch].map((staff, index) => (
-        <group
-          key={staff.id}
-          onClick={(event) => {
-            if (event.delta > 5) return;
-            event.stopPropagation();
-            onInteract("teller");
-          }}
-        >
-          <WorldCharacter
-            name={staff.name}
-            appearance={staff.appearance}
-            position={positions[index]!}
-            facing="south"
-            animation={staff.animation}
-          />
-        </group>
-      ))}
-      <WorldCharacter
-        name="Waiting visitor"
-        appearance={{ outfit: 4, bottoms: 2, hair: 2 }}
-        position={positions[BANK_BRANCH_STAFF[branch].length]!}
-        facing="north"
-        animation="idle"
+      <BankCameraFraming layout={layout} />
+      <ProceduralBankArchitecture
+        branch={branch}
+        layout={layout}
+        doorsOpen={!scanning}
+        onSelect={onSelect}
+        onWalk={(point) => startWalk([point[0], point[2]], null)}
       />
-      {players.slice(0, visitorCount).map((player, index) => (
+      <group ref={group}>
         <WorldCharacter
-          key={player.characterId}
-          name={player.name}
-          position={positions[BANK_BRANCH_STAFF[branch].length + 1 + index]!}
-          facing="north"
-          animation={index % 2 === 0 ? "talk" : "idle"}
+          name={playerName}
+          appearance={appearance}
+          gender={gender}
+          position={[0, 0, 0]}
+          animation={walking ? "walk" : "idle"}
+        />
+      </group>
+      {people.map((person) => (
+        <WorldCharacter
+          key={person.key}
+          name={person.name}
+          appearance={person.appearance}
+          position={[person.position[0], 0.04, person.position[1]]}
+          facing="south"
+          animation="idle"
         />
       ))}
     </>
   );
 }
-
-function BankLobbyModel({
-  branch,
-  bankName,
-  players,
-  playerName,
-  appearance,
-  gender,
-  destination,
-  reducedMotion,
-  onInteract,
-  onWalk,
-  onReady,
-  onBlocked,
-}: {
-  branch: BankSlug;
-  bankName: string;
-  players: OnlineBankPlayer[];
-  playerName: string;
-  appearance: Appearance;
-  gender: string;
-  destination: Position;
-  reducedMotion: boolean;
-  onInteract: (place: "teller" | "atm" | "seat") => void;
-  onWalk: (position: Position) => void;
-  onReady: () => void;
-  onBlocked: (blocked: boolean) => void;
-}) {
-  const gltf = useGLTF(BANK_SHELL_URL);
-  const atmModel = useGLTF(BANK_ATM_URL);
-  const fitted = useMemo(() => fitBankShell(gltf.scene), [gltf.scene]);
-  const atm = useMemo(() => {
-    const root = new Group();
-    root.position.set(...ATM_POSITION);
-    root.add(atmModel.scene.clone(true));
-    return root;
-  }, [atmModel.scene]);
-  const navigation = useMemo(
-    () => createBankNavigation(bankCollisionPolygons([fitted.holder, atm])),
-    [fitted, atm],
-  );
-  useEffect(onReady, [onReady]);
-
-  return (
-    <>
-      <LobbyArchitecture fitted={fitted} atm={atm} onInteract={onInteract} onWalk={onWalk} />
-      <LobbyCharacters
-        branch={branch}
-        navigation={navigation}
-        players={players}
-        onInteract={onInteract}
-      />
-      <WalkingPlayer
-        key={playerName}
-        navigation={navigation}
-        onBlocked={onBlocked}
-        name={playerName}
-        appearance={appearance}
-        gender={gender}
-        destination={destination}
-        reducedMotion={reducedMotion}
-      />
-      <mesh position={[0, 0, 0]} visible={false} name={`interior:${bankName}`} />
-    </>
-  );
-}
-
-/**
- * Shown only when the 3D lobby cannot load. It states that plainly and offers the same three real
- * services, so no stand-in room is drawn.
- */
 export function BankLobbyFallback({
   bankName,
   onRetry,
@@ -347,17 +277,7 @@ export function BankLobbyFallback({
   );
 }
 
-function BankCameraFraming() {
-  const { camera, size, invalidate } = useThree();
-  useLayoutEffect(() => {
-    if (!("isOrthographicCamera" in camera)) return;
-    camera.zoom = Math.max(10, Math.min(size.width / 15, size.height / 13, 60));
-    camera.updateProjectionMatrix();
-    invalidate();
-  }, [camera, size.width, size.height, invalidate]);
-  return null;
-}
-
+/** Confirmed branch arrivals open directly in the working hall. All bank architecture is code-built. */
 export function BankLobbyScene({
   branch,
   bankName,
@@ -366,6 +286,7 @@ export function BankLobbyScene({
   appearance,
   gender,
   reducedMotion = false,
+  interactionBlocked = false,
   onInteract,
 }: {
   branch: BankSlug;
@@ -375,69 +296,181 @@ export function BankLobbyScene({
   appearance: Appearance;
   gender: string;
   reducedMotion?: boolean;
-  onInteract: (place: "teller" | "atm" | "seat") => void;
+  interactionBlocked?: boolean;
+  onInteract: (place: Interaction) => void;
 }) {
-  const [sceneFailed, setSceneFailed] = useState(false);
-  const [sceneReady, setSceneReady] = useState(false);
-  const [blocked, setBlocked] = useState(false);
-  const [destination, setDestination] = useState<Position>(BANK_ENTRANCE);
-  const handleReady = useCallback(() => setSceneReady(true), []);
-  const retry = useCallback(() => {
-    setSceneFailed(false);
-    setSceneReady(false);
-  }, []);
-  const fallback = (
-    <BankLobbyFallback bankName={bankName} onRetry={retry} onInteract={onInteract} />
+  const [area, setArea] = useState<BankArea>("hall"),
+    [scanning, setScanning] = useState(!reducedMotion);
+  const [ready, setReady] = useState(false),
+    [failed, setFailed] = useState(false),
+    [message, setMessage] = useState("");
+  const [command, setCommand] = useState<Command>(null);
+  const position = useRef<WalkPoint>([0, 0]);
+  const [arrivalFrom, setArrivalFrom] = useState<BankArea | undefined>();
+  const layout = useMemo(
+    () => buildBankWorld(branch, area, arrivalFrom),
+    [branch, area, arrivalFrom],
   );
-
+  const handleReady = useCallback(() => setReady(true), []);
+  const handlePosition = useCallback((point: WalkPoint) => {
+    position.current = point;
+  }, []);
+  const select = useCallback(
+    (id: string) => {
+      if (interactionBlocked) return;
+      setCommand((previous) => ({ id, serial: (previous?.serial ?? 0) + 1 }));
+    },
+    [interactionBlocked],
+  );
+  const arrive = useCallback(
+    (fixture: BankFixture) => {
+      if (
+        fixture.action === "hall" ||
+        fixture.action === "grounds" ||
+        fixture.action === "upstairs"
+      ) {
+        setCommand(null);
+        setMessage("");
+        setArrivalFrom(area);
+        setArea(fixture.action);
+        setScanning(fixture.action === "hall" && area === "grounds" && !reducedMotion);
+      } else onInteract(fixture.action);
+    },
+    [onInteract, area, reducedMotion],
+  );
   useEffect(() => {
-    if (sceneReady || sceneFailed) return;
-    const timer = window.setTimeout(() => setSceneFailed(true), 10_000);
+    if (!scanning || !ready) return;
+    const timer = window.setTimeout(() => {
+      setScanning(false);
+      setMessage("Security scan complete. Tap a clear floor tile to walk.");
+    }, BANK_WORLD.scanMilliseconds);
     return () => window.clearTimeout(timer);
-  }, [sceneFailed, sceneReady]);
-
-  if (sceneFailed) return fallback;
-
+  }, [scanning, ready]);
+  useEffect(() => {
+    const interact = (event: KeyboardEvent) => {
+      if (
+        event.code !== "KeyE" ||
+        event.repeat ||
+        scanning ||
+        interactionBlocked ||
+        (event.target instanceof HTMLElement &&
+          event.target.closest("input,textarea,select,button"))
+      )
+        return;
+      const nearest = [...layout.fixtures].sort(
+        (a, b) =>
+          Math.hypot(a.point[0] - position.current[0], a.point[1] - position.current[1]) -
+          Math.hypot(b.point[0] - position.current[0], b.point[1] - position.current[1]),
+      )[0];
+      if (
+        nearest &&
+        Math.hypot(
+          nearest.point[0] - position.current[0],
+          nearest.point[1] - position.current[1],
+        ) <= 2.5
+      ) {
+        event.preventDefault();
+        select(nearest.id);
+      } else setMessage("Walk closer to a teller, ATM, door or staircase to interact.");
+    };
+    window.addEventListener("keydown", interact);
+    return () => window.removeEventListener("keydown", interact);
+  }, [layout, scanning, interactionBlocked, select]);
+  if (failed)
+    return (
+      <BankLobbyFallback
+        bankName={bankName}
+        onRetry={() => setFailed(false)}
+        onInteract={onInteract}
+      />
+    );
+  const navigation =
+    area === "hall"
+      ? [
+          ["exit", "Courtyard & ATMs"],
+          ["stairs", "Upstairs customer care"],
+        ]
+      : area === "grounds"
+        ? [["entrance", "Enter banking hall"]]
+        : [["stairs", "Downstairs banking hall"]];
   return (
     <div
       data-bank-viewport
-      className="relative h-[min(62vh,560px)] min-h-[340px] overflow-hidden rounded-xl border border-border bg-[#e7e2d7] sm:min-h-[420px]"
-      aria-label={`${bankName} interactive lobby`}
+      className="relative h-[min(75vh,720px)] min-h-[400px] overflow-hidden rounded-xl bg-card"
+      aria-label={`${bankName} interactive ${area}`}
     >
-      {blocked && (
-        <p
-          role="status"
-          className="absolute left-3 top-3 z-10 rounded-lg bg-card p-3 text-sm text-foreground"
-        >
-          That spot is blocked. Choose a clear floor tile.
-        </p>
-      )}
       <Scene
-        zoom={33}
-        onError={() => setSceneFailed(true)}
-        fallback={fallback}
-        loadingFallback={
-          <Html center>
-            <WorldLoadingIndicator title="Entering the bank" detail="Preparing the lobby" />
-          </Html>
-        }
+        minZoom={2}
+        zoom={12}
+        onError={() => setFailed(true)}
+        fallback={<BankLobbyFallback bankName={bankName} onInteract={onInteract} />}
       >
-        <BankCameraFraming />
-        <BankLobbyModel
+        <BankWorld
+          key={area}
           branch={branch}
-          bankName={bankName}
-          players={players}
+          layout={layout}
+          command={command}
+          scanning={scanning}
+          interactionBlocked={interactionBlocked}
+          reducedMotion={reducedMotion}
           playerName={playerName}
           appearance={appearance}
           gender={gender}
-          destination={destination}
-          reducedMotion={reducedMotion}
-          onInteract={onInteract}
-          onWalk={setDestination}
-          onBlocked={setBlocked}
+          players={players}
+          onSelect={select}
+          onArrive={arrive}
+          onMessage={setMessage}
+          onPosition={handlePosition}
           onReady={handleReady}
         />
       </Scene>
+      <div className="bank-world-controls" role="group" aria-label="Bank scene controls">
+        <strong>
+          {area === "hall"
+            ? "Banking hall"
+            : area === "upstairs"
+              ? "First floor · Customer care"
+              : "Courtyard · ATM gallery"}
+        </strong>
+        <div className="flex flex-wrap gap-2">
+          {navigation.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              disabled={scanning || interactionBlocked}
+              onClick={() => select(id!)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        <details>
+          <summary>Accessible scene actions</summary>
+          <div className="grid gap-2 pt-2">
+            {layout.fixtures
+              .filter(
+                (item) =>
+                  !item.id.startsWith("seat-") ||
+                  item.id === layout.fixtures.find((f) => f.action === "seat")?.id,
+              )
+              .map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  disabled={scanning || interactionBlocked}
+                  onClick={() => select(item.id)}
+                >
+                  {item.label}
+                </button>
+              ))}
+          </div>
+        </details>
+      </div>
+      {(scanning || message) && (
+        <p className="bank-scene-message" role="status">
+          {scanning ? "Security scan…" : message}
+        </p>
+      )}
     </div>
   );
 }

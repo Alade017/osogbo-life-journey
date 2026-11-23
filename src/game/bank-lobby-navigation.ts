@@ -34,8 +34,12 @@ function touchesPolygon(point: WalkPoint, polygon: BankObstaclePolygon, radius: 
 }
 
 /** Rasterize once per loaded model, then use the existing sampled grid pathfinder. */
-export function createBankNavigation(polygons: readonly BankObstaclePolygon[]) {
-  const { halfWidth, halfDepth, cell, bodyRadius } = BANK_LOBBY;
+export function createBankNavigation(
+  polygons: readonly BankObstaclePolygon[],
+  bounds: { halfWidth: number; halfDepth: number } = BANK_LOBBY,
+) {
+  const { cell, bodyRadius } = BANK_LOBBY;
+  const { halfWidth, halfDepth } = bounds;
   const width = Math.ceil((halfWidth * 2) / cell),
     depth = Math.ceil((halfDepth * 2) / cell);
   const blocked = new Uint8Array(width * depth);
@@ -98,7 +102,9 @@ export function createBankNavigation(polygons: readonly BankObstaclePolygon[]) {
     canWalk,
     nearest,
     route: (from: WalkPoint, to: WalkPoint) =>
-      canWalk(from) && canWalk(to) ? findGridWalkPath(from, to, canWalk) : null,
+      canWalk(from) && canWalk(to)
+        ? findGridWalkPath(from, to, canWalk, Math.ceil(halfWidth * halfDepth * 20))
+        : null,
   };
 }
 export type BankNavigation = ReturnType<typeof createBankNavigation>;
