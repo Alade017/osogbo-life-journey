@@ -55,6 +55,7 @@ ATIKU = dict(
     trees=[(-14.0, -10.6), (-14.0, 10.6), (14.0, -10.6), (14.0, 10.6)],
     benches=[(-1.5, 4.2)],
     bins=[(-6.3, 3.6)],
+    poles=[(-0.4, -10.6)],  # concrete utility pole on the north edge, cables run east-west
     lamps=[(-10.0, -3.7), (-2.0, -3.7), (10.0, -3.7), (-10.0, 3.7), (-2.0, 3.7), (10.0, 3.7)],
     features=[("Housing", 367, 120), ("Community", 400, 500)],
     style=dict(ground="0xd9c9ad", grid="0xcbbd9f", verticalRoad=(560, 107), horizontalRoad=(300, 160)),
@@ -214,6 +215,32 @@ def _duplex(prefix, lot):
 HOUSE = {"flat": _flat_block, "bungalow": _bungalow, "duplex": _duplex}
 
 
+def _compound_kit(prefix, lot):
+    """Spec props inside each plot: black water tank on a steel stand (back corner) and a
+    generator cage (front corner). Decorative only, so the collision data is unchanged."""
+    x, z, w, d, s = lot["x"], lot["z"], lot["w"], lot["d"], lot["side"]
+    tx, tz = x - w / 2 + 1.0, z - s * (d / 2 - 1.0)
+    for i, (dx, dz) in enumerate(((-0.3, -0.3), (0.3, -0.3), (-0.3, 0.3), (0.3, 0.3))):
+        box(f"{prefix}_tank_leg_{i}", tx + dx, tz + dz, 0.08, 0.08, 1.2, P["metal"])
+    cyl(f"{prefix}_tank", tx, tz, 0.55, 1.0, P["gate"], y0=1.2)
+    box(f"{prefix}_gen_cage", x + w / 2 - 1.2, z + s * (d / 2 - 1.2), 1.0, 0.8, 0.9, P["metal"])
+    box(f"{prefix}_gen_unit", x + w / 2 - 1.2, z + s * (d / 2 - 1.2), 0.7, 0.5, 0.6, P["gate"], y0=0.1)
+
+
+def _hedge(prefix, lot):
+    """Clipped hedge along the inside of the back wall (GRA estate look)."""
+    x, z, w, d, s = lot["x"], lot["z"], lot["w"], lot["d"], lot["side"]
+    box(f"{prefix}_hedge", x, z - s * (d / 2 - 0.25), w - 1.0, 0.5, 1.1, P["hedge"])
+
+
+def _utility_pole(prefix, i, x, z, h=6.5):
+    """Concrete NEPA-style pole with a crossarm and transformer; cables run east-west."""
+    box(f"{prefix}_pole_{i}", x, z, 0.3, 0.3, h, P["stone"])
+    box(f"{prefix}_crossarm_{i}", x, z, 1.6, 0.12, 0.12, P["trunk"], y0=h - 0.6)
+    box(f"{prefix}_transformer_{i}", x, z + 0.25, 0.5, 0.4, 0.6, P["metal"], y0=h - 2.2)
+    box(f"{prefix}_cable_{i}", 0, z, FIELD_W, 0.02, 0.02, P["gate"], y0=h - 0.7)
+
+
 def _lamp(prefix, i, x, z):
     cyl(f"{prefix}_lamp_pole_{i}", x, z, 0.05, 3.2, P["metal"])
     box(f"{prefix}_lamp_head_{i}", x, z, 0.5, 0.25, 0.15, P["sign"], y0=3.15)
@@ -238,6 +265,11 @@ def build(area):
     for lot in area["lots"]:
         _walls(f"{pre}{lot['id']}", lot)
         HOUSE[lot["house"]](f"{pre}{lot['id']}", lot)
+        _compound_kit(f"{pre}{lot['id']}", lot)
+        if area["slug"] == "oke-fia":
+            _hedge(f"{pre}{lot['id']}", lot)
+    for i, (x, z) in enumerate(area.get("poles", [])):
+        _utility_pole(pre, i, x, z)
     shop = area["shop"]
     box(f"{pre}shop_{shop['id']}", shop["x"], shop["z"], shop["w"], shop["d"], 3.2, P["plaster"])
     box(f"{pre}shop_awning", shop["x"], shop["z"] + shop["d"] / 2 + 0.6, shop["w"] + 0.6, 1.2, 0.15, P["accent"], y0=2.6)
