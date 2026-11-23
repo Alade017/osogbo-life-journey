@@ -297,3 +297,59 @@
     padding-inline: 3px;
   }
 }
+
+/* UI-07: Keep the market header compact while retaining recognizable tabs. */
+.market-app .market-app-hero {
+  gap: 10px;
+}
+
+.market-app .market-app-hero-icon {
+  flex-basis: 40px;
+  height: 40px;
+}
+
+.market-app .market-app-hero h2 {
+  font-size: clamp(1.25rem, 5cqi, 1.5rem);
+  line-height: 1.15;
+}
+
+.market-app .market-app-tabs button svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* UI-08: Group price and quantity with the Buy action at the end of the row.
+   The existing quantity validation and purchase mutation are unchanged. */
+.market-app .market-app-product {
+  min-width: 0;
+}
+
+.market-app .market-app-product > .flex.items-center.justify-between {
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.market-app .market-app-product > .flex.items-center.justify-between > .flex {
+  min-width: 0;
+}
+
+.market-app .market-app-product .market-app-buy {
+  min-width: 64px;
+  min-height: 44px;
+  color: var(--primary-foreground);
+  background: var(--brand-royal);
+  border: 1px solid var(--brand-royal);
+  font-weight: 800;
+}
+
+.market-app .market-app-product .market-app-buy:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+@media (max-width: 380px) {
+  .market-app .market-app-product > .flex.items-center.justify-between > .flex:last-child {
+    margin-left: auto;
+  }
+}
