@@ -703,7 +703,7 @@ export function R3FNeighborhoodSurface({
       <div className="playable-neighborhood-canvas">
         <Canvas
           orthographic={Boolean(overview)}
-          shadows="soft"
+          shadows="percentage"
           frameloop="demand"
           dpr={[1, quality.maxDpr]}
           gl={{
