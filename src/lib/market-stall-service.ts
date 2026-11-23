@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import { GAME_RPC_TIMEOUT_MS, withTimeout } from "@/lib/request-timeout";
 
 export const stallCategorySchema = z.enum([
   "fabrics",
@@ -135,7 +136,12 @@ type Rpc = (name: string, args: Record<string, unknown>) => Promise<RpcResult>;
 
 async function callRpc(name: string, args: Record<string, unknown>): Promise<unknown> {
   const rpc = supabase.rpc.bind(supabase) as unknown as Rpc;
-  const { data, error } = await rpc(name, args);
+  // A hung call must end in an error, otherwise the button stays pending ("Renting…") forever.
+  const { data, error } = await withTimeout(
+    rpc(name, args),
+    GAME_RPC_TIMEOUT_MS,
+    "The market did not respond. Check your connection and try again.",
+  );
   if (error) throw new Error(error.message);
   return data;
 }

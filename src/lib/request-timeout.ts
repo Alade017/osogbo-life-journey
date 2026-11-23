@@ -15,5 +15,8 @@ export function withTimeout<T>(promise: PromiseLike<T>, ms: number, message: str
   });
 }
 
+/** How long a player-initiated game RPC may run before the action fails and can be tried again. */
+export const GAME_RPC_TIMEOUT_MS = 15_000;
+
 /** After this long on a loading screen, the player is offered a retry instead of waiting silently. */
 export const SLOW_LOAD_AFTER_MS = 8_000;

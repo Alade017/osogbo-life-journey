@@ -1,0 +1,127 @@
+/* NPC sales and player listings on the Real Estate page. Uses the same tokens as property-listings.css. */
+.property-sale-panel {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.9rem;
+  border: 1px solid var(--ring);
+  border-radius: var(--shape-card);
+  background: var(--card);
+  box-shadow: var(--elevation-card);
+  color: var(--foreground);
+  min-width: 0;
+}
+
+.property-sale-panel h2 {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.property-sale-panel h3 {
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+  line-height: 1.25;
+}
+
+.property-sale-note {
+  margin: 0;
+  font-size: 0.8rem;
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+.property-sale-panel ul {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.property-sale-panel li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--ring);
+  min-width: 0;
+}
+
+.property-sale-panel li > span {
+  min-width: 0;
+  font-size: 0.86rem;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+
+.property-sale-panel button {
+  min-height: 44px;
+  padding: 0.5rem 0.85rem;
+  border: 1px solid var(--primary);
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--primary-foreground);
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.property-sale-panel button:disabled {
+  border-color: var(--ring);
+  background: var(--muted);
+  color: var(--muted-foreground);
+  cursor: not-allowed;
+}
+
+.property-sale-panel button:focus-visible,
+.property-sale-panel input:focus-visible {
+  outline: 3px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* The second button in a pair (Keep it, Not now, Cancel) is the quieter choice. */
+.property-sale-confirm > button + button {
+  border-color: var(--ring);
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.property-sale-confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  max-width: 100%;
+}
+
+form.property-sale-confirm {
+  display: grid;
+  width: 100%;
+}
+
+.property-sale-confirm label {
+  display: grid;
+  gap: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 650;
+}
+
+.property-sale-confirm input {
+  min-height: 44px;
+  padding: 0.5rem 0.7rem;
+  border: 1px solid var(--ring);
+  border-radius: calc(var(--shape-card) * 0.6);
+  background: var(--background);
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 420px) {
+  .property-sale-panel li > span {
+    flex-basis: 100%;
+  }
+}
