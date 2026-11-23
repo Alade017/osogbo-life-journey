@@ -9,7 +9,7 @@ import { BoxGeometry } from "three";
  */
 export function useWorshipRowGeometry(isMosque: boolean): BoxGeometry {
   const geometry = useMemo(
-    () => new BoxGeometry(...(isMosque ? [1.5, 0.06, 1.0] : [3.6, 0.8, 0.7])),
+    () => new BoxGeometry(isMosque ? 1.5 : 3.6, isMosque ? 0.06 : 0.8, isMosque ? 1.0 : 0.7),
     [isMosque],
   );
   useEffect(() => () => geometry.dispose(), [geometry]);
