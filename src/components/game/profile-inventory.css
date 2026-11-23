@@ -1205,3 +1205,100 @@
     transition: none;
   }
 }
+
+/* UI-03: Recognizable inventory states without duplicating selection logic. */
+.pi-inventory .pi-tile[aria-pressed="true"] {
+  position: relative;
+  border-color: var(--brand-royal);
+  background: color-mix(in srgb, var(--color-primary-soft) 45%, var(--brand-cream));
+}
+
+.pi-inventory .pi-tile-selected {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--shape-pill);
+  padding: 0.2rem 0.55rem;
+  color: var(--brand-royal-deep);
+  background: var(--color-primary-soft);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
+
+.pi-inventory .pi-filters button[aria-pressed="true"] {
+  box-shadow: 0 0 0 2px var(--color-primary-soft);
+}
+
+.pi-inventory .pi-detail-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pi-inventory .pi-detail-clear {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: var(--shape-pill);
+  padding: 0.35rem 0.75rem;
+  background: var(--popover);
+  color: var(--brand-royal-deep);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.pi-inventory .pi-detail-clear:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* UI-04: Badges remain available, but secondary achievement details
+   only occupy space once the player expands them. */
+.pi-profile .pi-badges-disclosure {
+  display: block;
+}
+
+.pi-profile .pi-badges-disclosure > summary {
+  align-items: center;
+  cursor: pointer;
+  list-style: none;
+  border-radius: var(--shape-card);
+  border: 1px solid var(--border);
+  background: var(--card);
+  padding: 0.9rem 1rem;
+}
+
+.pi-profile .pi-badges-disclosure > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pi-profile .pi-badges-disclosure > summary::after {
+  content: "+";
+  color: var(--brand-royal);
+  font-size: 1.4rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pi-profile .pi-badges-disclosure[open] > summary::after {
+  content: "−";
+}
+
+.pi-profile .pi-badges-disclosure > summary:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.pi-profile .pi-badges-disclosure > .pi-badges {
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 480px) {
+  .pi-profile .pi-badges-disclosure > summary {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+}
