@@ -1,6 +1,7 @@
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { CAMPUS_DESKS, CAMPUS_STUDY_TABLES } from "@/game/campus-navigation";
 import { WorldMaterial } from "./WorldScene";
+import { SceneBoxGeometryProvider, useSceneBoxGeometry } from "./scene-box-geometries";
 import { CAMPUS_BUILDINGS, CAMPUS_PATHS, type CampusAreaId } from "@/game/school-campus";
 function Part({
   at,
@@ -11,9 +12,9 @@ function Part({
   size: [number, number, number];
   color?: string | undefined;
 }) {
+  const geometry = useSceneBoxGeometry(size);
   return (
-    <mesh position={at} castShadow receiveShadow>
-      <boxGeometry args={size} />
+    <mesh position={at} castShadow receiveShadow geometry={geometry}>
       <WorldMaterial tone="wall" color={color} />
     </mesh>
   );
@@ -82,7 +83,7 @@ function Frontage({ width, depth, color }: { width: number; depth: number; color
     </>
   );
 }
-export function SchoolCampusScene({
+function SchoolCampusContents({
   area,
   onAreaSelect,
   onWalkTo,
@@ -226,5 +227,14 @@ export function SchoolCampusScene({
         </>
       )}
     </group>
+  );
+}
+
+/** Geometry stays scoped to this mounted campus scene. */
+export function SchoolCampusScene(props: Parameters<typeof SchoolCampusContents>[0]) {
+  return (
+    <SceneBoxGeometryProvider>
+      <SchoolCampusContents {...props} />
+    </SceneBoxGeometryProvider>
   );
 }
