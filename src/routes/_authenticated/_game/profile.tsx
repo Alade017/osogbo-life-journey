@@ -172,13 +172,15 @@ export function ProfilePage() {
             <p className="pi-eyebrow">Achievements</p>
             <h2 id="profile-badges-title">Badges</h2>
           </div>
-          <span>
-            {earned} / {badges.length} earned
-          </span>
+          <div className="pi-badge-totals">
+            <span>{earned} / {badges.length} earned</span>
+            {inProgress > 0 && (
+              <small className="pi-progress-summary">
+                {inProgress} achievement{inProgress === 1 ? "" : "s"} in progress
+              </small>
+            )}
+          </div>
         </summary>
-        {inProgress > 0 && (
-          <p className="pi-progress-summary">{inProgress} achievement{inProgress === 1 ? "" : "s"} in progress</p>
-        )}
         <ul className="pi-badges">
           {badges.map((badge) => {
             const Icon = BADGE_ICONS[badge.id];
