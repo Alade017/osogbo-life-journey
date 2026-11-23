@@ -353,3 +353,20 @@
     margin-left: auto;
   }
 }
+
+/* UI-09: Help appears where the player needs it, not in a modal. */
+.market-app .market-interaction-tip {
+  margin: 0.75rem 1rem 0;
+  padding: 0.65rem 0.85rem;
+  border-left: 3px solid var(--brand-royal);
+  border-radius: 0 var(--shape-button) var(--shape-button) 0;
+  background: color-mix(in srgb, var(--color-primary-soft) 25%, var(--card));
+  color: var(--muted-foreground);
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.market-app .market-app-section > .market-interaction-tip {
+  margin: 0;
+}
