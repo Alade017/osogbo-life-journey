@@ -626,4 +626,115 @@
   background: #ffffff;
 }
 
+/* UI-01: Shared visual language for non-home game pages.
+   Deliberately scoped to the existing route-level class: no changes to the
+   home dashboard, map canvas, phone surfaces or authoritative game state. */
+.city-game.dashboard-ui-refresh .game-screen-restyle {
+  --screen-section-gap: clamp(16px, 2vw, 24px);
+  --screen-panel-radius: var(--shape-card);
+  --screen-focus-ring: 0 0 0 3px color-mix(in srgb, var(--ring) 22%, transparent);
+}
 
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) {
+  min-width: 0;
+  column-gap: var(--screen-section-gap);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) > * {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) h1 {
+  overflow-wrap: anywhere;
+  text-wrap: balance;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) p {
+  color: var(--color-text-secondary);
+  overflow-wrap: break-word;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-panel, .profile-glance-card) {
+  min-width: 0;
+  border-radius: var(--screen-panel-radius);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-panel, .profile-glance-card) :is(h2, h3, h4) {
+  line-height: 1.25;
+  overflow-wrap: break-word;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+  box-shadow: var(--screen-focus-ring);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(button, a):disabled,
+.city-game.dashboard-ui-refresh .game-screen-restyle [aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
+/* UI-02: Flexible content flow and touch-friendly form controls.
+   No fixed page widths, no forced grid count, and no positioning changes
+   to in-world controls or existing dialog portals. */
+.city-game.dashboard-ui-refresh .game-screen-restyle > :not(.game-home):not(.house-page) {
+  width: 100%;
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-settings-page, .wallet-page, .inventory-page, .profile-page) {
+  min-width: 0;
+  max-width: 100%;
+  gap: var(--screen-section-gap);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-settings-page, .wallet-page, .inventory-page, .profile-page) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle :is(input, select, textarea) {
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle {
+    --screen-section-gap: 14px;
+    --screen-panel-radius: 18px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) {
+    gap: 10px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) h1 {
+    font-size: clamp(1.5rem, 6vw, 2rem);
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-settings-page, .wallet-page, .inventory-page, .profile-page) {
+    gap: var(--screen-section-gap);
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(input, select, textarea) {
+    min-height: 44px;
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle {
+    --screen-section-gap: 12px;
+  }
+
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(.game-page-header, .arrival-line) h1 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .city-game.dashboard-ui-refresh .game-screen-restyle :is(button, a, input, select, textarea) {
+    transition: none;
+    scroll-behavior: auto;
+  }
+}
