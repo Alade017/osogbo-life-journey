@@ -40,6 +40,37 @@ describe("unified housing API handlers", () => {
     expect(calls.properties).toHaveBeenCalledWith("player-1");
   });
 
+  it("explains an overdue home switch instead of reporting an internal error", async () => {
+    const { handlers, calls } = setup();
+    calls.rentProperty.mockRejectedValueOnce(new Error("PAY_OVERDUE_RENT_FIRST"));
+    const response = await handlers.postRent(
+      new Request("https://game.test/api/housing/rent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": requestId },
+        body: JSON.stringify({ property_id: propertyId }),
+      }),
+    );
+    const body = (await response.json()) as { error: { code: string; reason: string } };
+    expect(response.status).toBe(409);
+    expect(body.error.code).toBe("PAY_OVERDUE_RENT_FIRST");
+    expect(body.error.reason).toContain("Pay your overdue rent");
+    expect(body.error.reason).not.toMatch(/internal error/i);
+  });
+
+  it("never shows an unknown server code or 'internal error' to the player", async () => {
+    const { handlers, calls } = setup();
+    calls.rentProperty.mockRejectedValueOnce(new Error("SOMETHING_UNMAPPED happened"));
+    const response = await handlers.postRent(
+      new Request("https://game.test/api/housing/rent", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Idempotency-Key": requestId },
+        body: JSON.stringify({ property_id: propertyId }),
+      }),
+    );
+    const body = (await response.json()) as { error: { reason: string } };
+    expect(body.error.reason).toBe("That change could not be completed. Try again.");
+  });
+
   it("requires a UUID request receipt when renting a unified property", async () => {
     const { handlers, calls } = setup();
     const response = await handlers.postRent(

@@ -37,6 +37,7 @@ button.palette-select-trigger:disabled {
 }
 
 button.palette-select-trigger > span {
+  min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

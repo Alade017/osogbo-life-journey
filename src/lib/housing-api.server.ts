@@ -33,6 +33,7 @@ const statusByCode: Record<string, number> = {
   SLOT_MISMATCH: 409,
   NO_RENT_DUE: 409,
   OVERDUE_OPTION_UNAVAILABLE: 409,
+  PAY_OVERDUE_RENT_FIRST: 409,
 };
 
 const reasonByCode: Record<string, string> = {
@@ -45,7 +46,11 @@ const reasonByCode: Record<string, string> = {
   HOUSE_INELIGIBLE: "You do not meet the requirements for this home.",
   NO_RENT_DUE: "There is no active rent payment due for this home.",
   OVERDUE_OPTION_UNAVAILABLE: "This overdue option is no longer available.",
+  PAY_OVERDUE_RENT_FIRST: "Pay your overdue rent before you switch to another home.",
 };
+
+/** Copy for an error code the server does not name. Never shows the raw code or “internal error”. */
+const FALLBACK_REASON = "That change could not be completed. Try again.";
 
 function errorCode(error: unknown) {
   const message = error instanceof Error ? error.message : String(error);
@@ -81,7 +86,7 @@ export function createHousingApiHandlers(deps: HousingApiDependencies) {
         message: error instanceof Error ? error.message : String(error),
       });
       return json(
-        { error: { code, reason: reasonByCode[code] ?? code.replaceAll("_", " ").toLowerCase() } },
+        { error: { code, reason: reasonByCode[code] ?? FALLBACK_REASON } },
         statusByCode[code] ?? 500,
       );
     }
