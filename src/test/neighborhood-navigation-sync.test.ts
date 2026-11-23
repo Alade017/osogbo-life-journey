@@ -43,6 +43,7 @@ describe("neighborhood navigation and location registry", () => {
         OLAIYA_ORIGIN,
         area.objects,
         area.obstacles,
+        area.roads,
       );
       expect(walkRoute, `Expected walk route for ${landmark.id}`).not.toBeNull();
 
@@ -78,6 +79,7 @@ describe("neighborhood navigation and location registry", () => {
         OLAIYA_ORIGIN,
         area.objects,
         area.obstacles,
+        area.roads,
       );
       expect(route, `Expected commute route to ${zone.id}`).not.toBeNull();
     }
@@ -95,6 +97,7 @@ describe("neighborhood navigation and location registry", () => {
         OLAIYA_ORIGIN,
         area.objects,
         area.obstacles,
+        area.roads,
       );
       expect(route, `Expected commute route to NPC ${npc.id}`).not.toBeNull();
     }

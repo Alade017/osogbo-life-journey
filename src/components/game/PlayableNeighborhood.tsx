@@ -36,7 +36,7 @@ import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import { neighbourhoodLoadingStage } from "@/components/game/neighbourhood-loading";
 import { NeighborhoodZoneModal } from "@/components/game/NeighborhoodZoneModal";
 import { FeatureTravelPanel } from "@/components/game/FeatureTravelPanel";
-import { GROUND_ARRIVE_DISTANCE, groundIntent } from "@/game/ground-intent";
+import { GROUND_ARRIVE_DISTANCE } from "@/game/ground-intent";
 import { commuteNotice } from "@/game/commute-notice";
 import "./commute-banner.css";
 import { joinNeighborhood, type NeighborhoodRoom } from "@/lib/multiplayer-service";
@@ -459,17 +459,28 @@ export function PlayableNeighborhood() {
           district.origin,
           area.objects,
           area.obstacles,
+          area.roads,
         );
         autoWalkRouteRef.current =
           plannedRoute && plannedRoute.length > 0 ? { route: plannedRoute, index: 0 } : null;
       } else {
         autoWalkRouteRef.current = null;
       }
-      setHasWalked(true);
       setDirections(new Set());
+      if (!autoWalkRouteRef.current) {
+        groundTargetRef.current = null;
+        setGroundTarget(null);
+        setPendingTargetId(null);
+        dispatchZone(setPendingZoneId(null));
+        setHomeBound(false);
+        toast.error("No walkable route to that entrance. Try another approach.");
+        return false;
+      }
+      setHasWalked(true);
       setGroundTarget(targetScenePoint);
+      return true;
     },
-    [area.objects, area.obstacles, district],
+    [area.objects, area.obstacles, area.roads, district],
   );
 
   useEffect(() => {
@@ -737,8 +748,7 @@ export function PlayableNeighborhood() {
       enterHomeNow();
       return;
     }
-    startPathfindingTo({ x: homeObject.x, y: homeObject.y });
-    setHomeBound(true);
+    setHomeBound(startPathfindingTo({ x: homeObject.x, y: homeObject.y }));
   }, [nearHome, homeObject, district?.personalHome, enterHomeNow, startPathfindingTo]);
   const enteringHome = enterHome.isPending;
   const openCompound = () => {
@@ -866,8 +876,8 @@ export function PlayableNeighborhood() {
     setPendingTargetId(null);
     setHomeBound(false);
     dispatchZone(setPendingZoneId(pendingNav.primaryZoneId));
-    startPathfindingTo(pendingNav.targetScenePoint);
-    toast.message(`Walking to ${pendingNav.landmarkName}`);
+    if (startPathfindingTo(pendingNav.targetScenePoint))
+      toast.message(`Walking to ${pendingNav.landmarkName}`);
     return undefined;
   }, [
     connectionState,
@@ -930,9 +940,9 @@ export function PlayableNeighborhood() {
         }
       }
 
-      const tapped =
-        autoIntent ??
-        (target && scenePos ? groundIntent(target, scenePos) : groundIntent(target, position));
+      // Only a validated route may drive automatic movement. Never steer through a wall
+      // because planning failed or its waypoints were exhausted.
+      const tapped = autoIntent;
       const intent = anyModalOpen
         ? { x: 0, y: 0 }
         : (tapped ?? directionIntent(directionsRef.current));
@@ -1079,9 +1089,9 @@ export function PlayableNeighborhood() {
       openInteraction();
       return;
     }
-    toast.message(`Walking to ${target.name}`);
     setPendingTargetId(targetId);
-    startPathfindingTo({ x: target.x, y: target.y });
+    if (startPathfindingTo({ x: target.x, y: target.y }))
+      toast.message(`Walking to ${target.name}`);
   };
   useEffect(() => {
     if (!pendingTargetId || nearbyObject?.id !== pendingTargetId) return;
@@ -1106,11 +1116,10 @@ export function PlayableNeighborhood() {
           dispatchZone(openZoneInteraction({ zoneId: id }));
           return;
         }
-        toast.message(`Walking to ${zone.title}`);
         setPendingTargetId(null);
         setHomeBound(false);
         dispatchZone(setPendingZoneId(id));
-        startPathfindingTo(zone.accessPoint);
+        if (startPathfindingTo(zone.accessPoint)) toast.message(`Walking to ${zone.title}`);
         return;
       }
       const npc = findZoneNpc(id);
@@ -1125,11 +1134,10 @@ export function PlayableNeighborhood() {
           dispatchZone(openZoneInteraction({ npcId: id }));
           return;
         }
-        toast.message(`Walking to ${npc.name}`);
         setPendingTargetId(null);
         setHomeBound(false);
         dispatchZone(setPendingZoneId(id));
-        startPathfindingTo(npc.accessPoint);
+        if (startPathfindingTo(npc.accessPoint)) toast.message(`Walking to ${npc.name}`);
       }
     },
     [nearbyZoneMatch, nearbyZoneNpcMatch, startPathfindingTo],
@@ -1288,6 +1296,7 @@ export function PlayableNeighborhood() {
                       zoom={zoom}
                       onZoomChange={setZoom}
                       groundTarget={groundTarget}
+                      plannedRoute={groundTarget ? autoWalkRouteRef.current?.route : undefined}
                       commuteTarget={
                         commuting
                           ? (area.objects.find((object) => object.kind === "work") ?? null)

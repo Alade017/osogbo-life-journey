@@ -21,8 +21,17 @@ const state = vi.hoisted(() => ({
   placeRows: [] as Array<{ location_id: string; category: string }>,
   shopRows: [] as Array<{ shop: { location_id: string; slug?: string } }>,
   jobRows: [] as Array<{ is_available: boolean; location_id: string }>,
+  routeBlocked: false,
   position: null as { x: number; y: number } | null,
 }));
+vi.mock("@/game/commute-route", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@/game/commute-route")>();
+  return {
+    ...actual,
+    planCommuteRoute: (...args: Parameters<typeof actual.planCommuteRoute>) =>
+      state.routeBlocked ? null : actual.planCommuteRoute(...args),
+  };
+});
 vi.mock("@tanstack/react-router", () => ({
   useNavigate: () => vi.fn(),
   Link: ({ to, children }: { to: string; children: React.ReactNode }) => (
@@ -245,6 +254,7 @@ beforeEach(() => {
   state.shopRows = [];
   state.jobRows = [];
   state.position = null;
+  state.routeBlocked = false;
   state.rpc.mockResolvedValue({ data: null, error: null });
   state.currentAction = null;
   client = new QueryClient({
@@ -614,4 +624,18 @@ it("skips venue preloading when network policy disallows it", async () => {
   });
   await screen.findByText("Venue interior");
   expect(state.preloadVenue).not.toHaveBeenCalled();
+});
+
+it("stops a failed route without sending direct movement through the blocked destination", async () => {
+  const joined = room("city");
+  state.join.mockImplementation(async () => joined);
+  show();
+  await screen.findByText("R3F neighbourhood");
+  state.routeBlocked = true;
+  joined.send.mockClear();
+  await act(async () => state.scene.mock.lastCall?.[0].onGroundTap({ x: 500, y: 300 }));
+  expect(state.scene.mock.lastCall?.[0].groundTarget).toBeNull();
+  await act(async () => new Promise((resolve) => setTimeout(resolve, 250)));
+  const movement = joined.send.mock.calls.filter(([type]) => type === "move");
+  expect(movement.every(([, intent]) => intent.x === 0 && intent.y === 0)).toBe(true);
 });

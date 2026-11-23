@@ -97,3 +97,71 @@ describe("commuteIntent", () => {
     expect(commuteArrived(far, origin, target)).toBe(false);
   });
 });
+
+describe("road-aware commute planning", () => {
+  it("prefers an authored access lane over a shorter walk across open plots", () => {
+    const start = { x: 4, y: 4 };
+    const destination = { x: 12, y: 4 };
+    const target = toScene(destination, origin);
+    const lane = toScene({ x: 4, y: 5 }, origin);
+    const startScene = toScene(start, origin);
+    const roads = [
+      {
+        id: "access-lane",
+        axis: "horizontal" as const,
+        offset: lane.y,
+        width: 40,
+        type: "lane" as const,
+        start: startScene.x,
+        end: target.x,
+      },
+    ];
+    const route = planCommuteRoute(start, target, origin, [], [], roads)!;
+    expect(route).not.toBeNull();
+    expect(route.some((p) => p.y >= 4.75)).toBe(true);
+    expect(commuteArrived(route.at(-1)!, origin, target)).toBe(true);
+    // A lane preference never changes arrival requirements or the movement coordinate system.
+    for (const point of route) expect(canOccupyNeighborhoodPoint(point, origin, [])).toBe(true);
+  });
+
+  it("never follows an authored road through a sealed compound", () => {
+    const start = { x: 4, y: 4 };
+    const target = toScene({ x: 14, y: 10 }, origin);
+    const roads = [
+      {
+        id: "blocked-road",
+        axis: "horizontal" as const,
+        offset: target.y,
+        width: 60,
+        type: "street" as const,
+      },
+    ];
+    expect(
+      planCommuteRoute(
+        start,
+        target,
+        origin,
+        [],
+        [wall("sealed", target.x, target.y, 600, 600)],
+        roads,
+      ),
+    ).toBeNull();
+  });
+
+  it.each([
+    [
+      { x: NaN, y: 4 },
+      { x: 4, y: 4 },
+    ],
+    [
+      { x: -1, y: 4 },
+      { x: 4, y: 4 },
+    ],
+    [
+      { x: 4, y: 4 },
+      { x: Infinity, y: 4 },
+    ],
+  ])("rejects invalid endpoints without constructing a fallback route", (start, target) => {
+    expect(planCommuteRoute(start, target, origin, [])).toBeNull();
+  });
+});

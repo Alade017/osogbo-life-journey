@@ -1,3 +1,5 @@
+import { useRenderQuality } from "@/hooks/use-render-quality";
+import { WORLD_RENDER_QUALITY } from "./render-quality";
 import { useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import { MeshBasicMaterial, type MeshStandardMaterial } from "three";
 import { applyFoliageSway, FOLIAGE_SWAY, foliageSwayAmplitude } from "./foliage-sway";
@@ -49,7 +51,7 @@ export function WorldLighting({
   animateFoliage = false,
   refined = false,
   shadowMapSize,
-  contactShadows = true,
+  contactShadows,
 }: {
   size?: number;
   dimmed?: boolean;
@@ -60,6 +62,7 @@ export function WorldLighting({
   shadowMapSize?: number;
   contactShadows?: boolean;
 }) {
+  const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
   const { invalidate } = useThree();
   useEffect(() => {
     if (!animateFoliage) {
@@ -84,7 +87,7 @@ export function WorldLighting({
   useFrame(({ clock }) => {
     if (animateFoliage) FOLIAGE_SWAY.time.value = clock.elapsedTime;
   });
-  const shadowResolution = shadowMapSize ?? (refined ? 2048 : 1024);
+  const shadowResolution = shadowMapSize ?? Math.min(quality.shadowMapSize, refined ? 2048 : 1024);
   return (
     <>
       <color attach="background" args={[WORLD_PALETTE.ground]} />
@@ -108,7 +111,7 @@ export function WorldLighting({
         shadow-camera-bottom={-size}
         shadow-camera-far={size * 3}
       />
-      {contactShadows && (
+      {(contactShadows ?? quality.contactShadows) && (
         <ContactShadows
           position={[0, 0.015, 0]}
           scale={size * 2}

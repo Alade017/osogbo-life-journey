@@ -1,3 +1,5 @@
+import { useRenderQuality } from "@/hooks/use-render-quality";
+import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
 import { Link } from "@tanstack/react-router";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
 import { TRAVEL_MODES, TRAVEL_MODE_DETAILS, type TravelMode } from "@/lib/transport-service";
@@ -154,6 +156,7 @@ function BasicLocationVenueScene({
   onBrowseMarket?: () => void;
   onBankServices?: () => void;
 }) {
+  const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
   const venue = useMemo(
     () => design ?? getLocationVenueDesign(slug, locationName),
     [design, slug, locationName],
@@ -240,7 +243,7 @@ function BasicLocationVenueScene({
               key={slug}
               shadows
               frameloop="demand"
-              dpr={[1, 1.25]}
+              dpr={[1, Math.min(1.25, quality.maxDpr)]}
               gl={{ antialias: false, powerPreference: "low-power" }}
               fallback={
                 <p className="p-4 text-sm" role="note">

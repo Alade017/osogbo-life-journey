@@ -1,3 +1,5 @@
+import { useRenderQuality } from "@/hooks/use-render-quality";
+import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
 import { Component, Suspense, useEffect, useState, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useGLTF } from "@react-three/drei";
@@ -46,6 +48,7 @@ export function Scene({
   fallback?: ReactNode;
   loadingFallback?: ReactNode;
 }) {
+  const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
   const [visible, setVisible] = useState(true);
   const sceneSky = getSceneColor("--scene-sky");
   useEffect(() => {
@@ -59,7 +62,7 @@ export function Scene({
       <Canvas
         orthographic
         shadows={false}
-        dpr={[1, 1.25]}
+        dpr={[1, Math.min(1.25, quality.maxDpr)]}
         frameloop={visible ? (animated ? "always" : "demand") : "never"}
         fallback={
           fallback ?? <p role="alert">3D requires WebGL. Your browser could not start it.</p>

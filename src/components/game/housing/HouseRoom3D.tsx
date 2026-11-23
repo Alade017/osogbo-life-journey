@@ -1,3 +1,5 @@
+import { useRenderQuality } from "@/hooks/use-render-quality";
+import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
 import {
   createContext,
   useContext,
@@ -2081,6 +2083,7 @@ export function HouseRoom3D({
   draftMove = null,
   onDraftMove,
 }: Props & { inputBlocked?: boolean }) {
+  const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
   const roomView = useMemo(
     () =>
@@ -2250,7 +2253,7 @@ export function HouseRoom3D({
           <Canvas
             style={{ touchAction: "none" }}
             frameloop="demand"
-            dpr={[1, 1.5]}
+            dpr={[1, quality.maxDpr]}
             shadows
             camera={{
               position: [0, 4, 12],

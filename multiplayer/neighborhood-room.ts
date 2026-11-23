@@ -436,6 +436,7 @@ export class NeighborhoodRoom extends Room {
     return {
       origin: this.areaOrigin,
       objects: this.area.objects,
+      ...(this.area.roads ? { roads: this.area.roads } : {}),
       ...(this.area.obstacles ? { obstacles: this.area.obstacles } : {}),
     };
   }
