@@ -3,6 +3,7 @@ import {
   resolveWornOutfit,
   resolveNormalizedWornOutfit,
   publicWornEquipment,
+  resolveEquippedHeadwear,
 } from "@/game/wearable-outfits";
 import { normalizeAvatarAppearance } from "@/game/avatar-appearance";
 import { worldEquipment, worldAppearance } from "@/game/world-character-view";
@@ -49,6 +50,16 @@ it("projects only bounded cosmetic metadata and preserves it through the world s
   expect(worldEquipment(JSON.stringify(projected))).toEqual(projected);
   expect(resolveWornOutfit({}, "female", projected).topCut).toBe("long-sleeve");
   expect(worldAppearance('{"clothed":true,"bank":500}')).toEqual({ clothed: true });
+});
+it("preserves equipped headwear and accessories across the multiplayer projection", () => {
+  const projected = publicWornEquipment([
+    { slot: "head", item: { slug: "gele" } },
+    { slot: "accessory", item: { slug: "backpack" } },
+  ]);
+  const restored = worldEquipment(JSON.stringify(projected));
+  expect(restored).toEqual(projected);
+  expect(resolveEquippedHeadwear(restored)).toBe(1);
+  expect(restored.find((entry) => entry.slot === "accessory")?.item?.slug).toBe("backpack");
 });
 it("rejects mismatched slots, invalid colors and appearance overrides", () => {
   expect(
