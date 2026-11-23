@@ -1778,6 +1778,43 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       : [];
   return (
     <div className={`house-page house-page-fill${editing ? " is-editing" : ""}`}>
+      {character?.id &&
+        canonicalHome?.tenure === "rented" &&
+        (isOverdue || rentStatus === "due") && (
+          <section className="house-rent-notice" aria-label="Home rent">
+            <p role="status">
+              {rentStatusLabel[rentStatus] ?? "Rent due"}
+              {rentDueAt
+                ? ` · ${new Intl.DateTimeFormat("en-NG", {
+                    dateStyle: "medium",
+                    timeStyle: "short",
+                    timeZone: "Africa/Lagos",
+                  }).format(new Date(rentDueAt))}`
+                : ""}
+            </p>
+            <button
+              type="button"
+              className="map-primary-button"
+              disabled={isOffline || payRent.isPending}
+              onClick={() => payRent.mutate()}
+            >
+              {payRent.isPending ? "Paying…" : "Pay rent"}
+            </button>
+          </section>
+        )}
+      {character?.id && canonicalHome?.tenure === "rented" && (
+        <HousingReliefPanel
+          characterId={character.id}
+          rentalKind="home"
+          rentStatus={rentStatus}
+          graceEndsAt={canonicalHome.graceEndsAt}
+          rescueEndsAt={canonicalHome.rescueEndsAt}
+          assetLabel="home"
+          offline={isOffline}
+          paying={payRent.isPending}
+          onPayRent={() => payRent.mutate()}
+        />
+      )}
       <div className="house-toolbar">
         <div className="house-scene-controls" role="group" aria-label="Home controls">
           {!editing && canonicalHome && (

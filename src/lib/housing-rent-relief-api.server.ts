@@ -1,3 +1,5 @@
+import { housingKindFrom } from "./housing-api.server";
+
 const statusByCode: Record<string, number> = {
   UNAUTHORIZED: 401,
   INVALID_REQUEST: 400,
@@ -69,6 +71,7 @@ export async function handleRentReliefRequest(request: Request) {
   const body = (await request.json().catch(() => null)) as {
     action?: unknown;
     hustleId?: unknown;
+    kind?: unknown;
   } | null;
   if (!userId || !key || !body || typeof body.action !== "string")
     return response({ error: { code: "INVALID_REQUEST" } }, userId ? 400 : 401);
@@ -86,6 +89,7 @@ export async function handleRentReliefRequest(request: Request) {
       const { data, error } = await supabaseAdmin.rpc("apply_rent_relief_hustle", {
         p_user_id: userId,
         p_request_id: key,
+        p_kind: housingKindFrom(body.kind),
       });
       if (error) throw new Error(error.message);
       return response(data);
@@ -134,7 +138,8 @@ export async function handleRentReliefStateRequest(request: Request) {
       name: string,
       args: Record<string, unknown>,
     ) => Promise<{ data: unknown; error: { message: string } | null }>;
-    const { data, error } = await rpc("housing_relief_state", { p_user_id: userId });
+    const kind = housingKindFrom(new URL(request.url).searchParams.get("kind"));
+    const { data, error } = await rpc("housing_relief_state", { p_user_id: userId, p_kind: kind });
     if (error) throw new Error(error.message);
     return response(data);
   } catch (error) {

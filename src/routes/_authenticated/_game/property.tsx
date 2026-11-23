@@ -169,6 +169,7 @@ export function PropertyPage() {
                   graceEndsAt={stallRent.data.graceEndsAt}
                   rescueEndsAt={stallRent.data.rescueEndsAt}
                   assetLabel="market stall"
+                  rentalKind="stall"
                   offline={offline}
                   paying={payStallRent.isPending}
                   onPayRent={() => payStallRent.mutate()}

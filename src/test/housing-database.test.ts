@@ -33,6 +33,15 @@ describe("housing onboarding database actions", () => {
         "utf8",
       ),
     );
+    for (const file of [
+      "supabase/migrations/20261111024351_shared_home_tenancy_tables.sql",
+      "supabase/migrations/20261111024630_shared_home_join_leave.sql",
+      "supabase/migrations/20261111025428_shared_home_placements.sql",
+      "supabase/migrations/20261111025959_shared_home_tenant_space.sql",
+      "supabase/migrations/20261123040000_home_and_stall_together.sql",
+    ]) {
+      await db.exec(readFileSync(file, "utf8"));
+    }
     await db.query("insert into auth.users(id) values($1)", [userId]);
   }, 180_000);
 
@@ -896,7 +905,7 @@ describe("housing onboarding database actions", () => {
     );
     expect(after.rows[0]?.result.notice).toBeNull();
     const grants = await db.query<{ player_execute: boolean; server_execute: boolean }>(
-      "select has_function_privilege('authenticated','public.housing_relief_state(uuid)','execute') as player_execute,has_function_privilege('service_role','public.housing_relief_state(uuid)','execute') as server_execute",
+      "select has_function_privilege('authenticated','public.housing_relief_state(uuid,text)','execute') as player_execute,has_function_privilege('service_role','public.housing_relief_state(uuid,text)','execute') as server_execute",
     );
     expect(grants.rows[0]).toEqual({ player_execute: false, server_execute: true });
     await db.query("delete from public.profiles where id=$1", [otherUserId]);

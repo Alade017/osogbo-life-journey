@@ -6664,7 +6664,7 @@ export type Database = {
         Returns: number;
       };
       apply_rent_relief_hustle: {
-        Args: { p_request_id: string; p_user_id: string };
+        Args: { p_kind?: string | null; p_request_id: string; p_user_id: string };
         Returns: Json;
       };
       block_player: { Args: { p_target_character_id: string }; Returns: Json };
@@ -7049,7 +7049,7 @@ export type Database = {
       housing_eligible_houses: { Args: { p_user_id: string }; Returns: Json };
       housing_map_properties: { Args: { p_user_id: string }; Returns: Json };
       housing_property_listings: { Args: { p_user_id: string }; Returns: Json };
-      housing_relief_state: { Args: { p_user_id: string }; Returns: Json };
+      housing_relief_state: { Args: { p_kind?: string | null; p_user_id: string }; Returns: Json };
       housing_rent: {
         Args: {
           p_house_type_id: string;
@@ -7305,7 +7305,7 @@ export type Database = {
         Returns: Json;
       };
       resolve_property_overdue: {
-        Args: { p_option: string; p_request_id: string; p_user_id: string };
+        Args: { p_kind?: string | null; p_option: string; p_request_id: string; p_user_id: string };
         Returns: Json;
       };
       respond_player_friend_request: {
