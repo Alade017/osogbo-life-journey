@@ -195,7 +195,6 @@ function MarketAppContent({ characterId }: { characterId: string }) {
             <ShoppingBag aria-hidden="true" size={21} />
           </span>
           <div>
-            <span className="market-app-eyebrow">Osogbo marketplace</span>
             <h2>Market</h2>
             <p>Shop nearby, manage your stall, and discover local sellers.</p>
           </div>
@@ -793,8 +792,9 @@ function MarketAppContent({ characterId }: { characterId: string }) {
 
                       <div className="flex items-center justify-between gap-2 pt-1 border-t border-border/40">
                         <div className="flex items-center gap-2">
-                          <label className="text-xs text-muted-foreground">Qty:</label>
+                          <label htmlFor={`market-quantity-${offer.id}`} className="text-xs text-muted-foreground">Qty:</label>
                           <input
+                            id={`market-quantity-${offer.id}`}
                             type="number"
                             min={minimumQuantity}
                             max={item?.stackable ? item.max_stack : 1}
@@ -820,7 +820,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                                 requestId: crypto.randomUUID(),
                               })
                             }
-                            className="text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
+                            className="market-app-buy text-xs font-bold px-3 py-1.5 rounded-lg bg-primary text-primary-foreground disabled:opacity-50"
                           >
                             Buy
                           </button>
