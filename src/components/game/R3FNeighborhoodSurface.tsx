@@ -1,3 +1,4 @@
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { InteractionMarker } from "@/components/3d/InteractionMarker";
 import { NpcBody } from "@/components/3d/NpcBody";
 import { useRenderQuality } from "@/hooks/use-render-quality";
@@ -21,7 +22,7 @@ import { BuildingOcclusion } from "@/components/3d/BuildingOcclusion";
 import { WaypointBeacon } from "./WaypointBeacon";
 import { WorldStreetFurniture } from "@/components/3d/WorldStreetFurniture";
 import { worldAppearance, worldEquipment } from "@/game/world-character-view";
-import { Canvas, useFrame, useThree } from "@react-three/fiber";
+import { useFrame, useThree } from "@react-three/fiber";
 import { EffectComposer, Vignette } from "@react-three/postprocessing";
 import { ACESFilmicToneMapping, type Group } from "three";
 import type { NeighborhoodPlayerView, NeighborhoodSceneHandle } from "@/game/neighborhood-types";
@@ -701,7 +702,8 @@ export function R3FNeighborhoodSurface({
   return (
     <NeighborhoodBoundary>
       <div className="playable-neighborhood-canvas">
-        <Canvas
+        <WorldCanvas
+          persistent={!overview}
           orthographic={Boolean(overview)}
           shadows="soft"
           frameloop="demand"
@@ -1084,7 +1086,7 @@ export function R3FNeighborhoodSurface({
               );
             })}
           {overview?.markers}
-        </Canvas>
+        </WorldCanvas>
         <div ref={overlayHost} className="world-label-layer" />
       </div>
     </NeighborhoodBoundary>
