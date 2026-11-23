@@ -222,10 +222,14 @@ function WalletPage() {
                         transaction.category,
                       )}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {transaction.description} · {transaction.account} ·{" "}
-                      {new Date(transaction.created_at).toLocaleString("en-NG")}
-                    </p>
+                    <details className="wallet-transaction-details">
+                      <summary>Transaction details</summary>
+                      <div className="wallet-transaction-meta">
+                        {transaction.description && <p>{transaction.description}</p>}
+                        <p>Account: {transaction.account}</p>
+                        <p>Date: {new Date(transaction.created_at).toLocaleString("en-NG")}</p>
+                      </div>
+                    </details>
                   </div>
                   <div className="wallet-transaction-amount text-right">
                     <p
