@@ -897,7 +897,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             fallback: [doorX, doorY, doorZ],
           });
           if (!arrived)
-            toast.error("The walk into your home was interrupted. You are back at the entrance; try again.");
+            toast.error(
+              "The walk into your home was interrupted. You are back at the entrance; try again.",
+            );
         } else {
           movement.place([doorX, doorY, doorZ]);
           toast.error("The entrance is blocked. Rearrange your furniture to clear the way.");
