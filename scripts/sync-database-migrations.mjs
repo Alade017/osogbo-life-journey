@@ -49,9 +49,7 @@ try {
     console.log(
       `Drizzle ledger: ${drizzleAudit.applied} applied migrations. Pending: ${drizzleAudit.pending.map((entry) => entry.tag).join(", ") || "none"}`,
     );
-    console.log(
-      `Historical checksum differences: ${mismatchTags.join(", ") || "none"}`,
-    );
+    console.log(`Historical checksum differences: ${mismatchTags.join(", ") || "none"}`);
     for (const warning of drizzleAudit.timestampWarnings) {
       console.warn(
         `Drizzle timestamp discrepancy for ${warning.tag}: journal=${warning.expectedTimestamp}, database=${warning.actualTimestamp}. Unique checksum confirms this migration is already applied; no ledger rewrite is performed.`,
@@ -84,7 +82,9 @@ try {
         "Review Supabase migration history first. This script does not apply or reconcile Supabase migrations.",
       );
     if (drizzleAudit.issues.length || drizzleAudit.unknown.length)
-      throw new Error("Drizzle migration ledger is ambiguous or contains unknown history; manual review required");
+      throw new Error(
+        "Drizzle migration ledger is ambiguous or contains unknown history; manual review required",
+      );
 
     const reviewed =
       process.argv.includes("--accept-advertisement-history") &&
