@@ -1009,3 +1009,29 @@
     transition: none;
   }
 }
+
+/* UI-13: Explain transfer eligibility at the amount entry point. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transfer-help,
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-transfer-limits {
+  margin: 0;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page input[aria-invalid="true"] {
+  border-color: var(--destructive);
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+/* UI-14: Retain current balance grouping without adding additional cards. */
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page .wallet-balance-grid > .game-panel {
+  min-width: 0;
+}
+
+.city-game.dashboard-ui-refresh .game-screen-restyle .wallet-page .wallet-balance-grid > .game-panel p {
+  overflow-wrap: anywhere;
+}
