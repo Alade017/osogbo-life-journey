@@ -2054,6 +2054,7 @@
 .home-meal-note,
 .home-task-notice {
   margin: 0;
+  min-height: 1.35em;
 }
 
 .home-task-notice {

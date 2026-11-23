@@ -283,9 +283,21 @@
 
 .phone-ui-refresh .phone-group-heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+}
+
+.phone-ui-refresh .phone-group-heading > .phone-new-message-button {
+  flex-shrink: 0;
+  margin-left: auto;
+}
+
+.phone-ui-refresh .phone-group-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 13px;
 }
 
 .phone-ui-refresh .phone-group-heading h3,

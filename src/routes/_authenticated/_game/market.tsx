@@ -15,7 +15,10 @@ export const Route = createFileRoute("/_authenticated/_game/market")({
   component: MarketPage,
 });
 
-export function MarketPage({ shopSlug, foodOnly = false }: { shopSlug?: string | null; foodOnly?: boolean } = {}) {
+export function MarketPage({
+  shopSlug,
+  foodOnly = false,
+}: { shopSlug?: string | null; foodOnly?: boolean } = {}) {
   const { data: worldTime } = useWorldClock();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
@@ -51,11 +54,21 @@ export function MarketPage({ shopSlug, foodOnly = false }: { shopSlug?: string |
     onSuccess: () => toast.success("Item sold. The cash has been added to your wallet."),
   });
 
-  if (characterLoading || shopsLoading) return <LoadingState />;
+  if (characterLoading || shopsLoading)
+    return (
+      <LoadingState
+        title="Opening the market"
+        detail="Loading your stall and the shops…"
+        queryKeys={[q.character().queryKey, q.shopItems().queryKey]}
+      />
+    );
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow={foodOnly ? "LOCAL FOOD OFFERS" : "SHOPS AROUND THE CITY"} title={foodOnly ? "Food & drinks" : "City market"} />
+      <PageHeader
+        eyebrow={foodOnly ? "LOCAL FOOD OFFERS" : "SHOPS AROUND THE CITY"}
+        title={foodOnly ? "Food & drinks" : "City market"}
+      />
       <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-4">
         <div>
           <p className="font-semibold">
@@ -156,7 +169,11 @@ export function MarketPage({ shopSlug, foodOnly = false }: { shopSlug?: string |
       ) : (
         <EmptyState
           title={foodOnly ? "No food offers available" : "No shops in this district"}
-          body={foodOnly ? "No matching food or drink offers are available from open shops here right now." : "Travel to a market, supermarket, clothing shop, or electronics store to browse its offers."}
+          body={
+            foodOnly
+              ? "No matching food or drink offers are available from open shops here right now."
+              : "Travel to a market, supermarket, clothing shop, or electronics store to browse its offers."
+          }
         />
       )}
 
