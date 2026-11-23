@@ -119,16 +119,18 @@ function WalletPage() {
               aria-invalid={!!transferError}
               aria-describedby="wallet-transfer-help"
             />
-            <p id="wallet-transfer-help" className={`wallet-transfer-help text-xs ${transferError ? "text-destructive" : "text-muted-foreground"}`}>
-              {transferError ?? "Enter a whole naira amount to move money between cash and your bank."}
+            <p
+              id="wallet-transfer-help"
+              className={`wallet-transfer-help text-xs ${transferError ? "text-destructive" : "text-muted-foreground"}`}
+            >
+              {transferError ??
+                "Enter a whole naira amount to move money between cash and your bank."}
             </p>
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
                 className="wallet-action-primary rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50"
-                disabled={
-                  !amount || !!depositError || deposit.isPending
-                }
+                disabled={!amount || !!depositError || deposit.isPending}
                 onClick={() => submitTransfer(deposit, funds.cash)}
               >
                 Deposit cash
@@ -136,9 +138,7 @@ function WalletPage() {
               <button
                 type="button"
                 className="wallet-action-secondary rounded-lg border-2 border-edge bg-secondary px-4 py-2 font-bold disabled:opacity-50"
-                disabled={
-                  !amount || !!withdrawError || withdraw.isPending
-                }
+                disabled={!amount || !!withdrawError || withdraw.isPending}
                 onClick={() => submitTransfer(withdraw, funds.bank)}
               >
                 Withdraw cash
@@ -187,20 +187,23 @@ function WalletPage() {
         )}
       </section>
 
-      <details className="wallet-history-disclosure"><summary className="wallet-history-summary">Lifetime financial overview</summary><div className="wallet-lifetime-grid grid gap-4 sm:grid-cols-2">
-        <div className="game-panel p-5">
-          <p className="text-sm font-semibold text-muted-foreground">Lifetime income</p>
-          <p className="font-display text-2xl font-bold text-primary">
-            {formatNaira(wallet?.total_income)}
-          </p>
+      <details className="wallet-history-disclosure">
+        <summary className="wallet-history-summary">Lifetime financial overview</summary>
+        <div className="wallet-lifetime-grid grid gap-4 sm:grid-cols-2">
+          <div className="game-panel p-5">
+            <p className="text-sm font-semibold text-muted-foreground">Lifetime income</p>
+            <p className="font-display text-2xl font-bold text-primary">
+              {formatNaira(wallet?.total_income)}
+            </p>
+          </div>
+          <div className="game-panel p-5">
+            <p className="text-sm font-semibold text-muted-foreground">Lifetime expenses</p>
+            <p className="font-display text-2xl font-bold text-clay">
+              {formatNaira(wallet?.total_expenses)}
+            </p>
+          </div>
         </div>
-        <div className="game-panel p-5">
-          <p className="text-sm font-semibold text-muted-foreground">Lifetime expenses</p>
-          <p className="font-display text-2xl font-bold text-clay">
-            {formatNaira(wallet?.total_expenses)}
-          </p>
-        </div>
-      </div></details>
+      </details>
 
       <section aria-labelledby="transactions-heading">
         <h2 id="transactions-heading" className="mb-3 text-2xl font-bold">
@@ -218,7 +221,10 @@ function WalletPage() {
             {txs.map((transaction) => {
               const income = transaction.kind === "income";
               return (
-                <li key={transaction.id} className="wallet-transaction-row flex items-center gap-3 p-4">
+                <li
+                  key={transaction.id}
+                  className="wallet-transaction-row flex items-center gap-3 p-4"
+                >
                   <span
                     className={`flex h-9 w-9 items-center justify-center rounded-lg border-2 border-edge ${income ? "bg-leaf" : "bg-clay text-clay-foreground"}`}
                   >

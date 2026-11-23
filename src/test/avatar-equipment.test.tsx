@@ -5,7 +5,10 @@ import { Avatar } from "@/components/game/Avatar";
 describe("Avatar equipment visuals", () => {
   it("renders visible slot accents only for equipped slots", () => {
     const { container } = render(
-      <Avatar appearance={{}} equipment={[{ slot: "accessory" }, { slot: "head" }]} />,
+      <Avatar
+        appearance={{}}
+        equipment={[{ slot: "accessory" }, { slot: "head", item: { slug: "cap" } }]}
+      />,
     );
     expect(container.querySelector('[data-equipment-slot="accessory"]')).toBeInTheDocument();
     expect(container.querySelector('[data-equipment-slot="head"]')).toBeInTheDocument();

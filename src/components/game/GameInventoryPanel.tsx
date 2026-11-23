@@ -522,7 +522,11 @@ export function GameInventoryPanel() {
                   )}
                   <div className="pi-detail-heading">
                     <p className="pi-eyebrow">Item details</p>
-                    <button type="button" className="pi-detail-clear" onClick={() => setSelectedId(null)}>
+                    <button
+                      type="button"
+                      className="pi-detail-clear"
+                      onClick={() => setSelectedId(null)}
+                    >
                       Clear selection
                     </button>
                   </div>
@@ -541,7 +545,11 @@ export function GameInventoryPanel() {
                     </div>
                   </dl>
                   {selectedItem.item ? (
-                    <div className="pi-detail-actions" role="group" aria-label="Selected item actions">
+                    <div
+                      className="pi-detail-actions"
+                      role="group"
+                      aria-label="Selected item actions"
+                    >
                       {selectedUse && (
                         <Button
                           className="pi-action-primary"
@@ -587,8 +595,14 @@ export function GameInventoryPanel() {
                   ) : (
                     <p className="pi-note">Item actions aren't available right now.</p>
                   )}
-                  {(!!useError && !!selectedUse || !!equipError && !!selectedSlot || !!discardError) && (
-                    <div className="pi-action-guidance" role="status" aria-label="Item action restrictions">
+                  {((!!useError && !!selectedUse) ||
+                    (!!equipError && !!selectedSlot) ||
+                    !!discardError) && (
+                    <div
+                      className="pi-action-guidance"
+                      role="status"
+                      aria-label="Item action restrictions"
+                    >
                       {selectedUse && useError && <p>Use: {useError}</p>}
                       {selectedSlot && equipError && <p>Wear: {equipError}</p>}
                       {discardError && <p>Discard: {discardError}</p>}

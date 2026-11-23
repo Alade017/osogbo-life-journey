@@ -117,13 +117,18 @@ describe("upgraded character frame playback", () => {
   });
 });
 
-it("keeps the idle loop requesting frames on a demand-rendered canvas", () => {
-  render(<CharacterBody variant="male" height={1} motion="Idle" />);
-  for (let i = 0; i < 1800; i++) {
-    runtime.invalidate.mockClear();
-    runtime.frame!({ clock: { elapsedTime: i / 60 } }, 1 / 60);
-    expect(runtime.invalidate, `idle frame ${i}`).toHaveBeenCalled();
-  }
+it("stops requesting idle frames after settling and resumes when walking", () => {
+  const view = render(<CharacterBody variant="male" height={1} motion="Idle" />);
+  play(3);
+
+  runtime.invalidate.mockClear();
+  play(1);
+  expect(runtime.invalidate).not.toHaveBeenCalled();
+
+  view.rerender(<CharacterBody variant="male" height={1} motion="Walk" />);
+  runtime.invalidate.mockClear();
+  play(1);
+  expect(runtime.invalidate).toHaveBeenCalled();
 });
 
 it("settles a reduced-motion idle pose without scheduling an endless animation loop", () => {
@@ -164,7 +169,6 @@ it("holds a still dance pose with reduced motion", () => {
   expect(runtime.invalidate).not.toHaveBeenCalled();
   expect(point(rig, BONE.rHand).distanceTo(hand)).toBeLessThan(0.001);
 });
-
 
 it("attaches worn back accessories to the animated upper spine", () => {
   render(

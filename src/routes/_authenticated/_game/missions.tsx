@@ -61,7 +61,8 @@ function MissionsPage() {
           const m = pm.mission!;
           const money = m.slug === "earn_10000";
           const progressRatio = m.target > 0 ? Math.max(0, Math.min(1, pm.progress / m.target)) : 0;
-          const nearlyComplete = pm.status !== "claimed" && pm.status !== "completed" && progressRatio >= 0.8;
+          const nearlyComplete =
+            pm.status !== "claimed" && pm.status !== "completed" && progressRatio >= 0.8;
           return (
             <div
               key={pm.id}
@@ -81,15 +82,26 @@ function MissionsPage() {
               </div>
               <p className="mt-1 text-sm text-muted-foreground">{m.description}</p>
               <ol className="mission-stage-path" aria-label={`${m.title} reward stages`}>
-                <li className={`mission-stage${pm.status === "completed" || pm.status === "claimed" ? " is-complete" : " is-current"}`} aria-current={pm.status !== "completed" && pm.status !== "claimed" ? "step" : undefined}>
+                <li
+                  className={`mission-stage${pm.status === "completed" || pm.status === "claimed" ? " is-complete" : " is-current"}`}
+                  aria-current={
+                    pm.status !== "completed" && pm.status !== "claimed" ? "step" : undefined
+                  }
+                >
                   <span className="mission-stage-node" aria-hidden="true" />
                   <span>In progress</span>
                 </li>
-                <li className={`mission-stage${pm.status === "claimed" ? " is-complete" : pm.status === "completed" ? " is-current" : ""}`} aria-current={pm.status === "completed" ? "step" : undefined}>
+                <li
+                  className={`mission-stage${pm.status === "claimed" ? " is-complete" : pm.status === "completed" ? " is-current" : ""}`}
+                  aria-current={pm.status === "completed" ? "step" : undefined}
+                >
                   <span className="mission-stage-node" aria-hidden="true" />
                   <span>Ready to claim</span>
                 </li>
-                <li className={`mission-stage${pm.status === "claimed" ? " is-current" : ""}`} aria-current={pm.status === "claimed" ? "step" : undefined}>
+                <li
+                  className={`mission-stage${pm.status === "claimed" ? " is-current" : ""}`}
+                  aria-current={pm.status === "claimed" ? "step" : undefined}
+                >
                   <span className="mission-stage-node" aria-hidden="true" />
                   <span>Claimed</span>
                 </li>

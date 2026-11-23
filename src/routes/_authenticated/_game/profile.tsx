@@ -173,7 +173,9 @@ export function ProfilePage() {
             <h2 id="profile-badges-title">Badges</h2>
           </div>
           <div className="pi-badge-totals">
-            <span>{earned} / {badges.length} earned</span>
+            <span>
+              {earned} / {badges.length} earned
+            </span>
             {inProgress > 0 && (
               <small className="pi-progress-summary">
                 {inProgress} achievement{inProgress === 1 ? "" : "s"} in progress
@@ -185,7 +187,10 @@ export function ProfilePage() {
           {badges.map((badge) => {
             const Icon = BADGE_ICONS[badge.id];
             return (
-              <li key={badge.id} className={`pi-badge${badge.earned ? " is-earned" : ""}${!badge.earned && badge.progress > 0 ? " is-in-progress" : ""}`}>
+              <li
+                key={badge.id}
+                className={`pi-badge${badge.earned ? " is-earned" : ""}${!badge.earned && badge.progress > 0 ? " is-in-progress" : ""}`}
+              >
                 <span className="pi-badge-icon" aria-hidden="true">
                   <Icon size={22} />
                 </span>
