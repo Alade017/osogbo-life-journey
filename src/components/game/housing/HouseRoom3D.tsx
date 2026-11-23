@@ -2524,6 +2524,8 @@ export function HouseRoom3D({
                     : [0, WORLD_SCALE.door * 0.58, depth * 0.06]
               }
               distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 0.94}
+              minZoom={ROOM_VIEW_CAMERA.minZoom}
+              maxZoom={ROOM_VIEW_CAMERA.maxZoom}
               enabled={!inputBlocked && !activePreview}
             />
           </Canvas>
