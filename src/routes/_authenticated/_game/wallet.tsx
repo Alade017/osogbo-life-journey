@@ -74,7 +74,7 @@ function WalletPage() {
         <p>All balances are virtual in-game currency. They have no real-world value.</p>
       </div>
       <div className="wallet-balance-grid grid gap-4 sm:grid-cols-3">
-        <div className="game-panel border-l-4 border-l-primary p-5">
+        <div className="game-panel wallet-balance-primary border-l-4 border-l-primary p-5">
           <p className="text-sm font-semibold text-muted-foreground">Cash</p>
           <p className="font-display text-3xl font-bold text-primary">{formatNaira(funds.cash)}</p>
         </div>
@@ -118,7 +118,7 @@ function WalletPage() {
             <div className="flex flex-wrap gap-3">
               <button
                 type="button"
-                className="rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50"
+                className="wallet-action-primary rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:opacity-50"
                 disabled={
                   !!transferError || !!amountError(numericAmount, funds.cash) || deposit.isPending
                 }
@@ -128,7 +128,7 @@ function WalletPage() {
               </button>
               <button
                 type="button"
-                className="rounded-lg border-2 border-edge bg-secondary px-4 py-2 font-bold disabled:opacity-50"
+                className="wallet-action-secondary rounded-lg border-2 border-edge bg-secondary px-4 py-2 font-bold disabled:opacity-50"
                 disabled={
                   !!transferError || !!amountError(numericAmount, funds.bank) || withdraw.isPending
                 }
@@ -173,7 +173,7 @@ function WalletPage() {
         )}
       </section>
 
-      <div className="wallet-lifetime-grid grid gap-4 sm:grid-cols-2">
+      <details className="wallet-history-disclosure"><summary className="wallet-history-summary">Lifetime financial overview</summary><div className="wallet-lifetime-grid grid gap-4 sm:grid-cols-2">
         <div className="game-panel p-5">
           <p className="text-sm font-semibold text-muted-foreground">Lifetime income</p>
           <p className="font-display text-2xl font-bold text-primary">
@@ -186,7 +186,7 @@ function WalletPage() {
             {formatNaira(wallet?.total_expenses)}
           </p>
         </div>
-      </div>
+      </div></details>
 
       <section aria-labelledby="transactions-heading">
         <h2 id="transactions-heading" className="mb-3 text-2xl font-bold">
