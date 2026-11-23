@@ -4,13 +4,11 @@ import type { ReactNode } from "react";
 
 export function GameMobileNav({
   hidden = false,
-  shortLabels = false,
   onNavigate,
   onInventoryOpen,
   children,
 }: {
   hidden?: boolean;
-  shortLabels?: boolean;
   onNavigate: () => void;
   onInventoryOpen: () => void;
   children?: ReactNode;
@@ -43,12 +41,13 @@ export function GameMobileNav({
       </Link>
       <Link
         to="/jobs"
+        aria-label="Career Life"
         activeProps={{ className: "gbb-active" }}
         className="gbb-link"
         onClick={onNavigate}
       >
         <Briefcase className="h-4.75 w-4.75" />
-        <span>{shortLabels ? "Career" : "Career Life"}</span>
+        <span>Career</span>
       </Link>
       <button
         type="button"

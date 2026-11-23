@@ -3,7 +3,7 @@
   --home-gutter: clamp(12px, 1.65vw, 26px);
   --home-top: max(20px, env(safe-area-inset-top));
   --home-bottom: calc(max(16px, env(safe-area-inset-bottom)) + var(--game-keyboard-inset, 0px));
-  --home-dock-height: 76px;
+  --home-dock-height: var(--game-navigation-height);
   --home-panel-top: calc(var(--home-top) + 224px);
   --home-glass: color-mix(in srgb, var(--card) 94%, transparent);
   --home-blue-glass: color-mix(in srgb, var(--primary) 42%, var(--foreground));
@@ -546,55 +546,10 @@
   background: var(--success, var(--primary-foreground));
 }
 
-/* The root dock alone gets the desktop treatment; the phone's own dock keeps its styles. */
+/* Home alone reserves desktop room beside the portrait and scene tools. */
 .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) {
   bottom: var(--home-bottom);
-  gap: 8px;
   width: min(720px, calc(100vw - 600px));
-  max-width: calc(100% - 2 * var(--home-gutter));
-  height: var(--home-dock-height);
-  padding: 8px;
-  border: 1px solid var(--home-edge);
-  border-radius: 32px;
-  background: color-mix(in srgb, var(--primary) 28%, transparent);
-  box-shadow: var(--home-shadow);
-  backdrop-filter: blur(16px);
-}
-.game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: row;
-  gap: 8px;
-  width: auto;
-  min-width: 0;
-  height: 100%;
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 1px solid var(--home-edge);
-  border-radius: 24px;
-  background: var(--home-glass);
-  color: var(--foreground);
-  font-size: 12px;
-  font-weight: 750;
-}
-.game-shell.city-game.navigation-redesign.home-hud
-  > .gbb:not(.is-open)
-  :is(.gbb-link, .gbb-phone)
-  svg {
-  flex: none;
-  width: 26px;
-  height: 26px;
-}
-.game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) .gbb-active {
-  background: color-mix(in srgb, var(--primary) 12%, var(--card));
-  color: var(--primary);
-}
-.game-shell.city-game.navigation-redesign.home-hud
-  > .gbb:not(.is-open)
-  .gbb-phone
-  .phone-launcher-icon {
-  width: 26px;
-  height: 26px;
 }
 
 .game-shell.city-game.navigation-redesign.home-hud aside.game-needs-rail[aria-label] {
@@ -956,9 +911,6 @@
 }
 
 @media (max-width: 1199px) {
-  .game-shell.city-game.navigation-redesign.home-hud {
-    --home-dock-height: 68px;
-  }
   .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) {
     width: min(700px, calc(100% - 2 * var(--home-gutter)));
   }
@@ -1013,7 +965,6 @@
     --home-gutter: 10px;
     --home-top: max(8px, env(safe-area-inset-top));
     --home-bottom: calc(max(8px, env(safe-area-inset-bottom)) + var(--game-keyboard-inset, 0px));
-    --home-dock-height: 66px;
   }
   .game-shell.city-game.navigation-redesign.home-hud > .world-environment {
     display: grid;
@@ -1161,39 +1112,6 @@
     width: 44px;
     height: 44px;
     border-radius: 16px;
-  }
-  .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) {
-    gap: 4px;
-    padding: 5px;
-    border-radius: 24px;
-  }
-  .game-shell.city-game.navigation-redesign.home-hud
-    > .gbb:not(.is-open)
-    :is(.gbb-link, .gbb-phone) {
-    flex-direction: column;
-    gap: 4px;
-    padding: 4px 2px;
-    border-radius: 18px;
-    font-size: 10px;
-  }
-  .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) .gbb-link span,
-  .game-shell.city-game.navigation-redesign.home-hud
-    > .gbb:not(.is-open)
-    .gbb-phone
-    .phone-compact-label {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip: auto;
-    opacity: 1;
-  }
-  .game-shell.city-game.navigation-redesign.home-hud
-    > .gbb:not(.is-open)
-    :is(.gbb-link, .gbb-phone)
-    svg {
-    width: 22px;
-    height: 22px;
   }
   .game-shell.city-game.navigation-redesign.home-hud .home-player-status {
     gap: 8px;
@@ -1352,7 +1270,6 @@
 @media (max-height: 560px) and (min-width: 600px) {
   .game-shell.city-game.navigation-redesign.home-hud {
     --home-top: max(6px, env(safe-area-inset-top));
-    --home-dock-height: 54px;
     --home-panel-top: calc(var(--home-top) + 114px);
   }
   .game-shell.city-game.navigation-redesign.home-hud > .world-environment {

@@ -317,7 +317,6 @@ function GameLayout() {
           <div className={phoneOpen ? "gbb is-open" : "gbb"}>
             <GameMobileNav
               hidden={phoneOpen || inventoryOpen}
-              shortLabels={homeHud}
               onNavigate={() => setPhoneOpen(false)}
               onInventoryOpen={() => setInventoryOpen(true)}
             />

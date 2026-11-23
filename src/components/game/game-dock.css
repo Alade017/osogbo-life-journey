@@ -1,10 +1,28 @@
 /* Shared geometry for page content, fixed controls and the phone's portal. */
 :root {
-  --game-navigation-height: 56px;
-  --game-navigation-gap: 8px;
+  --game-navigation-height: 76px;
+  --game-navigation-gap: 16px;
   --game-dock-space: calc(
-    var(--game-navigation-height) + 2 * var(--game-navigation-gap) + env(safe-area-inset-bottom)
+    var(--game-navigation-height) + max(var(--game-navigation-gap), env(safe-area-inset-bottom)) +
+      var(--game-navigation-gap)
   );
+}
+
+@media (max-width: 1199px) {
+  :root {
+    --game-navigation-height: 68px;
+  }
+}
+@media (max-width: 767px) {
+  :root {
+    --game-navigation-height: 66px;
+    --game-navigation-gap: 8px;
+  }
+}
+@media (max-height: 560px) and (min-width: 600px) {
+  :root {
+    --game-navigation-height: 54px;
+  }
 }
 
 .city-game.navigation-redesign,
