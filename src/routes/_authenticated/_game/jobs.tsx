@@ -52,6 +52,8 @@ export function JobsPage() {
 
 /** Phone Opportunities: the open jobs as a plain list. Each row shows the job, its place and pay. */
 export function PhoneJobList() {
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState("all");
   const { data: jobs, isLoading, isError, refetch } = useQuery(q.jobs());
   const { data: locations } = useQuery(q.locations());
   if (isError)
@@ -65,19 +67,38 @@ export function PhoneJobList() {
     );
   if (isLoading || !jobs) return <CardListSkeleton label="Loading jobs" cards={3} />;
   const openJobs = jobs.filter((job) => !isCareerJob(job.slug));
+  const query = search.trim().toLowerCase();
+  const visibleJobs = openJobs.filter((job) => {
+    const location = locations?.find((item) => item.id === job.location_id);
+    return (category === "all" || resolveJobCategory(job) === category) &&
+      [job.name, job.description, location?.name].some((value) => value?.toLowerCase().includes(query));
+  });
   return (
     <section className="phone-job-list" aria-label="Available jobs">
       <div className="phone-job-list-heading">
         <h2>Available jobs</h2>
         <span>
-          {openJobs.length} {openJobs.length === 1 ? "job" : "jobs"}
+          {visibleJobs.length} {visibleJobs.length === 1 ? "job" : "jobs"}
         </span>
       </div>
+      <label className="learning-search">
+        <Search size={16} aria-hidden="true" />
+        <input type="search" aria-label="Search opportunities" placeholder="Search jobs or workplaces" value={search} onChange={(event) => setSearch(event.target.value)} />
+      </label>
+      <label className="phone-job-filter">
+        <span>Category</span>
+        <select value={category} onChange={(event) => setCategory(event.target.value)}>
+          <option value="all">All categories</option>
+          {JOB_CATEGORIES.map((item) => <option key={item} value={item}>{JOB_CATEGORY_LABELS[item]}</option>)}
+        </select>
+      </label>
       {openJobs.length === 0 ? (
         <p className="phone-job-state">No jobs are open right now.</p>
+      ) : visibleJobs.length === 0 ? (
+        <p className="phone-job-state" role="status">No jobs match your filters.</p>
       ) : (
         <ul>
-          {openJobs.map((job) => {
+          {visibleJobs.map((job) => {
             const location = locations?.find((item) => item.id === job.location_id);
             return (
               <li key={job.id} className="phone-job-row">
@@ -86,6 +107,9 @@ export function PhoneJobList() {
                   {location && <small>{location.name}</small>}
                 </span>
                 <strong className="phone-job-pay">{formatNaira(job.salary)}</strong>
+                {location ? (
+                  <Link className="phone-job-workplace" to="/location/$slug" params={{ slug: location.slug }} aria-label={`View workplace for ${job.name}`}>View workplace</Link>
+                ) : <small className="phone-job-location-state">Workplace unavailable</small>}
               </li>
             );
           })}
