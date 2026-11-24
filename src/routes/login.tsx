@@ -7,7 +7,7 @@ import { afterLogin, loginDestination } from "@/lib/login-destination";
 
 export const Route = createFileRoute("/login")({
   validateSearch: (search: Record<string, unknown>): { destination?: string } => {
-    const destination = loginDestination(search.destination);
+    const destination = loginDestination(search["destination"]);
     return destination ? { destination } : {};
   },
   head: () => ({
