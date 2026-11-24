@@ -117,3 +117,15 @@
 @media (prefers-reduced-motion: reduce) {
   .entry *, .entry *::before, .entry *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* The landing-page scene is a visual preview, not the interactive map screen. */
+.entry-world-stage .map-hud,
+.entry-world-stage .map-topbar,
+.entry-world-stage .map-controls,
+.entry-world-stage .map-ticker,
+.entry-world-stage .map-player-dock,
+.entry-world-stage .town-map-zoom-controls,
+.entry-world-stage .map-offline-banner,
+.entry-world-stage .map-housing-message {
+  display: none !important;
+}
