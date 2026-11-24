@@ -1,10 +1,7 @@
-import { Suspense, useEffect, useMemo } from "react";
-import { Box3, Vector3 } from "three";
-import { Clone, useGLTF } from "@react-three/drei";
+import { ShowroomAsset } from "./ShowroomAsset";
 import { WorldMaterial } from "./WorldScene";
 import type { WorldTone } from "./world-theme";
-import { VenueSceneBoundary } from "@/components/game/VenueSceneBoundary";
-import { SHOWROOM_LAYOUT, type ShowroomLayout } from "@/game/showroom-navigation";
+import { type ShowroomLayout } from "@/game/showroom-navigation";
 import type { WalkPoint } from "@/game/grid-walk-path";
 
 type Point = [number, number, number];
@@ -19,18 +16,6 @@ function Block({ at, size, tone = "wall", color }: { at: Point; size: Point; ton
 }
 function Glass({ at, size }: { at: Point; size: Point }) {
   return <mesh position={at}><boxGeometry args={size} /><meshStandardMaterial color="#b6d7df" transparent opacity={0.22} roughness={0.18} depthWrite={false} /></mesh>;
-}
-function Vehicle({ model, onReady }: { model: Display; onReady: (id: string) => void }) {
-  const { scene } = useGLTF(model.url);
-  const transform = useMemo(() => {
-    const box = new Box3().setFromObject(scene);
-    const size = box.getSize(new Vector3());
-    const center = box.getCenter(new Vector3());
-    if (box.isEmpty() || ![size.x, size.y, size.z, center.x, center.z, box.min.y].every(Number.isFinite)) throw new Error("Invalid vehicle bounds");
-    return { scale: Math.min(1, (SHOWROOM_LAYOUT.displayWidth - 0.2) / Math.max(size.x, 0.001), (SHOWROOM_LAYOUT.displayDepth - 0.2) / Math.max(size.z, 0.001)), offset: [-center.x, -box.min.y, -center.z] as Point };
-  }, [scene]);
-  useEffect(() => { onReady(model.id); }, [model.id, onReady]);
-  return <group scale={transform.scale}><group position={transform.offset}><Clone object={scene} /></group></group>;
 }
 const height = 4;
 
@@ -75,7 +60,8 @@ export function DealershipExterior({ layout, onEnter, onWalk, style = "standard"
   </group>;
 }
 
-export function DealershipInterior({ layout, models, onWalk, onSelect, onExit, style = "standard", activeBay, onAssetReady, onAssetError, viewer }: {
+export function DealershipInterior({ layout, models, onWalk, onSelect, onExit, style = "standard", activeBay, onAssetReady, onAssetError, viewer, loadRadius }: {
+  loadRadius: number;
   layout: ShowroomLayout;
   viewer: WalkPoint;
   models: readonly Display[];
@@ -120,8 +106,8 @@ export function DealershipInterior({ layout, models, onWalk, onSelect, onExit, s
           <mesh position={[side * (layout.displayWidth / 2 - 0.045), 0.169, 0]}><boxGeometry args={[0.045, 0.012, layout.displayDepth - 0.08]} /><meshBasicMaterial color={finish.accent} /></mesh>
           <mesh position={[0, 0.169, side * (layout.displayDepth / 2 - 0.045)]}><boxGeometry args={[layout.displayWidth - 0.08, 0.012, 0.045]} /><meshBasicMaterial color={finish.accent} /></mesh>
         </group>)}
-        {model && (activeBay === index || Math.hypot(viewer[0] - bay.x, viewer[1] - bay.z) <= 14) && <group position={[0, 0.16, 0]}>
-          <VenueSceneBoundary key={model.id} onError={() => onAssetError(model.id)}><Suspense fallback={null}><Vehicle model={model} onReady={onAssetReady} /></Suspense></VenueSceneBoundary>
+        {model && <group position={[0, 0.16, 0]}>
+          <ShowroomAsset product={model} viewer={viewer} position={[bay.x, bay.z]} radius={loadRadius} pinned={activeBay === index} limits={[layout.displayWidth - 0.2, 3.5, layout.displayDepth - 0.2]} onReady={onAssetReady} onError={onAssetError} />
         </group>}
       </group>;
     })}
