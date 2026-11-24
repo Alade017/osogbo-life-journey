@@ -3,6 +3,16 @@ import { DISTRICT_FEATURES } from "./district-features";
 import { addFeatureBlocks, addHouseBlocks } from "./district-streets";
 import { townAnchorForSlug, townNeighborhoodArea } from "./town-neighborhood.ts";
 
+const TOWN_STYLE_OLAIYA = {
+  ground: 0xd9c9ad,
+  grid: 0xcbbd9f,
+  road: 0x777872,
+  paving: 0xc5b9a5,
+  marking: 0xeee6d5,
+  verticalRoad: { x: 340, width: 96 },
+  horizontalRoad: { y: 300, height: 96 },
+} as const;
+
 export type WorldPoint = { x: number; y: number };
 export type NeighborhoodNpcView = {
   id: string;
@@ -113,10 +123,234 @@ export const NEIGHBORHOOD_SCENE_BOUNDS = {
  * Olaiya is walked from the town data like every other place (see town-neighborhood). This export
  * keeps the name for the default fallback and for callers that want the Olaiya layout directly.
  */
-export const CITY_CENTRE_AREA: NeighborhoodArea = townNeighborhoodArea(
-  townAnchorForSlug("city-centre")!,
-  "Olaiya",
+/**
+ * Olaiya, hand-built as a 60 x 45 m district like Greenbank and Hillview. Every place from the
+ * town data (osogbo-town.json, district "olaiya") stands on the street; the Olaiya test checks it.
+ * Each place has a spot: its position and the road point in front of it where players stand.
+ */
+const OLAIYA_NORTH = 276; // road point on the north side of the market road
+const OLAIYA_SOUTH = 324; // road point on the south side of the market road
+const OLAIYA_PLACES = [
+  {
+    id: "olaiya-fuel-pumps",
+    label: "Fuel & Go Forecourt Pumps",
+    kind: "landmark",
+    x: 450,
+    y: 160,
+    width: 110,
+    height: 90,
+    access: { x: 450, y: OLAIYA_NORTH },
+  },
+  {
+    id: "olaiya-mini-mart",
+    label: "Fuel & Go Mini-Mart",
+    kind: "shop",
+    x: 575,
+    y: 160,
+    width: 110,
+    height: 100,
+    access: { x: 575, y: OLAIYA_NORTH },
+  },
+  {
+    id: "olaiya-vulcanizer",
+    label: "Vulcanizer & Tire Corner",
+    kind: "landmark",
+    x: 690,
+    y: 160,
+    width: 100,
+    height: 90,
+    access: { x: 690, y: OLAIYA_NORTH },
+  },
+  {
+    id: "olaiya-central",
+    label: "Olaiya Central",
+    kind: "shop",
+    x: 820,
+    y: 150,
+    width: 150,
+    height: 120,
+    access: { x: 820, y: OLAIYA_NORTH },
+  },
+  {
+    id: "olaiya-atm",
+    label: "Meridian Bank ATM Alcove",
+    kind: "landmark",
+    x: 945,
+    y: 165,
+    width: 70,
+    height: 70,
+    access: { x: 945, y: OLAIYA_NORTH },
+  },
+  {
+    id: "olaiya-bank-lobby",
+    label: "Meridian Bank Customer Lobby",
+    kind: "shop",
+    x: 1060,
+    y: 150,
+    width: 150,
+    height: 120,
+    access: { x: 1060, y: OLAIYA_NORTH },
+  },
+  {
+    id: "olaiya-adire-vats",
+    label: "Indigo Dye Vats & Zinc Shed",
+    kind: "landmark",
+    x: 1190,
+    y: 160,
+    width: 100,
+    height: 100,
+    access: { x: 1190, y: OLAIYA_NORTH },
+  },
+  {
+    id: "olaiya-adire-racks",
+    label: "Adire Drying & Folding Racks",
+    kind: "landmark",
+    x: 450,
+    y: 450,
+    width: 110,
+    height: 100,
+    access: { x: 450, y: OLAIYA_SOUTH },
+  },
+  {
+    id: "olaiya-market-stalls",
+    label: "Open Market Produce & Cloth Tables",
+    kind: "landmark",
+    x: 575,
+    y: 450,
+    width: 110,
+    height: 100,
+    access: { x: 575, y: OLAIYA_SOUTH },
+  },
+  {
+    id: "olaiya-buka",
+    label: "Mama Sikira Buka Kitchen",
+    kind: "shop",
+    x: 700,
+    y: 450,
+    width: 110,
+    height: 100,
+    access: { x: 700, y: OLAIYA_SOUTH },
+  },
+  {
+    id: "olaiya-barber",
+    label: "Dele Cutz Barber Salon",
+    kind: "shop",
+    x: 825,
+    y: 450,
+    width: 100,
+    height: 100,
+    access: { x: 825, y: OLAIYA_SOUTH },
+  },
+  {
+    id: "olaiya-pos",
+    label: "FastCash POS & Airtime Kiosk",
+    kind: "kiosk",
+    x: 945,
+    y: 460,
+    width: 60,
+    height: 60,
+    access: { x: 945, y: OLAIYA_SOUTH },
+  },
+  {
+    id: "olaiya-accessory",
+    label: "Iya Adire Style & Accessories",
+    kind: "shop",
+    x: 1060,
+    y: 450,
+    width: 110,
+    height: 100,
+    access: { x: 1060, y: OLAIYA_SOUTH },
+  },
+  {
+    id: "olaiya-transit",
+    label: "Keke Napep & Korope Loading Stand",
+    kind: "landmark",
+    x: 575,
+    y: 740,
+    width: 120,
+    height: 60,
+    access: { x: 575, y: 650 },
+  },
+] as const;
+
+/** Where each Olaiya place stands and the road point players use to reach it. */
+export const OLAIYA_SPOTS: Readonly<
+  Record<string, { position: WorldPoint; accessPoint: WorldPoint }>
+> = Object.fromEntries(
+  OLAIYA_PLACES.map((place) => [
+    place.id,
+    { position: { x: place.x, y: place.y }, accessPoint: { x: place.access.x, y: place.access.y } },
+  ]),
 );
+
+export const CITY_CENTRE_AREA: NeighborhoodArea = {
+  slug: "city-centre",
+  name: "Olaiya",
+  objects: [
+    { id: "home", name: "Olaiya homes", kind: "home", walkIn: true, x: 320, y: 300 },
+    {
+      id: "market",
+      name: "Olaiya shops",
+      kind: "market",
+      walkIn: true,
+      shopSlug: null,
+      x: 575,
+      y: OLAIYA_SOUTH,
+    },
+    {
+      id: "work",
+      name: "Olaiya opportunities",
+      kind: "work",
+      walkIn: true,
+      x: 820,
+      y: OLAIYA_NORTH,
+    },
+    { id: "npc", name: "Olaiya neighbour 1", kind: "npc", walkIn: true, x: 620, y: OLAIYA_NORTH },
+    {
+      id: "npc-2",
+      name: "Olaiya neighbour 2",
+      kind: "npc",
+      walkIn: true,
+      x: 1000,
+      y: OLAIYA_SOUTH,
+    },
+    { id: "npc-3", name: "Olaiya neighbour 3", kind: "npc", walkIn: true, x: 880, y: OLAIYA_NORTH },
+  ],
+  roads: [
+    { id: "olaiya-main-road", axis: "vertical", offset: 60, width: 96, type: "arterial" },
+    { id: "olaiya-market-road", axis: "horizontal", offset: 300, width: 96, type: "arterial" },
+    { id: "olaiya-east-road", axis: "vertical", offset: 1300, width: 96, type: "street" },
+    { id: "olaiya-transit-lane", axis: "horizontal", offset: 650, width: 80, type: "street" },
+    { id: "olaiya-south-road", axis: "horizontal", offset: 950, width: 96, type: "arterial" },
+  ],
+  obstacles: [
+    ...OLAIYA_PLACES.map((place) => ({
+      id: place.id,
+      kind: place.kind,
+      label: place.label,
+      x: place.x,
+      y: place.y,
+      width: place.width,
+      height: place.height,
+    })),
+    { id: "olaiya-tree-0", kind: "tree", x: 180, y: 80, width: 24, height: 24 },
+    { id: "olaiya-tree-1", kind: "tree", x: 180, y: 1120, width: 24, height: 24 },
+    { id: "olaiya-tree-2", kind: "tree", x: 1480, y: 80, width: 24, height: 24 },
+    { id: "olaiya-tree-3", kind: "tree", x: 1480, y: 1120, width: 24, height: 24 },
+    { id: "olaiya-tree-4", kind: "tree", x: 1200, y: 520, width: 24, height: 24 },
+    { id: "olaiya-tree-5", kind: "tree", x: 1200, y: 800, width: 24, height: 24 },
+  ],
+  paths: [],
+  dressing: [],
+  style: TOWN_STYLE_OLAIYA,
+  environment: {
+    url: "/models/environments/neighborhoods/olaiya.glb",
+    x: 800,
+    y: 600,
+    width: 1600,
+    height: 1200,
+  },
+};
 
 /** A second, data-backed street layout for the seeded Oja-Oba Market destination. */
 export const OJA_OBA_AREA: NeighborhoodArea = {

@@ -13,6 +13,7 @@ import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import {
   ATIKU_AREA,
+  CITY_CENTRE_AREA,
   OKE_FIA_AREA,
   type NeighborhoodArea,
   type NeighborhoodObstacle,
@@ -35,7 +36,11 @@ function metres(x: number, y: number, origin: Origin) {
   return { x: snap((x - origin.x) / UNIT), z: snap((y - origin.y) / UNIT) };
 }
 
-export const LAYOUT_AREAS: readonly NeighborhoodArea[] = [ATIKU_AREA, OKE_FIA_AREA];
+export const LAYOUT_AREAS: readonly NeighborhoodArea[] = [
+  ATIKU_AREA,
+  OKE_FIA_AREA,
+  CITY_CENTRE_AREA,
+];
 
 /** Short id ("nw", "provisions") from an obstacle id like "atiku-compound-nw". */
 function shortId(slug: string, id: string): string {
@@ -82,6 +87,10 @@ export function layoutJson(area: NeighborhoodArea) {
     gatehouse: gatehouse
       ? { ...footprint(gatehouse, slug, origin), label: gatehouse.label ?? "" }
       : null,
+    /** Every named place on the street (shops, kiosks, landmarks), with its kind and label. */
+    places: obstacles
+      .filter((o) => o.kind === "shop" || o.kind === "kiosk" || o.kind === "landmark")
+      .map((o) => ({ ...footprint(o, slug, origin), kind: o.kind, label: o.label ?? "" })),
     trees: named("tree").map((o) => {
       const c = metres(o.x, o.y, origin);
       return [c.x, c.z];

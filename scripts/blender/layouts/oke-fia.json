@@ -181,6 +181,62 @@
     "d": 4,
     "label": "Estate Security Post"
   },
+  "places": [
+    {
+      "id": "estate-mini-mart",
+      "x": -19,
+      "z": -19.75,
+      "w": 4,
+      "d": 4,
+      "kind": "shop",
+      "label": "Hillview Mini-Mart"
+    },
+    {
+      "id": "gatehouse",
+      "x": -23.5,
+      "z": -19.75,
+      "w": 4,
+      "d": 4,
+      "kind": "landmark",
+      "label": "Estate Security Post"
+    },
+    {
+      "id": "pos-kiosk",
+      "x": -18,
+      "z": -4.75,
+      "w": 1.5,
+      "d": 1.5,
+      "kind": "kiosk",
+      "label": "POS"
+    },
+    {
+      "id": "district-feature-0",
+      "x": -27.75,
+      "z": -18,
+      "w": 2.25,
+      "d": 1.5,
+      "kind": "landmark",
+      "label": "Eateries"
+    },
+    {
+      "id": "district-feature-1",
+      "x": -17.6,
+      "z": -2.6,
+      "w": 2.25,
+      "d": 1.5,
+      "kind": "landmark",
+      "label": "Small Shops"
+    },
+    {
+      "id": "district-feature-2",
+      "x": -24.35,
+      "z": -16.5,
+      "w": 2.25,
+      "d": 1.5,
+      "kind": "landmark",
+      "label": "Gym"
+    }
+  ],
   "trees": [
     [
       -27.5,

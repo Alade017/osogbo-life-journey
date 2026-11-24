@@ -198,6 +198,44 @@
     "label": "POS"
   },
   "gatehouse": null,
+  "places": [
+    {
+      "id": "provisions",
+      "x": -12.5,
+      "z": -18.25,
+      "w": 4,
+      "d": 6,
+      "kind": "shop",
+      "label": "Greenbank Provisions"
+    },
+    {
+      "id": "pos-kiosk",
+      "x": -11.5,
+      "z": -6.75,
+      "w": 1.5,
+      "d": 1.5,
+      "kind": "kiosk",
+      "label": "POS"
+    },
+    {
+      "id": "district-feature-0",
+      "x": -16.25,
+      "z": -18,
+      "w": 2.25,
+      "d": 1.5,
+      "kind": "landmark",
+      "label": "Housing"
+    },
+    {
+      "id": "district-feature-1",
+      "x": -15,
+      "z": -3.75,
+      "w": 2.25,
+      "d": 1.5,
+      "kind": "landmark",
+      "label": "Community"
+    }
+  ],
   "trees": [
     [
       -29,

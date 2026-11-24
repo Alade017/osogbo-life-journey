@@ -1,6 +1,5 @@
-import type { WorldPoint } from "./neighborhood-model.ts";
+import { OLAIYA_SPOTS, type WorldPoint } from "./neighborhood-model.ts";
 import type { NeedName } from "../lib/life-simulation.ts";
-import { townSpotFor } from "./town-neighborhood.ts";
 
 export type InteractableCategory =
   "filling-station" | "bank" | "adire" | "market" | "shops" | "transit" | "npc";
@@ -645,18 +644,22 @@ const NPC_LANDMARK: Record<string, string> = {
   "zone-npc-sikira": "olaiya-buka",
   "zone-npc-chidi": "olaiya-transit",
 };
-/** Olaiya's interaction spots are landmarks in the town data, so their places follow the layout. */
+/** Olaiya's interaction spots come from its hand-built layout (OLAIYA_SPOTS), one per town place. */
 export const NEIGHBORHOOD_INTERACTABLE_ZONES: readonly InteractableZoneSpec[] = AUTHORED_ZONES.map(
   (zone) => {
     const landmarkId = ZONE_LANDMARK[zone.id];
     if (!landmarkId) throw new Error(`No Olaiya landmark for ${zone.id}`);
-    return { ...zone, ...townSpotFor("city-centre", landmarkId) };
+    const spot = OLAIYA_SPOTS[landmarkId];
+    if (!spot) throw new Error(`No Olaiya spot for ${landmarkId}`);
+    return { ...zone, ...spot };
   },
 );
 export const NEIGHBORHOOD_ZONE_NPCS: readonly ZoneNpcSpec[] = AUTHORED_NPCS.map((npc) => {
   const landmarkId = NPC_LANDMARK[npc.id];
   if (!landmarkId) throw new Error(`No Olaiya landmark for ${npc.id}`);
-  const { accessPoint } = townSpotFor("city-centre", landmarkId);
+  const spot = OLAIYA_SPOTS[landmarkId];
+  if (!spot) throw new Error(`No Olaiya spot for ${landmarkId}`);
+  const { accessPoint } = spot;
   return { ...npc, position: accessPoint, accessPoint };
 });
 

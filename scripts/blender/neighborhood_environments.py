@@ -76,6 +76,18 @@ DECOR = {
         lamps=[(-28.5, -15.65), (-1.5, -6.85), (-16.9, -15.65), (-13.1, -6.85)],
         features=[("Eateries", 60, 120), ("Small Shops", 330, 530), ("Gym", 150, 160)],
     ),
+    "city-centre": dict(
+        prefix="olj_", out="olaiya.glb",
+        houses={},  # Olaiya has no housing plots: its places are drawn from the layout's places list
+        benches=[(2.0, 5.0)],
+        bins=[(-21.0, 9.0), (3.0, -1.0)],
+        poles=[(-16.0, 16.5)],
+        palms=[(27.0, -18.0), (27.0, 4.0), (27.0, 17.0)],
+        # Street lamps on the verges of the north-south main road and the market road.
+        lamps=[(-25.0, -14.0), (-25.0, -4.0), (-25.0, 6.0), (-25.0, 16.0),
+               (-19.0, -12.8), (-19.0, -9.7), (-1.0, -12.8), (-1.0, -9.7), (10.0, -12.8), (10.0, -9.7)],
+        features=[],
+    ),
 }
 
 
@@ -96,6 +108,7 @@ def load_area(slug):
 
 ATIKU = load_area("atiku")
 HILLVIEW = load_area("oke-fia")
+CITY = load_area("city-centre")
 
 # ---------------- Blender helpers ----------------
 _mats = {}
@@ -347,6 +360,59 @@ def _tree(prefix, i, x, z):
     sph(f"{prefix}_tree_crown_{i}", x, z, 1.0, P["foliage"], y0=2.6, sz=0.9)
 
 
+def _open_stall(name, x, z, w, d, roof):
+    """Open-fronted market stall: four timber posts under a cloth roof."""
+    for i, (dx, dz) in enumerate([(-w / 2 + 0.15, -d / 2 + 0.15), (w / 2 - 0.15, -d / 2 + 0.15),
+                                  (-w / 2 + 0.15, d / 2 - 0.15), (w / 2 - 0.15, d / 2 - 0.15)]):
+        cyl(f"{name}_post_{i}", x + dx, z + dz, 0.06, 2.6, P["timber"])
+    box(f"{name}_cloth", x, z, w + 0.3, d + 0.3, 0.12, roof, y0=2.6)
+    box(f"{name}_counter", x, z + d / 2 - 0.3, w * 0.9, 0.5, 0.9, P["timber"])
+
+
+def _place(pre, p):
+    """Visual for one named street place (shop, kiosk or landmark) on the Olaiya layout."""
+    x, z, w, d, pid, kind = p["x"], p["z"], p["w"], p["d"], p["id"], p["kind"]
+    name = f"{pre}place_{pid}"
+    if pid.endswith("fuel-pumps"):
+        # Open forecourt: a canopy on four posts over two pumps.
+        for i, (dx, dz) in enumerate([(-w / 2 + 0.2, -d / 2 + 0.2), (w / 2 - 0.2, -d / 2 + 0.2),
+                                      (-w / 2 + 0.2, d / 2 - 0.2), (w / 2 - 0.2, d / 2 - 0.2)]):
+            cyl(f"{name}_post_{i}", x + dx, z + dz, 0.07, 3.6, P["metal"])
+        box(f"{name}_canopy", x, z, w + 0.4, d + 0.4, 0.25, P["accent"], y0=3.6)
+        box(f"{name}_pump_a", x - w / 4, z, 0.5, 0.5, 1.2, P["indigo"])
+        box(f"{name}_pump_b", x + w / 4, z, 0.5, 0.5, 1.2, P["indigo"])
+    elif pid.endswith("transit"):
+        # Open bus and keke shelter with a bench under the roof.
+        for i, (dx, dz) in enumerate([(-w / 2 + 0.2, -d / 2 + 0.2), (w / 2 - 0.2, -d / 2 + 0.2)]):
+            cyl(f"{name}_post_{i}", x + dx, z + dz, 0.06, 2.8, P["metal"])
+        box(f"{name}_roof", x, z, w + 0.2, d + 0.2, 0.2, P["indigo"], y0=2.8)
+        box(f"{name}_bench", x, z + d / 2 - 0.3, 1.8, 0.5, 0.45, P["timber"])
+        box(f"{name}_sign", x, z - d / 2 + 0.05, w * 0.6, 0.08, 0.4, P["sign"], y0=2.4)
+    elif pid.endswith("atm"):
+        # Small glass-fronted ATM booth.
+        box(f"{name}_booth", x, z, w, d, 2.8, P["plaster"])
+        box(f"{name}_glass", x, z + d / 2 + 0.02, w * 0.6, 0.04, 1.2, P["glass"], y0=0.8)
+        box(f"{name}_sign", x, z + d / 2 + 0.05, w * 0.8, 0.08, 0.4, P["indigo"], y0=2.6)
+    elif pid.endswith(("adire-vats", "adire-racks", "market-stalls")):
+        _open_stall(name, x, z, w, d, P["indigo"] if "vats" in pid else P["accent"])
+        if "vats" in pid:
+            for i, dx in enumerate((-w / 3, 0.0, w / 3)):
+                cyl(f"{name}_vat_{i}", x + dx, z - d / 4, 0.4, 0.7, P["indigo"], y0=0.0)
+    elif kind == "kiosk":
+        box(f"{name}_kiosk", x, z, w, d, 2.2, P["timber"])
+        cyl(f"{name}_umbrella", x, z, 1.1, 0.15, P["accent"], y0=2.5)
+    elif kind == "shop":
+        box(f"{name}_shop", x, z, w, d, 3.2, P["plaster"])
+        box(f"{name}_awning", x, z + d / 2 + 0.6, w + 0.6, 1.2, 0.15, P["accent"], y0=2.6)
+        box(f"{name}_sign", x, z + d / 2 + 0.05, w * 0.8, 0.08, 0.5,
+            P["indigo"] if "bank" in pid else P["sign"], y0=3.0)
+    else:
+        # Generic landmark block: stone walls, tiled roof, sign band.
+        box(f"{name}_block", x, z, w, d, 3.4, P["stone"])
+        box(f"{name}_roof", x, z, w + 0.4, d + 0.4, 0.3, P["roof"], y0=3.4)
+        box(f"{name}_sign", x, z + d / 2 + 0.05, w * 0.7, 0.08, 0.45, P["indigo"], y0=2.9)
+
+
 def build(area):
     global FIELD_W, FIELD_D
     FIELD_W, FIELD_D = area["frame"]["width_m"], area["frame"]["depth_m"]
@@ -383,6 +449,12 @@ def build(area):
     box(f"{pre}pos_kiosk", k["x"], k["z"], k["w"], k["d"], 2.2, P["timber"])
     cyl(f"{pre}pos_pole", k["x"], k["z"], 0.04, 2.6, P["metal"])
     cyl(f"{pre}pos_umbrella", k["x"], k["z"], 1.1, 0.15, P["accent"], y0=2.5)
+    # Places beyond the shop, kiosk and gatehouse (drawn above) get their own visual.
+    drawn = {shop["id"], k["id"]}
+    for p in area.get("places", []):
+        if p["id"] in drawn or p["id"].endswith("-gatehouse"):
+            continue
+        _place(pre, p)
     for i, (x, z) in enumerate(area["trees"]):
         _tree(pre, i, x, z)
     for i, (x, z) in enumerate(area["benches"]):
@@ -413,7 +485,7 @@ def clear(prefix):
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
     out_dir = argv[0] if argv else None
-    for area in (ATIKU, HILLVIEW):
+    for area in (ATIKU, HILLVIEW, CITY):
         clear(area["prefix"])
         build(area)
         if out_dir:
