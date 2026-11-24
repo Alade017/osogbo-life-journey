@@ -5,6 +5,11 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { ATIKU_AREA, OKE_FIA_AREA, neighborhoodAreaForSlug } from "@/game/neighborhood-model";
 import { neighborhoodObstacleFootprint, type GroundRect } from "@/game/neighborhood-geometry";
 
+// The GLBs carry baked PNG textures; three's loader reads `self` while parsing them, which Node lacks.
+if (typeof (globalThis as { self?: unknown }).self === "undefined") {
+  (globalThis as { self?: unknown }).self = globalThis;
+}
+
 const AREAS = [
   { label: "Greenbank Estates", area: ATIKU_AREA, glb: "greenbank-estates.glb" },
   { label: "Hillview Quarter", area: OKE_FIA_AREA, glb: "hillview-quarter.glb" },

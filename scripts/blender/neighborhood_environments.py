@@ -28,12 +28,13 @@ ENV_CENTRE = (400.0, 300.0)  # matches the entrance convention used by Fuel and 
 FIELD_W, FIELD_D = 30.0, 22.5  # metres; 800 x 600 street units
 
 # ---------------- Palette (world-theme.ts WORLD_PALETTE + neighbourhood style) ----------------
+TEX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "textures")
 P = dict(
-    ground="#d9c9ad", lawn="#a8bd8c", pavers="#c5b9a5", road="#777872", marking="#eee6d5",
-    wall="#d4bea0", plaster="#f1e9d9", roof="#74685e", glass="#9bc8d8", door="#70401f",
-    timber="#82705d", accent="#c47c45", indigo="#2e4170", sign="#e7c77f", metal="#626b6b",
-    gate="#2b2f36", gold="#e7c77f", foliage="#89977c", trunk="#82705d", drainage="#555b59",
-    hedge="#6f8a5f", stone="#e7dfce",
+    ground="tex:sand", lawn="tex:lawn", pavers="tex:paving", road="tex:asphalt", marking="#f6efe0",
+    wall="tex:wall_render", plaster="tex:plaster", roof="tex:roof_tiles", glass="#8fc3d6", door="#7a4522",
+    timber="#8c6a4a", accent="#d9833f", indigo="#2f4a8a", sign="#f0cf82", metal="#7b8080",
+    gate="#2e3138", gold="#e9c46a", foliage="#6f9a4e", trunk="#8c6a4a", drainage="#5d6361",
+    hedge="#5f8c4a", stone="#efe4cc", solar="#27407f",
 )
 
 # ---------------- Area definitions (metres, model frame; x east, z south) ----------------
@@ -56,6 +57,7 @@ ATIKU = dict(
     benches=[(-1.5, 4.2)],
     bins=[(-6.3, 3.6)],
     poles=[(-0.4, -10.6)],  # concrete utility pole on the north edge, cables run east-west
+    palms=[(-14.2, -7.0), (-14.2, 7.0)],  # west verge, clear of the avenue
     lamps=[(-10.0, -3.7), (-2.0, -3.7), (10.0, -3.7), (-10.0, 3.7), (-2.0, 3.7), (10.0, 3.7)],
     features=[("Housing", 367, 120), ("Community", 400, 500)],
     style=dict(ground="0xd9c9ad", grid="0xcbbd9f", verticalRoad=(560, 107), horizontalRoad=(300, 160)),
@@ -85,6 +87,7 @@ HILLVIEW = dict(
     benches=[],
     bins=[],
     lamps=[(-13.5, -4.4), (13.5, 4.4), (-1.9, -4.4), (1.9, 4.4)],
+    palms=[(-14.2, -7.0), (14.4, -6.5)],  # off the boulevard (|z| > 4 m)
     features=[("Eateries", 60, 120), ("Small Shops", 330, 530), ("Gym", 150, 160)],
     style=dict(ground="0xa8bd8c", grid="0x9db07f", verticalRoad=(400, 67), horizontalRoad=(300, 213)),
     objects=[
@@ -103,7 +106,48 @@ def _srgb_to_linear(c):
     return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
 
 
+_tex_images = {}
+
+
+def _tex_mat(key):
+    """Principled material whose base colour is a repeating PNG (one tile per metre)."""
+    name = key[len("tex:"):]
+    if key not in _mats:
+        if name not in _tex_images:
+            _tex_images[name] = bpy.data.images.load(os.path.join(TEX_DIR, f"{name}.png"), check_existing=True)
+        m = bpy.data.materials.new(name=f"nb_{name}")
+        m.use_nodes = True
+        tree = m.node_tree
+        bsdf = tree.nodes["Principled BSDF"]
+        img = tree.nodes.new("ShaderNodeTexImage")
+        img.image = _tex_images[name]
+        img.interpolation = "Linear"
+        tree.links.new(img.outputs["Color"], bsdf.inputs["Base Color"])
+        bsdf.inputs["Roughness"].default_value = 0.9
+        for key_ in ("Specular IOR Level", "Specular"):
+            if key_ in bsdf.inputs:
+                bsdf.inputs[key_].default_value = 0.2
+                break
+        _mats[key] = m
+    return _mats[key]
+
+
+def _box_uv(me, loc, size):
+    """UVs in metres from world position, so a texture tiles once per metre on every face."""
+    layer = me.uv_layers.active or me.uv_layers.new(name="UVMap")
+    for poly in me.polygons:
+        n = poly.normal
+        ax = max(range(3), key=lambda i: abs(n[i]))
+        a, b = [i for i in range(3) if i != ax]
+        for li in poly.loop_indices:
+            co = me.vertices[me.loops[li].vertex_index].co
+            w = (loc[0] + co.x * size[0], loc[1] + co.y * size[1], loc[2] + co.z * size[2])
+            layer.data[li].uv = (w[a], w[b])
+
+
 def _mat(hex_color):
+    if hex_color.startswith("tex:"):
+        return _tex_mat(hex_color)
     if hex_color not in _mats:
         h = hex_color.lstrip("#")
         rgb = [_srgb_to_linear(int(h[i:i + 2], 16) / 255) for i in (0, 2, 4)]
@@ -128,9 +172,26 @@ def _finish(obj, color, prefix_name):
 
 def box(name, x, z, w, d, h, color, y0=0.0):
     """Footprint centred at metre (x, z), w along x, d along z, h tall from y0."""
-    bpy.ops.mesh.primitive_cube_add(size=1, location=(x, -z, y0 + h / 2))
+    loc = (x, -z, y0 + h / 2)
+    bpy.ops.mesh.primitive_cube_add(size=1, location=loc)
     o = bpy.context.active_object
     o.scale = (w, d, h)
+    if color.startswith("tex:"):
+        _box_uv(o.data, loc, (w, d, h))
+    return _finish(o, color, name)
+
+
+def slab(name, x, z, y, w, d, tilt_deg, color, heading_deg=0.0):
+    """Thin flat panel (solar, sign) tilted about its long axis, centred at metre (x, z), height y."""
+    from mathutils import Matrix, Vector
+    bpy.ops.mesh.primitive_cube_add(size=1)
+    o = bpy.context.active_object
+    o.name = name
+    o.scale = (w, d, 0.05)
+    o.matrix_world = (Matrix.Translation(Vector((x, -z, y)))
+                      @ Matrix.Rotation(math.radians(-heading_deg), 4, "Z")
+                      @ Matrix.Rotation(math.radians(tilt_deg), 4, "X")
+                      @ Matrix.Diagonal((w, d, 0.05, 1.0)))
     return _finish(o, color, name)
 
 
@@ -170,6 +231,7 @@ def _flat_block(prefix, lot):
     cz = z - s * 0.4
     box(f"{prefix}_block", x, cz, bw, bd, 6.0, P["plaster"])
     box(f"{prefix}_roof", x, cz, bw + 0.3, bd + 0.3, 0.3, P["roof"], y0=6.0)
+    _solar(prefix, x - bw * 0.2, cz, 6.3, bw * 0.55, bd * 0.7)
     face = cz + s * bd / 2
     box(f"{prefix}_band", x, face + s * 0.04, bw, 0.08, 0.25, P["indigo"], y0=3.0)
     for row in (1.0, 3.8):
@@ -188,6 +250,7 @@ def _bungalow(prefix, lot):
     cz = z - s * 0.6
     box(f"{prefix}_block", x, cz, bw, bd, 3.2, P["plaster"])
     box(f"{prefix}_roof", x, cz, bw + 0.4, bd + 0.4, 0.35, P["roof"], y0=3.2)
+    _solar(prefix, x + bw * 0.15, cz, 3.55, bw * 0.5, bd * 0.6)
     face = cz + s * bd / 2
     for i in (-1, 1):
         box(f"{prefix}_win_{i}", x + i * bw / 3.5, face + s * 0.03, 1.0, 0.06, 1.2, P["glass"], y0=1.0)
@@ -202,6 +265,7 @@ def _duplex(prefix, lot):
     cz = z - s * 0.5
     box(f"{prefix}_block", x, cz, bw, bd, 6.4, P["stone"])
     box(f"{prefix}_roof", x, cz, bw + 0.4, bd + 0.4, 0.3, P["roof"], y0=6.4)
+    _solar(prefix, x, cz, 6.7, bw * 0.6, bd * 0.6)
     face = cz + s * bd / 2
     box(f"{prefix}_balcony", x, face + s * 0.25, bw * 0.8, 0.5, 0.12, P["stone"], y0=3.4)
     box(f"{prefix}_balcony_glass", x, face + s * 0.5, bw * 0.8, 0.06, 1.0, P["glass"], y0=3.5)
@@ -241,6 +305,39 @@ def _utility_pole(prefix, i, x, z, h=6.5):
     box(f"{prefix}_cable_{i}", 0, z, FIELD_W, 0.02, 0.02, P["gate"], y0=h - 0.7)
 
 
+def _palm(prefix, i, x, z, h=5.2):
+    """Palm: leaning trunk and a crown of drooping fronds (clean low-poly, per the spec)."""
+    from mathutils import Matrix, Vector
+    lean = math.radians(7 if i % 2 else -6)
+    top = Vector((x, -z, h))
+    tm = Matrix.Translation(Vector((x, -z, h / 2))) @ Matrix.Rotation(lean, 4, "X") @ Matrix.Diagonal((0.14, 0.14, h, 1.0))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=1.0, depth=1.0)
+    o = bpy.context.active_object
+    o.name = f"{prefix}_palm_trunk_{i}"
+    o.matrix_world = tm
+    o.data.materials.append(_mat(P["trunk"]))
+    for k in range(8):
+        a = math.radians(k * 45 + (i * 17))
+        tilt = math.radians(38)
+        dirv = Vector((math.cos(a), math.sin(a), 0))
+        centre = top + Vector((dirv.x * 1.2, -dirv.y * 1.2, -0.2))  # Blender Y = -metre z
+        m = (Matrix.Translation(centre)
+             @ Matrix.Rotation(-a, 4, "Z")
+             @ Matrix.Rotation(tilt, 4, "Y")
+             @ Matrix.Diagonal((2.4, 0.42, 0.05, 1.0)))
+        bpy.ops.mesh.primitive_cube_add(size=1)
+        f = bpy.context.active_object
+        f.name = f"{prefix}_frond_{i}_{k}"
+        f.matrix_world = m
+        f.data.materials.append(_mat(P["foliage"]))
+
+
+def _solar(prefix, x, z, y, w, d):
+    """Two-row solar array tilted to the south-east, as on the reference roofs."""
+    slab(f"{prefix}_solar_a", x, z - 0.35, y + 0.35, w, d * 0.45, 18, P["solar"])
+    slab(f"{prefix}_solar_b", x, z + 0.35, y + 0.35, w, d * 0.45, 18, P["solar"])
+
+
 def _lamp(prefix, i, x, z):
     cyl(f"{prefix}_lamp_pole_{i}", x, z, 0.05, 3.2, P["metal"])
     box(f"{prefix}_lamp_head_{i}", x, z, 0.5, 0.25, 0.15, P["sign"], y0=3.15)
@@ -270,6 +367,8 @@ def build(area):
             _hedge(f"{pre}{lot['id']}", lot)
     for i, (x, z) in enumerate(area.get("poles", [])):
         _utility_pole(pre, i, x, z)
+    for i, (x, z) in enumerate(area.get("palms", [])):
+        _palm(pre, i, x, z)
     shop = area["shop"]
     box(f"{pre}shop_{shop['id']}", shop["x"], shop["z"], shop["w"], shop["d"], 3.2, P["plaster"])
     box(f"{pre}shop_awning", shop["x"], shop["z"] + shop["d"] / 2 + 0.6, shop["w"] + 0.6, 1.2, 0.15, P["accent"], y0=2.6)
