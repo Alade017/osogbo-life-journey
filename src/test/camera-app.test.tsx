@@ -17,6 +17,12 @@ it("switches to screenshot mode and records an illustrative capture state", () =
   fireEvent.click(screen.getByRole("button", { name: "Capture screenshot preview" }));
   expect(screen.getByRole("status")).toHaveTextContent("Screen capture preview captured");
   expect(screen.getByLabelText("1 captures")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Open captured preview" }));
+  expect(screen.getByRole("region", { name: "Captured preview" })).toBeVisible();
+  expect(screen.getByRole("button", { name: "Close captured preview" })).toHaveAttribute(
+    "aria-expanded",
+    "true",
+  );
 });
 
 it("captures a selfie preview and resets the local capture counter", () => {
