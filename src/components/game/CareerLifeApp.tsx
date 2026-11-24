@@ -47,7 +47,7 @@ export function CareerLifeApp({
   });
   const current = summary.data?.employments.find((job) => job.current);
   return (
-    <div className="career-learning-app">
+    <div className="career-learning-app" data-career-phone={phone ? "" : undefined}>
       <header className="learning-hero">
         <span className="learning-kicker">YOUR NEXT CHAPTER</span>
         <h1>Career Life</h1>
@@ -125,7 +125,7 @@ export function CareerLifeApp({
                       <p>Explore opportunities, build skills, and find your first workplace.</p>
                     )}
                     <Button className="mt-3" onClick={() => setTab("Opportunities")}>
-                      {current ? "Open workplace & opportunities" : "Explore opportunities"}
+                      {current ? "Explore workplace opportunities" : "Explore opportunities"}
                     </Button>
                   </section>
                 </>

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { expect, it, vi } from "vitest";
 import { PhoneMapApp } from "@/components/game/phone/PhoneMapApp";
 
@@ -29,4 +29,15 @@ it("opens real destination details and links only mapped places to map markers w
     "href",
     "/map?landmark=cedar-bank&details=1",
   );
+});
+
+it("filters the live destinations by search and category", () => {
+  render(<PhoneMapApp />);
+  fireEvent.change(screen.getByRole("searchbox", { name: "Search destinations" }), { target: { value: "cedar" } });
+  expect(screen.getByRole("link", { name: "View destination: Cedar Bank" })).toBeVisible();
+  expect(screen.queryByRole("link", { name: "View destination: New place" })).toBeNull();
+  fireEvent.change(screen.getByRole("searchbox", { name: "Search destinations" }), { target: { value: "" } });
+  fireEvent.click(screen.getByRole("button", { name: "Custom" }));
+  expect(screen.getByRole("link", { name: "View destination: New place" })).toBeVisible();
+  expect(screen.queryByRole("link", { name: "View destination: Cedar Bank" })).toBeNull();
 });
