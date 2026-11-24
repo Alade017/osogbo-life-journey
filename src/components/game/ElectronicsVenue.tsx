@@ -1,3 +1,4 @@
+import { useProductInspection } from "@/hooks/use-product-inspection";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/game";
@@ -29,17 +30,13 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
   const displays = useMemo(() => electronicsDisplays(products.length), [products]);
   const navigation = useMemo(() => electronicsNavigation(displays), [displays]);
   const walker = useHouseMovement(slug, toRoom(RETAIL_ROOM.spawn));
-  const [station, setStation] = useState<number | null>(null);
-  const [inspection, setInspection] = useState(false);
+  const { assets, station, setStation, inspection, setInspection, assetReady, assetError } = useProductInspection();
   const [failed, setFailed] = useState(false);
-  const [assets, setAssets] = useState<Record<string,"ready"|"failed">>({});
   const [message, setMessage] = useState("Tap the floor to walk or approach a product.");
   const request = useRef(0);
   const { cancel } = walker;
   useEffect(() => () => { request.current++; cancel(); }, [cancel]);
   const onError = useCallback(() => { request.current++; cancel(); setFailed(true); setStation(null); setInspection(false); setMessage("The 3D environment is unavailable."); }, [cancel]);
-  const assetReady = useCallback((id: string) => setAssets(old => old[id] === "ready" ? old : {...old,[id]:"ready"}), []);
-  const assetError = useCallback((id: string) => setAssets(old => old[id] === "failed" ? old : {...old,[id]:"failed"}), []);
   function current(): WalkPoint { const [x,,z] = walker.positionRef.current; return [x,z]; }
   function walk(path: WalkPoint[] | null, after?: () => void) {
     const ticket = ++request.current;
