@@ -33,11 +33,11 @@ export function PropertyExchangeApp() {
         <PropertyMarketPanel />
       </section>
 
-      <section className="property-exchange-section property-exchange-buyback" aria-labelledby="property-exchange-buyback">
+      <section className="property-exchange-section property-exchange-buyback" aria-labelledby="property-exchange-buyback-heading">
         <div className="property-exchange-section-heading">
           <span className="property-exchange-section-icon"><Building2 /></span>
           <div>
-            <h3 id="property-exchange-buyback">Sell to town buyers</h3>
+            <h3 id="property-exchange-buyback-heading">Sell to town buyers</h3>
             <p>Review the available NPC buy-back offers for your properties.</p>
           </div>
         </div>
