@@ -1,4 +1,5 @@
-import { Suspense } from "react";
+import { Suspense, useEffect, useMemo } from "react";
+import { Box3, Vector3 } from "three";
 import { Clone, useGLTF } from "@react-three/drei";
 import { WorldMaterial } from "./WorldScene";
 import type { WorldTone } from "./world-theme";
@@ -19,9 +20,17 @@ function Block({ at, size, tone = "wall", color }: { at: Point; size: Point; ton
 function Glass({ at, size }: { at: Point; size: Point }) {
   return <mesh position={at}><boxGeometry args={size} /><meshStandardMaterial color="#b6d7df" transparent opacity={0.22} roughness={0.18} depthWrite={false} /></mesh>;
 }
-function Vehicle({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
-  return <Clone object={scene} />;
+function Vehicle({ model, onReady }: { model: Display; onReady: (id: string) => void }) {
+  const { scene } = useGLTF(model.url);
+  const transform = useMemo(() => {
+    const box = new Box3().setFromObject(scene);
+    const size = box.getSize(new Vector3());
+    const center = box.getCenter(new Vector3());
+    if (box.isEmpty() || ![size.x, size.y, size.z, center.x, center.z, box.min.y].every(Number.isFinite)) throw new Error("Invalid vehicle bounds");
+    return { scale: Math.min(1, (layout.displayWidth - 0.2) / Math.max(size.x, 0.001), (layout.displayDepth - 0.2) / Math.max(size.z, 0.001)), offset: [-center.x, -box.min.y, -center.z] as Point };
+  }, [scene]);
+  useEffect(() => { onReady(model.id); }, [model.id, onReady]);
+  return <group scale={transform.scale}><group position={transform.offset}><Clone object={scene} /></group></group>;
 }
 const height = 4;
 const entranceWidth = layout.entranceWidth;
@@ -64,13 +73,15 @@ export function DealershipExterior({ onEnter, onWalk, style = "standard" }: { on
   </group>;
 }
 
-export function DealershipInterior({ models, onWalk, onSelect, onExit, style = "standard", activeBay }: {
+export function DealershipInterior({ models, onWalk, onSelect, onExit, style = "standard", activeBay, onAssetReady, onAssetError }: {
   models: readonly Display[];
   onWalk: (point: WalkPoint) => void;
   onSelect: (index: number) => void;
   onExit: () => void;
   style?: DealershipStyle;
   activeBay?: number | null;
+  onAssetReady: (id: string) => void;
+  onAssetError: (id: string) => void;
 }) {
   const finish = finishes[style];
   return <group name="dealership-interior">
@@ -104,7 +115,7 @@ export function DealershipInterior({ models, onWalk, onSelect, onExit, style = "
           <mesh position={[0, 0.169, side * (layout.displayDepth / 2 - 0.045)]}><boxGeometry args={[layout.displayWidth - 0.08, 0.012, 0.045]} /><meshBasicMaterial color={finish.accent} /></mesh>
         </group>)}
         {model && <group position={[0, 0.16, 0]}>
-          <VenueSceneBoundary key={model.id} fallback={null}><Suspense fallback={null}><Vehicle url={model.url} /></Suspense></VenueSceneBoundary>
+          <VenueSceneBoundary key={model.id} onError={() => onAssetError(model.id)}><Suspense fallback={null}><Vehicle model={model} onReady={onAssetReady} /></Suspense></VenueSceneBoundary>
         </group>}
       </group>;
     })}
