@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { MallStreetArchitecture } from "./MallStreetArchitecture";
+import { useEffect, useRef, useState } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import type { Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -6,13 +7,10 @@ import type { WalkPoint } from "@/game/grid-walk-path";
 import { shopperLook } from "@/game/mall-appearance";
 import { createWalker, stepWalker, type MallWalker } from "@/game/mall-movement";
 import {
-  STREET_DOOR,
   STREET_DOOR_FRONT,
-  STREET_OBSTACLES,
   STREET_PEDESTRIANS,
   STREET_RIDER_SPOT,
   findStreetPath,
-  type StreetRect,
 } from "@/game/osun-mall-street-layout";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
@@ -44,31 +42,6 @@ const RIDER_APPEARANCE: Appearance = {
   shoes: 0,
 };
 
-function Block({
-  rect,
-  height,
-  tone = "concrete",
-  color,
-}: {
-  rect: StreetRect;
-  height: number;
-  tone?: "concrete" | "wall" | "glass" | "door" | "timber";
-  color?: string;
-}) {
-  const width = rect.maxX - rect.minX;
-  const depth = rect.maxZ - rect.minZ;
-  return (
-    <mesh
-      position={[(rect.minX + rect.maxX) / 2, height / 2, (rect.minZ + rect.maxZ) / 2]}
-      castShadow
-      receiveShadow
-    >
-      <boxGeometry args={[width, height, depth]} />
-      <WorldMaterial tone={tone} {...(color === undefined ? {} : { color })} />
-    </mesh>
-  );
-}
-
 /** The bike's place relative to the rider's stand, so the bike moves with the rider. */
 const BIKE_OFFSET: WalkPoint = [2.6, -0.5];
 
@@ -78,6 +51,24 @@ const BIKE_OFFSET: WalkPoint = [2.6, -0.5];
  */
 function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoint | null }) {
   const group = useRef<Group>(null);
+  const [pose, setPose] = useState({ moving: false, facing: "south" });
+  const poseRef = useRef(pose);
+  const updatePose = (moving: boolean, dx: number, dz: number) => {
+    const facing =
+      Math.abs(dx) + Math.abs(dz) < 0.0001
+        ? poseRef.current.facing
+        : Math.abs(dx) > Math.abs(dz)
+          ? dx > 0
+            ? "east"
+            : "west"
+          : dz > 0
+            ? "south"
+            : "north";
+    if (moving !== poseRef.current.moving || facing !== poseRef.current.facing) {
+      poseRef.current = { moving, facing };
+      setPose(poseRef.current);
+    }
+  };
   const rider = useRef<{ pos: WalkPoint; walker: MallWalker | null }>({
     pos: [STREET_RIDER_SPOT[0], STREET_RIDER_SPOT[1]],
     walker: null,
@@ -93,11 +84,15 @@ function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoin
   }, [target]);
   useFrame((_, delta) => {
     const state = rider.current;
+    const previous = state.pos;
+    let moving = false;
     if (state.walker) {
       const next = stepWalker(state.walker, Math.min(delta, 0.1));
       state.pos = next.pos;
       state.walker = next.done ? null : next;
+      moving = next.moving;
     }
+    updatePose(moving, state.pos[0] - previous[0], state.pos[1] - previous[1]);
     group.current?.position.set(state.pos[0], 0, state.pos[1]);
   });
   return (
@@ -125,8 +120,8 @@ function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoin
         name="Okada rider"
         gender="male"
         appearance={RIDER_APPEARANCE}
-        facing="west"
-        animation="idle"
+        facing={pose.facing}
+        animation={pose.moving ? "walk" : "idle"}
         position={[0, 0, 0]}
       />
     </group>
@@ -144,8 +139,27 @@ function StreetPlayer({
   gender: string;
 }) {
   const group = useRef<Group>(null);
+  const [pose, setPose] = useState({ moving: false, facing: "south" });
+  const poseRef = useRef(pose);
+  const updatePose = (moving: boolean, dx: number, dz: number) => {
+    const facing =
+      Math.abs(dx) + Math.abs(dz) < 0.0001
+        ? poseRef.current.facing
+        : Math.abs(dx) > Math.abs(dz)
+          ? dx > 0
+            ? "east"
+            : "west"
+          : dz > 0
+            ? "south"
+            : "north";
+    if (moving !== poseRef.current.moving || facing !== poseRef.current.facing) {
+      poseRef.current = { moving, facing };
+      setPose(poseRef.current);
+    }
+  };
   useFrame((_, delta) => {
     const player = sim.current.player;
+    const previous = player.pos;
     if (player.walker) {
       const next = stepWalker(player.walker, Math.min(delta, 0.1));
       player.pos = next.pos;
@@ -153,6 +167,7 @@ function StreetPlayer({
       player.walker = next.done ? null : next;
       if (next.done) player.moving = false;
     }
+    updatePose(player.moving, player.pos[0] - previous[0], player.pos[1] - previous[1]);
     group.current?.position.set(player.pos[0], 0, player.pos[1]);
   });
   return (
@@ -161,8 +176,8 @@ function StreetPlayer({
         name="You"
         gender={gender}
         appearance={appearance}
-        facing="south"
-        animation="idle"
+        facing={pose.facing}
+        animation={pose.moving ? "walk" : "idle"}
         position={[0, 0, 0]}
       />
     </group>
@@ -190,7 +205,7 @@ export function OsunMallStreet3D({
 }) {
   return (
     <>
-      <WorldLighting size={16} />
+      <WorldLighting size={24} refined contactShadows={false} />
       {/* Road and pavement. Clicking the ground walks the visitor there. */}
       <mesh
         rotation={[-Math.PI / 2, 0, 0]}
@@ -205,31 +220,17 @@ export function OsunMallStreet3D({
         <planeGeometry args={[20, 12]} />
         <WorldMaterial tone="concrete" color="#c9bda6" />
       </mesh>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.01, -1.2]} receiveShadow>
+      <mesh
+        rotation={[-Math.PI / 2, 0, 0]}
+        position={[0, 0.01, -1.2]}
+        receiveShadow
+        raycast={() => null}
+      >
         <planeGeometry args={[20, 2.8]} />
         <WorldMaterial tone="concrete" color="#4b4f57" />
       </mesh>
 
-      {/* The mall's front building. Its door takes the visitor back inside. */}
-      <mesh position={[0, 2, -5.8]} castShadow receiveShadow>
-        <boxGeometry args={[20, 4, 2.4]} />
-        <WorldMaterial tone="wall" color="#d9c9a8" />
-      </mesh>
-      <mesh
-        position={[STREET_DOOR[0], 1.1, STREET_DOOR[1] - 0.05]}
-        onClick={(event) => {
-          if (!isClick(event)) return;
-          event.stopPropagation();
-          onEnterMall();
-        }}
-      >
-        <boxGeometry args={[1.8, 2.2, 0.12]} />
-        <WorldMaterial tone="glass" color="#8fb7c8" />
-      </mesh>
-
-      {STREET_OBSTACLES.map((rect) => (
-        <Block key={rect.id} rect={rect} height={rect.id === "shelter" ? 2.4 : 1.2} tone="timber" />
-      ))}
+      <MallStreetArchitecture onEnterMall={onEnterMall} />
       <OkadaRider onRider={onRider} target={riderTarget} />
 
       {STREET_PEDESTRIANS.map((spot, index) => {

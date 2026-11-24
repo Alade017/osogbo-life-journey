@@ -1,3 +1,5 @@
+import { useDestinationSceneFrame } from "@/hooks/use-destination-scene-frame";
+import "@/components/game/destination-scene.css";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useState } from "react";
@@ -99,6 +101,7 @@ export const Route = createFileRoute("/_authenticated/_game/bank/$slug")({
 function BankPage() {
   const { slug } = Route.useParams();
   const [network, setNetwork] = useState(readNetworkStatus);
+  const [servicesOpen, setServicesOpen] = useState(false);
   const [interaction, setInteraction] = useState("");
   const [selectedService, setSelectedService] = useState<"teller" | "atm" | null>(null);
   const [transferAmount, setTransferAmount] = useState("");
@@ -110,12 +113,14 @@ function BankPage() {
     (location) => location.slug === slug && location.type === "bank" && location.is_active,
   );
   const atBranch = !!bank && character?.current_location_id === bank.id;
+  const destinationFrame = useDestinationSceneFrame(atBranch);
   const presence = useBankPresence(atBranch ? bank.id : undefined, character?.id);
   const bankAccount = useQuery({ ...q.bankAccount(), enabled: atBranch && network.online });
   const wallet = useQuery({ ...q.wallet(), enabled: atBranch && network.online });
   const validSlug = isBankSlug(slug);
 
   useEffect(() => {
+    setServicesOpen(false);
     setInteraction("");
     setSelectedService(null);
     setTransferAmount("");
@@ -163,6 +168,7 @@ function BankPage() {
   });
 
   function interact(place: "teller" | "atm" | "seat") {
+    setServicesOpen(true);
     if (place === "atm") {
       setSelectedService("atm");
       setInteraction("");
@@ -171,9 +177,7 @@ function BankPage() {
     }
     if (place === "seat") {
       setSelectedService(null);
-      setInteraction(
-        "You take a seat in the waiting area. Click any clear part of the floor to walk.",
-      );
+      setInteraction("Waiting area selected. Choose a clear floor tile to continue walking.");
       return;
     }
     setSelectedService("teller");
@@ -225,7 +229,7 @@ function BankPage() {
       ? (character.appearance as Appearance)
       : {};
   return (
-    <div className="space-y-4">
+    <div ref={destinationFrame} className={atBranch ? "destination-scene bank-world" : "space-y-4"}>
       <Link
         to="/location/$slug"
         params={{ slug }}
@@ -243,13 +247,16 @@ function BankPage() {
           <p className="mt-1 max-w-2xl text-sm text-muted-foreground">{bank.description}</p>
         </div>
         {atBranch ? (
-          <a
-            href="#branch-services"
+          <button
+            type="button"
+            onClick={() => setServicesOpen(true)}
+            aria-expanded={servicesOpen}
+            aria-controls="bank-world-services"
             className="inline-flex items-center gap-2 rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground"
           >
             <Landmark size={17} aria-hidden="true" />
-            Open account services
-          </a>
+            Account services
+          </button>
         ) : (
           <Link
             to="/wallet"
@@ -261,7 +268,7 @@ function BankPage() {
         )}
       </header>
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border bg-card px-4 py-3 text-sm">
+      <div className="bank-world-status flex flex-wrap items-center gap-x-4 gap-y-2 rounded-lg border border-border bg-card px-4 py-3 text-sm">
         {atBranch ? (
           <span className="font-bold text-emerald-700" role="status">
             You are at {bank.name}
@@ -309,12 +316,9 @@ function BankPage() {
             appearance={appearance}
             gender={character?.gender ?? "nonbinary"}
             reducedMotion={profile.data?.reduced_motion ?? false}
+            interactionBlocked={servicesOpen}
             onInteract={interact}
           />
-          <p className="text-xs text-muted-foreground">
-            Walk around by clicking an open floor tile. Click a teller, waiting seat or ATM to
-            interact.
-          </p>
         </>
       ) : (
         <section className="game-panel space-y-3 border-l-4 border-l-primary p-5">
@@ -333,244 +337,264 @@ function BankPage() {
         </section>
       )}
 
-      {atBranch && (
-        <section
-          id="branch-services"
-          className="game-panel space-y-4 p-4 md:p-5"
-          aria-labelledby="branch-services-title"
-        >
-          <div className="flex items-center gap-2">
-            <Landmark size={19} className="text-primary" aria-hidden="true" />
-            <h2 id="branch-services-title" className="font-display text-xl font-bold">
-              {selectedService === "atm"
-                ? "ATM services"
-                : selectedService === "teller"
-                  ? "Teller counter"
-                  : "Your bank account"}
-            </h2>
-          </div>
-          {!selectedService ? (
-            <p className="text-sm text-muted-foreground">
-              Speak with a teller to open an account or use the ATM for cash services.
-            </p>
-          ) : bankAccount.isLoading ? (
-            <p role="status" className="text-sm text-muted-foreground">
-              Checking your account…
-            </p>
-          ) : bankAccount.isError ? (
-            <p role="alert" className="text-sm text-destructive">
-              Account details could not be loaded: {bankAccount.error.message}
-            </p>
-          ) : !bankAccount.data ? (
-            <div className="space-y-3">
-              <p className="text-sm text-muted-foreground">
-                {selectedService === "teller"
-                  ? "A teller can open your personal account here. Your account number will stay with you when you visit other branches."
-                  : "Open an account with a teller before using the ATM."}
-              </p>
-              {selectedService === "teller" && (
-                <button
-                  type="button"
-                  disabled={!network.online || openAccount.isPending}
-                  onClick={() => {
-                    setServiceMessage("");
-                    openAccount.mutate();
-                  }}
-                  className="min-h-10 rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  {openAccount.isPending ? "Opening account…" : "Open a bank account"}
-                </button>
-              )}
+      <div
+        id="bank-world-services"
+        className={atBranch ? "bank-services-drawer" : undefined}
+        hidden={atBranch && !servicesOpen}
+      >
+        {atBranch && (
+          <button
+            type="button"
+            className="bank-drawer-close"
+            onClick={() => setServicesOpen(false)}
+          >
+            Close services
+          </button>
+        )}
+        {atBranch && (
+          <section
+            id="branch-services"
+            className="game-panel space-y-4 p-4 md:p-5"
+            aria-labelledby="branch-services-title"
+          >
+            <div className="flex items-center gap-2">
+              <Landmark size={19} className="text-primary" aria-hidden="true" />
+              <h2 id="branch-services-title" className="font-display text-xl font-bold">
+                {selectedService === "atm"
+                  ? "ATM services"
+                  : selectedService === "teller"
+                    ? "Teller counter"
+                    : "Your bank account"}
+              </h2>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div className="rounded-lg border border-border bg-background p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Account number
-                  </p>
-                  <p className="mt-1 font-mono text-lg font-bold">
-                    {bankAccount.data.account_number}
-                  </p>
-                </div>
-                <div className="rounded-lg border border-border bg-background p-3">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    Bank balance
-                  </p>
-                  <p className="mt-1 font-display text-lg font-bold">
-                    {wallet.isLoading ? "Loading…" : formatNaira(wallet.data?.bank_balance)}
-                  </p>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Account opened at {bankAccount.data.branch_name}. Transfers are confirmed by the
-                game server and take 3 in-game minutes.
+            {!selectedService ? (
+              <p className="text-sm text-muted-foreground">
+                Speak with a teller to open an account or use the ATM for cash services.
               </p>
-              {wallet.isError && (
-                <p role="alert" className="text-sm text-destructive">
-                  Your balance could not be loaded: {wallet.error.message}
-                </p>
-              )}
+            ) : bankAccount.isLoading ? (
+              <p role="status" className="text-sm text-muted-foreground">
+                Checking your account…
+              </p>
+            ) : bankAccount.isError ? (
+              <p role="alert" className="text-sm text-destructive">
+                Account details could not be loaded: {bankAccount.error.message}
+              </p>
+            ) : !bankAccount.data ? (
               <div className="space-y-3">
-                <label className="block text-sm font-semibold" htmlFor="branch-transfer-amount">
-                  Transfer amount
-                </label>
-                <input
-                  id="branch-transfer-amount"
-                  className="w-full rounded-lg border-2 border-edge bg-background px-3 py-2"
-                  type="number"
-                  min="1"
-                  step="1"
-                  inputMode="numeric"
-                  value={transferAmount}
-                  onChange={(event) => setTransferAmount(event.target.value)}
-                  placeholder="Enter whole Naira amount"
-                />
-                <div className="flex flex-wrap gap-3">
+                <p className="text-sm text-muted-foreground">
+                  {selectedService === "teller"
+                    ? "A teller can open your personal account here. Your account number will stay with you when you visit other branches."
+                    : "Open an account with a teller before using the ATM."}
+                </p>
+                {selectedService === "teller" && (
                   <button
                     type="button"
-                    disabled={
-                      !network.online ||
-                      wallet.isLoading ||
-                      wallet.isError ||
-                      !wallet.data ||
-                      !!amountError(Number(transferAmount), wallet.data?.balance) ||
-                      deposit.isPending ||
-                      withdraw.isPending
-                    }
+                    disabled={!network.online || openAccount.isPending}
                     onClick={() => {
                       setServiceMessage("");
-                      deposit.mutate(Number(transferAmount));
+                      openAccount.mutate();
                     }}
                     className="min-h-10 rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
                   >
-                    {deposit.isPending ? "Depositing…" : "Deposit cash"}
+                    {openAccount.isPending ? "Opening account…" : "Open a bank account"}
                   </button>
-                  <button
-                    type="button"
-                    disabled={
-                      !network.online ||
-                      wallet.isLoading ||
-                      wallet.isError ||
-                      !wallet.data ||
-                      !!amountError(Number(transferAmount), wallet.data?.bank_balance) ||
-                      deposit.isPending ||
-                      withdraw.isPending
-                    }
-                    onClick={() => {
-                      setServiceMessage("");
-                      withdraw.mutate(Number(transferAmount));
-                    }}
-                    className="min-h-10 rounded-lg border-2 border-edge bg-secondary px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50"
-                  >
-                    {withdraw.isPending ? "Withdrawing…" : "Withdraw cash"}
-                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div className="rounded-lg border border-border bg-background p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Account number
+                    </p>
+                    <p className="mt-1 font-mono text-lg font-bold">
+                      {bankAccount.data.account_number}
+                    </p>
+                  </div>
+                  <div className="rounded-lg border border-border bg-background p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                      Bank balance
+                    </p>
+                    <p className="mt-1 font-display text-lg font-bold">
+                      {wallet.isLoading ? "Loading…" : formatNaira(wallet.data?.bank_balance)}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Account opened at {bankAccount.data.branch_name}. Transfers are confirmed by the
+                  game server and take 3 in-game minutes.
+                </p>
+                {wallet.isError && (
+                  <p role="alert" className="text-sm text-destructive">
+                    Your balance could not be loaded: {wallet.error.message}
+                  </p>
+                )}
+                <div className="space-y-3">
+                  <label className="block text-sm font-semibold" htmlFor="branch-transfer-amount">
+                    Transfer amount
+                  </label>
+                  <input
+                    id="branch-transfer-amount"
+                    className="w-full rounded-lg border-2 border-edge bg-background px-3 py-2"
+                    type="number"
+                    min="1"
+                    step="1"
+                    inputMode="numeric"
+                    value={transferAmount}
+                    onChange={(event) => setTransferAmount(event.target.value)}
+                    placeholder="Enter whole Naira amount"
+                  />
+                  <div className="flex flex-wrap gap-3">
+                    <button
+                      type="button"
+                      disabled={
+                        !network.online ||
+                        wallet.isLoading ||
+                        wallet.isError ||
+                        !wallet.data ||
+                        !!amountError(Number(transferAmount), wallet.data?.balance) ||
+                        deposit.isPending ||
+                        withdraw.isPending
+                      }
+                      onClick={() => {
+                        setServiceMessage("");
+                        deposit.mutate(Number(transferAmount));
+                      }}
+                      className="min-h-10 rounded-lg border-2 border-edge bg-primary px-4 py-2 font-bold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {deposit.isPending ? "Depositing…" : "Deposit cash"}
+                    </button>
+                    <button
+                      type="button"
+                      disabled={
+                        !network.online ||
+                        wallet.isLoading ||
+                        wallet.isError ||
+                        !wallet.data ||
+                        !!amountError(Number(transferAmount), wallet.data?.bank_balance) ||
+                        deposit.isPending ||
+                        withdraw.isPending
+                      }
+                      onClick={() => {
+                        setServiceMessage("");
+                        withdraw.mutate(Number(transferAmount));
+                      }}
+                      className="min-h-10 rounded-lg border-2 border-edge bg-secondary px-4 py-2 font-bold disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      {withdraw.isPending ? "Withdrawing…" : "Withdraw cash"}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-          {serviceMessage && (
-            <p
-              className={`rounded-lg p-3 text-sm ${
-                openAccount.isError || deposit.isError || withdraw.isError
-                  ? "bg-destructive/10 text-destructive"
-                  : "bg-primary/10"
-              }`}
-              role={openAccount.isError || deposit.isError || withdraw.isError ? "alert" : "status"}
-            >
-              {serviceMessage}
-            </p>
-          )}
-          {interaction && (
-            <p className="rounded-lg bg-muted p-3 text-sm" role="status">
-              {interaction}
-            </p>
-          )}
-        </section>
-      )}
+            )}
+            {serviceMessage && (
+              <p
+                className={`rounded-lg p-3 text-sm ${
+                  openAccount.isError || deposit.isError || withdraw.isError
+                    ? "bg-destructive/10 text-destructive"
+                    : "bg-primary/10"
+                }`}
+                role={
+                  openAccount.isError || deposit.isError || withdraw.isError ? "alert" : "status"
+                }
+              >
+                {serviceMessage}
+              </p>
+            )}
+            {interaction && (
+              <p className="rounded-lg bg-muted p-3 text-sm" role="status">
+                {interaction}
+              </p>
+            )}
+          </section>
+        )}
 
-      {atBranch && (
-        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.7fr)]">
-          <aside className="space-y-4">
-            <section className="game-panel space-y-3 p-4" aria-labelledby="bank-people-title">
-              <div className="flex items-center justify-between gap-2">
+        {atBranch && (
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(260px,0.7fr)]">
+            <aside className="space-y-4">
+              <section className="game-panel space-y-3 p-4" aria-labelledby="bank-people-title">
+                <div className="flex items-center justify-between gap-2">
+                  <h2
+                    id="bank-people-title"
+                    className="flex items-center gap-2 font-display font-bold"
+                  >
+                    <Users size={18} className="text-primary" aria-hidden="true" />
+                    People in this branch
+                  </h2>
+                  <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold">
+                    {presence.players.length} online
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Other players appear here while they are visiting this exact bank location.
+                </p>
+                {presence.status === "connecting" ? (
+                  <p role="status" className="text-sm text-muted-foreground">
+                    Connecting to live visitors…
+                  </p>
+                ) : presence.status === "offline" ? (
+                  <p role="status" className="text-sm text-muted-foreground">
+                    Reconnect to see live visitors.
+                  </p>
+                ) : presence.status === "error" ? (
+                  <p role="alert" className="text-sm text-destructive">
+                    Live visitor status is temporarily unavailable.
+                  </p>
+                ) : presence.players.length ? (
+                  <ul className="space-y-2">
+                    {presence.players.map((player) => (
+                      <li
+                        key={player.characterId}
+                        className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
+                      >
+                        <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
+                        {player.name}
+                        <span className="ml-auto text-xs text-muted-foreground">Visitor</span>
+                      </li>
+                    ))}
+                    {presence.players.length > 5 && (
+                      <li className="text-xs text-muted-foreground">
+                        {presence.players.length - 5} more visitors are in the lobby.
+                      </li>
+                    )}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground">
+                    No other players are here right now.
+                  </p>
+                )}
+              </section>
+
+              <section className="game-panel space-y-3 p-4" aria-labelledby="bank-staff-title">
                 <h2
-                  id="bank-people-title"
+                  id="bank-staff-title"
                   className="flex items-center gap-2 font-display font-bold"
                 >
-                  <Users size={18} className="text-primary" aria-hidden="true" />
-                  People in this branch
+                  <BriefcaseBusiness size={18} className="text-primary" aria-hidden="true" />
+                  Branch staff
                 </h2>
-                <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-bold">
-                  {presence.players.length} online
-                </span>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Other players appear here while they are visiting this exact bank location.
-              </p>
-              {presence.status === "connecting" ? (
-                <p role="status" className="text-sm text-muted-foreground">
-                  Connecting to live visitors…
-                </p>
-              ) : presence.status === "offline" ? (
-                <p role="status" className="text-sm text-muted-foreground">
-                  Reconnect to see live visitors.
-                </p>
-              ) : presence.status === "error" ? (
-                <p role="alert" className="text-sm text-destructive">
-                  Live visitor status is temporarily unavailable.
-                </p>
-              ) : presence.players.length ? (
                 <ul className="space-y-2">
-                  {presence.players.map((player) => (
+                  {BANK_BRANCH_STAFF[slug].map((employee) => (
                     <li
-                      key={player.characterId}
-                      className="flex items-center gap-2 rounded-md border border-border px-3 py-2 text-sm"
+                      key={employee.name}
+                      className="flex items-center justify-between gap-2 text-sm"
                     >
-                      <span className="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true" />
-                      {player.name}
-                      <span className="ml-auto text-xs text-muted-foreground">Visitor</span>
+                      <span className="font-semibold">{employee.name}</span>
+                      <span className="text-xs text-muted-foreground">{employee.role}</span>
                     </li>
                   ))}
-                  {presence.players.length > 5 && (
-                    <li className="text-xs text-muted-foreground">
-                      {presence.players.length - 5} more visitors are in the lobby.
-                    </li>
-                  )}
                 </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground">
-                  No other players are here right now.
-                </p>
-              )}
-            </section>
-
-            <section className="game-panel space-y-3 p-4" aria-labelledby="bank-staff-title">
-              <h2 id="bank-staff-title" className="flex items-center gap-2 font-display font-bold">
-                <BriefcaseBusiness size={18} className="text-primary" aria-hidden="true" />
-                Branch staff
-              </h2>
-              <ul className="space-y-2">
-                {BANK_BRANCH_STAFF[slug].map((employee) => (
-                  <li
-                    key={employee.name}
-                    className="flex items-center justify-between gap-2 text-sm"
-                  >
-                    <span className="font-semibold">{employee.name}</span>
-                    <span className="text-xs text-muted-foreground">{employee.role}</span>
-                  </li>
-                ))}
-              </ul>
-              <Link
-                to="/jobs"
-                className="inline-flex min-h-10 items-center text-sm font-bold text-primary underline"
-              >
-                Explore bank careers
-              </Link>
-            </section>
-          </aside>
-        </div>
-      )}
+                <Link
+                  to="/jobs"
+                  className="inline-flex min-h-10 items-center text-sm font-bold text-primary underline"
+                >
+                  Explore bank careers
+                </Link>
+              </section>
+            </aside>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

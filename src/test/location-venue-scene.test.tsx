@@ -68,7 +68,7 @@ describe("location venue scene", () => {
     expect(screen.getByText("The interior is taking longer than expected.")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Continue without 3D" }));
     expect(screen.queryByText("Opening the venue")).not.toBeInTheDocument();
-    expect(screen.getByText(/The 3D preview did not start/)).toBeInTheDocument();
+    expect(screen.getByText(/The scene could not load/)).toBeInTheDocument();
     expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: "Market table" }));
@@ -192,7 +192,7 @@ it("preserves manual fallback when venue details change", () => {
   rerender(<LocationVenueScene slug="town-market" locationName="Updated Town Market" />);
   expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
   expect(screen.queryByText("Opening the venue")).not.toBeInTheDocument();
-  expect(screen.getByText(/The 3D preview did not start/)).toBeInTheDocument();
+  expect(screen.getByText(/The scene could not load/)).toBeInTheDocument();
 });
 
 it("starts a fresh loading lifecycle for a different venue", () => {
@@ -201,7 +201,7 @@ it("starts a fresh loading lifecycle for a different venue", () => {
   rerender(<LocationVenueScene slug="transit-park" locationName="Transit Park" />);
   expect(screen.getByTestId("venue-canvas")).toBeInTheDocument();
   expect(screen.getByText("Opening the venue")).toBeInTheDocument();
-  expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/The scene could not load/)).not.toBeInTheDocument();
 });
 
 it("isolates furniture failures without disabling the venue", () => {
@@ -231,7 +231,7 @@ it("isolates furniture failures without disabling the venue", () => {
   expect(screen.queryByTestId("furniture-table")).not.toBeInTheDocument();
   expect(screen.getByTestId("furniture-seat")).toBeInTheDocument();
   expect(screen.queryByText("Opening the venue")).not.toBeInTheDocument();
-  expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
+  expect(screen.queryByText(/The scene could not load/)).not.toBeInTheDocument();
   fireEvent.click(screen.getByRole("button", { name: "Test table" }));
   expect(screen.getByText("Table details")).toBeInTheDocument();
 });
@@ -306,7 +306,7 @@ describe("optional furniture readiness", () => {
     render(renderVenue([table, seat]));
     expect(screen.getByText(failureMessage)).toBeInTheDocument();
     expect(screen.getByTestId("furniture-seat")).toBeInTheDocument();
-    expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/The scene could not load/)).not.toBeInTheDocument();
   });
 
   it("preserves failed readiness under Strict Mode", () => {
@@ -394,7 +394,7 @@ describe("venue scene transitions", () => {
   function expectFreshScene() {
     expect(screen.getByTestId("venue-canvas")).toBeInTheDocument();
     expect(screen.getByText("Opening the venue")).toBeInTheDocument();
-    expect(screen.queryByText(/The 3D preview did not start/)).not.toBeInTheDocument();
+    expect(screen.queryByText(/The scene could not load/)).not.toBeInTheDocument();
   }
 
   it("resets fallback when switching shops", () => {
@@ -457,7 +457,7 @@ describe("venue scene transitions", () => {
       />,
     );
     expect(screen.queryByTestId("venue-canvas")).not.toBeInTheDocument();
-    expect(screen.getByText(/The 3D preview did not start/)).toBeInTheDocument();
+    expect(screen.getByText(/The scene could not load/)).toBeInTheDocument();
   });
 
   it("starts a fresh loading timeout after transition", () => {

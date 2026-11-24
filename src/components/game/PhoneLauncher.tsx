@@ -1,3 +1,4 @@
+import { gameWorldHref, type PhoneHudTarget } from "@/lib/game-hud-search";
 import { useMissionClaim } from "@/hooks/use-mission-claim";
 import { useMissions } from "@/hooks/use-missions";
 import {
@@ -228,6 +229,8 @@ export function PhoneLauncher({
   shortcutEditor,
   open,
   onOpenChange,
+  requestedNavigation,
+  onNavigationChange,
 }: {
   className?: string;
   compact?: boolean;
@@ -237,6 +240,8 @@ export function PhoneLauncher({
   dock?: ReactNode;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
+  requestedNavigation?: PhoneHudTarget;
+  onNavigationChange?: (target: PhoneHudTarget) => void;
 }) {
   useEffect(() => {
     const timer = window.setTimeout(prefetchPhoneApps, 300);
@@ -250,7 +255,8 @@ export function PhoneLauncher({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const href = useLocation({ select: (location) => location.href });
-  const previousHref = useRef(href);
+  const worldHref = gameWorldHref(href);
+  const previousHref = useRef(worldHref);
   const [internalOpen, setInternalOpen] = useState(false);
   const [launcherPage, setLauncherPage] = useState(0);
   const launcherScrollRef = useRef<HTMLDivElement>(null);
@@ -260,6 +266,16 @@ export function PhoneLauncher({
   const lastWheelPageRef = useRef(0);
   const [messagePlayerId, setMessagePlayerId] = useState<string | undefined>();
   const dialogOpen = open ?? internalOpen;
+  const requestedApp = requestedNavigation?.app;
+  const requestedSearch = requestedNavigation?.search;
+  useEffect(() => {
+    if (dialogOpen && requestedApp !== undefined)
+      dispatchNavigation({
+        type: "restore",
+        app: requestedApp,
+        ...(requestedSearch ? { search: requestedSearch } : {}),
+      });
+  }, [dialogOpen, requestedApp, requestedSearch]);
   const launcherApps: readonly PhoneAppDefinition[] = shortcutEditor
     ? [{ label: "Shortcuts", icon: SlidersHorizontal, tone: "phone-app-muted" }, ...PHONE_APPS]
     : PHONE_APPS;
@@ -330,15 +346,15 @@ export function PhoneLauncher({
   );
 
   useEffect(() => {
-    if (href === previousHref.current) return;
-    previousHref.current = href;
-    if (isFullPageWorldPath(href.split(/[?#]/)[0]!)) setPhoneOpen(false);
-  }, [href, setPhoneOpen]);
+    if (worldHref === previousHref.current) return;
+    previousHref.current = worldHref;
+    if (isFullPageWorldPath(worldHref.split(/[?#]/)[0]!)) setPhoneOpen(false);
+  }, [worldHref, setPhoneOpen]);
 
   const openApp = useCallback(
     (appName: string, search?: string) => {
       playGameSound("ui");
-      const worldPath = fullPageWorldApp(appName);
+      const worldPath = appName === "Map" ? undefined : fullPageWorldApp(appName);
       if (worldPath === "/house") {
         // The phone's House app enters the house on the server before opening it.
         void enterHomeFromAnywhere(queryClient).then((entered) => {
@@ -355,8 +371,9 @@ export function PhoneLauncher({
         app: appName,
         ...(search ? { search } : {}),
       });
+      onNavigationChange?.({ app: appName, ...(search ? { search } : {}) });
     },
-    [openWorld, queryClient],
+    [openWorld, queryClient, onNavigationChange],
   );
 
   useEffect(() => {
@@ -393,12 +410,15 @@ export function PhoneLauncher({
 
   const goBack = () => {
     playGameSound("ui");
+    const next = reducePhoneNavigation(navigation, { type: "back" });
     dispatchNavigation({ type: "back" });
+    onNavigationChange?.({ app: next.app, ...(next.search ? { search: next.search } : {}) });
   };
 
   const returnHome = () => {
     playGameSound("ui");
     dispatchNavigation({ type: "home" });
+    onNavigationChange?.({ app: null });
   };
 
   // Swipe-up gesture detection on home indicator
@@ -421,6 +441,8 @@ export function PhoneLauncher({
 
   // Render each supported app within the phone dialog.
   const renderAppContent = (appName: string) => {
+    // URL-driven Map HUD shows the existing directory; its full-city-map link still travels.
+    if (appName === "Map") return <PhoneMapApp />;
     if (fullPageWorldApp(appName)) return null;
 
     if (appName === "Shortcuts") {
@@ -605,7 +627,6 @@ export function PhoneLauncher({
     if (appName === "Games") return <GamesApp />;
     if (appName === "Settings") return <SettingsPage />;
     if (appName === "Osun Gist") return <OsunGistApp />;
-    if (appName === "Map") return <PhoneMapApp />;
     if (appName === "Support") return <SupportApp onHome={returnHome} />;
 
     // Fallback coming soon for any unbuilt or auxiliary app

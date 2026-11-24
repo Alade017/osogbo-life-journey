@@ -4194,3 +4194,109 @@
   font-size: 0.85rem;
   text-align: center;
 }
+
+/* Scoped Career Life phone layout; desktop jobs and Education retain their styles. */
+.phone-app-body .career-learning-app[data-career-phone] {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-hero {
+  padding: 14px;
+  margin: 0;
+  border-radius: 16px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-hero h1 {
+  font-size: 1.3rem;
+  margin: 5px 0;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-hero-role {
+  margin-top: 10px;
+  padding-top: 8px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-tabs {
+  margin: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  border-radius: 999px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-tabs button {
+  flex: 1 0 auto;
+  flex-direction: row;
+  min-height: 44px;
+  padding: 6px 9px;
+  font-size: 0.72rem;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-stats {
+  margin: 0;
+  gap: 6px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-stats > div {
+  padding: 10px 8px;
+  border-radius: 12px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-stats dd {
+  font-size: 0.95rem;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-card {
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-card button {
+  border-radius: 999px;
+}
+.phone-app-body .phone-job-list .learning-search {
+  border-radius: 999px;
+}
+.phone-app-body .phone-job-list .learning-search input {
+  min-height: 44px;
+  padding-block: 8px;
+}
+.phone-app-body .phone-job-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.phone-app-body .phone-job-filter select {
+  min-width: 0;
+  flex: 1;
+  min-height: 44px;
+  padding-inline: 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+}
+.phone-app-body .phone-job-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 10px;
+  padding: 12px;
+}
+.phone-app-body .phone-job-workplace,
+.phone-app-body .phone-job-location-state {
+  grid-column: 1 / -1;
+  justify-self: start;
+  font-size: 0.75rem;
+}
+.phone-app-body .phone-job-workplace {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--primary);
+  font-weight: 700;
+}
+.phone-app-body .phone-job-workplace:focus-visible,
+.phone-app-body .phone-job-filter select:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.phone-app-body .phone-job-location-state {
+  color: var(--muted-foreground);
+}

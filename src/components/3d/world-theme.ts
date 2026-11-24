@@ -71,9 +71,9 @@ export const WORLD_PALETTE = {
 export type WorldTone = keyof typeof WORLD_PALETTE;
 
 export const WORLD_MATERIAL = {
-  roughness: 1,
+  roughness: 0.9,
   metalness: 0,
-  flatShading: true,
+  flatShading: false,
 } as const;
 
 /** Warm cutaway colours for a house room seen on its own. Presentation only. */

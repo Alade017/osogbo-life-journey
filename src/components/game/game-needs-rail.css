@@ -59,6 +59,11 @@
   font-size: 12px;
   font-weight: 700;
 }
+.city-game.navigation-redesign aside.game-needs-rail[aria-label] .game-needs-trigger-copy small {
+  display: block;
+  font-size: 10px;
+  color: var(--muted-foreground);
+}
 .city-game.navigation-redesign aside.game-needs-rail[aria-label] .game-needs-urgent-pill {
   display: inline-flex;
   align-items: center;
@@ -76,11 +81,15 @@
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.city-game.navigation-redesign aside.game-needs-rail[aria-label] .game-needs-urgent-pill.is-warning {
+.city-game.navigation-redesign
+  aside.game-needs-rail[aria-label]
+  .game-needs-urgent-pill.is-warning {
   border-color: color-mix(in srgb, #94620a 30%, var(--border));
   color: #94620a;
 }
-.city-game.navigation-redesign aside.game-needs-rail[aria-label] .game-needs-urgent-pill.is-critical {
+.city-game.navigation-redesign
+  aside.game-needs-rail[aria-label]
+  .game-needs-urgent-pill.is-critical {
   border-color: color-mix(in srgb, var(--destructive) 35%, var(--border));
   color: var(--destructive);
 }

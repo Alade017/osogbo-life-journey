@@ -20,6 +20,8 @@ export type StreetRect = { id: string; minX: number; maxX: number; minZ: number;
 
 /** Kiosks, the okada stand and the shelter. Nobody can walk through them. */
 export const STREET_OBSTACLES: readonly StreetRect[] = [
+  { id: "front-rail-left", minX: -8.4, maxX: -1.8, minZ: -3.15, maxZ: -3.05 },
+  { id: "front-rail-right", minX: 1.8, maxX: 8.4, minZ: -3.15, maxZ: -3.05 },
   { id: "okada-stand", minX: -6.8, maxX: -4.4, minZ: 2.4, maxZ: 3.6 },
   { id: "kiosk", minX: 3.6, maxX: 5.4, minZ: 1.2, maxZ: 2.2 },
   { id: "shelter", minX: -2.8, maxX: -1.2, minZ: 4.6, maxZ: 5.2 },

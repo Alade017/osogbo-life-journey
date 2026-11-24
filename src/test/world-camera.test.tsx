@@ -31,7 +31,9 @@ vi.mock("@react-three/drei", async () => {
 });
 it("keeps the house camera inside its mobile-friendly zoom bounds", () => {
   render(<WorldCamera width={12} depth={10} stage minZoom={0.82} maxZoom={1.18} />);
-  const distance = (state.camera as PerspectiveCamera).position.length();
+  const target = (state.controls as { target: Vector3 }).target;
+  expect(target.y).toBeGreaterThan(0);
+  const distance = (state.camera as PerspectiveCamera).position.distanceTo(target);
   expect(Number(state.orbitOptions["minDistance"])).toBeCloseTo(distance / 1.18);
   expect(Number(state.orbitOptions["maxDistance"])).toBeCloseTo(distance / 0.82);
 });

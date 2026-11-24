@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { act, cleanup, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { PlayableNeighborhood } from "@/components/game/PlayableNeighborhood";
@@ -549,7 +549,7 @@ it("reports a bounded timeout when joining never resolves", async () => {
   await act(async () => {
     await vi.advanceTimersByTimeAsync(15_000);
   });
-  expect(screen.queryByRole("button", { name: "Retry connection" })).not.toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Retry connection" })).toBeEnabled();
   expect(screen.queryByText(/Connected ·/)).not.toBeInTheDocument();
   await act(async () => {
     await vi.advanceTimersByTimeAsync(1_500);
@@ -638,4 +638,57 @@ it("stops a failed route without sending direct movement through the blocked des
   await act(async () => new Promise((resolve) => setTimeout(resolve, 250)));
   const movement = joined.send.mock.calls.filter(([type]) => type === "move");
   expect(movement.every(([, intent]) => intent.x === 0 && intent.y === 0)).toBe(true);
+});
+
+it("shows the destination while the room is unavailable without accepting local movement", async () => {
+  state.join.mockRejectedValue(new Error("Failed to fetch"));
+  show();
+  await screen.findByText("Connection unavailable");
+  expect(screen.getByText("R3F neighbourhood")).toBeInTheDocument();
+  expect(screen.getByRole("button", { name: "Retry connection" })).toBeEnabled();
+  expect(state.scene.mock.lastCall?.[0].interactionTargets).toEqual([]);
+  expect(state.scene.mock.lastCall?.[0].playersRef.current).toEqual([]);
+  await act(async () => state.scene.mock.lastCall?.[0].onGroundTap({ x: 500, y: 300 }));
+  expect(state.scene.mock.lastCall?.[0].groundTarget).toBeNull();
+  expect(state.rpc).not.toHaveBeenCalled();
+});
+
+it("discards held keys and stale taps when the room disconnects, requiring fresh input after reconnect", async () => {
+  const first = room("city"),
+    second = room("city");
+  state.join.mockResolvedValueOnce(first).mockResolvedValueOnce(second);
+  show();
+  await screen.findByText("R3F neighbourhood");
+  await screen.findByText(/Tap the ground.*walk/);
+  const previousTap = state.scene.mock.lastCall?.[0].onGroundTap;
+  act(() => fireEvent.keyDown(window, { code: "ArrowRight" }));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  });
+  expect(first.send.mock.calls.some(([type, intent]) => type === "move" && intent.x !== 0)).toBe(
+    true,
+  );
+  await act(async () => first.listeners.leave?.(1006));
+  expect(screen.getByText("Connection unavailable")).toBeInTheDocument();
+  act(() => fireEvent.keyDown(window, { code: "ArrowLeft" }));
+  await act(async () => previousTap?.({ x: 500, y: 300 }));
+  expect(state.scene.mock.lastCall?.[0].groundTarget).toBeNull();
+  await act(async () => screen.getByRole("button", { name: "Retry connection" }).click());
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 250));
+  });
+  expect(state.join).toHaveBeenCalledTimes(2);
+  act(() => fireEvent.keyDown(window, { code: "ArrowRight", repeat: true }));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  });
+  const movements = second.send.mock.calls.filter(([type]) => type === "move");
+  expect(movements.every(([, intent]) => intent.x === 0 && intent.y === 0)).toBe(true);
+  act(() => fireEvent.keyDown(window, { code: "ArrowRight" }));
+  await act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 150));
+  });
+  expect(second.send.mock.calls.some(([type, intent]) => type === "move" && intent.x !== 0)).toBe(
+    true,
+  );
 });

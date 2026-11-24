@@ -33,9 +33,10 @@ export const CHARACTER_MOTION = {
 } as const;
 
 export const CHARACTER_GROUND = {
+  castShadow: false,
   /** Soft contact shadow radius, as a fraction of height. */
-  shadowRadius: 0.32,
-  shadowOpacity: 0.22,
+  shadowRadius: 0.17,
+  shadowOpacity: 0.06,
   shadowColor: "#2b2118",
 } as const;
 export const CHARACTER_CLOTH = {
