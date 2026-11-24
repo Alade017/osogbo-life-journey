@@ -1,3 +1,4 @@
+import { ShowroomPreviewPanel } from "@/components/game/ShowroomPreviewPanel";
 import { transportPreference } from "@/lib/transport-park";
 import "@/components/map/map-compact.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -378,6 +379,7 @@ export function CityMapDashboard(
           </button>
         </div>
       </header>
+      <ShowroomPreviewPanel />
       {offline && (
         <div role="status" className="map-offline-banner">
           <CloudOff size={16} />
