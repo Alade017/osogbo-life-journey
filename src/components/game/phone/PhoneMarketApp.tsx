@@ -159,9 +159,7 @@ function MarketAppContent({ characterId }: { characterId: string }) {
         result.isOpen ? "Stall is now open at Oja-Oba Market." : "Stall details saved.",
       );
     },
-    onError: (err) => {
-      toast.error(err instanceof Error ? err.message : "Failed to update stall");
-    },
+    onError: (err) => toast.error(marketStallErrorMessage(err)),
   });
   // Shop purchase and sell
   const purchase = useGameAction(rpc.purchaseShopItem, {
