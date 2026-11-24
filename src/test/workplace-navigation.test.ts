@@ -27,3 +27,9 @@ describe("Harvest Tech Hub routes", () => {
       expect(nav.route(workplaceSpawn, p)).toBeNull();
   });
 });
+
+it("reaches a clear tap near a partition even if rounding puts it inside the collision margin", () => {
+  const target = [-6, 2.3] as const;
+  expect(nav.canWalk(target)).toBe(true);
+  expect(nav.route(workplaceSpawn, target)?.at(-1)).toEqual(target);
+});

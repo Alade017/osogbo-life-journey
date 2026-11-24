@@ -1351,3 +1351,67 @@
     translate: 0 0;
   }
 }
+
+@media (min-width: 960px) {
+  .game-shell.city-game.navigation-redesign.home-hud {
+    & .home-world-conditions,
+    & > .world-environment > :is(.world-event, [role="status"], .world-outage) {
+      min-height: 44px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      align-content: center;
+    }
+    & .home-dashboard .hd-status {
+      top: calc(var(--home-top) + 54px);
+    }
+    & .home-dashboard .hd-area {
+      flex-basis: 210px;
+      gap: 8px;
+      min-height: 44px;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+    & .home-dashboard .hd-area > svg {
+      width: 18px;
+      height: 18px;
+      padding: 5px;
+    }
+    & .home-dashboard :is(.hd-icon-button, .hd-balance),
+    & .house-room-views button,
+    & .house-toolbar .house-scene-exit,
+    & aside.game-needs-rail[aria-label] .game-needs-toggle {
+      min-height: 44px;
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+    & .home-dashboard .hd-icon-button,
+    & .home-tools-menu > summary {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 50%;
+    }
+    & .home-dashboard .hd-icon-button svg {
+      width: 20px;
+      height: 20px;
+    }
+    & .house-toolbar .house-room-views {
+      top: calc(var(--home-top) + 108px);
+    }
+    & .home-player-status {
+      width: 175px;
+      min-height: 50px;
+      gap: 8px;
+    }
+    & .home-player-portrait {
+      width: 40px;
+      height: 40px;
+    }
+    & .home-player-energy-meter {
+      max-width: 75px;
+    }
+    & > .gbb:not(.is-open) {
+      width: min(490px, calc(100vw - 450px));
+    }
+  }
+}

@@ -6,10 +6,7 @@ export function findGridWalkPath(
   canWalk: (p: WalkPoint) => boolean,
   maxNodes = 5000,
 ): WalkPoint[] | null {
-  const snap = (p: WalkPoint): WalkPoint => [Math.round(p[0] * 2) / 2, Math.round(p[1] * 2) / 2];
-  const start = snap(from),
-    end = snap(to),
-    key = (p: WalkPoint) => `${p[0]},${p[1]}`;
+  const key = (p: WalkPoint) => `${p[0]},${p[1]}`;
   const clear = (a: WalkPoint, b: WalkPoint) => {
     const n = Math.max(1, Math.ceil(Math.hypot(a[0] - b[0], a[1] - b[1]) / 0.1));
     for (let i = 0; i <= n; i++) {
@@ -18,8 +15,20 @@ export function findGridWalkPath(
     }
     return true;
   };
-  if (![...from, ...to].every(Number.isFinite) || !clear(from, start) || !clear(end, to))
-    return null;
+  if (![...from, ...to].every(Number.isFinite) || !canWalk(from) || !canWalk(to)) return null;
+  // At a wall, the closest rounded grid cell can fall inside the obstacle.
+  // Try the other corners of this cell only when the entire join is walkable.
+  const snap = (p: WalkPoint) => {
+    const candidates: WalkPoint[] = [];
+    for (const x of new Set([Math.floor(p[0] * 2) / 2, Math.ceil(p[0] * 2) / 2]))
+      for (const z of new Set([Math.floor(p[1] * 2) / 2, Math.ceil(p[1] * 2) / 2]))
+        candidates.push([x, z]);
+    const distance = ([x, z]: WalkPoint) => Math.hypot(x - p[0], z - p[1]);
+    return candidates.sort((a, b) => distance(a) - distance(b)).find((c) => clear(p, c));
+  };
+  const start = snap(from),
+    end = snap(to);
+  if (!start || !end) return null;
   const queue: WalkPoint[] = [start],
     parents = new Map<string, WalkPoint | null>([[key(start), null]]);
   for (let i = 0; i < queue.length && i < maxNodes; i++) {

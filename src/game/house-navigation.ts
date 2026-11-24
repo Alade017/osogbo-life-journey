@@ -1,3 +1,4 @@
+import type { BlueprintDoor } from "@/components/game/housing/house-blueprints";
 import type { HousePlacement, HouseSlot } from "@/components/game/housing/HouseRoomScene";
 import {
   housePartitionSegmentsForFloor,
@@ -346,5 +347,41 @@ export function findRoomPath(
   const path: RoomPoint[] = [];
   for (let i = end; i !== -1; i = parents.get(i) ?? -1) path.unshift(point(i));
   // Start positions are maintained on navigable cells. Snap only when a layout change displaced the actor.
+  return path;
+}
+
+/** Approach the selected opening, cross its centre and clear the swinging leaf. */
+export function findDoorPath(
+  door: BlueprintDoor,
+  start: RoomPoint,
+  width: number,
+  depth: number,
+  obstacles: RoomObstacle[],
+) {
+  const normal = door.axis === "x" ? 2 : 0;
+  const centre: RoomPoint = [door.x, 0.06, door.z];
+  const side = start[normal] >= centre[normal] ? 1 : -1;
+  const path: RoomPoint[] = [];
+  let from = start;
+  for (const offset of [0.65, 0, -0.65]) {
+    const target: RoomPoint = [...centre];
+    target[normal] += offset * side;
+    const leg = findRoomPath(from, target, width, depth, obstacles);
+    const end = leg?.at(-1);
+    if (
+      !leg ||
+      !end ||
+      Math.hypot(leg[0]![0] - from[0], leg[0]![2] - from[2]) > 0.35 ||
+      Math.hypot(end[0] - target[0], end[2] - target[2]) > 0.22 ||
+      (offset !== 0.65 &&
+        leg.some(
+          ([x, , z]) =>
+            Math.abs(door.axis === "x" ? x - door.x : z - door.z) > door.width / 2 - 0.1,
+        ))
+    )
+      return null;
+    path.push(...(path.length ? leg.slice(1) : leg));
+    from = end;
+  }
   return path;
 }

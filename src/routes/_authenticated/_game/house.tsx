@@ -1,6 +1,7 @@
 import { useHouseMovement } from "@/hooks/use-house-movement";
 import {
   findRoomPath,
+  findDoorPath,
   placementPoint,
   packagePoint,
   roomObstacles,
@@ -737,16 +738,14 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const roomViews = serverState?.house
     ? houseRoomViews(serverState.house.house_type_id, roomWidth, roomDepth, activeFloor)
     : [];
-  const [pinnedRoom, setPinnedRoom] = useState<string | null | undefined>(undefined);
+  const [pinnedRoom, setPinnedRoom] = useState<null | undefined>(null);
   useEffect(() => {
     setActiveFloor(0);
-    setPinnedRoom(undefined);
+    setPinnedRoom(null);
   }, [serverState?.house?.id]);
   const followedRoom =
     roomViews.find((room) => roomViewContains(room, movement.position[0], movement.position[2]))
-      ?.id ??
-    roomViews[0]?.id ??
-    null;
+      ?.id ?? null;
   const roomView = pinnedRoom === undefined ? followedRoom : pinnedRoom;
   const [walkingTask, setWalkingTask] = useState<string | null>(null);
   const interactionVersion = useRef(0);
@@ -1900,44 +1899,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         </HomeToolsMenu>
         {!editing && roomViews.length > 0 && (
           <div className="house-room-views" role="group" aria-label="Room view">
-            {roomViews.length > 4 ? (
-              <select
-                aria-label="View room"
-                value={roomView ?? "whole"}
-                onChange={(event) =>
-                  setPinnedRoom(event.target.value === "whole" ? null : event.target.value)
-                }
-              >
-                <option value="whole">{WHOLE_HOME_LABEL}</option>
-                {roomViews.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {room.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <>
-                {roomViews.map((room) => (
-                  <button
-                    key={room.id}
-                    type="button"
-                    aria-pressed={roomView === room.id}
-                    className={roomView === room.id ? "is-active" : undefined}
-                    onClick={() => setPinnedRoom(room.id)}
-                  >
-                    {room.label}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  aria-pressed={roomView === null}
-                  className={roomView === null ? "is-active" : undefined}
-                  onClick={() => setPinnedRoom(null)}
-                >
-                  {WHOLE_HOME_LABEL}
-                </button>
-              </>
-            )}
+            <button
+              type="button"
+              onClick={() => setPinnedRoom(pinnedRoom === undefined ? null : undefined)}
+            >
+              {pinnedRoom === undefined ? WHOLE_HOME_LABEL : "Follow character"}
+            </button>
             {layoutConflicts.length > 0 && (
               <button
                 type="button"
@@ -1997,6 +1964,24 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           }
           {...(taskPose ? { taskPose } : {})}
           doorOpen={doorOpen}
+          onEnterDoor={(door) => {
+            if (editing || taskBusy || !isInsideHome || isOffline) return;
+            const path = findDoorPath(
+              door,
+              movement.positionRef.current,
+              roomWidth,
+              roomDepth,
+              obstacles,
+            );
+            if (!path) {
+              setActivityError("The doorway is blocked. Leave space on both sides.");
+              return;
+            }
+            setActivityError("");
+            void movement.walk(path).then((arrived) => {
+              if (arrived) setPinnedRoom(undefined);
+            });
+          }}
           onWalk={(point) => {
             if (!editing && !taskBusy && isInsideHome && !isOffline) {
               setActivityError("");

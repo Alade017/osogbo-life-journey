@@ -81,7 +81,9 @@ export type TownMapCallbacks = {
 
 type Props = TownMapData &
   TownMapCallbacks & {
-    onSelectProperty?: (property: import("@/components/map/MapCanvas").MapProperty) => void | undefined;
+    onSelectProperty?: (
+      property: import("@/components/map/MapCanvas").MapProperty,
+    ) => void | undefined;
     eventChips: readonly { id: string; label: string; x: number; y: number }[];
     onSelectEvent?: (landmarkId: string) => void | undefined;
     onReady: () => void;
@@ -1424,7 +1426,7 @@ export function R3FTownSurface(props: Props) {
           aria-label="Map camera controls"
           style={{
             position: "absolute",
-            right: 12,
+            left: 12,
             bottom: 12,
             pointerEvents: "none",
             color: WORLD_PALETTE.timber,
@@ -1437,7 +1439,7 @@ export function R3FTownSurface(props: Props) {
             maxWidth: 230,
           }}
         >
-          Drag to move · Pinch to zoom · Zoom in for more places
+          Drag to pan · Scroll or pinch to zoom
         </div>
         {hovered && (
           <div
