@@ -274,6 +274,9 @@ const MARKET_STALL_FALLBACK = "That change could not be completed. Try again.";
 /** Player-facing line for a failed stall action. Known server codes get plain copy, never the raw code. */
 export function marketStallErrorMessage(error: unknown): string {
   const message = error instanceof Error ? error.message : String(error ?? "");
+  if (/rent a current stall before saving|stall lease is not current/i.test(message)) {
+    return "Your Oja-Oba stall lease is not current. Rent the first week or pay overdue rent before opening it.";
+  }
   const codes = message.match(/\b[A-Z][A-Z0-9_]{2,}\b/g) ?? [];
   const known = codes.find((candidate) => candidate in MARKET_STALL_ERROR_COPY);
   return known ? MARKET_STALL_ERROR_COPY[known]! : MARKET_STALL_FALLBACK;
