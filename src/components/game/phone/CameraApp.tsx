@@ -2,7 +2,6 @@ import { useState } from "react";
 import {
   Camera,
   Check,
-  FlipHorizontal,
   Image as ImageIcon,
   Monitor,
   RotateCcw,
