@@ -413,11 +413,98 @@ def _place(pre, p):
         box(f"{name}_sign", x, z + d / 2 + 0.05, w * 0.7, 0.08, 0.45, P["indigo"], y0=2.9)
 
 
+PRODUCE = ["#e2832f", "#c94a3a", "#6f9a4e", "#e9c46a"]
+
+
+def _planter(prefix, i, x, z, w=3.0, d=1.6):
+    """Raised stone planter bed with three shrubs, for market frontages and verges."""
+    box(f"{prefix}_planter_{i}", x, z, w, d, 0.35, P["stone"])
+    for j, dx in enumerate((-w / 3, 0.0, w / 3)):
+        sph(f"{prefix}_shrub_{i}_{j}", x + dx, z, 0.5, P["hedge"] if j % 2 == 0 else P["foliage"], y0=0.75, sz=0.8)
+
+
+def _crates(prefix, i, x, z):
+    """Stacked produce crates in mixed orange, red, green and yellow."""
+    box(f"{prefix}_crate_a_{i}", x, z, 0.8, 0.6, 0.4, PRODUCE[i % 4])
+    box(f"{prefix}_crate_b_{i}", x + 0.9, z, 0.8, 0.6, 0.4, PRODUCE[(i + 1) % 4])
+    box(f"{prefix}_crate_c_{i}", x + 0.45, z, 0.8, 0.6, 0.4, PRODUCE[(i + 2) % 4], y0=0.4)
+
+
+def _string_lights(prefix, x0, x1, z, y=3.0, step=2.0):
+    """Festoon of lanterns strung between two posts across a street."""
+    for end, x in (("a", x0), ("b", x1)):
+        cyl(f"{prefix}_string_post_{end}", x, z, 0.06, y + 0.2, P["metal"])
+    n = int((x1 - x0) / step)
+    for i in range(1, n):
+        x = x0 + i * step
+        sph(f"{prefix}_lantern_{i}", x, z, 0.16, [P["sign"], P["accent"], "#d9604f"][i % 3], y0=y - 0.25)
+
+
+WHITE = "#f6efe0"
+KERB = "#d9d4c7"
+
+
+def _zebra(prefix, i, x, z, road_w, stripes=6, step=0.7):
+    """Zebra crossing across a vertical road at (x, z): bars long across the road, spaced along it."""
+    for k in range(stripes):
+        box(f"{prefix}_zebra_{i}_{k}", x, z + (k - (stripes - 1) / 2) * step, road_w, 0.4, 0.02, WHITE, y0=0.06)
+
+
+def _kerb(prefix, name, x, z, w, d):
+    """Light kerb strip along a road edge."""
+    box(f"{prefix}_kerb_{name}", x, z, w, d, 0.14, KERB)
+
+
+def _chalkboard(prefix, i, x, z):
+    """A-frame chalkboard sign with a timber frame, the way the market stalls label their prices."""
+    box(f"{prefix}_board_{i}", x, z, 0.7, 0.06, 0.9, "#2b2f2a", y0=0.5)
+    box(f"{prefix}_board_frame_{i}", x, z - 0.04, 0.78, 0.04, 0.98, P["timber"], y0=0.46)
+
+
+def _produce_pile(prefix, i, x, z):
+    """Heaped fruit on a stall table: a row of coloured spheres."""
+    for j, dx in enumerate((-0.25, 0.0, 0.25)):
+        sph(f"{prefix}_fruit_{i}_{j}", x + dx, z, 0.14, PRODUCE[(i + j) % 4], y0=1.0)
+
+
+def _city_dressing(pre):
+    """Market-street dressing for Olaiya: planters, produce, lantern strings and extra shade trees."""
+    for i, (x, z) in enumerate([(-20.0, -1.5), (-12.0, -1.5), (-4.0, -1.5), (4.0, -1.5),
+                                (-20.0, 8.5), (-4.0, 9.0), (6.0, 9.0), (18.0, 9.0)]):
+        _planter(pre, i, x, z)
+    for i, (x, z) in enumerate([(-11.6, -2.9), (-6.2, -2.9), (-0.6, -2.9), (3.8, -2.9),
+                                (14.7, -17.8), (7.7, -17.8)]):
+        _crates(pre, i, x, z)
+    # Two lantern festoons over the market road and the transit lane, like the night market reference.
+    _string_lights(pre, -26.0, 17.0, -11.25)
+    _string_lights(pre, -18.0, 16.0, 1.875)
+    # Zebra crossings across the main road and the east road, kerbs along the market road and the south road.
+    for i, z in enumerate([-4.0, -2.4, -0.8]):
+        _zebra(pre, i, -27.75, z - 4.0 + 0.0, 3.6, stripes=5)
+    for i in range(3):
+        _zebra(pre, 10 + i, 18.75, 4.0 + i * 3.6 - 3.6, 3.6, stripes=5)
+    _kerb(pre, "market-north", -6.0, -13.05, 44.0, 0.15)
+    _kerb(pre, "market-south", -6.0, -9.45, 44.0, 0.15)
+    _kerb(pre, "south-north", -6.0, 11.3, 44.0, 0.15)
+    _kerb(pre, "south-south", -6.0, 14.95, 44.0, 0.15)
+    # Hedge line along the south edge, like the hedged frontages in the boulevard reference.
+    box(f"{pre}_hedge_south", 0.0, 15.6, 44.0, 0.8, 0.7, P["hedge"], y0=0.0)
+    # Chalkboards and produce piles at the stall fronts.
+    for i, (x, z) in enumerate([(-11.6, -2.2), (-0.6, -2.2), (9.7, -2.2)]):
+        _chalkboard(pre, i, x, z)
+    for i, (x, z) in enumerate([(-13.1, -4.8), (-8.45, -4.8), (-3.75, -4.8), (9.75, -4.8)]):
+        _produce_pile(pre, i, x, z)
+    # Extra shade trees on the verges and between the stalls.
+    for i, (x, z) in enumerate([(-15.5, 16.2), (3.5, 16.3), (22.5, 4.5), (22.5, -6.0), (-22.0, -6.0)]):
+        _tree(pre, 100 + i, x, z)
+
+
 def build(area):
     global FIELD_W, FIELD_D
     FIELD_W, FIELD_D = area["frame"]["width_m"], area["frame"]["depth_m"]
     pre = area["prefix"]
-    box(f"{pre}ground", 0, 0, FIELD_W, FIELD_D, 0.1, P["lawn"] if area["slug"] == "oke-fia" else P["ground"], y0=-0.1)
+    ground = {"oke-fia": P["lawn"], "city-centre": P["pavers"]}.get(area["slug"], P["ground"])
+    box(f"{pre}ground", 0, 0, FIELD_W, FIELD_D, 0.1, ground, y0=-0.1)
     road_color = P["road"]
     for r in area["roads"]:
         if r["axis"] == "horizontal":
@@ -463,6 +550,8 @@ def build(area):
         box(f"{pre}bin_{i}", x, z, 0.6, 0.6, 0.7, P["drainage"])
     for i, (x, z) in enumerate(area["lamps"]):
         _lamp(pre, i, x, z)
+    if area["slug"] == "city-centre":
+        _city_dressing(pre)
 
 
 # ---------------- Export ----------------
