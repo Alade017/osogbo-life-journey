@@ -436,3 +436,47 @@
     transition: none;
   }
 }
+
+
+/* Keep the market's seller controls inside narrow handset viewports. */
+.market-app,
+.market-app *,
+.market-app .phone-sub-content,
+.market-app-section,
+.market-app-stall,
+.market-app-stall fieldset {
+  box-sizing: border-box;
+  min-width: 0;
+  max-width: 100%;
+}
+.market-app-stall fieldset {
+  width: 100%;
+}
+.market-app-stall :is(input, select, textarea) {
+  width: 100%;
+  max-width: 100%;
+}
+.market-app-stall button {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.market-app-stall .w-full {
+  width: 100%;
+}
+.market-app .market-app-lease {
+  overflow-wrap: anywhere;
+}
+.market-app .market-app-tabs button {
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+@media (max-width: 380px) {
+  .market-app .phone-sub-header,
+  .market-app-section {
+    padding-inline: 0.65rem;
+  }
+  .market-app-stall {
+    padding: 0.7rem;
+  }
+}
