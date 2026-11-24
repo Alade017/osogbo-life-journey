@@ -70,7 +70,7 @@ export function PhoneJobList() {
   const query = search.trim().toLowerCase();
   const visibleJobs = openJobs.filter((job) => {
     const location = locations?.find((item) => item.id === job.location_id);
-    return (category === "all" || resolveJobCategory(job) === category) &&
+    return (category === "all" || resolveJobCategory(job.category, job.slug, job.name) === category) &&
       [job.name, job.description, location?.name].some((value) => value?.toLowerCase().includes(query));
   });
   return (
