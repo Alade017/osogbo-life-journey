@@ -27,7 +27,7 @@ vi.mock("@/components/game/CareerLifeApp", () => ({
   CareerLifeApp: () => <div>Career HUD content</div>,
 }));
 vi.mock("@/components/game/phone/PhoneMapApp", () => ({
-  PhoneMapApp: () => <div>Map HUD content</div>,
+  PhoneMapApp: () => <div>Map HUD content <a href="/map">Open full city map</a></div>,
 }));
 beforeEach(() => {
   state.href = "/jobs";
@@ -35,17 +35,17 @@ beforeEach(() => {
 });
 afterEach(cleanup);
 
-it.each([["Map", "/map"]])(
-  "opens the %s launcher as a full page and closes the phone",
-  async (app, href) => {
-    render(<PhoneLauncher />);
-    fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
-    fireEvent.click(screen.getByRole("button", { name: `Open ${app}` }));
-    expect(state.navigate).toHaveBeenCalledWith({ href });
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(document.querySelector("canvas")).toBeNull();
-  },
-);
+it("opens the Map directory in the phone and travels only on explicit map selection", async () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open Map" }));
+  expect(await screen.findByText("Map HUD content")).toBeVisible();
+  expect(state.navigate).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("link", { name: "Open full city map" }));
+  expect(state.navigate).toHaveBeenCalledWith({ href: "/map" });
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(document.querySelector("canvas")).toBeNull();
+});
 
 it("redirects external neighborhood and friend-home requests without opening a phone world", () => {
   render(<PhoneLauncher />);
