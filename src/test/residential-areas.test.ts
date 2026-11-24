@@ -114,8 +114,8 @@ describe.each([
     label: "Hillview Quarter",
     glb: "hillview-quarter.glb",
     ground: "hvq_ground",
-    width: 30,
-    depth: 22.5,
+    width: 60,
+    depth: 45,
   },
 ])("$label environment GLB", ({ glb, ground, width, depth }) => {
   it(`parses and its ground is the authored ${width} x ${depth} m field the game scales to its frame`, async () => {

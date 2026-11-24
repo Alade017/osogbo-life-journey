@@ -62,12 +62,18 @@ DECOR = {
     ),
     "oke-fia": dict(
         prefix="hvq_", out="hillview-quarter.glb",
-        houses={"ne": "duplex", "se": "duplex", "sw": "duplex"},
+        houses={
+            "ne": "duplex", "se": "duplex", "sw": "duplex",
+            "n-east": "duplex", "n-far": "duplex", "s-east": "duplex", "s-far": "duplex",
+            "c-w": "duplex", "c-mid": "duplex", "c-east": "duplex", "c-far": "duplex",
+            "d-w": "duplex", "d-mid": "duplex", "d-east": "duplex", "d-far": "duplex",
+        },
         benches=[],
         bins=[],
         poles=[],
-        palms=[(-14.2, -7.0), (14.4, -6.5)],  # off the boulevard (|z| > 4 m)
-        lamps=[(-13.5, -4.4), (13.5, 4.4), (-1.9, -4.4), (1.9, 4.4)],
+        # Decor is in metres from the frame centre (800, 600), shifted from the old (400, 300) centre.
+        palms=[(-29.2, -18.25), (-0.6, -17.75)],  # clear of the boulevard (|z| > 4 m)
+        lamps=[(-28.5, -15.65), (-1.5, -6.85), (-16.9, -15.65), (-13.1, -6.85)],
         features=[("Eateries", 60, 120), ("Small Shops", 330, 530), ("Gym", 150, 160)],
     ),
 }
