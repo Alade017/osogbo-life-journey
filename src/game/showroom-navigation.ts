@@ -5,6 +5,9 @@ export const SHOWROOM_LAYOUT = {
   depth: 18,
   entrance: [0, 7.5] as WalkPoint,
   clearance: 0.35,
+  entranceWidth: 3,
+  exteriorSpawn: [0, 12] as WalkPoint,
+  exteriorDoor: [0, 9.5] as WalkPoint,
   displayWidth: 3.6,
   displayDepth: 5.8,
 } as const;
@@ -39,4 +42,14 @@ export function showroomNavigation() {
     return route(from, target);
   }
   return { canWalk, route, approach };
+}
+
+/** The forecourt is walkable; the building and road are not. */
+export function showroomExteriorRoute(from: WalkPoint, to: WalkPoint) {
+  const front = SHOWROOM_LAYOUT.depth / 2;
+  return findGridWalkPath(from, to, ([x, z]) =>
+    Number.isFinite(x) && Number.isFinite(z) &&
+    Math.abs(x) <= SHOWROOM_LAYOUT.width / 2 &&
+    z >= front + 0.5 && z <= front + 3
+  );
 }
