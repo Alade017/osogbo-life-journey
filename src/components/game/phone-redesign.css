@@ -876,3 +876,65 @@
     transition: none;
   }
 }
+
+
+/* Radix portals render dialogs and menus beside the phone root, not inside it.
+   Scope their visual treatment to the period when the in-game handset is open. */
+body:has(.phone-ui-refresh) :is(
+  [role="dialog"]:not(.phone-dialog),
+  [role="alertdialog"],
+  [data-radix-dialog-content],
+  [data-radix-alert-dialog-content]
+) {
+  box-sizing: border-box;
+  max-width: min(calc(100vw - 28px), 27rem);
+  max-height: min(calc(100dvh - 28px), 44rem);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+
+body:has(.phone-ui-refresh) :is(
+  [role="menu"],
+  [role="listbox"],
+  [data-radix-menu-content],
+  [data-radix-select-content],
+  [data-radix-popover-content],
+  [data-radix-dropdown-menu-content]
+) {
+  max-width: min(calc(100vw - 24px), 24rem);
+  max-height: min(60dvh, 28rem);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  color: var(--foreground);
+  background: var(--popover, var(--card));
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+body:has(.phone-ui-refresh) :is(
+  [role="dialog"],
+  [role="alertdialog"],
+  [role="menu"],
+  [role="listbox"]
+) :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring, var(--primary));
+  outline-offset: 2px;
+}
+
+@media (max-width: 380px) {
+  body:has(.phone-ui-refresh) :is(
+    [role="dialog"]:not(.phone-dialog),
+    [role="alertdialog"],
+    [data-radix-dialog-content],
+    [data-radix-alert-dialog-content]
+  ) {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    padding-inline: 14px;
+    border-radius: 1.25rem;
+  }
+}
