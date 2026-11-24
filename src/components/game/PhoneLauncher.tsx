@@ -13,6 +13,7 @@ import * as DialogPrimitive from "@radix-ui/react-dialog";
 import {
   Bell,
   Bike,
+  Camera,
   BriefcaseBusiness,
   Building2,
   CalendarDays,
@@ -139,6 +140,7 @@ const CommunityPhoneApps = lazy(() =>
 );
 const PhoneCommunityServices = lazy(() => import("@/components/game/phone/PhoneCommunityServices"));
 const CityServicesApp = lazy(() => import("@/components/game/phone/CityServicesApp"));
+const CameraApp = lazy(() => import("@/components/game/phone/CameraApp"));
 const PropertyExchangeApp = lazy(() => import("@/components/game/phone/PropertyExchangeApp"));
 
 type PhoneAppDefinition = {
@@ -154,6 +156,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
   { label: "Businesses", icon: Building2, tone: "phone-app-green" },
   { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue", emphasis: "utility" },
+  { label: "Camera", icon: Camera, tone: "phone-app-blue", emphasis: "important" },
   { label: "Career Life", icon: BriefcaseBusiness, tone: "phone-app-gold", emphasis: "important" },
   { label: "City Services", icon: HeartPulse, tone: "phone-app-green", emphasis: "important" },
   { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
@@ -481,6 +484,7 @@ export function PhoneLauncher({
 
     if (appName === "Education" || appName === "Courses") return <EducationPage phoneMode />;
     if (appName === "City Services") return <CityServicesApp />;
+    if (appName === "Camera") return <CameraApp />;
     if (appName === "Property Exchange") return <PropertyExchangeApp />;
 
     if (appName === "Bank") {
