@@ -9,6 +9,18 @@ import { neighborhoodBuildingFootprint } from "./neighborhood-geometry.ts";
 /** A flat rectangle in neighbourhood units. Centre is (x, y); depth runs along y. */
 export type DressingRect = { x: number; y: number; width: number; depth: number };
 export type DressingBounds = { left: number; top: number; width: number; height: number };
+
+/** The district's own rectangle (its environment), in street units. */
+export function environmentBounds(area: NeighborhoodArea): DressingBounds {
+  const env = area.environment;
+  if (!env) throw new Error(`${area.slug} has no environment`);
+  return {
+    left: env.x - env.width / 2,
+    top: env.y - env.height / 2,
+    width: env.width,
+    height: env.height,
+  };
+}
 export type CarSpot = WorldPoint & { rotation: number };
 export type TrafficLightSpot = WorldPoint & { rotation: number };
 

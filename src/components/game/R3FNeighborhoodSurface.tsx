@@ -93,6 +93,7 @@ import {
   pedestrianSpots,
   roadMarkings,
   sidewalksAndCurbs,
+  environmentBounds,
   streetLightSpots,
   treeVisualProfile,
   vendorSpots,
@@ -634,7 +635,8 @@ export function R3FNeighborhoodSurface({
       curbs: kerbs.curbs,
       crossings,
       crossingStripes: pedestrianCrossingStripes(crossings),
-      lights: streetLightSpots(area, bounds),
+      // Lamps stay inside the district's own streets, so the view is not lined with poles.
+      lights: streetLightSpots(area, area.environment ? environmentBounds(area) : bounds),
       cars: trafficCars(area, bounds),
       people: pedestrianSpots(area, bounds),
       vendors: vendorSpots(area),

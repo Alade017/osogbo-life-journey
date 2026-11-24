@@ -81,11 +81,10 @@ DECOR = {
         houses={},  # Olaiya has no housing plots: its places are drawn from the layout's places list
         benches=[(2.0, 5.0)],
         bins=[(-21.0, 9.0), (3.0, -1.0)],
-        poles=[(-16.0, 16.5)],
+        poles=[],  # no utility poles in the market street: the redesign keeps the view open
         palms=[(27.0, -18.0), (27.0, 4.0), (27.0, 17.0)],
-        # Street lamps on the verges of the north-south main road and the market road.
-        lamps=[(-25.0, -14.0), (-25.0, -4.0), (-25.0, 6.0), (-25.0, 16.0),
-               (-19.0, -12.8), (-19.0, -9.7), (-1.0, -12.8), (-1.0, -9.7), (10.0, -12.8), (10.0, -9.7)],
+        # Three street lamps along the north side of the market road; the rest of the street is open.
+        lamps=[(-19.0, -12.8), (-1.0, -12.8), (10.0, -12.8)],
         features=[],
     ),
 }
