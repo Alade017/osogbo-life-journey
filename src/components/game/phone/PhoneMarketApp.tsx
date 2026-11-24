@@ -484,8 +484,47 @@ function MarketAppContent({ characterId }: { characterId: string }) {
                     {saveStallMutation.isPending ? "Saving stall..." : "Save stall details"}
                   </button>
                   {!activeLease && (
-                    <p role="status" className="text-xs text-muted-foreground">
-                      Rent a current stall before saving or opening your stall.
+                    <div className="market-app-lease-gate" role="status">
+                      <strong>
+                        {rentQuery.isPending
+                          ? "Checking your stall lease…"
+                          : rentQuery.isError
+                            ? "Your stall lease could not be verified."
+                            : "Rent is required to open your stall."}
+                      </strong>
+                      <p>
+                        {rentQuery.data && rentQuery.data.status !== "current"
+                          ? "Your lease is overdue. Pay the outstanding week before reopening your stall."
+                          : "Rent the Oja-Oba stall for the first week, then save your details and switch on customer access."}
+                      </p>
+                      {rentQuery.isSuccess && rentQuery.data === null && (
+                        <button
+                          type="button"
+                          disabled={rentMutation.isPending}
+                          onClick={() => rentMutation.mutate()}
+                        >
+                          {rentMutation.isPending ? "Renting…" : `Rent stall · ${formatNaira(2000)}`}
+                        </button>
+                      )}
+                      {rentQuery.isSuccess && rentQuery.data && rentQuery.data.status !== "current" && (
+                        <button
+                          type="button"
+                          disabled={payRentMutation.isPending}
+                          onClick={() => payRentMutation.mutate()}
+                        >
+                          {payRentMutation.isPending ? "Paying…" : "Pay overdue rent"}
+                        </button>
+                      )}
+                      {rentQuery.isError && (
+                        <button type="button" onClick={() => void rentQuery.refetch()}>
+                          Retry lease check
+                        </button>
+                      )}
+                    </div>
+                  )}
+                  {saveStallMutation.isError && (
+                    <p className="market-app-save-error" role="alert">
+                      {marketStallErrorMessage(saveStallMutation.error)}
                     </p>
                   )}
                 </fieldset>
