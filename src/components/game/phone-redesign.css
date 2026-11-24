@@ -3,19 +3,19 @@
 @media (min-width: 641px) {
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh,
   .phone-dialog.phone-ui-refresh {
-    width: 400px !important;
+    width: 420px !important;
     max-width: calc(100% - 32px) !important;
     height: min(
-      670px,
-      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px)
+      820px,
+      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 36px)
     ) !important;
     max-height: calc(
       100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px
     ) !important;
     padding: 0 !important;
-    border: 5px solid #2c3036 !important;
-    border-radius: 44px !important;
-    background: #2c3036 !important;
+    border: 4px solid #707985 !important;
+    border-radius: 43px !important;
+    background: linear-gradient(115deg, #343b45 0%, #a6adb6 8%, #515a66 18%, #242b34 48%, #929ba5 86%, #303741 100%) !important;
     box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.5) !important;
   }
 }
@@ -39,7 +39,7 @@
 
 .phone-dialog-shell {
   --phone-frame-height: min(
-    670px,
+    820px,
     calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px)
   );
   --phone-frame-bottom: calc(var(--game-dock-space) + var(--game-keyboard-inset, 0px) + 8px);
@@ -48,12 +48,12 @@
 .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
   overflow: visible;
   height: var(--phone-frame-height) !important;
-  border-color: color-mix(in srgb, var(--brand-ink) 78%, #6b737e) !important;
+  border-color: color-mix(in srgb, #aeb7c2 78%, var(--brand-ink)) !important;
   background: linear-gradient(
     100deg,
-    color-mix(in srgb, var(--brand-ink) 80%, #69717c),
+    color-mix(in srgb, var(--brand-ink) 68%, #9ba4ae),
     var(--brand-ink) 35%,
-    color-mix(in srgb, var(--brand-ink) 84%, #89919a) 75%,
+    color-mix(in srgb, var(--brand-ink) 66%, #c0c7ce) 75%,
     var(--brand-ink)
   ) !important;
   box-shadow:
@@ -89,7 +89,7 @@
 }
 
 .phone-dialog-shell-solo {
-  --phone-frame-height: min(670px, calc(100dvh - 28px));
+  --phone-frame-height: min(820px, calc(100dvh - 36px));
 }
 
 .phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
@@ -196,20 +196,20 @@
   }
 
   .phone-dialog-shell-solo {
-    --phone-frame-height: calc(100dvh - 64px);
+    --phone-frame-height: calc(100dvh - 40px);
   }
 
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
-    width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
+    width: calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
     max-width: calc(
-      100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)
+      100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)
     ) !important;
     height: var(--phone-frame-height) !important;
-    border-radius: 25px !important;
+    border-radius: 38px !important;
   }
 
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh .phone-screen {
-    border-radius: 20px !important;
+    border-radius: 34px !important;
   }
 
   .phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
@@ -678,5 +678,33 @@
     height: 88dvh !important;
     max-height: 88dvh !important;
     pointer-events: auto;
+  }
+}
+
+
+/* Modern Galaxy S Ultra-inspired handset: flat titanium rails, narrow glass bezel,
+   centered punch-hole camera and a taller flagship screen proportion. */
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh {
+  box-sizing: border-box;
+  outline: 1px solid rgb(255 255 255 / 26%);
+}
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh .phone-screen {
+  overflow: hidden;
+  border-radius: 36px !important;
+}
+.phone-ui-refresh .phone-status-camera {
+  width: 13px;
+  height: 13px;
+  border-width: 2px;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, #7c8794 45%, transparent),
+    inset 0 0 4px #05070a;
+}
+@media (max-width: 640px) {
+  .phone-dialog-shell-solo {
+    --phone-frame-height: calc(100dvh - 40px);
+  }
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh .phone-screen {
+    border-radius: 32px !important;
   }
 }
