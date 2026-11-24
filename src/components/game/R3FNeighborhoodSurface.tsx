@@ -64,6 +64,14 @@ import {
   type WorldInstance,
 } from "../3d/WorldScene";
 import { ZoneNpcs } from "@/components/3d/ZoneNpcs";
+import {
+  ambientPauseMs,
+  ambientResidentRoster,
+  buildAmbientPlan,
+  nextAmbientTarget,
+  type AmbientPlan,
+  type AmbientResident,
+} from "@/game/neighborhood-residents";
 import { StreetLife } from "@/components/3d/StreetLife";
 import type { ZoneNpcSpec } from "@/game/neighborhood-interactions";
 import { CHARACTER_MOTION } from "@/components/3d/character-config";
@@ -86,6 +94,7 @@ import {
   pedestrianSpots,
   roadMarkings,
   sidewalksAndCurbs,
+  environmentBounds,
   streetLightSpots,
   treeVisualProfile,
   vendorSpots,
@@ -377,6 +386,87 @@ function NeighborhoodNpcActor({
   );
 }
 
+/**
+ * One ambient resident: walks between stops across the district, pauses, then walks on.
+ * Shares the story NPCs' path planning and avoidance, so residents go around buildings,
+ * each other and players.
+ */
+function AmbientResidentActor({
+  resident,
+  plan,
+  point,
+  actorPositions,
+  actorRoutes,
+  playerPositions,
+  occupiedFootprints,
+  sceneBounds,
+}: {
+  resident: AmbientResident;
+  plan: AmbientPlan;
+  point: (x: number, z: number) => [number, number, number];
+  actorPositions: MutableRefObject<Map<string, NpcPoint>>;
+  actorRoutes: MutableRefObject<Map<string, readonly NpcPoint[]>>;
+  playerPositions: readonly (readonly [number, number, number])[];
+  occupiedFootprints: readonly { left: number; top: number; width: number; height: number }[];
+  sceneBounds: { left: number; top: number; width: number; height: number };
+}) {
+  const [target, setTarget] = useState<NpcPoint>(resident.start);
+  const step = useRef(0);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timer.current) clearTimeout(timer.current);
+    },
+    [],
+  );
+
+  const onArrive = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = setTimeout(
+      () => {
+        step.current += 1;
+        setTarget((current) => nextAmbientTarget(plan, resident.index, step.current, current));
+      },
+      ambientPauseMs(resident.index, step.current),
+    );
+  }, [plan, resident.index]);
+
+  const npc = useMemo<NeighborhoodNpcView>(
+    () => ({
+      id: resident.id,
+      name: resident.name,
+      role: "Resident",
+      activity: "Out and about",
+      available: true,
+      isPaused: false,
+      activityKind: "walking",
+      x: resident.start.x,
+      y: resident.start.y,
+      targetX: target.x,
+      targetY: target.y,
+      isMoving: true,
+    }),
+    [resident, target],
+  );
+
+  return (
+    <NeighborhoodNpcActor
+      npc={npc}
+      showLabel={false}
+      start={point(resident.start.x, resident.start.y)}
+      target={point(target.x, target.y)}
+      actorPositions={actorPositions}
+      actorRoutes={actorRoutes}
+      playerPositions={playerPositions}
+      occupiedFootprints={occupiedFootprints}
+      sceneBounds={sceneBounds}
+      onSelect={() => {}}
+      onArrive={onArrive}
+    />
+  );
+}
+
 /** Subtle distance fog matching the sky color so the outer perimeter blends smoothly into the horizon. */
 const SKY_FOG_NEAR_SCALE = 0.42;
 const SKY_FOG_FAR_SCALE = 1.05;
@@ -546,7 +636,8 @@ export function R3FNeighborhoodSurface({
       curbs: kerbs.curbs,
       crossings,
       crossingStripes: pedestrianCrossingStripes(crossings),
-      lights: streetLightSpots(area, bounds),
+      // Lamps stay inside the district's own streets, so the view is not lined with poles.
+      lights: streetLightSpots(area, area.environment ? environmentBounds(area) : bounds),
       cars: trafficCars(area, bounds),
       people: pedestrianSpots(area, bounds),
       vendors: vendorSpots(area),
@@ -606,6 +697,11 @@ export function R3FNeighborhoodSurface({
     [district.origin, players, point],
   );
   const npcPoints = useMemo(() => npcs.map((npc) => point(npc.x, npc.y)), [npcs, point]);
+  const ambientPlan = useMemo(() => buildAmbientPlan(area), [area]);
+  const ambientRoster = useMemo(
+    () => ambientResidentRoster(area, ambientPlan),
+    [area, ambientPlan],
+  );
   const actorPositions = useRef(new Map<string, NpcPoint>());
   const actorRoutes = useRef(new Map<string, readonly NpcPoint[]>());
   const movementBounds = useMemo(
@@ -1005,6 +1101,21 @@ export function R3FNeighborhoodSurface({
               onArrive={() => onNpcArrive(npc.id, npc.targetX, npc.targetY)}
             />
           ))}
+          {/* Ambient residents live in the district and walk its streets all day. */}
+          {!overview &&
+            ambientRoster.map((resident) => (
+              <AmbientResidentActor
+                key={resident.id}
+                resident={resident}
+                plan={ambientPlan}
+                point={point}
+                actorPositions={actorPositions}
+                actorRoutes={actorRoutes}
+                playerPositions={scenePoints}
+                occupiedFootprints={movementObstacles}
+                sceneBounds={movementBounds}
+              />
+            ))}
           {/* Ground that takes taps and clicks: the character walks to the tapped point. */}
           <mesh
             rotation={[-Math.PI / 2, 0, 0]}

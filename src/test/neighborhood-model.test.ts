@@ -62,7 +62,7 @@ describe("neighborhood coordinates and interaction", () => {
         area.objects.length,
       );
       // Places with a landmark in the town data are walked from that data (see town-neighborhood).
-      const handBuilt = ["city-centre", "oja-oba", "fuel-and-go"];
+      const handBuilt = ["city-centre", "oja-oba", "fuel-and-go", "atiku", "oke-fia"];
       if (townAnchorForSlug(node.slug) && !handBuilt.includes(node.slug)) {
         expect(area.objects.filter((object) => object.kind === "npc").length).toBeGreaterThan(0);
         const kinds = area.obstacles?.map((obstacle) => obstacle.kind) ?? [];

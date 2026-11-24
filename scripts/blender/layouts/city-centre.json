@@ -1,0 +1,261 @@
+{
+  "slug": "city-centre",
+  "name": "Olaiya",
+  "frame": {
+    "width_m": 60,
+    "depth_m": 45
+  },
+  "roads": [
+    {
+      "id": "olaiya-main-road",
+      "axis": "vertical",
+      "offset_m": -27.75,
+      "width_m": 3.6,
+      "type": "arterial"
+    },
+    {
+      "id": "olaiya-market-road",
+      "axis": "horizontal",
+      "offset_m": -11.25,
+      "width_m": 3.6,
+      "type": "arterial"
+    },
+    {
+      "id": "olaiya-east-road",
+      "axis": "vertical",
+      "offset_m": 18.75,
+      "width_m": 3.6,
+      "type": "street"
+    },
+    {
+      "id": "olaiya-transit-lane",
+      "axis": "horizontal",
+      "offset_m": 1.85,
+      "width_m": 3,
+      "type": "street"
+    },
+    {
+      "id": "olaiya-south-road",
+      "axis": "horizontal",
+      "offset_m": 13.1,
+      "width_m": 3.6,
+      "type": "arterial"
+    }
+  ],
+  "lots": [],
+  "shop": {
+    "id": "olaiya-mini-mart",
+    "x": -8.45,
+    "z": -16.5,
+    "w": 4.1,
+    "d": 3.75,
+    "label": "Fuel & Go Mini-Mart"
+  },
+  "kiosk": {
+    "id": "olaiya-pos",
+    "x": 5.45,
+    "z": -5.25,
+    "w": 2.25,
+    "d": 2.25,
+    "label": "FastCash POS & Airtime Kiosk"
+  },
+  "gatehouse": null,
+  "places": [
+    {
+      "id": "olaiya-fuel-pumps",
+      "x": -13.1,
+      "z": -16.5,
+      "w": 4.1,
+      "d": 3.35,
+      "kind": "landmark",
+      "label": "Fuel & Go Forecourt Pumps"
+    },
+    {
+      "id": "olaiya-mini-mart",
+      "x": -8.45,
+      "z": -16.5,
+      "w": 4.1,
+      "d": 3.75,
+      "kind": "shop",
+      "label": "Fuel & Go Mini-Mart"
+    },
+    {
+      "id": "olaiya-vulcanizer",
+      "x": -4.1,
+      "z": -16.5,
+      "w": 3.75,
+      "d": 3.35,
+      "kind": "landmark",
+      "label": "Vulcanizer & Tire Corner"
+    },
+    {
+      "id": "olaiya-central",
+      "x": 0.75,
+      "z": -16.85,
+      "w": 5.6,
+      "d": 4.5,
+      "kind": "shop",
+      "label": "Olaiya Central"
+    },
+    {
+      "id": "olaiya-atm",
+      "x": 5.45,
+      "z": -16.3,
+      "w": 2.6,
+      "d": 2.6,
+      "kind": "landmark",
+      "label": "Meridian Bank ATM Alcove"
+    },
+    {
+      "id": "olaiya-bank-lobby",
+      "x": 9.75,
+      "z": -16.85,
+      "w": 5.6,
+      "d": 4.5,
+      "kind": "shop",
+      "label": "Meridian Bank Customer Lobby"
+    },
+    {
+      "id": "olaiya-adire-vats",
+      "x": 14.6,
+      "z": -16.5,
+      "w": 3.75,
+      "d": 3.75,
+      "kind": "landmark",
+      "label": "Indigo Dye Vats & Zinc Shed"
+    },
+    {
+      "id": "olaiya-adire-racks",
+      "x": -13.1,
+      "z": -5.6,
+      "w": 4.1,
+      "d": 3.75,
+      "kind": "landmark",
+      "label": "Adire Drying & Folding Racks"
+    },
+    {
+      "id": "olaiya-market-stalls",
+      "x": -8.45,
+      "z": -5.6,
+      "w": 4.1,
+      "d": 3.75,
+      "kind": "landmark",
+      "label": "Open Market Produce & Cloth Tables"
+    },
+    {
+      "id": "olaiya-buka",
+      "x": -3.75,
+      "z": -5.6,
+      "w": 4.1,
+      "d": 3.75,
+      "kind": "shop",
+      "label": "Mama Sikira Buka Kitchen"
+    },
+    {
+      "id": "olaiya-barber",
+      "x": 0.95,
+      "z": -5.6,
+      "w": 3.75,
+      "d": 3.75,
+      "kind": "shop",
+      "label": "Dele Cutz Barber Salon"
+    },
+    {
+      "id": "olaiya-pos",
+      "x": 5.45,
+      "z": -5.25,
+      "w": 2.25,
+      "d": 2.25,
+      "kind": "kiosk",
+      "label": "FastCash POS & Airtime Kiosk"
+    },
+    {
+      "id": "olaiya-accessory",
+      "x": 9.75,
+      "z": -5.6,
+      "w": 4.1,
+      "d": 3.75,
+      "kind": "shop",
+      "label": "Iya Adire Style & Accessories"
+    },
+    {
+      "id": "olaiya-transit",
+      "x": -8.45,
+      "z": 5.25,
+      "w": 4.5,
+      "d": 2.25,
+      "kind": "landmark",
+      "label": "Keke Napep & Korope Loading Stand"
+    }
+  ],
+  "trees": [
+    [
+      -23.25,
+      -19.5
+    ],
+    [
+      -23.25,
+      19.5
+    ],
+    [
+      25.5,
+      -19.5
+    ],
+    [
+      25.5,
+      19.5
+    ],
+    [
+      15,
+      -3
+    ],
+    [
+      15,
+      7.5
+    ]
+  ],
+  "objects": [
+    {
+      "id": "home",
+      "name": "Olaiya homes",
+      "kind": "home",
+      "x": -18,
+      "z": -11.25
+    },
+    {
+      "id": "market",
+      "name": "Olaiya shops",
+      "kind": "market",
+      "x": -8.45,
+      "z": -10.35
+    },
+    {
+      "id": "work",
+      "name": "Olaiya opportunities",
+      "kind": "work",
+      "x": 0.75,
+      "z": -12.15
+    },
+    {
+      "id": "npc",
+      "name": "Olaiya neighbour 1",
+      "kind": "npc",
+      "x": -6.75,
+      "z": -12.15
+    },
+    {
+      "id": "npc-2",
+      "name": "Olaiya neighbour 2",
+      "kind": "npc",
+      "x": 7.5,
+      "z": -10.35
+    },
+    {
+      "id": "npc-3",
+      "name": "Olaiya neighbour 3",
+      "kind": "npc",
+      "x": 3,
+      "z": -12.15
+    }
+  ]
+}
