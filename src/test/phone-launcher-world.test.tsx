@@ -26,6 +26,9 @@ vi.mock("@/hooks/use-mission-claim", () => ({ useMissionClaim: () => ({ mutate: 
 vi.mock("@/components/game/CareerLifeApp", () => ({
   CareerLifeApp: () => <div>Career HUD content</div>,
 }));
+vi.mock("@/components/game/phone/CameraApp", () => ({
+  default: () => <div>Camera app content</div>,
+}));
 vi.mock("@/components/game/phone/CityServicesApp", () => ({
   default: () => <div>City Services content</div>,
 }));
@@ -185,4 +188,14 @@ it("opens the replacement City Services and Property Exchange apps from the laun
   fireEvent.click(screen.getByRole("button", { name: "Open Property Exchange" }));
   expect(await screen.findByText("Property Exchange content")).toBeVisible();
   expect(screen.queryByRole("button", { name: "Open Activities" })).toBeNull();
+});
+
+
+it("opens the Camera app from the launcher and from the global shortcut event", async () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open Camera" }));
+  expect(await screen.findByText("Camera app content")).toBeVisible();
+  fireEvent(window, new CustomEvent("osogbo-open-phone-app", { detail: { app: "Camera" } }));
+  expect(await screen.findByText("Camera app content")).toBeVisible();
 });
