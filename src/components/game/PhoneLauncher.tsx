@@ -354,7 +354,7 @@ export function PhoneLauncher({
   const openApp = useCallback(
     (appName: string, search?: string) => {
       playGameSound("ui");
-      const worldPath = fullPageWorldApp(appName);
+      const worldPath = appName === "Map" ? undefined : fullPageWorldApp(appName);
       if (worldPath === "/house") {
         // The phone's House app enters the house on the server before opening it.
         void enterHomeFromAnywhere(queryClient).then((entered) => {
