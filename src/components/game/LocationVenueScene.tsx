@@ -406,7 +406,11 @@ function BasicLocationVenueScene({
         )}
       </div>
 
-      <details data-venue-controls open={!immersive}>
+      <details
+        data-venue-controls
+        name={immersive ? "destination-panels" : undefined}
+        open={!immersive}
+      >
         <summary>Scene actions</summary>
         <div>
           {furnitureReadiness && (

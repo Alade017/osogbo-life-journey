@@ -56,13 +56,30 @@ function fixture(initial: string) {
     component: () => <p>Legacy jobs page</p>,
   });
   const router = createRouter({
-    routeTree: root.addChildren([house, jobs]),
+    routeTree: root.addChildren([
+      house,
+      jobs,
+      createRoute({
+        getParentRoute: () => root,
+        path: "/map",
+        component: () => <p>City map world</p>,
+      }),
+    ]),
     history: createMemoryHistory({ initialEntries: [initial] }),
     defaultPendingMinMs: 0,
   });
   render(<RouterProvider router={router} />);
   return { router, mounted, departed };
 }
+
+it("closes the directory instead of reopening it when Map is tapped on the city map", async () => {
+  fixture("/map?hud=map");
+  await screen.findByText("City map world");
+  fireEvent.click(screen.getByRole("link", { name: "Map" }));
+  await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("closed"));
+  expect(screen.getByTestId("href")).toHaveTextContent("/map");
+  expect(screen.getByText("City map world")).toBeVisible();
+});
 
 it("opens HUDs and follows Back/Forward without remounting the world route", async () => {
   const { router, mounted, departed } = fixture("/house?floor=1#bed");

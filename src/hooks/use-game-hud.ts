@@ -13,6 +13,7 @@ import {
 export function useGameHud() {
   const navigate = useNavigate();
   const href = useRouterState({ select: (state) => state.location.href });
+  const pathname = useRouterState({ select: (state) => state.location.pathname });
   const raw = useRouterState({ select: (state) => state.location.search });
   const hudSearch = useMemo(() => parseGameHudSearch(raw), [raw]);
   const phoneOpen =
@@ -44,7 +45,13 @@ export function useGameHud() {
     (target: PhoneHudTarget) => setHud(hudForPhoneTarget(target)),
     [setHud],
   );
-  const openHud = useCallback((hud: "jobs" | "map") => setHud({ hud }), [setHud]);
+  const openHud = useCallback(
+    (hud: "jobs" | "map") => {
+      if (hud === "map" && pathname === "/map") setHud({}, true);
+      else setHud({ hud });
+    },
+    [pathname, setHud],
+  );
   return {
     phoneOpen,
     inventoryOpen,
