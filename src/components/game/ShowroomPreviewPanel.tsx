@@ -1,5 +1,6 @@
 import { lazy, Suspense, useState } from "react";
 
+const MotorsScene = lazy(() => import("./MotorsShowroomScene").then((module) => ({ default: module.MotorsShowroomScene })));
 const ProductViewer = lazy(() => import("./ShowroomProductViewer").then((module) => ({ default: module.ShowroomProductViewer })));
 import { showroomDestinations, type ShowroomLandmarkId } from "@/data/showroom-destinations";
 import { getShowroomModels } from "@/data/showroom-models";
@@ -28,6 +29,11 @@ export function ShowroomPreviewPanel() {
         <section className="mt-3" aria-label={showroomDestinations[selected].name}>
           <h3 className="text-sm font-semibold">{showroomDestinations[selected].name}</h3>
           <p className="text-xs text-muted-foreground">{showroomDestinations[selected].description}</p>
+          {open && selected === "fuel-station" && (
+            <Suspense fallback={<p role="status" className="p-2 text-xs">Opening showroom…</p>}>
+              <MotorsScene models={getShowroomModels(selected)} onSelect={setModelId} />
+            </Suspense>
+          )}
           <ul className="mt-2 grid max-h-48 grid-cols-1 gap-1 overflow-y-auto sm:grid-cols-2">
             {getShowroomModels(selected).map((model) => (
               <li key={model.id}><button type="button" aria-pressed={modelId === model.id} onClick={() => setModelId(model.id)} className="w-full rounded-full border px-3 py-1.5 text-left text-xs capitalize aria-pressed:bg-primary aria-pressed:text-primary-foreground">{model.label}</button></li>
