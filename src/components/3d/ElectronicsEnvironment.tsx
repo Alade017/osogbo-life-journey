@@ -1,9 +1,6 @@
-import { Suspense, useEffect, useMemo } from "react";
-import { Clone, useGLTF } from "@react-three/drei";
-import { Box3, Vector3 } from "three";
+import { ShowroomAsset } from "./ShowroomAsset";
 import { WorldMaterial } from "./WorldScene";
 import type { WorldTone } from "./world-theme";
-import { VenueSceneBoundary } from "@/components/game/VenueSceneBoundary";
 import { RETAIL_ROOM as room, RETAIL_COUNTER as counter, type RetailDisplay } from "@/game/electronics-navigation";
 import type { WalkPoint } from "@/game/grid-walk-path";
 
@@ -12,22 +9,9 @@ type Product = { id: string; url: string };
 function Block({ at, size, tone }: { at: Point; size: Point; tone: WorldTone }) {
   return <mesh position={at} receiveShadow castShadow><boxGeometry args={size} /><WorldMaterial tone={tone} /></mesh>;
 }
-function ProductModel({ url }: { url: string }) {
-  const { scene } = useGLTF(url);
-  const transform = useMemo(() => {
-    const bounds = new Box3().setFromObject(scene);
-    const size = bounds.getSize(new Vector3());
-    const center = bounds.getCenter(new Vector3());
-    const scale = Math.min(1, 1.35 / Math.max(size.x, 0.001), 0.85 / Math.max(size.z, 0.001), 1.25 / Math.max(size.y, 0.001));
-    return { scale, offset: [-center.x, -bounds.min.y, -center.z] as Point };
-  }, [scene]);
-  return <group scale={transform.scale}><group position={transform.offset}><Clone object={scene} /></group></group>;
-}
-function AssetReady({ id, onReady }: { id: string; onReady: (id: string) => void }) {
-  useEffect(() => { onReady(id); }, [id, onReady]);
-  return null;
-}
-export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, onExit, selected, computerStore, onAssetReady, onAssetError }: {
+export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, onExit, selected, computerStore, onAssetReady, onAssetError, viewer, loadRadius }: {
+  viewer: WalkPoint;
+  loadRadius: number;
   displays: readonly RetailDisplay[];
   products: readonly Product[];
   onWalk: (point: WalkPoint) => void;
@@ -65,12 +49,7 @@ export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, o
         <Block at={[0,0.83,0]} size={[display.width,0.12,display.depth]} tone={computerStore ? "timber" : "slate"} />
         {[-1,1].flatMap(x => [-1,1].map(z => <Block key={x+":"+z} at={[x*(display.width/2-0.12),0.38,z*(display.depth/2-0.1)]} size={[0.1,0.76,0.1]} tone="metal" />))}
         <group position={[0,0.89,0]} rotation={[0,display.x<0?Math.PI/2:-Math.PI/2,0]}>
-          <VenueSceneBoundary key={product.id} onError={() => onAssetError(product.id)}>
-            <Suspense fallback={null}>
-              <ProductModel url={product.url} />
-              <AssetReady id={product.id} onReady={onAssetReady} />
-            </Suspense>
-          </VenueSceneBoundary>
+          <ShowroomAsset product={product} viewer={viewer} position={[display.x, display.z]} radius={loadRadius} pinned={selected === index} limits={[Math.min(1.35, display.depth - 0.1), 1.25, 0.85]} onReady={onAssetReady} onError={onAssetError} />
         </group>
         {selected===index && <mesh position={[0,0.898,display.depth/2-0.025]}><boxGeometry args={[display.width,0.012,0.04]} /><meshBasicMaterial color="#c47c45" /></mesh>}
       </group>;
