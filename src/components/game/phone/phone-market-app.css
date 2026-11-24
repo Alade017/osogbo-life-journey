@@ -480,3 +480,44 @@
     padding: 0.7rem;
   }
 }
+
+
+.market-app .market-app-lease-gate {
+  display: grid;
+  gap: 0.45rem;
+  min-width: 0;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--brand-royal, var(--primary)) 28%, var(--border));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--brand-royal, var(--primary)) 7%, var(--card));
+}
+.market-app .market-app-lease-gate strong {
+  color: var(--foreground);
+  font-size: 0.78rem;
+}
+.market-app .market-app-lease-gate p {
+  margin: 0;
+  color: var(--muted-foreground);
+  font-size: 0.72rem;
+  line-height: 1.45;
+}
+.market-app .market-app-lease-gate button {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.5rem 0.75rem;
+  border: 0;
+  border-radius: 10px;
+  color: var(--primary-foreground);
+  background: var(--brand-royal, var(--primary));
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+.market-app .market-app-save-error {
+  margin: 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 10px;
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 8%, var(--card));
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+}
