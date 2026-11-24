@@ -1,18 +1,36 @@
 {
   "slug": "atiku",
   "name": "Greenbank Estates",
+  "frame": {
+    "width_m": 60,
+    "depth_m": 45
+  },
   "roads": [
     {
       "id": "greenbank-avenue",
       "axis": "horizontal",
-      "offset_m": 0,
+      "offset_m": -11.25,
       "width_m": 6,
       "type": "arterial"
     },
     {
       "id": "greenbank-cross-street",
       "axis": "vertical",
-      "offset_m": 6,
+      "offset_m": -9,
+      "width_m": 4,
+      "type": "street"
+    },
+    {
+      "id": "greenbank-east-street",
+      "axis": "vertical",
+      "offset_m": 13.1,
+      "width_m": 4,
+      "type": "street"
+    },
+    {
+      "id": "greenbank-south-street",
+      "axis": "horizontal",
+      "offset_m": 9,
       "width_m": 4,
       "type": "street"
     }
@@ -20,49 +38,161 @@
   "lots": [
     {
       "id": "nw",
-      "x": -8,
-      "z": -6.5,
+      "x": -23,
+      "z": -17.75,
       "w": 10,
       "d": 7,
       "side": 1
     },
     {
       "id": "sw",
-      "x": -8,
-      "z": 6.5,
+      "x": -23,
+      "z": -4.75,
       "w": 10,
       "d": 7,
       "side": -1
     },
     {
       "id": "ne",
-      "x": 11.5,
-      "z": -6.5,
+      "x": -3.5,
+      "z": -17.75,
       "w": 6,
       "d": 7,
       "side": 1
     },
     {
       "id": "se",
-      "x": 11.5,
-      "z": 6.5,
+      "x": -3.5,
+      "z": -4.75,
       "w": 6,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "n-east",
+      "x": 5.75,
+      "z": -17.75,
+      "w": 10,
+      "d": 7,
+      "side": 1
+    },
+    {
+      "id": "n-far",
+      "x": 21.75,
+      "z": -17.75,
+      "w": 10,
+      "d": 7,
+      "side": 1
+    },
+    {
+      "id": "s-east",
+      "x": 5.75,
+      "z": -4.75,
+      "w": 10,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "s-far",
+      "x": 21.75,
+      "z": -4.75,
+      "w": 10,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "c-w",
+      "x": -23,
+      "z": 3,
+      "w": 10,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "c-mid",
+      "x": -14.15,
+      "z": 3,
+      "w": 5.5,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "c-e",
+      "x": -3.5,
+      "z": 3,
+      "w": 6,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "c-east",
+      "x": 5.75,
+      "z": 3,
+      "w": 10,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "c-far",
+      "x": 21.75,
+      "z": 3,
+      "w": 10,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "d-w",
+      "x": -23,
+      "z": 15,
+      "w": 10,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "d-mid",
+      "x": -14.15,
+      "z": 15,
+      "w": 5.5,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "d-e",
+      "x": -3.5,
+      "z": 15,
+      "w": 6,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "d-east",
+      "x": 5.75,
+      "z": 15,
+      "w": 10,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "d-far",
+      "x": 21.75,
+      "z": 15,
+      "w": 10,
       "d": 7,
       "side": -1
     }
   ],
   "shop": {
     "id": "provisions",
-    "x": 2.5,
-    "z": -7,
+    "x": -12.5,
+    "z": -18.25,
     "w": 4,
     "d": 6,
     "label": "Greenbank Provisions"
   },
   "kiosk": {
     "id": "pos-kiosk",
-    "x": 3.5,
-    "z": 4.5,
+    "x": -11.5,
+    "z": -6.75,
     "w": 1.5,
     "d": 1.5,
     "label": "POS"
@@ -70,20 +200,28 @@
   "gatehouse": null,
   "trees": [
     [
-      -14,
-      -10.6
+      -29,
+      -21.85
     ],
     [
-      -14,
-      10.6
+      -29,
+      -0.65
     ],
     [
-      14,
-      -10.6
+      -1,
+      -21.85
     ],
     [
-      14,
-      10.6
+      29,
+      21.65
+    ],
+    [
+      29,
+      -21.85
+    ],
+    [
+      -29,
+      21.65
     ]
   ],
   "objects": [
@@ -91,29 +229,29 @@
       "id": "home",
       "name": "Greenbank homes",
       "kind": "home",
-      "x": 11.5,
-      "z": -2.5
+      "x": -3.5,
+      "z": -13.75
     },
     {
       "id": "market",
       "name": "Greenbank Provisions",
       "kind": "market",
-      "x": 2.5,
-      "z": -2.5
+      "x": -12.5,
+      "z": -13.75
     },
     {
       "id": "work",
       "name": "Greenbank opportunities",
       "kind": "work",
-      "x": 3.5,
-      "z": 2.5
+      "x": -11.5,
+      "z": -8.75
     },
     {
       "id": "npc",
       "name": "Neighbour in Greenbank Estates",
       "kind": "npc",
-      "x": -4,
-      "z": 1.2
+      "x": -19,
+      "z": -10.05
     }
   ]
 }

@@ -103,10 +103,22 @@ describe.each(AREAS)("$label residential neighbourhood", ({ label, area }) => {
 });
 
 describe.each([
-  { label: "Greenbank Estates", glb: "greenbank-estates.glb", ground: "atk_ground" },
-  { label: "Hillview Quarter", glb: "hillview-quarter.glb", ground: "hvq_ground" },
-])("$label environment GLB", ({ glb, ground }) => {
-  it("parses and its ground is the authored 30 m wide field the game scales to 800 street units", async () => {
+  {
+    label: "Greenbank Estates",
+    glb: "greenbank-estates.glb",
+    ground: "atk_ground",
+    width: 60,
+    depth: 45,
+  },
+  {
+    label: "Hillview Quarter",
+    glb: "hillview-quarter.glb",
+    ground: "hvq_ground",
+    width: 30,
+    depth: 22.5,
+  },
+])("$label environment GLB", ({ glb, ground, width, depth }) => {
+  it(`parses and its ground is the authored ${width} x ${depth} m field the game scales to its frame`, async () => {
     const loader = new GLTFLoader();
     const bytes = readFileSync(`public/models/environments/neighborhoods/${glb}`);
     const gltf = await loader.parseAsync(
@@ -118,13 +130,13 @@ describe.each([
     const size = new (await import("three")).Box3()
       .setFromObject(field!)
       .getSize(new (await import("three")).Vector3());
-    expect(size.x).toBeCloseTo(30, 2);
-    expect(size.z).toBeCloseTo(22.5, 2);
+    expect(size.x).toBeCloseTo(width, 2);
+    expect(size.z).toBeCloseTo(depth, 2);
   });
 });
 
 describe("Greenbank Estates GLB orientation", () => {
-  it("puts the north-east plot north and east of the origin, matching the game's street axes", async () => {
+  it("puts the north-east plot east of the entrance and north of the avenue, matching the game's street axes", async () => {
     const loader = new GLTFLoader();
     const bytes = readFileSync("public/models/environments/neighborhoods/greenbank-estates.glb");
     const gltf = await loader.parseAsync(
@@ -134,7 +146,8 @@ describe("Greenbank Estates GLB orientation", () => {
     const block = gltf.scene.getObjectByName("atk_ne_block");
     expect(block).toBeTruthy();
     const world = block!.getWorldPosition(block!.position.clone());
-    expect(world.x).toBeGreaterThan(10);
-    expect(world.z).toBeLessThan(0);
+    // Frame centre is street (800, 600). The entrance is street x 320 (-18 m) and the avenue is at street y 300 (-11.25 m).
+    expect(world.x).toBeGreaterThan(-18);
+    expect(world.z).toBeLessThan(-11.25);
   });
 });

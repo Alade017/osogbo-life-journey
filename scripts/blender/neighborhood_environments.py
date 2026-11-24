@@ -26,7 +26,7 @@ import bpy
 
 STREET_PER_METRE = 1 / 0.0375  # WORLD_SCALE.neighborhoodUnit in world-theme.ts
 ENV_CENTRE = (400.0, 300.0)  # matches the entrance convention used by Fuel and Go
-FIELD_W, FIELD_D = 30.0, 22.5  # metres; 800 x 600 street units
+FIELD_W, FIELD_D = 30.0, 22.5  # metres; set per area from its frame in build()
 
 # ---------------- Palette (world-theme.ts WORLD_PALETTE + neighbourhood style) ----------------
 TEX_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "textures")
@@ -47,12 +47,17 @@ LAYOUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "layouts")
 DECOR = {
     "atiku": dict(
         prefix="atk_", out="greenbank-estates.glb",
-        houses={"nw": "flat", "sw": "bungalow", "ne": "flat", "se": "bungalow"},
-        benches=[(-1.5, 4.2)],
-        bins=[(-6.3, 3.6)],
-        poles=[(-0.4, -10.6)],  # concrete utility pole on the north edge, cables run east-west
-        palms=[(-14.2, -7.0), (-14.2, 7.0)],  # west verge, clear of the avenue
-        lamps=[(-10.0, -3.7), (-2.0, -3.7), (10.0, -3.7), (-10.0, 3.7), (-2.0, 3.7), (10.0, 3.7)],
+        houses={
+            "nw": "flat", "sw": "bungalow", "ne": "flat", "se": "bungalow",
+            "n-east": "flat", "n-far": "flat", "s-east": "bungalow", "s-far": "bungalow",
+            "c-w": "flat", "c-mid": "bungalow", "c-e": "flat", "c-east": "bungalow", "c-far": "flat",
+            "d-w": "bungalow", "d-mid": "flat", "d-e": "bungalow", "d-east": "flat", "d-far": "bungalow",
+        },
+        benches=[(-16.5, -7.05)],
+        bins=[(-21.3, -7.65)],
+        poles=[(-15.4, -21.85)],  # concrete utility pole on the north edge, cables run east-west
+        palms=[(-29.2, -18.25), (-29.2, -4.25)],  # west verge, clear of the avenue
+        lamps=[(-25.0, -14.95), (-17.0, -14.95), (-5.0, -14.95), (-25.0, -7.55), (-17.0, -7.55), (-5.0, -7.55)],
         features=[("Housing", 367, 120), ("Community", 400, 500)],
     ),
     "oke-fia": dict(
@@ -337,6 +342,8 @@ def _tree(prefix, i, x, z):
 
 
 def build(area):
+    global FIELD_W, FIELD_D
+    FIELD_W, FIELD_D = area["frame"]["width_m"], area["frame"]["depth_m"]
     pre = area["prefix"]
     box(f"{pre}ground", 0, 0, FIELD_W, FIELD_D, 0.1, P["lawn"] if area["slug"] == "oke-fia" else P["ground"], y0=-0.1)
     road_color = P["road"]

@@ -1,6 +1,10 @@
 {
   "slug": "oke-fia",
   "name": "Hillview Quarter",
+  "frame": {
+    "width_m": 30,
+    "depth_m": 22.5
+  },
   "roads": [
     {
       "id": "hillview-boulevard",
