@@ -1,9 +1,13 @@
 import { useEffect, useMemo } from "react";
 import { createBlueprintInterior, createStudioRug, disposeStudioInterior } from "./studio-interior";
 import type { HouseRoomView } from "./house-room-contract";
-import type { BlueprintHomeType } from "./house-blueprints";
+import { useFrame } from "@react-three/fiber";
+import { MathUtils, type Object3D } from "three";
+import type { BlueprintDoor, BlueprintHomeType } from "./house-blueprints";
 
 export function BlueprintInterior({
+  onEnterDoor,
+  actorPosition,
   houseTypeId,
   activeFloor = 0,
   width,
@@ -12,6 +16,8 @@ export function BlueprintInterior({
   wallsClosed,
   roomView,
 }: {
+  onEnterDoor: ((door: BlueprintDoor) => void) | undefined;
+  actorPosition: [number, number, number] | undefined;
   houseTypeId: BlueprintHomeType;
   activeFloor?: 0 | 1;
   width: number;
@@ -31,7 +37,43 @@ export function BlueprintInterior({
     [houseTypeId, width, depth, editMode, wallsClosed, roomView, activeFloor],
   );
   useEffect(() => () => disposeStudioInterior(scene), [scene]);
-  return <primitive object={scene} />;
+  const doors = useMemo(() => {
+    const leaves: { panel: Object3D; door: BlueprintDoor }[] = [];
+    scene.traverse((frame) => {
+      const door: BlueprintDoor | undefined = frame.userData["door"];
+      const panel = door && frame.getObjectByName(door.id);
+      if (door && panel) leaves.push({ door, panel });
+    });
+    return leaves;
+  }, [scene]);
+  useFrame(({ invalidate }, delta) => {
+    for (const { door, panel } of doors) {
+      const near =
+        actorPosition && Math.hypot(actorPosition[0] - door.x, actorPosition[2] - door.z) < 1.6;
+      const target = near || editMode ? Math.PI : 0;
+      if (Math.abs(panel.rotation.y - target) < 0.005) continue;
+      panel.rotation.y = MathUtils.damp(panel.rotation.y, target, 10, delta);
+      invalidate();
+    }
+  });
+  return (
+    <primitive
+      object={scene}
+      onClick={
+        onEnterDoor
+          ? (event: import("@react-three/fiber").ThreeEvent<MouseEvent>) => {
+              if (event.delta > 4) return;
+              let hit: Object3D | null = event.object;
+              while (hit && hit !== scene && !hit.userData["door"]) hit = hit.parent;
+              if (hit?.userData["door"]) {
+                event.stopPropagation();
+                onEnterDoor(hit.userData["door"]);
+              }
+            }
+          : undefined
+      }
+    />
+  );
 }
 
 export function StudioRug({

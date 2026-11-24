@@ -6,7 +6,7 @@ import { WORLD_PALETTE } from "../3d/world-theme";
 const DAY_BACKGROUND = new Color(WORLD_PALETTE.ground);
 const NIGHT_BACKGROUND = new Color("#0b1220"); // Atmospheric deep Osogbo midnight navy
 const DAY_AMBIENT = new Color("#ffffff");
-const NIGHT_AMBIENT = new Color("#253654"); // Moonlit blue ambient
+const NIGHT_AMBIENT = new Color("#91a7c6"); // Moonlit blue ambient
 
 /**
  * Converts a clock time into a sun arc and a 0–1 daylight amount.

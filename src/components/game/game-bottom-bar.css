@@ -378,3 +378,22 @@
 .game-shell.hud-idle .gbb:not(.is-open) .gbb-link[data-core-action="true"]:not(:focus-visible) {
   box-shadow: none;
 }
+
+@media (min-width: 960px) {
+  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) {
+    width: min(490px, 94vw);
+    height: 54px;
+    padding: 4px;
+    gap: 3px;
+    border-radius: 999px;
+  }
+  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) {
+    border-radius: 999px;
+    gap: 5px;
+    padding: 4px 8px;
+  }
+  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) svg {
+    width: 19px;
+    height: 19px;
+  }
+}

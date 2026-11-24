@@ -325,21 +325,16 @@ export function createBlueprintInterior(
   );
   // The bathroom door folds back against its wall, keeping the navigation opening clear.
   for (const door of plan.interiorDoors) {
-    const doorwaySegment: HouseWallSegment = {
-      id: door.id,
-      position: [door.x, 0.95, door.z],
-      size:
-        door.axis === "z"
-          ? [HOUSE_WALL_THICKNESS, 1.9, door.width]
-          : [door.width, 1.9, HOUSE_WALL_THICKNESS],
-    };
-    if (!show(doorwaySegment) || (roomView && !boundsContain(roomView, door.x, door.z, 0.1)))
-      continue;
+    if (roomView && !boundsContain(roomView, door.x, door.z, 0.1)) continue;
     const frame = new Group();
+    frame.userData["door"] = door;
     frame.name = `${door.id}-frame`;
     frame.position.set(door.x, 0, door.z);
     frame.rotation.y = door.axis === "x" ? Math.PI / 2 : 0;
     walls.add(frame);
+    // Keep the opening clickable even when its leaf has swung against the wall.
+    const threshold = box(frame, [0.12, 1.86, door.width], [0, 0.93, 0], finish.trim);
+    threshold.visible = false;
     for (const side of [-1, 1])
       box(frame, [0.17, 1.95, 0.07], [0, 0.975, (side * door.width) / 2], finish.trim);
     box(frame, [0.17, 0.08, door.width + 0.14], [0, 1.95, 0], finish.trim);

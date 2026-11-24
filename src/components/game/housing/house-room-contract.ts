@@ -9,6 +9,7 @@ import {
   studioBlueprint,
   isBlueprintHomeType,
   type FloorBounds,
+  type BlueprintDoor,
 } from "./house-blueprints";
 
 /** A rectangle of the room, in room percent (see house-arrangement-guide). */
@@ -47,6 +48,7 @@ export type HouseRoomRendererProps = {
   actorPosition?: [number, number, number];
   actorFacing?: string;
   taskPose?: "sit" | "wash" | "cook" | "collect" | "stretch";
+  onEnterDoor?: (door: BlueprintDoor) => void;
   onWalk?: (point: [number, number, number]) => void;
   onCollectPackage?: (id: string) => void;
   activityRequestId?: string | null;

@@ -29,7 +29,8 @@
   margin-top: var(--spacing-sm);
 }
 .city-game .game-needs-rail.game-needs-rail.game-needs-rail.is-map-compact.is-collapsed {
-  width: 54px;
+  width: max-content;
+  max-width: calc(100vw - 24px);
   padding: 5px;
   gap: 2px;
 }

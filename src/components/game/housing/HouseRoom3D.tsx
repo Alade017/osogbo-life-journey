@@ -226,6 +226,8 @@ function OsogboRoomPrototype({
   editMode,
   activeFloor = 0,
   onUseStairs,
+  onEnterDoor,
+  actorPosition,
   doorOpen = false,
   roomView = null,
 }: {
@@ -235,6 +237,8 @@ function OsogboRoomPrototype({
   width: number;
   depth: number;
   activeFloor?: 0 | 1;
+  onEnterDoor: Props["onEnterDoor"];
+  actorPosition: Props["actorPosition"];
   onUseStairs: (() => void) | undefined;
   editMode: boolean;
   doorOpen?: boolean;
@@ -251,6 +255,8 @@ function OsogboRoomPrototype({
     return (
       <group>
         <BlueprintInterior
+          onEnterDoor={onEnterDoor}
+          actorPosition={actorPosition}
           houseTypeId={houseTypeId}
           activeFloor={activeFloor}
           width={width}
@@ -2067,6 +2073,7 @@ export function HouseRoom3D({
   actorFacing = "south",
   taskPose,
   onWalk,
+  onEnterDoor,
   onCollectPackage,
   activityRequestId = null,
   activityLabel = null,
@@ -2268,6 +2275,8 @@ export function HouseRoom3D({
             <WorldLighting size={Math.max(width, depth) * 1.5} dimmed={!lightOn} />
 
             <OsogboRoomPrototype
+              actorPosition={showCharacter ? actorPosition : undefined}
+              onEnterDoor={!editMode && !inputBlocked ? onEnterDoor : undefined}
               houseTypeId={houseTypeId}
               roomView={roomView}
               wallsClosed={wallsClosed}

@@ -63,7 +63,7 @@ export default function HarvestTechHubVenue({ venue }: { venue: LocationVenueDes
   const job = feature === "workstations" || feature === "reception";
   const course = feature === "training" || feature === "presentation";
   const linkStyle =
-    "inline-flex min-h-11 items-center rounded-lg bg-primary px-3 font-semibold text-primary-foreground";
+    "inline-flex min-h-11 items-center rounded-full bg-primary px-3 font-semibold text-primary-foreground";
   return (
     <section className="destination-venue-root" aria-label={venue.name}>
       <header>
@@ -84,7 +84,9 @@ export default function HarvestTechHubVenue({ venue }: { venue: LocationVenueDes
               depth={WORKPLACE_LAYOUT.cameraDepth}
               stage
               target={[0, 1.2, 0]}
-              zoom={1.2}
+              zoom={1.1}
+              minZoom={0.95}
+              maxZoom={1.35}
             />
             <WorldLighting size={14} />
             <WorkplaceScene
@@ -136,7 +138,7 @@ export default function HarvestTechHubVenue({ venue }: { venue: LocationVenueDes
           <div className="flex flex-wrap gap-2">
             {venue.fixtures.map((f) => (
               <button
-                className="rounded-lg border border-edge px-3"
+                className="rounded-full border border-edge px-3"
                 key={f.id}
                 type="button"
                 onClick={() => go(f)}
