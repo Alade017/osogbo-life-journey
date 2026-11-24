@@ -576,7 +576,6 @@
   overflow-y: auto;
   overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
-  touch-action: pan-y;
   background: var(--brand-porcelain, var(--background));
 }
 
