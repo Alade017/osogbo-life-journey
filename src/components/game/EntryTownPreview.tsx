@@ -1,10 +1,10 @@
-import { lazy, Suspense, useCallback, useMemo, useState } from "react";
+import { Component, lazy, Suspense, useCallback, useMemo, useState, type ReactNode } from "react";
 import { previewLandmarks } from "@/components/game/entry-town-preview";
 import "@/components/map/map-canvas.css";
 import "@/components/map/map-ui.css";
 import "@/components/map/map-hud.css";
 
-// The 3D town is loaded only when the landing page shows it.
+// Load the same 3D town used by the playable map, without blocking the entry screen.
 const TownSurface3D = lazy(() =>
   import("@/components/map/R3FTownSurface").then((module) => ({
     default: module.R3FTownSurface,
@@ -12,12 +12,30 @@ const TownSurface3D = lazy(() =>
 );
 
 type Props = {
-  /** Landmark id of the returning player's last stop. Null shows the whole town. */
   focusLandmarkId?: string | null;
   focusLabel?: string | null;
-  /** Slugs of active locations. Null shows every landmark in the town. */
   activeSlugs?: ReadonlySet<string> | null;
 };
+
+type BoundaryProps = { children: ReactNode; onUnavailable: () => void };
+type BoundaryState = { failed: boolean };
+
+class PreviewErrorBoundary extends Component<BoundaryProps, BoundaryState> {
+  state: BoundaryState = { failed: false };
+
+  static getDerivedStateFromError(): BoundaryState {
+    return { failed: true };
+  }
+
+  componentDidCatch(error: Error) {
+    console.error("The landing-page town preview failed to load.", error);
+    this.props.onUnavailable();
+  }
+
+  render() {
+    return this.state.failed ? null : this.props.children;
+  }
+}
 
 /** The live 3D town from the city map, shown as a non-interactive preview. */
 export function EntryTownPreview({
@@ -47,33 +65,41 @@ export function EntryTownPreview({
   return (
     <figure className="entry-world" aria-labelledby="entry-world-caption">
       <div className="entry-world-stage" aria-label="Preview of the Osogbo town">
-        <Suspense fallback={null}>
-          {status !== "unavailable" && (
-            <TownSurface3D
-              places={places}
-              properties={undefined}
-              playerLocation={null}
-              billboardMarkers={[]}
-              searchTarget={focusLandmarkId}
-              focusCloseUp
-              onSelectLandmark={noop}
-              onSelectDistrict={noop}
-              onSelectBillboard={undefined}
-              eventChips={[]}
-              onReady={handleReady}
-              onUnavailable={handleUnavailable}
-            />
-          )}
-        </Suspense>
-        {status === "loading" && (
-          <p className="entry-world-status" role="status">
-            Loading the town…
-          </p>
+        {status !== "unavailable" && (
+          <PreviewErrorBoundary onUnavailable={handleUnavailable}>
+            <Suspense
+              fallback={
+                <div className="entry-world-loading" role="status" aria-label="Loading the town preview">
+                  <span className="entry-world-loading-sun" />
+                  <span className="entry-world-loading-hill entry-world-loading-hill-back" />
+                  <span className="entry-world-loading-hill entry-world-loading-hill-front" />
+                  <span className="entry-world-loading-label">Preparing your town…</span>
+                </div>
+              }
+            >
+              <TownSurface3D
+                places={places}
+                properties={undefined}
+                playerLocation={null}
+                billboardMarkers={[]}
+                searchTarget={focusLandmarkId}
+                focusCloseUp
+                onSelectLandmark={noop}
+                onSelectDistrict={noop}
+                onSelectBillboard={undefined}
+                eventChips={[]}
+                onReady={handleReady}
+                onUnavailable={handleUnavailable}
+              />
+            </Suspense>
+          </PreviewErrorBoundary>
         )}
         {status === "unavailable" && (
-          <p className="entry-world-status" role="status">
-            The 3D town could not start on this device.
-          </p>
+          <div className="entry-world-unavailable" role="status">
+            <span className="entry-world-unavailable-mark" aria-hidden="true">OSUN</span>
+            <strong>Your town is waiting.</strong>
+            <span>The 3D preview isn't available in this browser, but you can still enter the game.</span>
+          </div>
         )}
       </div>
       <figcaption id="entry-world-caption">{caption}</figcaption>
