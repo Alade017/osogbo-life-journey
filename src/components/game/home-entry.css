@@ -129,3 +129,204 @@
 .entry-world-stage .map-housing-message {
   display: none !important;
 }
+
+
+/* Keep the landing preview sized as a real scene, including on mobile browsers. */
+.entry-hero-visual {
+  align-self: stretch;
+  height: 100%;
+}
+
+.entry-scene-frame {
+  min-height: 320px;
+}
+
+.entry-world,
+.entry-world-stage {
+  display: block;
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+
+.entry-world-stage > div:first-child {
+  width: 100%;
+  height: 100%;
+}
+
+.entry-world-stage canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* The shared map's camera toolbar is useful in-game, but not in this preview. */
+.entry-world-stage .town-camera-tools,
+.entry-world-stage .map-hud,
+.entry-world-stage .map-topbar,
+.entry-world-stage .map-controls,
+.entry-world-stage .map-ticker,
+.entry-world-stage .map-player-dock,
+.entry-world-stage .town-map-zoom-controls,
+.entry-world-stage .map-offline-banner,
+.entry-world-stage .map-housing-message {
+  display: none !important;
+}
+
+.entry-world-loading,
+.entry-world-unavailable {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+  color: var(--entry-ink);
+  background:
+    radial-gradient(ellipse at 78% 18%, rgb(255 255 255 / 72%), transparent 34%),
+    linear-gradient(180deg, #c9dff0 0%, #e6edf0 58%, #b8cdb5 58%, #91b18c 100%);
+}
+
+.entry-world-loading-sun {
+  position: absolute;
+  top: 13%;
+  right: 17%;
+  width: clamp(36px, 7vw, 68px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: #f4dca1;
+  box-shadow: 0 0 44px rgb(244 220 161 / 55%);
+}
+
+.entry-world-loading-hill {
+  position: absolute;
+  right: -8%;
+  bottom: 12%;
+  left: -8%;
+  height: 35%;
+  border-radius: 50% 50% 0 0 / 24% 24% 0 0;
+}
+
+.entry-world-loading-hill-back {
+  bottom: 19%;
+  background: #789a83;
+  transform: rotate(-5deg);
+}
+
+.entry-world-loading-hill-front {
+  background: #547c67;
+  transform: rotate(4deg) scale(1.08);
+}
+
+.entry-world-loading-label {
+  position: absolute;
+  z-index: 1;
+  bottom: 14px;
+  left: 14px;
+  padding: 8px 12px;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 999px;
+  color: var(--entry-ink);
+  background: rgb(255 255 255 / 82%);
+  font-size: .75rem;
+  font-weight: 750;
+  backdrop-filter: blur(8px);
+}
+
+.entry-world-unavailable {
+  padding: 24px;
+  text-align: center;
+  background:
+    radial-gradient(ellipse at 50% 20%, rgb(255 255 255 / 75%), transparent 45%),
+    linear-gradient(180deg, #c9dff0 0%, #e6edf0 58%, #b8cdb5 58%, #91b18c 100%);
+}
+
+.entry-world-unavailable > * {
+  position: relative;
+  z-index: 1;
+  max-width: 28rem;
+}
+
+.entry-world-unavailable-mark {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 3px solid rgb(255 255 255 / 85%);
+  border-radius: 18px;
+  color: #fff;
+  background: var(--entry-royal);
+  font-size: .78rem;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+
+.entry-world-unavailable strong {
+  font-family: var(--font-display);
+  font-size: clamp(1.25rem, 3vw, 2rem);
+}
+
+.entry-world-unavailable > span:last-child {
+  color: #34435a;
+  font-size: .86rem;
+  line-height: 1.5;
+}
+
+@media (max-width: 760px) {
+  .entry-main {
+    grid-template-rows: auto minmax(220px, 1fr);
+  }
+
+  .entry-hero-visual {
+    min-height: 220px;
+  }
+
+  .entry-scene-frame {
+    width: 100%;
+    height: 100%;
+    min-height: 220px;
+  }
+}
+
+@media (max-width: 380px) {
+  .entry-main {
+    grid-template-rows: auto minmax(190px, 1fr);
+  }
+
+  .entry-hero-visual,
+  .entry-scene-frame {
+    min-height: 190px;
+  }
+}
+
+@media (max-height: 760px) and (max-width: 760px) {
+  .entry-main {
+    gap: 8px;
+    padding-block: 6px 2px;
+  }
+
+  .entry-eyebrow {
+    margin-bottom: 6px;
+  }
+
+  .entry-title {
+    font-size: clamp(2rem, 8.8vw, 3rem);
+  }
+
+  .entry-description {
+    margin-top: 7px;
+    font-size: .78rem;
+  }
+
+  .entry-hero-actions {
+    margin-top: 9px;
+  }
+
+  .entry-trust-row {
+    margin-top: 8px;
+  }
+}
