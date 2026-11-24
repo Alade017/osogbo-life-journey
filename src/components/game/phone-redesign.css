@@ -10,7 +10,7 @@
       calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 36px)
     ) !important;
     max-height: calc(
-      100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px
+      100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 36px
     ) !important;
     padding: 0 !important;
     border: 4px solid #707985 !important;
