@@ -1,3 +1,4 @@
+import { CHARACTER_GROUND } from "./character-config";
 import { createHumanAnatomy, createHumanScalp, humanFaceFront } from "./humanoid-anatomy";
 import { HUMANOID_LATERAL_SCALE } from "./humanoid-proportions";
 import {
@@ -301,7 +302,7 @@ export function createHumanoid({
   if (hairColor) materials.push(new MeshStandardMaterial({ color: hairColor, roughness: 0.95 }));
   const meshes = materials.map((material, i) => {
     const mesh = new SkinnedMesh(geometry[i]!, material);
-    mesh.castShadow = true;
+    mesh.castShadow = CHARACTER_GROUND.castShadow;
     mesh.receiveShadow = true;
     mesh.bind(skeleton);
     return mesh;

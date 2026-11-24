@@ -183,7 +183,10 @@ export function OsunMallVenue({
 
   return (
     <section className="relative" aria-label={`${locationName} interior`}>
-      <div className="relative h-[calc(100dvh-7rem)] min-h-[24rem] overflow-hidden bg-muted">
+      <div
+        data-venue-viewport
+        className="relative h-[calc(100dvh-7rem)] min-h-[24rem] overflow-hidden bg-muted"
+      >
         <Canvas
           frameloop="always"
           dpr={[1, 1.25]}

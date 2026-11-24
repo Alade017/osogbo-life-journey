@@ -1,3 +1,4 @@
+import { useDestinationSceneFrame } from "@/hooks/use-destination-scene-frame";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useReducer, useRef } from "react";
@@ -5,7 +6,8 @@ import { toast } from "sonner";
 import { GraduationCap, MapPin, Utensils } from "lucide-react";
 import { formatNaira, q, rpc, useGameAction } from "@/lib/game";
 import { pageMeta } from "@/lib/seo";
-import { isPlayableDistrict } from "@/game/playable-district";
+import { destinationSceneRoute } from "@/lib/destination-scene-route";
+import "@/components/game/destination-scene.css";
 import { Button } from "@/components/ui/button";
 import { EmptyState, LoadingState } from "@/components/game/ui";
 import { TravelPanel } from "@/components/game/TravelPanel";
@@ -124,6 +126,7 @@ function LocationPage() {
   const conditions = travelConditionAdjustment(travelState.mode, gameTime, weather);
   const travelMessage = [routeMessage, conditions.explanation].filter(Boolean).join(" ") || null;
   const isHere = hasAuthoritativeLocationArrival(character?.current_location_id, loc?.id);
+  const destinationFrame = useDestinationSceneFrame(isHere);
   const meetsLevelRequirement = !!character && !!loc && character.level >= loc.level_required;
   const localPlaces = places?.filter((place) => place.location_id === loc?.id) ?? [];
   const localJobs = jobs?.filter((job) => job.location_id === loc?.id && job.is_available) ?? [];
@@ -156,9 +159,6 @@ function LocationPage() {
           ? `Arrived in ${r.location} · ${r.mode} · −${formatNaira(r.fare)} · +10 XP`
           : `Arrived in ${r.location} · ${r.mode} · −${formatNaira(r.fare)}`,
       );
-      if (loc?.type === "bank") {
-        void navigate({ to: "/bank/$slug", params: { slug: loc.slug } });
-      }
     },
     onError: (error) => dispatchTravel({ type: "fail", message: error.message }),
   });
@@ -211,6 +211,12 @@ function LocationPage() {
     loc,
     travelState.status,
   ]);
+
+  useEffect(() => {
+    if (!isHere || !loc) return;
+    const target = destinationSceneRoute(loc);
+    if (target) void navigate({ ...target, replace: true });
+  }, [isHere, loc, navigate]);
 
   function selectDestination() {
     travelPreflight.current = null;
@@ -303,19 +309,8 @@ function LocationPage() {
   if (isLoading || !character) return <LoadingState />;
   if (!loc) return <EmptyState title="District not found" body="That place isn't on the map." />;
 
-  // Once the visitor is inside a walkable venue, go straight to the scene: no preview cards.
-  if (isHere && loc.slug === "osun-mall") {
-    return (
-      <div className="-mx-3 px-3 md:-mx-4 md:px-4">
-        <LocationVenueScene
-          key={loc.id}
-          slug={loc.slug}
-          locationName={loc.name}
-          locationId={loc.id}
-        />
-      </div>
-    );
-  }
+  if (isHere && destinationSceneRoute(loc))
+    return <LoadingState title="Opening your destination" />;
 
   const jobOptions = localJobs
     .filter((job) => currentJob?.job_id !== job.id)
@@ -345,7 +340,10 @@ function LocationPage() {
   );
 
   return (
-    <div className="-mx-3 space-y-4 px-3 py-4 md:-mx-4 md:px-4">
+    <div
+      ref={destinationFrame}
+      className={isHere ? "destination-scene" : "-mx-3 space-y-4 px-3 py-4 md:-mx-4 md:px-4"}
+    >
       <h1 className="sr-only">{loc.name}</h1>
       {isHere ? (
         <LocationVenueScene
@@ -353,6 +351,7 @@ function LocationPage() {
           slug={loc.slug}
           locationName={loc.name}
           locationId={loc.id}
+          immersive
         />
       ) : (
         <section className="game-panel flex flex-wrap items-center justify-between gap-3 p-4">
@@ -381,7 +380,7 @@ function LocationPage() {
         </section>
       )}
 
-      {travelState.status !== "idle" && (
+      {!isHere && travelState.status !== "idle" && (
         <TravelPanel
           state={travelState}
           currentBalance={wallet?.balance ?? 0}
@@ -402,95 +401,88 @@ function LocationPage() {
         />
       )}
 
-      {isHere && (
-        <nav aria-label={`${loc.name} actions`} className="flex flex-wrap gap-2">
-          {loc.type !== "bank" && (
-            <Button
-              variant="plain"
-              onClick={() => visitAction.mutate(loc.id)}
-              disabled={visitAction.isPending}
-            >
-              <MapPin /> {visitAction.isPending ? "Checking in…" : "Spend time here"}
-            </Button>
-          )}
-          {hasBankService && (
-            <Button asChild variant="plain">
-              <Link to="/bank/$slug" params={{ slug }}>
-                Enter bank lobby
-              </Link>
-            </Button>
-          )}
-          {hasShops && (
-            <Button asChild variant="plain">
-              <Link to="/market">Browse local shops</Link>
-            </Button>
-          )}
-          {loc.slug === "student-district" && (
-            <Button asChild variant="plain">
-              <Link to="/education">
-                <GraduationCap /> Explore technology courses
-              </Link>
-            </Button>
-          )}
-          {isPlayableDistrict(loc.slug) && (
-            <Button asChild variant="plain">
-              <Link to="/neighborhood">
-                Walk{" "}
-                {loc.slug === "city-centre"
-                  ? "Olaiya"
-                  : loc.slug === "oja-oba"
-                    ? "Oja-Oba Market"
-                    : loc.name}
-              </Link>
-            </Button>
-          )}
-          <Button asChild variant="outline">
-            <Link to="/social" search={{ playerId: undefined }}>
-              Meet neighbours
-            </Link>
-          </Button>
-          {localPlaces
-            .filter((place) => place.meal_price !== null)
-            .map((place) => {
-              const price = place.meal_price ?? 0;
-              return (
+      <details className={isHere ? "destination-services" : "space-y-4"} open={!isHere}>
+        <summary>Activities & services</summary>
+        <div className="destination-services-body">
+          {isHere && (
+            <nav aria-label={`${loc.name} actions`} className="flex flex-wrap gap-2">
+              {loc.type !== "bank" && (
                 <Button
-                  key={place.id}
                   variant="plain"
-                  disabled={eat.isPending || (wallet?.balance ?? 0) < price}
-                  onClick={() => eat.mutate(place.id)}
+                  onClick={() => visitAction.mutate(loc.id)}
+                  disabled={visitAction.isPending}
                 >
-                  <Utensils />
-                  {eat.isPending
-                    ? "Ordering…"
-                    : (wallet?.balance ?? 0) < price
-                      ? `Need ${formatNaira(price)}`
-                      : `Eat at ${place.name} · ${formatNaira(price)}`}
+                  <MapPin /> {visitAction.isPending ? "Checking in…" : "Spend time here"}
                 </Button>
-              );
-            })}
-          {jobOptions.map(({ job, eligibility }) => (
-            <Button
-              key={job.id}
-              variant="ink"
-              disabled={!eligibility.eligible || selectJob.isPending}
-              onClick={() => selectJob.mutate(job.id)}
-            >
-              {!eligibility.eligible
-                ? (eligibility.reasons[0] ?? "Requirements not met")
-                : selectJob.isPending
-                  ? "Applying…"
-                  : `Apply: ${job.name}`}
-            </Button>
-          ))}
-        </nav>
-      )}
+              )}
+              {hasBankService && (
+                <Button asChild variant="plain">
+                  <Link to="/bank/$slug" params={{ slug }}>
+                    Enter bank lobby
+                  </Link>
+                </Button>
+              )}
+              {hasShops && (
+                <Button asChild variant="plain">
+                  <Link to="/market">Browse local shops</Link>
+                </Button>
+              )}
+              {loc.slug === "student-district" && (
+                <Button asChild variant="plain">
+                  <Link to="/education">
+                    <GraduationCap /> Explore technology courses
+                  </Link>
+                </Button>
+              )}
+              <Button asChild variant="outline">
+                <Link to="/social" search={{ playerId: undefined }}>
+                  Meet neighbours
+                </Link>
+              </Button>
+              {localPlaces
+                .filter((place) => place.meal_price !== null)
+                .map((place) => {
+                  const price = place.meal_price ?? 0;
+                  return (
+                    <Button
+                      key={place.id}
+                      variant="plain"
+                      disabled={eat.isPending || (wallet?.balance ?? 0) < price}
+                      onClick={() => eat.mutate(place.id)}
+                    >
+                      <Utensils />
+                      {eat.isPending
+                        ? "Ordering…"
+                        : (wallet?.balance ?? 0) < price
+                          ? `Need ${formatNaira(price)}`
+                          : `Eat at ${place.name} · ${formatNaira(price)}`}
+                    </Button>
+                  );
+                })}
+              {jobOptions.map(({ job, eligibility }) => (
+                <Button
+                  key={job.id}
+                  variant="ink"
+                  disabled={!eligibility.eligible || selectJob.isPending}
+                  onClick={() => selectJob.mutate(job.id)}
+                >
+                  {!eligibility.eligible
+                    ? (eligibility.reasons[0] ?? "Requirements not met")
+                    : selectJob.isPending
+                      ? "Applying…"
+                      : `Apply: ${job.name}`}
+                </Button>
+              ))}
+            </nav>
+          )}
 
-      {loc.type !== "bank" && (
-        <LocationActivities locationId={loc.id} slug={slug} isHere={isHere} />
-      )}
-      <CityEventParticipation slug={slug} isHere={isHere} />
-      <PartyVenuePanel locationId={loc.id} />
+          {loc.type !== "bank" && (
+            <LocationActivities locationId={loc.id} slug={slug} isHere={isHere} />
+          )}
+          <CityEventParticipation slug={slug} isHere={isHere} />
+          <PartyVenuePanel locationId={loc.id} />
+        </div>
+      </details>
     </div>
   );
 }

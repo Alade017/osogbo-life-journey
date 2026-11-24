@@ -231,3 +231,35 @@ it("preserves travel when venue preloading fails", async () => {
   expect(state.preload).toHaveBeenCalledTimes(1);
   expect(state.travel).toHaveBeenCalledTimes(1);
 });
+
+it("opens the clinic as the destination world only after the saved arrival is confirmed", async () => {
+  state.slug = "community-clinic";
+  show();
+  expect(screen.queryByText("Venue interior")).not.toBeInTheDocument();
+  await act(async () => {
+    client.setQueryData(["character"], {
+      id: "player",
+      current_location_id: "destination",
+      level: 5,
+    });
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(screen.getByText("Venue interior").closest(".destination-scene")).not.toBeNull();
+  expect(screen.queryByText(/^Walk /)).not.toBeInTheDocument();
+  expect(screen.queryByText("arrived")).not.toBeInTheDocument();
+});
+it("opens confirmed district streets without asking the player to walk there again", async () => {
+  state.slug = "city-centre";
+  show();
+  expect(state.navigate).not.toHaveBeenCalled();
+  await act(async () => {
+    client.setQueryData(["character"], {
+      id: "player",
+      current_location_id: "destination",
+      level: 5,
+    });
+    await vi.advanceTimersByTimeAsync(1);
+  });
+  expect(state.navigate).toHaveBeenCalledWith({ to: "/neighborhood", replace: true });
+  expect(state.travel).not.toHaveBeenCalled();
+});
