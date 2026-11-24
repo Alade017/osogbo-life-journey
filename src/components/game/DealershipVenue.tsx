@@ -1,3 +1,4 @@
+import { useProductInspection } from "@/hooks/use-product-inspection";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/game";
@@ -34,11 +35,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const walker = useHouseMovement(slug, toRoom(layout.exteriorSpawn));
   const [inside, setInside] = useState(false);
   const [message, setMessage] = useState("Walk to the entrance to enter.");
-  const [station, setStation] = useState<number | null>(null);
-  const [inspection, setInspection] = useState(false);
-  const [assets, setAssets] = useState<Record<string, "ready" | "failed">>({});
-  const assetReady = useCallback((id: string) => setAssets(old => old[id] === "ready" ? old : {...old, [id]: "ready"}), []);
-  const assetError = useCallback((id: string) => setAssets(old => old[id] === "failed" ? old : {...old, [id]: "failed"}), []);
+  const { assets, station, setStation, inspection, setInspection, assetReady, assetError } = useProductInspection();
   const product = station === null ? undefined : models[station];
   const canInspect = !!product && assets[product.id] === "ready";
   const inspecting = inspection && canInspect;
