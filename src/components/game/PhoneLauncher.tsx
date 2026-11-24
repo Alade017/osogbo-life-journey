@@ -17,10 +17,11 @@ import {
   Building2,
   CalendarDays,
   ChartNoAxesCombined,
-  ClipboardList,
   ChevronLeft,
   GraduationCap,
   HandCoins,
+  Handshake,
+  HeartPulse,
   HousePlus,
   MapPinned,
   MessageCircleCheck,
@@ -137,11 +138,8 @@ const CommunityPhoneApps = lazy(() =>
   })),
 );
 const PhoneCommunityServices = lazy(() => import("@/components/game/phone/PhoneCommunityServices"));
-const ActivityCatalogueApp = lazy(() =>
-  import("@/components/game/ActivityCatalogueApp").then((m) => ({
-    default: m.ActivityCatalogueApp,
-  })),
-);
+const CityServicesApp = lazy(() => import("@/components/game/phone/CityServicesApp"));
+const PropertyExchangeApp = lazy(() => import("@/components/game/phone/PropertyExchangeApp"));
 
 type PhoneAppDefinition = {
   label: string;
@@ -152,12 +150,12 @@ type PhoneAppDefinition = {
 };
 
 const PHONE_APPS: readonly PhoneAppDefinition[] = [
-  { label: "Activities", icon: ClipboardList, tone: "phone-app-green", emphasis: "important" },
   { label: "Bank", icon: Landmark, tone: "phone-app-blue", emphasis: "important" },
   { label: "Billboards", icon: PanelsTopLeft, tone: "phone-app-gold" },
   { label: "Businesses", icon: Building2, tone: "phone-app-green" },
   { label: "Calendar", icon: CalendarDays, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Career Life", icon: BriefcaseBusiness, tone: "phone-app-gold", emphasis: "important" },
+  { label: "City Services", icon: HeartPulse, tone: "phone-app-green", emphasis: "important" },
   { label: "Contribution", icon: HandCoins, tone: "phone-app-gold" },
   { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
@@ -174,6 +172,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
   { label: "Profile", icon: UserRound, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Property", icon: HousePlus, tone: "phone-app-green" },
+  { label: "Property Exchange", icon: Handshake, tone: "phone-app-gold", emphasis: "important" },
   { label: "Real Estate", icon: Building2, tone: "phone-app-green" },
   { label: "Settings", icon: Settings, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Support", icon: MessageCircle, tone: "phone-app-blue", emphasis: "utility" },
@@ -481,7 +480,8 @@ export function PhoneLauncher({
     }
 
     if (appName === "Education" || appName === "Courses") return <EducationPage phoneMode />;
-    if (appName === "Activities") return <ActivityCatalogueApp />;
+    if (appName === "City Services") return <CityServicesApp />;
+    if (appName === "Property Exchange") return <PropertyExchangeApp />;
 
     if (appName === "Bank") {
       return <PhoneBankApp />;
