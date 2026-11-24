@@ -26,8 +26,12 @@ vi.mock("@/hooks/use-mission-claim", () => ({ useMissionClaim: () => ({ mutate: 
 vi.mock("@/components/game/CareerLifeApp", () => ({
   CareerLifeApp: () => <div>Career HUD content</div>,
 }));
-vi.mock("@/components/game/phone/CityServicesApp", () => ({ default: () => <div>City Services content</div> }));
-vi.mock("@/components/game/phone/PropertyExchangeApp", () => ({ default: () => <div>Property Exchange content</div> }));
+vi.mock("@/components/game/phone/CityServicesApp", () => ({
+  default: () => <div>City Services content</div>,
+}));
+vi.mock("@/components/game/phone/PropertyExchangeApp", () => ({
+  default: () => <div>Property Exchange content</div>,
+}));
 vi.mock("@/components/game/phone/PhoneMapApp", () => ({
   PhoneMapApp: () => <div>Map HUD content <a href="/map">Open full city map</a></div>,
 }));
