@@ -8,6 +8,7 @@ import type { Appearance } from "@/game/avatar-appearance";
 import { useHouseMovement } from "@/hooks/use-house-movement";
 import { useRenderQuality } from "@/hooks/use-render-quality";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
+import { SHOWROOM_LOAD_RADIUS } from "@/components/3d/ShowroomAsset";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
@@ -25,7 +26,9 @@ const toRoom = ([x, z]: WalkPoint): [number, number, number] => [x, height, z];
 export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const { data: character } = useQuery(q.character());
   const { data: equipment } = useQuery(q.equipment());
-  const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
+  const renderQuality = useRenderQuality();
+  const quality = WORLD_RENDER_QUALITY[renderQuality];
+  const loadRadius = SHOWROOM_LOAD_RADIUS[renderQuality];
   const outfit = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
   const raw = character?.appearance;
   const appearance = useMemo(() => raw && typeof raw === "object" && !Array.isArray(raw)
@@ -117,8 +120,8 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
             gl={{ antialias: false, powerPreference: "low-power" }}
             onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
             <WorldCamera width={12} depth={12} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} target={inspecting && station !== null ? [layout.bays[station]!.x, 0.9, layout.bays[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspecting ? 2.8 : 1.5} />
-            <WorldLighting size={24} />
-            {inside ? <DealershipInterior layout={layout} viewer={[walker.position[0], walker.position[2]]} style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} />
+            <WorldLighting size={24} contactShadows={false} />
+            {inside ? <DealershipInterior loadRadius={loadRadius} layout={layout} viewer={[walker.position[0], walker.position[2]]} style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} />
               : <DealershipExterior layout={layout} style={style} onEnter={enter} onWalk={go} />}
             {character && <group position={walker.position}>
               <WorldCharacter position={[0, 0, 0]} facing={walker.facing} animation={walker.walking ? "walk" : "idle"}
