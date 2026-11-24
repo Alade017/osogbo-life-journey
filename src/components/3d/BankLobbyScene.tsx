@@ -1,7 +1,16 @@
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { Group } from "three";
 import { Scene } from "./Scene";
+import { BankCameraRig } from "./BankCameraRig";
 import { WorldCharacter } from "./WorldCharacter";
 import { ProceduralBankArchitecture } from "./ProceduralBankArchitecture";
 import {
@@ -22,23 +31,6 @@ type OnlineBankPlayer = { characterId: string; name: string };
 type Command = { id: string; serial: number } | null;
 type Interaction = "teller" | "atm" | "seat";
 
-function BankCameraFraming({ layout }: { layout: BankWorldLayout }) {
-  const { camera, size, invalidate } = useThree();
-  useLayoutEffect(() => {
-    if (!("isOrthographicCamera" in camera)) return;
-    camera.zoom = Math.max(
-      2,
-      Math.min(
-        size.width / ((layout.width + layout.depth) * 0.78),
-        size.height / ((layout.width + layout.depth) * 0.64),
-        40,
-      ),
-    );
-    camera.updateProjectionMatrix();
-    invalidate();
-  }, [camera, size.width, size.height, layout, invalidate]);
-  return null;
-}
 function BankWorld({
   branch,
   layout,
@@ -55,6 +47,9 @@ function BankWorld({
   onMessage,
   onPosition,
   onReady,
+  frame,
+  resetToken,
+  follow,
 }: {
   branch: BankSlug;
   layout: BankWorldLayout;
@@ -71,6 +66,9 @@ function BankWorld({
   onMessage: (message: string) => void;
   onPosition: (position: WalkPoint) => void;
   onReady: () => void;
+  frame: RefObject<HTMLDivElement | null>;
+  resetToken: number;
+  follow: boolean;
 }) {
   const navigation = useMemo(
     () =>
@@ -193,7 +191,13 @@ function BankWorld({
   }, [layout, branch, players, navigation, spawn]);
   return (
     <>
-      <BankCameraFraming layout={layout} />
+      <BankCameraRig
+        layout={layout}
+        frame={frame}
+        player={group}
+        resetToken={resetToken}
+        follow={follow}
+      />
       <ProceduralBankArchitecture
         branch={branch}
         layout={layout}
@@ -308,6 +312,9 @@ export function BankLobbyScene({
     [failed, setFailed] = useState(false),
     [message, setMessage] = useState("");
   const [command, setCommand] = useState<Command>(null);
+  const frame = useRef<HTMLDivElement>(null);
+  const [resetToken, setResetToken] = useState(0);
+  const [follow, setFollow] = useState(false);
   const position = useRef<WalkPoint>([0, 0]);
   const [arrivalFrom, setArrivalFrom] = useState<BankArea | undefined>();
   const layout = useMemo(
@@ -332,6 +339,7 @@ export function BankLobbyScene({
         fixture.action === "grounds" ||
         fixture.action === "upstairs"
       ) {
+        setFollow(false);
         setCommand(null);
         setMessage("");
         setArrivalFrom(area);
@@ -398,6 +406,7 @@ export function BankLobbyScene({
         : [["stairs", "Downstairs banking hall"]];
   return (
     <div
+      ref={frame}
       data-bank-viewport
       className="relative h-[min(75vh,720px)] min-h-[400px] overflow-hidden rounded-xl bg-card"
       aria-label={`${bankName} interactive ${area}`}
@@ -425,6 +434,9 @@ export function BankLobbyScene({
           onMessage={setMessage}
           onPosition={handlePosition}
           onReady={handleReady}
+          frame={frame}
+          resetToken={resetToken}
+          follow={follow}
         />
       </Scene>
       <div className="bank-world-controls" role="group" aria-label="Bank scene controls">
@@ -446,6 +458,20 @@ export function BankLobbyScene({
               {label}
             </button>
           ))}
+        </div>
+        <div className="flex flex-wrap gap-2" role="group" aria-label="Bank camera">
+          <button
+            type="button"
+            onClick={() => {
+              setFollow(false);
+              setResetToken((value) => value + 1);
+            }}
+          >
+            Reset view
+          </button>
+          <button type="button" aria-pressed={follow} onClick={() => setFollow((value) => !value)}>
+            Follow character
+          </button>
         </div>
         <details>
           <summary>Accessible scene actions</summary>

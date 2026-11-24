@@ -100,8 +100,9 @@
 }
 @media (max-width: 640px) {
   .destination-services {
-    top: calc(var(--destination-top, 0px) + max(12px, env(safe-area-inset-top)) + 128px);
+    top: calc(var(--destination-top, 0px) + max(12px, env(safe-area-inset-top)) + 72px);
     bottom: auto;
+    max-height: 32dvh;
   }
 }
 
@@ -182,7 +183,7 @@
   box-shadow: var(--elevation-card);
 }
 .bank-world-controls {
-  bottom: var(--destination-bottom, 12px);
+  bottom: calc(var(--destination-bottom, 12px) + 66px);
   display: grid;
   gap: 8px;
   max-height: 30dvh;

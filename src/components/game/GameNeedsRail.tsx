@@ -1,12 +1,5 @@
 import { useEffect, useId, useRef, useState } from "react";
-import {
-  Droplets,
-  Smile,
-  Sparkles,
-  Utensils,
-  Users,
-  Zap,
-} from "lucide-react";
+import { Droplets, Smile, Sparkles, Utensils, Users, Zap } from "lucide-react";
 import { useGameTime } from "@/components/game/GameTimeProvider";
 import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
 import type { PlayerState } from "@/lib/player-state";
@@ -74,9 +67,7 @@ export function GameNeedsRail({
     if (!expanded) return;
     const dismiss = () => {
       setExpanded(false);
-      window.dispatchEvent(
-        new CustomEvent("osogbo-hud-panel-open", { detail: { open: false } }),
-      );
+      window.dispatchEvent(new CustomEvent("osogbo-hud-panel-open", { detail: { open: false } }));
       setDetailNeed(null);
       setActionMessage(null);
     };
@@ -123,6 +114,7 @@ export function GameNeedsRail({
     }
     setExpanded(false);
     setDetailNeed(null);
+    window.dispatchEvent(new CustomEvent("osogbo-hud-panel-open", { detail: { open: false } }));
     window.dispatchEvent(
       new CustomEvent("osogbo-open-phone-app", { detail: { app: needAction.app } }),
     );
@@ -151,7 +143,7 @@ export function GameNeedsRail({
           window.dispatchEvent(
             new CustomEvent("osogbo-hud-panel-open", { detail: { open: nextExpanded } }),
           );
-          setDetailNeed(null);
+          setDetailNeed(nextExpanded ? (urgent?.name ?? null) : null);
           setActionMessage(null);
         }}
       >
@@ -160,6 +152,7 @@ export function GameNeedsRail({
         </span>
         <span className="game-needs-trigger-copy">
           <strong>Needs</strong>
+          {urgent && <small>Tap for help</small>}
         </span>
         {urgent && (
           <span className={`game-needs-urgent-pill is-${urgent.status}`}>

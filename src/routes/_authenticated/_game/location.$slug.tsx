@@ -401,7 +401,11 @@ function LocationPage() {
         />
       )}
 
-      <details className={isHere ? "destination-services" : "space-y-4"} open={!isHere}>
+      <details
+        name={isHere ? "destination-panels" : undefined}
+        className={isHere ? "destination-services" : "space-y-4"}
+        open={!isHere}
+      >
         <summary>Activities & services</summary>
         <div className="destination-services-body">
           {isHere && (
