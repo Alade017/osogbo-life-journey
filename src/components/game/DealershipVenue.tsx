@@ -12,7 +12,7 @@ import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { DealershipExterior, DealershipInterior } from "@/components/3d/DealershipEnvironment";
-import { SHOWROOM_LAYOUT as layout, SHOWROOM_BAYS, showroomNavigation, showroomExteriorRoute } from "@/game/showroom-navigation";
+import { createShowroomLayout, showroomNavigation, showroomExteriorRoute } from "@/game/showroom-navigation";
 import type { WalkPoint } from "@/game/grid-walk-path";
 import { getShowroomModels } from "@/data/showroom-models";
 import { showroomDestinations } from "@/data/showroom-destinations";
@@ -31,7 +31,8 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const appearance = useMemo(() => raw && typeof raw === "object" && !Array.isArray(raw)
     ? raw as Appearance : parseSavedAppearance(raw), [raw]);
   const models = useMemo(() => getShowroomModels(slug), [slug]);
-  const navigation = useMemo(showroomNavigation, []);
+  const layout = useMemo(() => createShowroomLayout(models.length), [models.length]);
+  const navigation = useMemo(() => showroomNavigation(layout), [layout]);
   const walker = useHouseMovement(slug, toRoom(layout.exteriorSpawn));
   const [inside, setInside] = useState(false);
   const [message, setMessage] = useState("Walk to the entrance to enter.");
@@ -75,7 +76,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   }
   function enter() {
     if (inside) return;
-    walk(showroomExteriorRoute(current(), layout.exteriorDoor), () => {
+    walk(showroomExteriorRoute(current(), layout.exteriorDoor, layout), () => {
       walker.place(toRoom(layout.entrance));
       setInside(true);
       setMessage("Tap the floor to walk or approach a vehicle.");
@@ -95,7 +96,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
     } else if (inside && Math.abs(point[0]) <= layout.entranceWidth / 2 && point[1] >= layout.entrance[1]) {
       exit();
     } else {
-      walk(inside ? navigation.route(current(), point) : showroomExteriorRoute(current(), point));
+      walk(inside ? navigation.route(current(), point) : showroomExteriorRoute(current(), point, layout));
     }
   }
   function approach(index: number) {
@@ -115,10 +116,10 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
           <WorldCanvas frameloop="demand" dpr={[1, quality.maxDpr]}
             gl={{ antialias: false, powerPreference: "low-power" }}
             onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
-            <WorldCamera width={12} depth={12} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} target={inspecting && station !== null ? [SHOWROOM_BAYS[station]!.x, 0.9, SHOWROOM_BAYS[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspecting ? 2.8 : 1.5} />
+            <WorldCamera width={12} depth={12} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} target={inspecting && station !== null ? [layout.bays[station]!.x, 0.9, layout.bays[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspecting ? 2.8 : 1.5} />
             <WorldLighting size={24} />
-            {inside ? <DealershipInterior style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} />
-              : <DealershipExterior style={style} onEnter={enter} onWalk={go} />}
+            {inside ? <DealershipInterior layout={layout} viewer={[walker.position[0], walker.position[2]]} style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} />
+              : <DealershipExterior layout={layout} style={style} onEnter={enter} onWalk={go} />}
             {character && <group position={walker.position}>
               <WorldCharacter position={[0, 0, 0]} facing={walker.facing} animation={walker.walking ? "walk" : "idle"}
                 name={character.name} gender={character.gender} appearance={appearance} equipment={outfit} />
