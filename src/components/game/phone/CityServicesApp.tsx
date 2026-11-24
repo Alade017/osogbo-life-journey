@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { HeartPulse, MapPin, Search, ShieldCheck } from "lucide-react";
+import { Building2, MapPin, Search, ShieldCheck } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { q } from "@/lib/game";
 import "./city-services-app.css";
@@ -33,7 +33,7 @@ export function CityServicesApp() {
     <div className="phone-local-app city-services-app" aria-label="City services directory">
       <header className="city-services-hero">
         <span className="city-services-icon" aria-hidden="true">
-          <HeartPulse />
+          <Building2 />
         </span>
         <span>
           <strong>City Services</strong>
