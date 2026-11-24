@@ -3,10 +3,10 @@
 @media (min-width: 641px) {
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh,
   .phone-dialog.phone-ui-refresh {
-    width: 420px !important;
+    width: 400px !important;
     max-width: calc(100% - 32px) !important;
     height: min(
-      820px,
+      840px,
       calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 36px)
     ) !important;
     max-height: calc(
