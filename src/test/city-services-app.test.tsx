@@ -43,7 +43,7 @@ it("lists live town locations and opens their real destination pages", () => {
   render(<CityServicesApp />);
   expect(screen.getByText("Osun Community Clinic")).toBeVisible();
   expect(screen.getByText("Cedar Bank")).toBeVisible();
-  expect(screen.getByRole("link", { name: "View destination" })).toHaveAttribute(
+  expect(screen.getAllByRole("link", { name: "View destination" })[0]).toHaveAttribute(
     "href",
     "/location/osun-clinic",
   );
