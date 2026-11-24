@@ -347,7 +347,6 @@
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  touch-action: pan-y;
 }
 
 .phone-app-pages::-webkit-scrollbar {
@@ -4322,7 +4321,4 @@
 }
 .phone-app-body :where(img, video, canvas, input, select, textarea) {
   max-width: 100%;
-}
-.phone-app-body :where(button, a) {
-  overflow-wrap: anywhere;
 }
