@@ -34,7 +34,7 @@ const ClinicVenue = lazy(venueSceneLoaders.clinic);
 const OsunMallVenue = lazy(venueSceneLoaders.mall);
 const WorshipVenue = lazy(venueSceneLoaders.worship);
 const SchoolCampusVenue = lazy(venueSceneLoaders.campus);
-import { Canvas } from "@react-three/fiber";
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldCamera, WorldLighting, WorldMaterial } from "@/components/3d/WorldScene";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 import {
@@ -239,8 +239,9 @@ function BasicLocationVenueScene({
       <div className="relative h-64 overflow-hidden rounded-lg border border-edge bg-muted sm:h-80 md:h-[25rem]">
         {sceneStatus !== "fallback" && (
           <VenueSceneBoundary resetKey={slug} onError={() => setSceneStatus("fallback")}>
-            <Canvas
+            <WorldCanvas
               key={slug}
+              onSceneError={() => setSceneStatus("fallback")}
               shadows="percentage"
               frameloop="demand"
               dpr={[1, Math.min(1.25, quality.maxDpr)]}
@@ -369,7 +370,7 @@ function BasicLocationVenueScene({
                 )}
                 <VenueSceneReady onReady={handleSceneReady} />
               </Suspense>
-            </Canvas>
+            </WorldCanvas>
           </VenueSceneBoundary>
         )}
         {sceneStatus === "loading" && (

@@ -1,3 +1,4 @@
+import { WorldSceneProvider, WorldSceneViewport } from "@/components/3d/WorldSceneHost";
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
@@ -254,97 +255,100 @@ function GameLayout() {
       locationId={character.current_location_id}
       locationType={simulationLocationType(currentLocation?.type)}
     >
-      <LoginStreakProvider userId={character.user_id} characterId={character.id}>
-        <div
-          onClickCapture={handleGamePageLinkClick}
-          className={cn(
-            "game-shell city-game navigation-redesign card-refresh dashboard-ui-refresh min-h-screen pb-20 md:pb-0",
-            pathname === "/house" && "home-scene",
-            homeHud && "home-hud",
-            profile?.reduced_motion && "reduce-motion",
-            phoneOpen && "phone-open",
-            (housingOpen || inventoryOpen) && "hud-menu-open",
-            hudPanelOpen && "hud-panel-open",
-            hudIdle && "hud-idle",
-          )}
-        >
-          <WorldEnvironment immersive={homeHud} />
-          <OutsideTransition />
-          <div className="city-game-frame">
-            <div className="city-game-content">
-              <main
-                className={cn(
-                  "city-game-main",
-                  pathname !== "/home" &&
-                    pathname !== "/house" &&
-                    pathname !== "/map" &&
-                    pathname !== "/jobs" &&
-                    pathname !== "/neighborhood"
-                    ? "game-screen-restyle"
-                    : undefined,
-                )}
-              >
-                {homeHud || (pathname === "/neighborhood" && !visitingFriend) ? (
-                  <HomeDashboard
-                    player={player}
-                    location={currentLocation?.name ?? "Osogbo"}
-                    unread={unread}
-                  >
+      <WorldSceneProvider>
+        <LoginStreakProvider userId={character.user_id} characterId={character.id}>
+          <div
+            onClickCapture={handleGamePageLinkClick}
+            className={cn(
+              "game-shell city-game navigation-redesign card-refresh dashboard-ui-refresh min-h-screen pb-20 md:pb-0",
+              pathname === "/house" && "home-scene",
+              homeHud && "home-hud",
+              profile?.reduced_motion && "reduce-motion",
+              phoneOpen && "phone-open",
+              (housingOpen || inventoryOpen) && "hud-menu-open",
+              hudPanelOpen && "hud-panel-open",
+              hudIdle && "hud-idle",
+            )}
+          >
+            <WorldEnvironment immersive={homeHud} />
+            <OutsideTransition />
+            <WorldSceneViewport />
+            <div className="city-game-frame">
+              <div className="city-game-content">
+                <main
+                  className={cn(
+                    "city-game-main",
+                    pathname !== "/home" &&
+                      pathname !== "/house" &&
+                      pathname !== "/map" &&
+                      pathname !== "/jobs" &&
+                      pathname !== "/neighborhood"
+                      ? "game-screen-restyle"
+                      : undefined,
+                  )}
+                >
+                  {homeHud || (pathname === "/neighborhood" && !visitingFriend) ? (
+                    <HomeDashboard
+                      player={player}
+                      location={currentLocation?.name ?? "Osogbo"}
+                      unread={unread}
+                    >
+                      <Outlet />
+                    </HomeDashboard>
+                  ) : (
                     <Outlet />
-                  </HomeDashboard>
-                ) : (
-                  <Outlet />
-                )}
-              </main>
+                  )}
+                </main>
+              </div>
             </div>
-          </div>
 
-          {homeHud && <HomePlayerStatus key={player.id} player={player} />}
+            {homeHud && <HomePlayerStatus key={player.id} player={player} />}
 
-          <GameNeedsRail
-            key={pathname === "/map" ? "map" : "game"}
-            player={player}
-            compact={pathname === "/map"}
-          />
-
-          <div className={phoneOpen ? "gbb is-open" : "gbb"}>
-            <GameMobileNav
-              hidden={phoneOpen || inventoryOpen}
-              onNavigate={() => setPhoneOpen(false)}
-              onInventoryOpen={() => setInventoryOpen(true)}
+            <GameNeedsRail
+              key={pathname === "/map" ? "map" : "game"}
+              player={player}
+              compact={pathname === "/map"}
             />
-            <PhoneLauncher
-              compact
-              className="gbb-phone"
-              open={phoneOpen}
-              onOpenChange={setPhoneOpen}
-              dock={
-                <div className="gbb">
-                  <GameMobileNav
-                    onNavigate={() => setPhoneOpen(false)}
-                    onInventoryOpen={() => {
-                      setPhoneOpen(false);
-                      setInventoryOpen(true);
-                    }}
-                  />
-                </div>
-              }
+
+            <div className={phoneOpen ? "gbb is-open" : "gbb"}>
+              <GameMobileNav
+                hidden={phoneOpen || inventoryOpen}
+                onNavigate={() => setPhoneOpen(false)}
+                onInventoryOpen={() => setInventoryOpen(true)}
+              />
+              <PhoneLauncher
+                compact
+                className="gbb-phone"
+                open={phoneOpen}
+                onOpenChange={setPhoneOpen}
+                dock={
+                  <div className="gbb">
+                    <GameMobileNav
+                      onNavigate={() => setPhoneOpen(false)}
+                      onInventoryOpen={() => {
+                        setPhoneOpen(false);
+                        setInventoryOpen(true);
+                      }}
+                    />
+                  </div>
+                }
+              />
+            </div>
+            <InventoryOverlay open={inventoryOpen} onOpenChange={setInventoryOpen} />
+            <HousingChooser
+              open={housingOpen}
+              pending={housingPending || (housingRequested && housingSource === "profile")}
+              allowSkip={housingPending}
+              onClose={() => {
+                housingHandledThisSession.current = true;
+                setHousingRequested(false);
+                setHousingOpen(false);
+              }}
             />
+            <HousingRepossessionNotice characterId={character.id} />
           </div>
-          <InventoryOverlay open={inventoryOpen} onOpenChange={setInventoryOpen} />
-          <HousingChooser
-            open={housingOpen}
-            pending={housingPending || (housingRequested && housingSource === "profile")}
-            allowSkip={housingPending}
-            onClose={() => {
-              housingHandledThisSession.current = true;
-              setHousingRequested(false);
-              setHousingOpen(false);
-            }}
-          />
-          <HousingRepossessionNotice characterId={character.id} />
-        </div>
-      </LoginStreakProvider>
+        </LoginStreakProvider>
+      </WorldSceneProvider>
     </GameTimeProvider>
   );
 }
