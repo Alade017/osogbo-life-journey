@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/game";
@@ -18,7 +18,18 @@ import { useHouseMovement } from "@/hooks/use-house-movement";
 import type { LocationVenueDesign, VenueFixture } from "@/lib/location-venue-designs";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 
+const ElectronicsVenue = lazy(() => import("./ElectronicsVenue"));
+
 export default function HarvestTechHubVenue({ venue }: { venue: LocationVenueDesign }) {
+  const [inStore, setInStore] = useState(false);
+  return inStore ? (
+    <Suspense fallback={<p role="status">Opening the computer store…</p>}>
+      <ElectronicsVenue slug="harvest-tech-hub" onExit={() => setInStore(false)} />
+    </Suspense>
+  ) : <HarvestWorkplace venue={venue} onEnterStore={() => setInStore(true)} />;
+}
+
+function HarvestWorkplace({ venue, onEnterStore }: { venue: LocationVenueDesign; onEnterStore: () => void }) {
   const { data: character } = useQuery(q.character());
   const { data: equipment } = useQuery(q.equipment());
   const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
@@ -59,6 +70,22 @@ export default function HarvestTechHubVenue({ venue }: { venue: LocationVenueDes
       setMessage(arrived ? (fixture?.label ?? "Arrived.") : "Walk stopped.");
     });
   }
+  function enterStore() {
+    if (!character || failed) return;
+    const ticket = ++request.current;
+    walker.cancel();
+    setStation(null);
+    setSelected("");
+    const [x, , z] = walker.positionRef.current;
+    const path = navigation.route([x, z], workplaceSpawn);
+    if (!path) { setMessage("That path is blocked. Choose a clear spot."); return; }
+    setMessage("Walking to the computer store entrance…");
+    void walker.walk(path.map(([px, pz]) => [px, 0.06, pz])).then((arrived) => {
+      if (ticket !== request.current) return;
+      if (arrived) onEnterStore();
+      else setMessage("Walk stopped.");
+    });
+  }
   const feature = station?.workplaceFeature;
   const job = feature === "workstations" || feature === "reception";
   const course = feature === "training" || feature === "presentation";
@@ -93,7 +120,10 @@ export default function HarvestTechHubVenue({ venue }: { venue: LocationVenueDes
               wallColor={venue.wallColor}
               accentColor={venue.accentColor}
               selected={selected}
-              onWalk={go}
+              onWalk={(point) => {
+                if (Math.abs(point[0]) <= WORKPLACE_LAYOUT.entranceWidth / 2 && point[1] >= workplaceSpawn[1]) enterStore();
+                else go(point);
+              }}
               onSelect={(id) => {
                 const fixture = venue.fixtures.find((f) => f.id === id);
                 if (fixture) go(fixture);
@@ -120,6 +150,7 @@ export default function HarvestTechHubVenue({ venue }: { venue: LocationVenueDes
           <p role="alert">The 3D view is unavailable. Station controls are available here.</p>
         )}
         <p role="status">{message}</p>
+        <button type="button" disabled={!character || failed} onClick={enterStore} className="rounded-full border border-edge px-3 py-1.5 text-sm">Walk to computer store</button>
         {job && (
           <Link to="/jobs" className={linkStyle}>
             Jobs &amp; shifts
