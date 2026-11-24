@@ -32,7 +32,9 @@ export function CityServicesApp() {
   return (
     <div className="phone-local-app city-services-app" aria-label="City services directory">
       <header className="city-services-hero">
-        <span className="city-services-icon" aria-hidden="true"><HeartPulse /></span>
+        <span className="city-services-icon" aria-hidden="true">
+          <HeartPulse />
+        </span>
         <span>
           <strong>City Services</strong>
           <small>Find useful places and services around town</small>
@@ -57,7 +59,13 @@ export function CityServicesApp() {
       </label>
 
       <div className="city-services-filters" role="group" aria-label="Filter services by type">
-        <button type="button" aria-pressed={selectedType === null} onClick={() => setSelectedType(null)}>All</button>
+        <button
+          type="button"
+          aria-pressed={selectedType === null}
+          onClick={() => setSelectedType(null)}
+        >
+          All
+        </button>
         {types.map((type) => (
           <button
             key={type}
@@ -70,11 +78,17 @@ export function CityServicesApp() {
         ))}
       </div>
 
-      {placesQuery.isPending && <p className="city-services-state" role="status">Loading town services…</p>}
+      {placesQuery.isPending && (
+        <p className="city-services-state" role="status">
+          Loading town services…
+        </p>
+      )}
       {placesQuery.isError && (
         <div className="city-services-state" role="alert">
           <p>The town directory could not be loaded.</p>
-          <button type="button" onClick={() => void placesQuery.refetch()}>Try again</button>
+          <button type="button" onClick={() => void placesQuery.refetch()}>
+            Try again
+          </button>
         </div>
       )}
       {!placesQuery.isPending && !placesQuery.isError && visiblePlaces.length === 0 && (
@@ -84,7 +98,9 @@ export function CityServicesApp() {
       <div className="city-services-list">
         {visiblePlaces.map((place) => (
           <article className="city-services-card" key={place.id}>
-            <span className="city-services-card-icon" aria-hidden="true"><MapPin /></span>
+            <span className="city-services-card-icon" aria-hidden="true">
+              <MapPin />
+            </span>
             <div className="city-services-card-copy">
               <small>{labelForType(place.type)}</small>
               <strong>{place.name}</strong>
