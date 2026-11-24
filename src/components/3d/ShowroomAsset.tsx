@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { Clone, useGLTF } from "@react-three/drei";
 import { Box3, Vector3 } from "three";
 import { VenueSceneBoundary } from "@/components/game/VenueSceneBoundary";
@@ -40,9 +40,12 @@ export function ShowroomAsset({ product, viewer, position, radius, pinned, limit
   onError: (id: string) => void;
 }) {
   const distance = Math.hypot(viewer[0] - position[0], viewer[1] - position[1]);
-  // Keep a small buffer around the near zone so the inspection target never disappears.
-  // The boundary stays mounted while its model is outside the render distance.
+  const [resident, setResident] = useState(() => pinned || distance <= radius);
+  const shouldMount = pinned || distance <= radius || (resident && distance <= radius + LOAD_MARGIN);
+  useEffect(() => { setResident(shouldMount); }, [shouldMount]);
+  // The exit radius is larger than the entry radius to avoid threshold churn.
+  // Keep the error boundary mounted so failed assets do not retry on every approach.
   return <VenueSceneBoundary resetKey={product.url} onError={() => onError(product.id)}>
-    { (pinned || distance <= radius + LOAD_MARGIN) && <Suspense fallback={null}><Model product={product} limits={limits} onReady={onReady} /></Suspense> }
+    { shouldMount && <Suspense fallback={null}><Model product={product} limits={limits} onReady={onReady} /></Suspense> }
   </VenueSceneBoundary>;
 }
