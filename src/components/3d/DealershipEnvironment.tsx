@@ -19,7 +19,7 @@ function Vehicle({ url }: { url: string }) {
   return <Clone object={scene} />;
 }
 const height = 4;
-const entranceWidth = 3;
+const entranceWidth = layout.entranceWidth;
 const front = layout.depth / 2;
 const halfWidth = layout.width / 2;
 
@@ -42,9 +42,11 @@ export function DealershipFacade({ onEnter }: { onEnter?: () => void }) {
   </group>;
 }
 
-export function DealershipExterior({ onEnter }: { onEnter?: () => void }) {
+export function DealershipExterior({ onEnter, onWalk }: { onEnter?: () => void; onWalk: (point: WalkPoint) => void }) {
   return <group name="dealership-exterior">
-    <Block at={[0, -0.25, 2]} size={[layout.width + 8, 0.3, layout.depth + 10]} tone="sidewalk" />
+    <group onClick={(event) => { event.stopPropagation(); if (event.delta <= 5) onWalk([event.point.x, event.point.z]); }}>
+      <Block at={[0, -0.1, front + 1.5]} size={[layout.width, 0.2, 3]} tone="sidewalk" />
+    </group>
     <Block at={[0, -0.08, front + 4.5]} size={[layout.width + 8, 0.18, 5]} tone="road" />
     <Block at={[0, height / 2, -front]} size={[layout.width, height, 0.2]} />
     {[-1, 1].map((side) => <Block key={side} at={[side * halfWidth, height / 2, 0]} size={[0.2, height, layout.depth]} />)}
@@ -53,10 +55,11 @@ export function DealershipExterior({ onEnter }: { onEnter?: () => void }) {
   </group>;
 }
 
-export function DealershipInterior({ models, onWalk, onSelect }: {
+export function DealershipInterior({ models, onWalk, onSelect, onExit }: {
   models: readonly Display[];
   onWalk: (point: WalkPoint) => void;
   onSelect: (index: number) => void;
+  onExit: () => void;
 }) {
   return <group name="dealership-interior">
     <group onClick={(event) => { event.stopPropagation(); if (event.delta <= 5) onWalk([event.point.x, event.point.z]); }}>
@@ -66,7 +69,10 @@ export function DealershipInterior({ models, onWalk, onSelect }: {
     <Block at={[0, height / 2, -front]} size={[layout.width, height, 0.2]} />
     <Block at={[-halfWidth, height / 2, 0]} size={[0.2, height, layout.depth]} />
     <Block at={[halfWidth, 0.18, 0]} size={[0.2, 0.36, layout.depth]} tone="metal" />
-    <Block at={[0, 0.12, front]} size={[layout.width, 0.24, 0.12]} tone="metal" />
+    {[-1, 1].map((side) => <Block key={side} at={[side * (halfWidth + entranceWidth / 2) / 2, 0.12, front]} size={[halfWidth - entranceWidth / 2, 0.24, 0.12]} tone="metal" />)}
+    <group onClick={(event) => { event.stopPropagation(); if (event.delta <= 5) onExit(); }}>
+      <Block at={[0, 0.025, front - 0.5]} size={[entranceWidth, 0.05, 1]} tone="path" />
+    </group>
     {[-1, 1].map((side) => <Block key={side} at={[side * entranceWidth / 2, 0.5, front]} size={[0.15, 1, 0.15]} tone="windowFrame" />)}
     <group position={[desk.x, 0, desk.z]} name="reception">
       <Block at={[0, 0.52, 0]} size={[desk.width - 0.1, 1.04, desk.depth - 0.1]} tone="timber" />
