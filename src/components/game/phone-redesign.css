@@ -40,7 +40,7 @@
 .phone-dialog-shell {
   --phone-frame-height: min(
     820px,
-    calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px)
+    calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 36px)
   );
   --phone-frame-bottom: calc(var(--game-dock-space) + var(--game-keyboard-inset, 0px) + 8px);
 }
