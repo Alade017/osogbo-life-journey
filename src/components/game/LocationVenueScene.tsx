@@ -28,6 +28,7 @@ const TransitParkScene = lazy(venueSceneLoaders.transport);
 const HealthcareScene = lazy(venueSceneLoaders.healthcare);
 const HarvestTechHubVenue = lazy(() => import("./HarvestTechHubVenue"));
 const DealershipVenue = lazy(() => import("./DealershipVenue"));
+const ElectronicsVenue = lazy(() => import("./ElectronicsVenue"));
 const WorkplaceScene = lazy(venueSceneLoaders.workplace);
 const RetailInteriorScene = lazy(venueSceneLoaders.retail);
 const BukaInteriorScene = lazy(venueSceneLoaders.food);
@@ -552,6 +553,15 @@ export function LocationVenueScene(props: {
   const specializedFallback = (
     <SpecializedVenueFallback locationName={props.locationName} venue={venue} />
   );
+  if (props.immersive && props.locationId && props.slug === "post-office-cafe") {
+    return (
+      <VenueSceneBoundary key={sceneIdentity} fallback={specializedFallback}>
+        <Suspense fallback={<WorldLoadingIndicator title="Entering Electronics World" detail="Opening the store…" />}>
+          <ElectronicsVenue slug="post-office-cafe" />
+        </Suspense>
+      </VenueSceneBoundary>
+    );
+  }
   if (props.immersive && props.locationId && (props.slug === "fuel-station" || props.slug === "cinema-event-hall")) {
     return (
       <VenueSceneBoundary key={sceneIdentity} fallback={specializedFallback}>
