@@ -1,0 +1,118 @@
+{
+  "slug": "oke-fia",
+  "name": "Hillview Quarter",
+  "roads": [
+    {
+      "id": "hillview-boulevard",
+      "axis": "horizontal",
+      "offset_m": 0,
+      "width_m": 8,
+      "type": "arterial"
+    },
+    {
+      "id": "hillview-service-road",
+      "axis": "vertical",
+      "offset_m": 0,
+      "width_m": 2.5,
+      "type": "street"
+    }
+  ],
+  "lots": [
+    {
+      "id": "ne",
+      "x": 7.5,
+      "z": -8,
+      "w": 11,
+      "d": 6.5,
+      "side": 1
+    },
+    {
+      "id": "se",
+      "x": 7.5,
+      "z": 8,
+      "w": 11,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "sw",
+      "x": -9,
+      "z": 8,
+      "w": 8,
+      "d": 6.5,
+      "side": -1
+    }
+  ],
+  "shop": {
+    "id": "estate-mini-mart",
+    "x": -4,
+    "z": -8.5,
+    "w": 4,
+    "d": 4,
+    "label": "Hillview Mini-Mart"
+  },
+  "kiosk": {
+    "id": "pos-kiosk",
+    "x": -3,
+    "z": 6.5,
+    "w": 1.5,
+    "d": 1.5,
+    "label": "POS"
+  },
+  "gatehouse": {
+    "id": "gatehouse",
+    "x": -8.5,
+    "z": -8.5,
+    "w": 4,
+    "d": 4,
+    "label": "Estate Security Post"
+  },
+  "trees": [
+    [
+      -12.5,
+      -10
+    ],
+    [
+      -14,
+      6
+    ],
+    [
+      14,
+      6
+    ],
+    [
+      13.8,
+      -10.5
+    ]
+  ],
+  "objects": [
+    {
+      "id": "home",
+      "name": "Hillview homes",
+      "kind": "home",
+      "x": 7.5,
+      "z": -2.5
+    },
+    {
+      "id": "market",
+      "name": "Hillview Mini-Mart",
+      "kind": "market",
+      "x": -4,
+      "z": -3.5
+    },
+    {
+      "id": "work",
+      "name": "Estate Security Post",
+      "kind": "work",
+      "x": -7,
+      "z": -3
+    },
+    {
+      "id": "npc",
+      "name": "Gardener in Hillview Quarter",
+      "kind": "npc",
+      "x": 4,
+      "z": 1.5
+    }
+  ]
+}

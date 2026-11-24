@@ -4,19 +4,20 @@ Single source of truth for two hand-built areas:
   * atiku  -> Greenbank Estates (mid-income flats and bungalows; spec Tier 2)
   * oke-fia -> Hillview Quarter (GRA executive duplexes; spec Tier 3)
 
-Each area is authored in real metres, then:
-  1. the GLB environment is exported to public/models/environments/neighborhoods/
-  2. the collision obstacles, roads and objects are printed as TypeScript so the game's
-     footprints match the model exactly (src/game/neighborhood-model.ts).
+The layout (roads, plots, shops, kiosks, trees, home/market/work points) is exported from the
+game's TypeScript by scripts/blender/export-layouts.ts into scripts/blender/layouts/*.json, so the
+model and the collision data cannot drift. Only visual decor is authored here (DECOR below), and
+each area is exported to public/models/environments/neighborhoods/.
 
 Coordinate contract with the game (R3FNeighborhoodSurface.point):
   street x = centre_x + m_x * STREET_PER_METRE      (game unit: 1 m = 1/0.0375 = 26.667 street units)
   street y = centre_y + m_z * STREET_PER_METRE
   glTF x = m_x, glTF z = m_z. Blender Y is set to -m_z because the glTF exporter maps Blender Y to -Z.
 
-Run:  <blender-python> scripts/blender/neighborhood_environments.py [out_dir] [--ts]
+Run:  <blender-python> scripts/blender/neighborhood_environments.py -- [out_dir]
 Works in a headless bpy (>= 3.6) and inside a live Blender Python console.
 """
+import json
 import math
 import os
 import sys
@@ -37,66 +38,53 @@ P = dict(
     hedge="#5f8c4a", stone="#efe4cc", solar="#27407f",
 )
 
-# ---------------- Area definitions (metres, model frame; x east, z south) ----------------
-ATIKU = dict(
-    prefix="atk_", slug="atiku", name="Greenbank Estates", out="greenbank-estates.glb",
-    roads=[
-        dict(id="greenbank-avenue", axis="horizontal", offset_m=0.0, width_m=6.0, type="arterial"),
-        dict(id="greenbank-cross-street", axis="vertical", offset_m=6.0, width_m=4.0, type="street"),
-    ],
-    # Gated plots. side = +1 means the gate faces the avenue on +z (north lots), -1 the south.
-    lots=[
-        dict(id="nw", x=-8.0, z=-6.5, w=10.0, d=7.0, side=1, house="flat"),
-        dict(id="sw", x=-8.0, z=6.5, w=10.0, d=7.0, side=-1, house="bungalow"),
-        dict(id="ne", x=11.5, z=-6.5, w=6.0, d=7.0, side=1, house="flat"),
-        dict(id="se", x=11.5, z=6.5, w=6.0, d=7.0, side=-1, house="bungalow"),
-    ],
-    shop=dict(id="provisions", x=2.5, z=-7.0, w=4.0, d=6.0, label="Greenbank Provisions"),
-    kiosk=dict(id="pos-kiosk", x=3.5, z=4.5, w=1.5, d=1.5, label="POS"),
-    trees=[(-14.0, -10.6), (-14.0, 10.6), (14.0, -10.6), (14.0, 10.6)],
-    benches=[(-1.5, 4.2)],
-    bins=[(-6.3, 3.6)],
-    poles=[(-0.4, -10.6)],  # concrete utility pole on the north edge, cables run east-west
-    palms=[(-14.2, -7.0), (-14.2, 7.0)],  # west verge, clear of the avenue
-    lamps=[(-10.0, -3.7), (-2.0, -3.7), (10.0, -3.7), (-10.0, 3.7), (-2.0, 3.7), (10.0, 3.7)],
-    features=[("Housing", 367, 120), ("Community", 400, 500)],
-    style=dict(ground="0xd9c9ad", grid="0xcbbd9f", verticalRoad=(560, 107), horizontalRoad=(300, 160)),
-    objects=[
-        dict(id="home", name="Greenbank homes", kind="home", x=11.5, z=-2.5),
-        dict(id="market", name="Greenbank Provisions", kind="market", x=2.5, z=-2.5),
-        dict(id="work", name="Greenbank opportunities", kind="work", x=3.5, z=2.5),
-        dict(id="npc", name="Neighbour in Greenbank Estates", kind="npc", x=-4.0, z=1.2),
-    ],
-)
+# ---------------- Area definitions ----------------
+# Layout comes from scripts/blender/layouts/<slug>.json (exported from the game's TypeScript).
+# Only visual decor is authored here: house styles per plot and the lamps, benches, bins,
+# poles, palms and district labels. None of it is collision data.
+LAYOUT_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "layouts")
 
-HILLVIEW = dict(
-    prefix="hvq_", slug="oke-fia", name="Hillview Quarter", out="hillview-quarter.glb",
-    roads=[
-        dict(id="hillview-boulevard", axis="horizontal", offset_m=0.0, width_m=8.0, type="arterial"),
-        dict(id="hillview-service-road", axis="vertical", offset_m=0.0, width_m=2.5, type="street"),
-    ],
-    lots=[
-        dict(id="ne", x=7.5, z=-8.0, w=11.0, d=6.5, side=1, house="duplex"),
-        dict(id="se", x=7.5, z=8.0, w=11.0, d=6.5, side=-1, house="duplex"),
-        dict(id="sw", x=-9.0, z=8.0, w=8.0, d=6.5, side=-1, house="duplex"),
-    ],
-    shop=dict(id="estate-mini-mart", x=-4.0, z=-8.5, w=4.0, d=4.0, label="Hillview Mini-Mart"),
-    gatehouse=dict(id="gatehouse", x=-8.5, z=-8.5, w=4.0, d=4.0, label="Estate Security Post"),
-    kiosk=dict(id="pos-kiosk", x=-3.0, z=6.5, w=1.5, d=1.5, label="POS"),
-    trees=[(-12.5, -10.0), (-14.0, 6.0), (14.0, 6.0), (13.8, -10.5)],
-    benches=[],
-    bins=[],
-    lamps=[(-13.5, -4.4), (13.5, 4.4), (-1.9, -4.4), (1.9, 4.4)],
-    palms=[(-14.2, -7.0), (14.4, -6.5)],  # off the boulevard (|z| > 4 m)
-    features=[("Eateries", 60, 120), ("Small Shops", 330, 530), ("Gym", 150, 160)],
-    style=dict(ground="0xa8bd8c", grid="0x9db07f", verticalRoad=(400, 67), horizontalRoad=(300, 213)),
-    objects=[
-        dict(id="home", name="Hillview homes", kind="home", x=7.5, z=-2.5),
-        dict(id="market", name="Hillview Mini-Mart", kind="market", x=-4.0, z=-3.5),
-        dict(id="work", name="Estate Security Post", kind="work", x=-7.0, z=-3.0),
-        dict(id="npc", name="Gardener in Hillview Quarter", kind="npc", x=4.0, z=1.5),
-    ],
-)
+DECOR = {
+    "atiku": dict(
+        prefix="atk_", out="greenbank-estates.glb",
+        houses={"nw": "flat", "sw": "bungalow", "ne": "flat", "se": "bungalow"},
+        benches=[(-1.5, 4.2)],
+        bins=[(-6.3, 3.6)],
+        poles=[(-0.4, -10.6)],  # concrete utility pole on the north edge, cables run east-west
+        palms=[(-14.2, -7.0), (-14.2, 7.0)],  # west verge, clear of the avenue
+        lamps=[(-10.0, -3.7), (-2.0, -3.7), (10.0, -3.7), (-10.0, 3.7), (-2.0, 3.7), (10.0, 3.7)],
+        features=[("Housing", 367, 120), ("Community", 400, 500)],
+    ),
+    "oke-fia": dict(
+        prefix="hvq_", out="hillview-quarter.glb",
+        houses={"ne": "duplex", "se": "duplex", "sw": "duplex"},
+        benches=[],
+        bins=[],
+        poles=[],
+        palms=[(-14.2, -7.0), (14.4, -6.5)],  # off the boulevard (|z| > 4 m)
+        lamps=[(-13.5, -4.4), (13.5, 4.4), (-1.9, -4.4), (1.9, 4.4)],
+        features=[("Eateries", 60, 120), ("Small Shops", 330, 530), ("Gym", 150, 160)],
+    ),
+}
+
+
+def load_area(slug):
+    """Layout from the exported JSON plus the visual decor for that slug."""
+    with open(os.path.join(LAYOUT_DIR, f"{slug}.json")) as f:
+        layout = json.load(f)
+    d = DECOR[slug]
+    layout["prefix"] = d["prefix"]
+    layout["out"] = d["out"]
+    for key in ("benches", "bins", "poles", "palms", "lamps", "features"):
+        layout[key] = d[key]
+    for lot in layout["lots"]:
+        lot["house"] = d["houses"][lot["id"]]  # every plot needs a house style
+    layout["trees"] = [tuple(t) for t in layout["trees"]]
+    return layout
+
+
+ATIKU = load_area("atiku")
+HILLVIEW = load_area("oke-fia")
 
 # ---------------- Blender helpers ----------------
 _mats = {}
@@ -392,59 +380,7 @@ def build(area):
         _lamp(pre, i, x, z)
 
 
-# ---------------- Export and TypeScript output ----------------
-def _street(x_m, z_m):
-    return (ENV_CENTRE[0] + x_m * STREET_PER_METRE, ENV_CENTRE[1] + z_m * STREET_PER_METRE)
-
-
-def _ts_area(area):
-    lines = [f'export const {area["slug"].upper().replace("-", "_")}_AREA: NeighborhoodArea = {{',
-             f'  slug: "{area["slug"]}",', f'  name: "{area["name"]}",', "  objects: ["]
-    for o in area["objects"]:
-        sx, sy = _street(o["x"], o["z"])
-        lines.append(f'    {{ id: "{o["id"]}", name: "{o["name"]}", kind: "{o["kind"]}", shopSlug: null, x: {sx:.0f}, y: {sy:.0f} }},')
-    lines.append("  ],")
-    lines.append("  roads: [")
-    for r in area["roads"]:
-        if r["axis"] == "horizontal":
-            off = ENV_CENTRE[1] + r["offset_m"] * STREET_PER_METRE
-        else:
-            off = ENV_CENTRE[0] + r["offset_m"] * STREET_PER_METRE
-        lines.append(f'    {{ id: "{r["id"]}", axis: "{r["axis"]}", offset: {off:.0f}, width: {r["width_m"] * STREET_PER_METRE:.0f}, type: "{r["type"]}" }},')
-    lines.append("  ],")
-    lines.append("  obstacles: [")
-    for lot in area["lots"]:
-        sx, sy = _street(lot["x"], lot["z"])
-        lines.append(f'    {{ id: "{area["slug"]}-compound-{lot["id"]}", kind: "compound", x: {sx:.0f}, y: {sy:.0f}, width: {lot["w"] * STREET_PER_METRE:.0f}, height: {lot["d"] * STREET_PER_METRE:.0f} }},')
-    for key in ("shop", "gatehouse", "kiosk"):
-        it = area.get(key)
-        if not it:
-            continue
-        sx, sy = _street(it["x"], it["z"])
-        kind = {"shop": "shop", "gatehouse": "landmark", "kiosk": "kiosk"}[key]
-        label = f', label: "{it["label"]}"' if "label" in it else ""
-        lines.append(f'    {{ id: "{area["slug"]}-{it["id"]}", kind: "{kind}"{label}, x: {sx:.0f}, y: {sy:.0f}, width: {it["w"] * STREET_PER_METRE:.0f}, height: {it["d"] * STREET_PER_METRE:.0f} }},')
-    for i, (x, z) in enumerate(area["trees"]):
-        sx, sy = _street(x, z)
-        lines.append(f'    {{ id: "{area["slug"]}-tree-{i}", kind: "tree", x: {sx:.0f}, y: {sy:.0f}, width: 24, height: 24 }},')
-    for i, (label, sx, sy) in enumerate(area["features"]):
-        lines.append(f'    {{ id: "district-feature-{i}", kind: "landmark", label: "{label}", x: {sx}, y: {sy}, width: 60, height: 40 }},')
-    lines.append("  ],")
-    lines.append(f'  environment: {{ url: "/models/environments/neighborhoods/{area["out"]}", x: {ENV_CENTRE[0]:.0f}, y: {ENV_CENTRE[1]:.0f}, width: {FIELD_W * STREET_PER_METRE:.0f}, height: {FIELD_D * STREET_PER_METRE:.0f} }},')
-    st = area["style"]
-    lines.append("  style: {")
-    lines.append(f'    ground: {st["ground"]},')
-    lines.append(f'    grid: {st["grid"]},')
-    lines.append("    road: 0x777872,")
-    lines.append("    paving: 0xc5b9a5,")
-    lines.append("    marking: 0xeee6d5,")
-    lines.append(f'    verticalRoad: {{ x: {st["verticalRoad"][0]}, width: {st["verticalRoad"][1]} }},')
-    lines.append(f'    horizontalRoad: {{ y: {st["horizontalRoad"][0]}, height: {st["horizontalRoad"][1]} }},')
-    lines.append("  },")
-    lines.append("};")
-    return "\n".join(lines)
-
-
+# ---------------- Export ----------------
 def export(area, out_dir):
     bpy.ops.object.select_all(action="DESELECT")
     for o in bpy.data.objects:
@@ -463,14 +399,13 @@ def clear(prefix):
 
 def main():
     argv = sys.argv[sys.argv.index("--") + 1:] if "--" in sys.argv else []
-    out_dir = argv[0] if argv and not argv[0].startswith("--") else None
+    out_dir = argv[0] if argv else None
     for area in (ATIKU, HILLVIEW):
         clear(area["prefix"])
         build(area)
         if out_dir:
             os.makedirs(out_dir, exist_ok=True)
             print("EXPORTED", export(area, out_dir))
-        print(_ts_area(area))
 
 
 if __name__ == "__main__":

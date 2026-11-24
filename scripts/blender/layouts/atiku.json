@@ -1,0 +1,119 @@
+{
+  "slug": "atiku",
+  "name": "Greenbank Estates",
+  "roads": [
+    {
+      "id": "greenbank-avenue",
+      "axis": "horizontal",
+      "offset_m": 0,
+      "width_m": 6,
+      "type": "arterial"
+    },
+    {
+      "id": "greenbank-cross-street",
+      "axis": "vertical",
+      "offset_m": 6,
+      "width_m": 4,
+      "type": "street"
+    }
+  ],
+  "lots": [
+    {
+      "id": "nw",
+      "x": -8,
+      "z": -6.5,
+      "w": 10,
+      "d": 7,
+      "side": 1
+    },
+    {
+      "id": "sw",
+      "x": -8,
+      "z": 6.5,
+      "w": 10,
+      "d": 7,
+      "side": -1
+    },
+    {
+      "id": "ne",
+      "x": 11.5,
+      "z": -6.5,
+      "w": 6,
+      "d": 7,
+      "side": 1
+    },
+    {
+      "id": "se",
+      "x": 11.5,
+      "z": 6.5,
+      "w": 6,
+      "d": 7,
+      "side": -1
+    }
+  ],
+  "shop": {
+    "id": "provisions",
+    "x": 2.5,
+    "z": -7,
+    "w": 4,
+    "d": 6,
+    "label": "Greenbank Provisions"
+  },
+  "kiosk": {
+    "id": "pos-kiosk",
+    "x": 3.5,
+    "z": 4.5,
+    "w": 1.5,
+    "d": 1.5,
+    "label": "POS"
+  },
+  "gatehouse": null,
+  "trees": [
+    [
+      -14,
+      -10.6
+    ],
+    [
+      -14,
+      10.6
+    ],
+    [
+      14,
+      -10.6
+    ],
+    [
+      14,
+      10.6
+    ]
+  ],
+  "objects": [
+    {
+      "id": "home",
+      "name": "Greenbank homes",
+      "kind": "home",
+      "x": 11.5,
+      "z": -2.5
+    },
+    {
+      "id": "market",
+      "name": "Greenbank Provisions",
+      "kind": "market",
+      "x": 2.5,
+      "z": -2.5
+    },
+    {
+      "id": "work",
+      "name": "Greenbank opportunities",
+      "kind": "work",
+      "x": 3.5,
+      "z": 2.5
+    },
+    {
+      "id": "npc",
+      "name": "Neighbour in Greenbank Estates",
+      "kind": "npc",
+      "x": -4,
+      "z": 1.2
+    }
+  ]
+}
