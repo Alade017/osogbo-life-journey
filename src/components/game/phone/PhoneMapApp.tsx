@@ -1,5 +1,6 @@
 import "./phone-map.css";
-import { MapPinned } from "lucide-react";
+import { useState } from "react";
+import { MapPinned, Search } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/game";
 import { Button } from "@/components/ui/button";
@@ -21,6 +22,15 @@ function typeLabel(type: string | null | undefined) {
 export function PhoneMapApp() {
   const { data: places, isLoading, isError, refetch } = useQuery(q.locations());
 
+  const [search, setSearch] = useState("");
+  const [category, setCategory] = useState<string | null>(null);
+  const categories = [...new Set((places ?? []).map((place) => typeLabel(place.type)))].sort();
+  const query = search.trim().toLowerCase();
+  const visiblePlaces = (places ?? []).filter((place) =>
+    (!category || typeLabel(place.type) === category) &&
+    [place.name, place.tagline, typeLabel(place.type)].some((value) => value?.toLowerCase().includes(query)),
+  );
+
   return (
     <div className="phone-local-app map-app" aria-label="Places to explore">
       <header>
@@ -30,9 +40,17 @@ export function PhoneMapApp() {
           <small>Places you can explore in town</small>
         </span>
       </header>
-      <Button asChild variant="plain">
+      <Button asChild variant="plain" className="phone-map-open">
         <a href="/map">Open full city map</a>
       </Button>
+      <label className="phone-map-search">
+        <Search size={16} aria-hidden="true" />
+        <input type="search" aria-label="Search destinations" placeholder="Search destinations" value={search} onChange={(event) => setSearch(event.target.value)} />
+      </label>
+      <div className="phone-map-filters" role="group" aria-label="Destination categories">
+        <button type="button" aria-pressed={category === null} onClick={() => setCategory(null)}>All</button>
+        {categories.map((type) => <button key={type} type="button" aria-pressed={category === type} onClick={() => setCategory(type)}>{type}</button>)}
+      </div>
       {isLoading && (
         <p role="status" className="phone-map-state">
           Loading places…
@@ -49,7 +67,8 @@ export function PhoneMapApp() {
       {places && (
         <div className="phone-local-list">
           {places.length === 0 && <p className="phone-map-state">No places are open yet.</p>}
-          {places.map((place) => {
+          {places.length > 0 && visiblePlaces.length === 0 && <p className="phone-map-state" role="status">No destinations match your filters.</p>}
+          {visiblePlaces.map((place) => {
             const landmark = landmarkByLocation.get(place.slug);
             return (
               <div className="phone-local-card" key={place.id}>
