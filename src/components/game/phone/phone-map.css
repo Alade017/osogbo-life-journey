@@ -20,3 +20,75 @@
   outline: 2px solid var(--ring);
   outline-offset: 2px;
 }
+
+.map-app .phone-map-open {
+  justify-self: start;
+  width: auto;
+  min-height: 44px;
+  border-radius: 999px;
+  padding-inline: 16px;
+}
+.map-app .phone-map-search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  padding-inline: 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted-foreground);
+}
+.phone-map-search input {
+  min-width: 0;
+  width: 100%;
+  min-height: 44px;
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.85rem;
+}
+.phone-map-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.phone-map-filters button {
+  min-height: 44px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding-inline: 12px;
+  font-size: 0.75rem;
+  color: var(--foreground);
+  background: var(--card);
+}
+.phone-map-filters button[aria-pressed="true"] {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+.phone-app-body .map-app .phone-local-card {
+  align-items: flex-start;
+  min-height: 0;
+  padding: 12px;
+}
+.map-app .phone-local-card > div {
+  width: 100%;
+  overflow-wrap: anywhere;
+}
+.phone-app-body .map-app .phone-map-destination-actions a {
+  min-height: 44px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  padding: 6px 12px;
+}
+.phone-app-body .map-app .phone-map-destination-actions a:first-child {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  border-color: var(--primary);
+}
+.phone-map-search:focus-within,
+.phone-map-filters button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
