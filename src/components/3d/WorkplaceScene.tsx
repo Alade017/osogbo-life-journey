@@ -1,3 +1,5 @@
+import { workplacePlants, workplaceGlass, workplacePartition } from "@/game/workplace-navigation";
+import type { WalkPoint } from "@/game/grid-walk-path";
 import { WorldMaterial } from "./WorldScene";
 import { WORLD_PALETTE, type WorldTone } from "./world-theme";
 import {
@@ -204,12 +206,14 @@ function SelectionOutline({ purpose, color }: { purpose: WorkplaceFeature; color
 /** A local venue inspection; choosing a fixture never starts a shift or grants experience. */
 export function WorkplaceScene({
   fixtures,
+  onWalk,
   selected,
   onSelect,
   floorColor,
   wallColor,
   accentColor,
 }: {
+  onWalk?: (point: WalkPoint) => void;
   fixtures: readonly VenueFixture[];
   selected: string;
   onSelect: (id: string) => void;
@@ -219,7 +223,14 @@ export function WorkplaceScene({
 }) {
   const layout = WORKPLACE_LAYOUT;
   return (
-    <group name="tech-hub-workplace">
+    <group
+      name="tech-hub-workplace"
+      onClick={(e) => {
+        e.stopPropagation();
+        if (onWalk && e.delta <= 5 && e.point.y >= -0.01 && e.point.y <= 0.06)
+          onWalk([e.point.x, e.point.z]);
+      }}
+    >
       <Block
         at={[0, -0.1, 0]}
         size={[layout.width, 0.2, layout.depth]}
@@ -263,10 +274,9 @@ export function WorkplaceScene({
       <Block at={[-6.88, 0.12, 0]} size={[0.12, 0.24, layout.depth]} tone="timber" />
       <Block at={[-2.9, 0.012, 0.3]} size={[4.4, 0.018, 4.2]} tone="tileShade" />
       <Block at={[2.9, 0.013, -2.6]} size={[4.1, 0.018, 3]} tone="path" />
-      {[-6.3, 6.3].map((x) => (
-        <Plant key={x} x={x} z={-5.2} />
+      {workplacePlants.map(([x, z]) => (
+        <Plant key={x + ":" + z} x={x} z={z} />
       ))}
-      <Plant x={-6.3} z={4.9} />
       <group name="workplace-entrance" position={[0, 0, layout.depth / 2]}>
         <Block at={[0, 0.025, -0.35]} size={[layout.entranceWidth, 0.04, 0.7]} tone="timber" />
         {[-1, 1].map((side) => (
@@ -300,14 +310,18 @@ export function WorkplaceScene({
           />
         </group>
       </group>
-      <Block at={[-4.2, 0.55, 2.8]} size={[4.8, 1.1, 0.15]} tone="timber" />
+      <Block
+        at={[workplacePartition.x, 0.55, workplacePartition.z]}
+        size={[workplacePartition.width, 1.1, workplacePartition.depth]}
+        tone="timber"
+      />
       <Block
         at={[0, 0.028, (layout.aisle.startZ + layout.aisle.endZ) / 2]}
         size={[layout.aisle.width, 0.025, layout.aisle.endZ - layout.aisle.startZ]}
         tone="linen"
       />
-      <mesh position={[1.1, 1.4, 1.6]}>
-        <boxGeometry args={[0.06, 2.8, 1.8]} />
+      <mesh position={[workplaceGlass.x, 1.4, workplaceGlass.z]}>
+        <boxGeometry args={[workplaceGlass.width, 2.8, workplaceGlass.depth]} />
         <meshStandardMaterial
           color={WORLD_PALETTE.glass}
           transparent

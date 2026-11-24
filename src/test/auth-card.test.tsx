@@ -124,3 +124,32 @@ describe("account sign-in", () => {
     expect(auth.signInWithOAuth).not.toHaveBeenCalled();
   });
 });
+
+it("preserves the destination when a player logs in from a venue link", async () => {
+  auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
+  auth.signInWithPassword.mockResolvedValue({ error: null });
+  render(<AuthCard mode="login" destination="harvest-tech-hub" />);
+  fireEvent.change(screen.getByLabelText("Username or email"), {
+    target: { value: "player@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
+  fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+  await waitFor(() =>
+    expect(auth.navigate).toHaveBeenCalledWith({
+      to: "/location/$slug",
+      params: { slug: "harvest-tech-hub" },
+    }),
+  );
+});
+
+it("keeps a failed login visible on the form", async () => {
+  auth.onAuthStateChange.mockReturnValue({ data: { subscription: { unsubscribe: vi.fn() } } });
+  auth.signInWithPassword.mockResolvedValue({ error: new Error("Invalid login credentials") });
+  render(<AuthCard mode="login" />);
+  fireEvent.change(screen.getByLabelText("Username or email"), {
+    target: { value: "player@example.com" },
+  });
+  fireEvent.change(screen.getByLabelText("Password"), { target: { value: "password123" } });
+  fireEvent.click(screen.getByRole("button", { name: "Log in" }));
+  expect(await screen.findByRole("alert")).toHaveTextContent("Invalid login credentials");
+});

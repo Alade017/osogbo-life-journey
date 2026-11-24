@@ -2,12 +2,17 @@ import { createFileRoute, Outlet, redirect, useNavigate } from "@tanstack/react-
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
+import { loginDestination } from "@/lib/login-destination";
+
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   head: () => ({ meta: [{ name: "robots", content: "noindex, nofollow" }] }),
-  beforeLoad: async () => {
+  beforeLoad: async ({ location }) => {
     const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/login" });
+    if (error || !data.user) {
+      const destination = loginDestination(/^\/location\/([^/]+)\/?$/.exec(location.pathname)?.[1]);
+      throw redirect({ to: "/login", search: destination ? { destination } : {} });
+    }
     return { user: data.user };
   },
   component: AuthenticatedShell,
