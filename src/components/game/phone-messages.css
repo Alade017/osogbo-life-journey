@@ -1487,3 +1487,68 @@
 .phone-messenger .phone-nav-badge[hidden] {
   display: none;
 }
+
+
+/* Inbox and group rows must shrink to the handset's inner width instead of clipping actions. */
+.phone-ui-refresh .phone-app-body .phone-inbox-controls {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-app-body .phone-inbox-search {
+  flex: 1 1 150px;
+  width: auto;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-app-body .phone-new-message-button {
+  flex: 0 0 auto;
+  min-width: 44px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-group-panel,
+.phone-ui-refresh .phone-group-list,
+.phone-ui-refresh .phone-group-row {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-group-row {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+}
+.phone-ui-refresh .phone-group-row .phone-group-card {
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-group-row .phone-group-tool {
+  flex: 0 0 44px;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-group-heading {
+  width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+@media (max-width: 380px) {
+  .phone-ui-refresh .phone-app-body .phone-inbox-controls {
+    gap: 6px;
+  }
+  .phone-ui-refresh .phone-app-body .phone-new-message-button:has(.phone-new-message-label) {
+    padding-inline: 9px;
+  }
+}
