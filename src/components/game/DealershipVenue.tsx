@@ -36,6 +36,12 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const [message, setMessage] = useState("Walk to the entrance to enter.");
   const [station, setStation] = useState<number | null>(null);
   const [inspection, setInspection] = useState(false);
+  const [assets, setAssets] = useState<Record<string, "ready" | "failed">>({});
+  const assetReady = useCallback((id: string) => setAssets(old => old[id] === "ready" ? old : {...old, [id]: "ready"}), []);
+  const assetError = useCallback((id: string) => setAssets(old => old[id] === "failed" ? old : {...old, [id]: "failed"}), []);
+  const product = station === null ? undefined : models[station];
+  const canInspect = !!product && assets[product.id] === "ready";
+  const inspecting = inspection && canInspect;
   const [sceneFailed, setSceneFailed] = useState(false);
   const style = slug === "cinema-event-hall" ? "exotic" : "standard";
   const request = useRef(0);
@@ -100,7 +106,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
     if (!inside || !model) return;
     walk(navigation.approach(current(), index), () => {
       setStation(index);
-      setMessage("Vehicle reached. You can inspect it here.");
+      setMessage("Vehicle display reached.");
     });
   }
 
@@ -112,9 +118,9 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
           <WorldCanvas frameloop="demand" dpr={[1, quality.maxDpr]}
             gl={{ antialias: false, powerPreference: "low-power" }}
             onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
-            <WorldCamera width={12} depth={12} stage horizontalOrbit={inspection} verticalOrbit={inspection} target={inspection && station !== null ? [SHOWROOM_BAYS[station]!.x, 0.9, SHOWROOM_BAYS[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspection ? 2.8 : 1.5} />
+            <WorldCamera width={12} depth={12} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} target={inspecting && station !== null ? [SHOWROOM_BAYS[station]!.x, 0.9, SHOWROOM_BAYS[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspecting ? 2.8 : 1.5} />
             <WorldLighting size={24} />
-            {inside ? <DealershipInterior style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} />
+            {inside ? <DealershipInterior style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} />
               : <DealershipExterior style={style} onEnter={enter} onWalk={go} />}
             {character && <group position={walker.position}>
               <WorldCharacter position={[0, 0, 0]} facing={walker.facing} animation={walker.walking ? "walk" : "idle"}
@@ -130,10 +136,10 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
         {inside && station !== null && !walker.walking && !sceneFailed && (
           <div className="flex flex-wrap items-center gap-2" aria-label="Vehicle interactions">
             <span className="text-sm font-medium capitalize">{models[station]?.label}</span>
-            <button type="button" aria-pressed={inspection} onClick={() => setInspection((value) => !value)}
+            {canInspect ? <button type="button" aria-pressed={inspecting} onClick={() => setInspection((value) => !value)}
               className="rounded-full border border-edge px-3 py-1.5 text-sm">
-              {inspection ? "Return to character" : "Inspect vehicle"}
-            </button>
+              {inspecting ? "Return to character" : "Inspect vehicle"}
+            </button> : <span role="status" className="text-xs">{product && assets[product.id] === "failed" ? "Vehicle model unavailable." : "Loading vehicle model…"}</span>}
           </div>
         )}
       </div>
