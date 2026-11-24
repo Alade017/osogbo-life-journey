@@ -135,3 +135,27 @@
   .phone-camera-app { padding: 10px; gap: 11px; }
   .phone-camera-viewfinder { min-height: 245px; }
 }
+
+.phone-camera-gallery-preview {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 10px;
+  padding: 9px;
+  border: 1px solid #c8d7ee;
+  border-radius: 12px;
+  background: #e9f0fb;
+}
+.phone-camera-gallery-thumb {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  flex: 0 0 42px;
+  place-items: center;
+  border-radius: 9px;
+  color: #164fb5;
+  background: linear-gradient(145deg, #d9e8ff, #b8cfee);
+}
+.phone-camera-gallery-preview > span { display: grid; min-width: 0; gap: 2px; }
+.phone-camera-gallery-preview strong { color: #173b70; font-size: .7rem; }
+.phone-camera-gallery-preview small { color: #64758f; font-size: .62rem; }
