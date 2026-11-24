@@ -1,3 +1,5 @@
+import { parseGameHudSearch } from "@/lib/game-hud-search";
+import { useGameHud } from "@/hooks/use-game-hud";
 import { WorldSceneProvider, WorldSceneViewport } from "@/components/3d/WorldSceneHost";
 import { createFileRoute, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -44,6 +46,7 @@ import "@/components/game/game-bottom-bar.css";
 import "@/components/game/home-hud.css";
 
 export const Route = createFileRoute("/_authenticated/_game")({
+  validateSearch: parseGameHudSearch,
   component: GameLayout,
 });
 
@@ -71,8 +74,15 @@ function GameLayout() {
   const { data: locations } = useQuery({ ...q.locations(), enabled: !!character });
   const { data: equipment } = useQuery({ ...q.equipment(), enabled: !!character });
   const [housingOpen, setHousingOpen] = useState(false);
-  const [phoneOpen, setPhoneOpen] = useState(false);
-  const [inventoryOpen, setInventoryOpen] = useState(false);
+  const {
+    phoneOpen,
+    inventoryOpen,
+    phoneRequest,
+    setPhoneOpen,
+    setInventoryOpen,
+    onPhoneNavigation,
+    openHud,
+  } = useGameHud();
   const [hudIdle, setHudIdle] = useState(false);
   const [hudPanelOpen, setHudPanelOpen] = useState(false);
   const [housingRequested, setHousingRequested] = useState(false);
@@ -313,6 +323,7 @@ function GameLayout() {
             <div className={phoneOpen ? "gbb is-open" : "gbb"}>
               <GameMobileNav
                 hidden={phoneOpen || inventoryOpen}
+                onHudOpen={openHud}
                 onNavigate={() => setPhoneOpen(false)}
                 onInventoryOpen={() => setInventoryOpen(true)}
               />
@@ -320,6 +331,8 @@ function GameLayout() {
                 compact
                 className="gbb-phone"
                 open={phoneOpen}
+                requestedNavigation={phoneRequest}
+                onNavigationChange={onPhoneNavigation}
                 onOpenChange={setPhoneOpen}
                 dock={
                   <div className="gbb">

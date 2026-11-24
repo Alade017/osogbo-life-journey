@@ -21,6 +21,9 @@ export function PhoneMapApp() {
           <small>Places you can explore in town</small>
         </span>
       </header>
+      <Button asChild variant="plain">
+        <a href="/map">Open full city map</a>
+      </Button>
       {isLoading && (
         <p role="status" className="phone-map-state">
           Loading places…
