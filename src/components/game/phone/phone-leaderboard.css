@@ -113,3 +113,14 @@
   font-size: 0.78rem;
   font-weight: 700;
 }
+
+
+/* The phone body owns vertical scrolling; the leaderboard must grow with its ranking list. */
+.phone-app-body .leaderboard-app {
+  min-height: 100%;
+  align-content: start;
+  overflow: visible;
+}
+.phone-app-body .leaderboard-app .leaderboard-ranks {
+  overflow: visible;
+}
