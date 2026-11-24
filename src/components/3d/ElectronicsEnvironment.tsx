@@ -1,5 +1,6 @@
 import { ShowroomAsset } from "./ShowroomAsset";
-import { WorldMaterial } from "./WorldScene";
+import { useMemo } from "react";
+import { WorldMaterial, WorldInstances, type WorldInstance } from "./WorldScene";
 import type { WorldTone } from "./world-theme";
 import { RETAIL_ROOM as room, RETAIL_COUNTER as counter, type RetailDisplay } from "@/game/electronics-navigation";
 import type { WalkPoint } from "@/game/grid-walk-path";
@@ -23,6 +24,10 @@ export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, o
   onAssetError: (id: string) => void;
 }) {
   const front = room.depth / 2;
+  const legs = useMemo(() => displays.flatMap(display => [-1, 1].flatMap(x => [-1, 1].map(z => ({
+    position: [display.x + x * (display.width / 2 - 0.12), 0.38, display.z + z * (display.depth / 2 - 0.1)],
+    scale: [0.1, 0.76, 0.1],
+  } satisfies WorldInstance)))), [displays]);
   return <group name="electronics-retail-interior">
     <group onClick={(e) => { e.stopPropagation(); if (e.delta <= 5) onWalk([e.point.x, e.point.z]); }}>
       <Block at={[0,-0.1,0]} size={[room.width,0.2,room.depth]} tone="tileLight" />
@@ -42,12 +47,12 @@ export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, o
       <Block at={[0,0.5,0]} size={[counter.width-0.1,1,counter.depth-0.1]} tone="timber" />
       <Block at={[0,1.03,0]} size={[counter.width,0.06,counter.depth]} tone="linen" />
     </group>
+    <WorldInstances items={legs} tone="metal" />
     {displays.map((display,index) => {
       const product = products[index];
       if (!product) return null;
       return <group key={product.id} position={[display.x,0,display.z]} onClick={(e) => { e.stopPropagation(); if(e.delta<=5) onSelect(index); }}>
         <Block at={[0,0.83,0]} size={[display.width,0.12,display.depth]} tone={computerStore ? "timber" : "slate"} />
-        {[-1,1].flatMap(x => [-1,1].map(z => <Block key={x+":"+z} at={[x*(display.width/2-0.12),0.38,z*(display.depth/2-0.1)]} size={[0.1,0.76,0.1]} tone="metal" />))}
         <group position={[0,0.89,0]} rotation={[0,display.x<0?Math.PI/2:-Math.PI/2,0]}>
           <ShowroomAsset product={product} viewer={viewer} position={[display.x, display.z]} radius={loadRadius} pinned={selected === index} limits={[Math.min(1.35, display.depth - 0.1), 1.25, 0.85]} onReady={onAssetReady} onError={onAssetError} />
         </group>
