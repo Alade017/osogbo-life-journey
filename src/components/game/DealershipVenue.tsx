@@ -11,7 +11,7 @@ import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { DealershipExterior, DealershipInterior } from "@/components/3d/DealershipEnvironment";
-import { SHOWROOM_LAYOUT as layout, showroomNavigation, showroomExteriorRoute } from "@/game/showroom-navigation";
+import { SHOWROOM_LAYOUT as layout, SHOWROOM_BAYS, showroomNavigation, showroomExteriorRoute } from "@/game/showroom-navigation";
 import type { WalkPoint } from "@/game/grid-walk-path";
 import { getShowroomModels } from "@/data/showroom-models";
 import { showroomDestinations } from "@/data/showroom-destinations";
@@ -35,12 +35,18 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const [inside, setInside] = useState(false);
   const [message, setMessage] = useState("Walk to the entrance to enter.");
   const [station, setStation] = useState<number | null>(null);
+  const [inspection, setInspection] = useState(false);
+  const [sceneFailed, setSceneFailed] = useState(false);
+  const style = slug === "cinema-event-hall" ? "exotic" : "standard";
   const request = useRef(0);
   const { cancel } = walker;
   useEffect(() => () => { request.current++; cancel(); }, [cancel]);
   const onError = useCallback(() => {
     request.current++;
     cancel();
+    setSceneFailed(true);
+    setStation(null);
+    setInspection(false);
     setMessage("The 3D environment is unavailable.");
   }, [cancel]);
 
@@ -48,8 +54,9 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
     const ticket = ++request.current;
     walker.cancel();
     setStation(null);
-    if (!character || !path) {
-      setMessage(character ? "Choose a clear walking route." : "Your character is not ready.");
+    setInspection(false);
+    if (!character || !path || sceneFailed) {
+      setMessage(sceneFailed ? "The 3D environment is unavailable." : character ? "Choose a clear walking route." : "Your character is not ready.");
       return;
     }
     setMessage("Walking…");
@@ -93,7 +100,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
     if (!inside || !model) return;
     walk(navigation.approach(current(), index), () => {
       setStation(index);
-      setMessage(model.label);
+      setMessage("Vehicle reached. You can inspect it here.");
     });
   }
 
@@ -105,10 +112,10 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
           <WorldCanvas frameloop="demand" dpr={[1, quality.maxDpr]}
             gl={{ antialias: false, powerPreference: "low-power" }}
             onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
-            <WorldCamera width={12} depth={12} stage target={[walker.position[0], 1.2, walker.position[2]]} zoom={1.5} />
+            <WorldCamera width={12} depth={12} stage horizontalOrbit={inspection} verticalOrbit={inspection} target={inspection && station !== null ? [SHOWROOM_BAYS[station]!.x, 0.9, SHOWROOM_BAYS[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspection ? 2.8 : 1.5} />
             <WorldLighting size={24} />
-            {inside ? <DealershipInterior models={models} onWalk={go} onSelect={approach} onExit={exit} />
-              : <DealershipExterior onEnter={enter} onWalk={go} />}
+            {inside ? <DealershipInterior style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} />
+              : <DealershipExterior style={style} onEnter={enter} onWalk={go} />}
             {character && <group position={walker.position}>
               <WorldCharacter position={[0, 0, 0]} facing={walker.facing} animation={walker.walking ? "walk" : "idle"}
                 name={character.name} gender={character.gender} appearance={appearance} equipment={outfit} />
@@ -118,9 +125,17 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
       </div>
       <div data-venue-controls>
         <p role="status">{message}</p>
-        <button type="button" disabled={!character} onClick={inside ? exit : enter}
+        <button type="button" disabled={!character || sceneFailed} onClick={inside ? exit : enter}
           className="rounded-full border border-edge px-3 py-1.5 text-sm">{inside ? "Walk to exit" : "Walk to entrance"}</button>
-        {inside && station !== null && <p className="text-sm capitalize">{models[station]?.label}</p>}
+        {inside && station !== null && !walker.walking && !sceneFailed && (
+          <div className="flex flex-wrap items-center gap-2" aria-label="Vehicle interactions">
+            <span className="text-sm font-medium capitalize">{models[station]?.label}</span>
+            <button type="button" aria-pressed={inspection} onClick={() => setInspection((value) => !value)}
+              className="rounded-full border border-edge px-3 py-1.5 text-sm">
+              {inspection ? "Return to character" : "Inspect vehicle"}
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
