@@ -8,6 +8,7 @@ import type { Appearance } from "@/game/avatar-appearance";
 import { useHouseMovement } from "@/hooks/use-house-movement";
 import { useRenderQuality } from "@/hooks/use-render-quality";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
+import { SHOWROOM_LOAD_RADIUS } from "@/components/3d/ShowroomAsset";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
@@ -22,7 +23,9 @@ const toRoom = ([x,z]: WalkPoint): [number,number,number] => [x,0.06,z];
 export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsStoreId; onExit?: () => void }) {
   const { data: character } = useQuery(q.character());
   const { data: equipment } = useQuery(q.equipment());
-  const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
+  const renderQuality = useRenderQuality();
+  const quality = WORLD_RENDER_QUALITY[renderQuality];
+  const loadRadius = SHOWROOM_LOAD_RADIUS[renderQuality];
   const outfit = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
   const raw = character?.appearance;
   const appearance = useMemo(() => raw && typeof raw === "object" && !Array.isArray(raw) ? raw as Appearance : parseSavedAppearance(raw), [raw]);
@@ -68,8 +71,8 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
       <VenueSceneBoundary onError={onError} fallback={<p role="alert">The 3D environment could not load.</p>}>
         <WorldCanvas frameloop="demand" dpr={[1,quality.maxDpr]} gl={{antialias:false,powerPreference:"low-power"}} onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
           <WorldCamera width={10} depth={10} stage horizontalOrbit={inspection} verticalOrbit={inspection} maxZoom={3} zoom={inspection ? 2.8 : 1.3} target={inspection && display ? [display.x,1.3,display.z] : [walker.position[0],1.2,walker.position[2]]} />
-          <WorldLighting size={18} />
-          <ElectronicsEnvironment displays={displays} products={products} selected={station} computerStore={slug==="harvest-tech-hub"} onWalk={point => {
+          <WorldLighting size={18} contactShadows={false} />
+          <ElectronicsEnvironment viewer={[walker.position[0], walker.position[2]]} loadRadius={loadRadius} displays={displays} products={products} selected={station} computerStore={slug==="harvest-tech-hub"} onWalk={point => {
             if (Math.abs(point[0]) <= RETAIL_ROOM.entranceWidth/2 && point[1] >= RETAIL_ROOM.doorway[1]) exit();
             else walk(navigation.route(current(),point));
           }} onExit={exit} onSelect={select} onAssetReady={assetReady} onAssetError={assetError} />
