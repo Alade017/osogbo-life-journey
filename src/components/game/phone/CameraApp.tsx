@@ -25,12 +25,14 @@ export function CameraApp() {
   const [captureCount, setCaptureCount] = useState(0);
   const [lastCapture, setLastCapture] = useState<string | null>(null);
   const [flash, setFlash] = useState(false);
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   const capture = () => {
     const nextCount = captureCount + 1;
     const label = mode === "screen" ? "Screen capture" : facing === "front" ? "Selfie" : "World photo";
     setCaptureCount(nextCount);
     setLastCapture(label);
+    setGalleryOpen(false);
     setFlash(true);
     window.setTimeout(() => setFlash(false), 180);
   };
@@ -110,7 +112,9 @@ export function CameraApp() {
         <button
           type="button"
           className="phone-camera-side-control"
-          aria-label="Open captured previews"
+          aria-label={galleryOpen ? "Close captured preview" : "Open captured preview"}
+          aria-expanded={galleryOpen}
+          onClick={() => setGalleryOpen((open) => !open)}
           disabled={!lastCapture}
         >
           <ImageIcon aria-hidden="true" />
@@ -138,6 +142,13 @@ export function CameraApp() {
           <RotateCcw size={13} aria-hidden="true" /> Reset
         </button>
       </div>
+
+      {lastCapture && galleryOpen && (
+        <div className="phone-camera-gallery-preview" role="region" aria-label="Captured preview">
+          <div className="phone-camera-gallery-thumb"><ImageIcon aria-hidden="true" /></div>
+          <span><strong>{lastCapture}</strong><small>Illustrative preview · Capture #{captureCount}</small></span>
+        </div>
+      )}
 
       {lastCapture && (
         <div className="phone-camera-captured" role="status" aria-live="polite">
