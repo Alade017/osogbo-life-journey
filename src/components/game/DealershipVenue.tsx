@@ -46,6 +46,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const canInspect = !!product && assets[product.id] === "ready";
   const inspecting = inspection && canInspect;
   const [sceneFailed, setSceneFailed] = useState(false);
+  const [sceneAttempt, setSceneAttempt] = useState(0);
   const style = slug === "cinema-event-hall" ? "exotic" : "standard";
   const request = useRef(0);
   const { cancel } = walker;
@@ -118,6 +119,17 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
       }
     }
   }
+  function retryScene() {
+    if (!sceneFailed) return;
+    request.current++;
+    cancel();
+    if (!(inside ? navigation.canWalk(current()) : !!showroomExteriorRoute(current(), layout.exteriorDoor, layout))) walker.place(toRoom(inside ? layout.entrance : layout.exteriorDoor));
+    setStation(null);
+    setInspection(false);
+    setSceneFailed(false);
+    setSceneAttempt(previous => previous + 1);
+    setMessage(inside ? "Tap the floor to walk or approach a vehicle." : "Walk to the entrance to enter.");
+  }
   function enter() { void crossDoor(true); }
   function exit() { void crossDoor(false); }
   function go(point: WalkPoint) {
@@ -143,7 +155,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
     <section className="destination-venue-root" aria-label={showroomDestinations[slug].name}>
       <header><h2>{showroomDestinations[slug].name}</h2></header>
       <div data-venue-viewport>
-        <VenueSceneBoundary onError={onError} fallback={<p role="alert">The 3D environment could not load.</p>}>
+        {sceneFailed ? <p role="alert">The 3D environment could not load. Use Retry scene below.</p> : <VenueSceneBoundary key={sceneAttempt} onError={onError} fallback={<p role="alert">The 3D environment could not load.</p>}>
           <WorldCanvas frameloop="demand" dpr={[1, quality.maxDpr]}
             gl={{ antialias: false, powerPreference: "low-power" }}
             onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
@@ -156,10 +168,11 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
                 name={character.name} gender={character.gender} appearance={appearance} equipment={outfit} />
             </group>}
           </WorldCanvas>
-        </VenueSceneBoundary>
+        </VenueSceneBoundary>}
       </div>
       <div data-venue-controls>
         <p role="status">{message}</p>
+      {sceneFailed && <button type="button" onClick={retryScene} className="rounded-full border border-edge px-3 py-1.5 text-sm">Retry scene</button>}
         <button type="button" disabled={!character || sceneFailed || transitioning} onClick={inside ? exit : enter}
           className="rounded-full border border-edge px-3 py-1.5 text-sm">{inside ? "Walk to exit" : "Walk to entrance"}</button>
         {inside && station !== null && !walker.walking && !sceneFailed && (

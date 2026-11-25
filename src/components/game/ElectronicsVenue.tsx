@@ -36,6 +36,7 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
   const walker = useHouseMovement(slug, toRoom(slug === "harvest-tech-hub" ? RETAIL_ROOM.spawn : RETAIL_EXTERIOR.spawn));
   const { attempts, retryAsset, assets, station, setStation, inspection, setInspection, assetReady, assetError, assetUnmounted } = useProductInspection();
   const [failed, setFailed] = useState(false);
+  const [sceneAttempt, setSceneAttempt] = useState(0);
   const [message, setMessage] = useState(slug === "harvest-tech-hub" ? "Tap the floor to walk or approach a product." : "Walk to the store entrance.");
   const request = useRef(0);
   const exiting = useRef(false);
@@ -107,6 +108,17 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
       else setMessage("You are at the store entrance.");
     });
   }
+  function retryScene() {
+    if (!failed) return;
+    request.current++;
+    cancel();
+    if (!(inside ? navigation.canWalk(current()) : electronicsExteriorCanWalk(current()))) walker.place(toRoom(inside ? RETAIL_ROOM.spawn : RETAIL_EXTERIOR.door));
+    setStation(null);
+    setInspection(false);
+    setFailed(false);
+    setSceneAttempt(previous => previous + 1);
+    setMessage(inside ? "Tap the floor to walk or approach a product." : "Walk to the entrance to enter.");
+  }
   function select(index: number) {
     if (!products[index]) return;
     walk(navigation.approach(current(), index), () => { setStation(index); setMessage("Product display reached."); });
@@ -119,7 +131,7 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
   return <section className="destination-venue-root" aria-label={name}>
     <header><h2>{name}</h2></header>
     <div data-venue-viewport>
-      <VenueSceneBoundary onError={onError} fallback={<p role="alert">The 3D environment could not load.</p>}>
+      {failed ? <p role="alert">The 3D environment could not load. Use Retry scene below.</p> : <VenueSceneBoundary key={sceneAttempt} onError={onError} fallback={<p role="alert">The 3D environment could not load.</p>}>
         <WorldCanvas frameloop="demand" dpr={[1,quality.maxDpr]} gl={{antialias:false,powerPreference:"low-power"}} onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
           <WorldCamera width={inspecting && display ? Math.max(display.depth, 1.25) + 0.8 : 10} depth={inspecting && display ? Math.max(display.depth, 1.25) + 0.8 : 10} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} zoom={inspecting ? 1.6 : 1.3} target={inspecting && display ? [display.x,1.3,display.z] : [walker.position[0],1.2,walker.position[2]]} />
           <WorldLighting size={18} contactShadows={false} />
@@ -129,10 +141,11 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
           }} onExit={exit} onSelect={select} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} attempts={attempts} /> : <ElectronicsExterior onEnter={() => void crossDoor(true)} onWalk={point => walk(electronicsExteriorRoute(current(), point))} />}
           {character && <group position={walker.position}><WorldCharacter position={[0,0,0]} facing={walker.facing} animation={walker.walking?"walk":"idle"} name={character.name} gender={character.gender} appearance={appearance} equipment={outfit}/></group>}
         </WorldCanvas>
-      </VenueSceneBoundary>
+      </VenueSceneBoundary>}
     </div>
     <div data-venue-controls>
       <p role="status">{message}</p>
+      {failed && <button type="button" onClick={retryScene} className="rounded-full border border-edge px-3 py-1.5 text-sm">Retry scene</button>}
       <button type="button" disabled={leaving || ((!character || failed) && !(failed && onExit))} onClick={inside ? exit : () => void crossDoor(true)} className="rounded-full border border-edge px-3 py-1.5 text-sm">{onExit ? (failed ? "Return to workplace" : "Walk back to workplace") : inside ? "Walk to exit" : "Walk to entrance"}</button>
       {product && !walker.walking && !failed && <div className="flex flex-wrap items-center gap-2">
         <span className="capitalize text-sm font-medium">{product.label}</span>
