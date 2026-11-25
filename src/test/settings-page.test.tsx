@@ -38,5 +38,7 @@ describe("settings page", () => {
       </QueryClientProvider>,
     );
     expect(await screen.findByDisplayValue("Adeyemi")).toBeTruthy();
+    expect(screen.getByRole("switch", { name: "Reduce motion" })).toBeInTheDocument();
+    expect(screen.getByRole("switch", { name: "Allow friend visits" })).toBeInTheDocument();
   });
 });
