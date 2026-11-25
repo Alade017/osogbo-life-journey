@@ -20,7 +20,6 @@ import {
   HAIR_COLORS,
   HAIR_STYLES_BY_GENDER,
   OUTFITS,
-  SHOE_COLORS,
   SKIN_TONES,
   TROUSERS,
   type Appearance,
@@ -152,7 +151,7 @@ export function CreateCharacter() {
       const { error } = await supabase.rpc("create_character", {
         p_name: cleanName,
         p_gender: gender,
-        p_appearance: { ...appearance },
+        p_appearance: { ...appearance, shoes: 0, headwear: 0, clothed: true },
         p_age: ageNumber,
         p_personality: personality,
         p_occupation: occupation || null,
@@ -386,13 +385,6 @@ export function CreateCharacter() {
                       options={TROUSERS}
                       value={appearance.bottoms}
                       onChange={(n) => update("bottoms", n)}
-                      swatches
-                    />
-                    <Picker
-                      label="Shoes"
-                      options={SHOE_COLORS}
-                      value={appearance.shoes}
-                      onChange={(n) => update("shoes", n)}
                       swatches
                     />
                   </div>
