@@ -473,6 +473,9 @@
   color: var(--primary-foreground);
   box-shadow: var(--home-shadow);
   text-decoration: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   backdrop-filter: blur(16px);
 }
 .game-shell.city-game.navigation-redesign.home-hud .home-player-portrait {
