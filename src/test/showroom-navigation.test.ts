@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { getShowroomModels } from "@/data/showroom-models";
 import { createShowroomLayout, showroomNavigation, showroomExteriorRoute } from "@/game/showroom-navigation";
-import { electronicsDisplays, electronicsNavigation, RETAIL_ROOM } from "@/game/electronics-navigation";
+import { electronicsDisplays, electronicsNavigation, electronicsExteriorRoute, electronicsExteriorCanWalk, RETAIL_EXTERIOR, RETAIL_ROOM } from "@/game/electronics-navigation";
 import type { WalkPoint } from "@/game/grid-walk-path";
 
 function assertClearPath(path: WalkPoint[] | null, canWalk: (point: WalkPoint) => boolean) {
@@ -51,6 +51,31 @@ describe("commercial venue navigation", () => {
         if (target) assertClearPath(nav.route(target, RETAIL_ROOM.doorway), nav.canWalk);
       }
       expect(nav.approach(RETAIL_ROOM.spawn, products.length)).toBeNull();
+    });
+  }
+});
+
+describe("commercial exterior navigation", () => {
+  it("connects the electronics forecourt to the doorway in both directions", () => {
+    assertClearPath(electronicsExteriorRoute(RETAIL_EXTERIOR.spawn, RETAIL_EXTERIOR.door), electronicsExteriorCanWalk);
+    assertClearPath(electronicsExteriorRoute(RETAIL_EXTERIOR.door, RETAIL_EXTERIOR.spawn), electronicsExteriorCanWalk);
+    const nav = electronicsNavigation(electronicsDisplays(getShowroomModels("post-office-cafe").length));
+    assertClearPath(nav.route(RETAIL_ROOM.doorway, RETAIL_ROOM.spawn), nav.canWalk);
+    expect(RETAIL_EXTERIOR.threshold).toEqual([0, RETAIL_ROOM.depth / 2]);
+    expect(electronicsExteriorRoute(RETAIL_EXTERIOR.spawn, RETAIL_EXTERIOR.threshold)).toBeNull();
+    expect(electronicsExteriorRoute(RETAIL_EXTERIOR.spawn, [0, RETAIL_EXTERIOR.spawn[1] + RETAIL_EXTERIOR.depth])).toBeNull();
+    expect(electronicsExteriorRoute(RETAIL_EXTERIOR.spawn, [RETAIL_ROOM.width, RETAIL_EXTERIOR.spawn[1]])).toBeNull();
+    expect(electronicsExteriorRoute(RETAIL_EXTERIOR.spawn, [NaN, 0])).toBeNull();
+  });
+  for (const slug of ["fuel-station", "cinema-event-hall"] as const) {
+    it(`keeps exterior walking separate from the doorway crossing: ${slug}`, () => {
+      const layout = createShowroomLayout(getShowroomModels(slug).length);
+      expect(showroomExteriorRoute(layout.exteriorDoor, layout.exteriorSpawn, layout)).not.toBeNull();
+      expect(layout.threshold).toEqual([0, layout.depth / 2]);
+      expect(showroomExteriorRoute(layout.exteriorSpawn, layout.threshold, layout)).toBeNull();
+      expect(showroomExteriorRoute(layout.exteriorSpawn, [layout.width, layout.exteriorSpawn[1]], layout)).toBeNull();
+      expect(showroomExteriorRoute(layout.exteriorSpawn, [0, layout.exteriorSpawn[1] + 1], layout)).toBeNull();
+      expect(showroomNavigation(layout).canWalk(layout.entrance)).toBe(true);
     });
   }
 });
