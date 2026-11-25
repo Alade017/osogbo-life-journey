@@ -115,6 +115,19 @@ it("updates the actual preview contract for body, palettes, presentation and ani
   expect(preview).toHaveAttribute("data-animation", "dance");
   expect(Number(preview.getAttribute("data-rotation"))).toBeCloseTo(Math.PI / 4);
 });
+it("offers only top and trousers as clothing choices during character creation", async () => {
+  setup();
+  await screen.findByText("Find your look");
+  expect(screen.getByRole("group", { name: /Top/ })).toBeInTheDocument();
+  expect(screen.getByRole("group", { name: /Trousers/ })).toBeInTheDocument();
+  expect(screen.queryByRole("group", { name: /Shoes/ })).not.toBeInTheDocument();
+  expect(screen.queryByRole("group", { name: /Headwear/ })).not.toBeInTheDocument();
+  expect(JSON.parse(screen.getByTestId("preview").getAttribute("data-appearance")!)).toMatchObject({
+    shoes: 0,
+    headwear: 0,
+    clothed: true,
+  });
+});
 it("requires a valid name and integer age before review", async () => {
   setup();
   await story();
@@ -152,7 +165,7 @@ it("preserves choices across steps and submits only after explicit review confir
         p_age: 24,
         p_personality: "creative",
         p_occupation: "developer",
-        p_appearance: expect.objectContaining({ clothed: true }),
+        p_appearance: expect.objectContaining({ clothed: true, shoes: 0, headwear: 0 }),
       }),
     ),
   );

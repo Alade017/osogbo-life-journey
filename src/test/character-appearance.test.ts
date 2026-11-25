@@ -4,7 +4,6 @@ import {
   HAIR_COLORS,
   HAIR_STYLES_BY_GENDER,
   OUTFITS,
-  SHOE_COLORS,
   SKIN_TONES,
   TROUSERS,
 } from "@/components/game/Avatar";
@@ -41,7 +40,7 @@ describe("character appearance customization", () => {
       expect(appearance.hairColor).toBeLessThan(HAIR_COLORS.length);
       expect(appearance.outfit).toBeLessThan(OUTFITS.length);
       expect(appearance.bottoms).toBeLessThan(TROUSERS.length);
-      expect(appearance.shoes).toBeLessThan(SHOE_COLORS.length);
+      expect(appearance.shoes).toBe(0);
       expect(appearance.headwear).toBe(0); // Character creation never assigns headwear.
       expect(appearance.stature).toBeLessThan(3);
       expect(appearance.build).toBeLessThan(4);
