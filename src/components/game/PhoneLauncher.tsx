@@ -146,6 +146,9 @@ const CameraApp = lazy(() => import("@/components/game/phone/CameraApp"));
 const NestaApp = lazy(() =>
   import("@/components/game/phone/NestaApp").then((m) => ({ default: m.NestaApp })),
 );
+const GigWorkApp = lazy(() =>
+  import("@/components/game/phone/GigWorkApp").then((m) => ({ default: m.GigWorkApp })),
+);
 const VitalStatApp = lazy(() =>
   import("@/components/game/phone/VitalStatApp").then((m) => ({ default: m.VitalStatApp })),
 );
@@ -171,6 +174,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
   { label: "Games", icon: Gamepad2, tone: "phone-app-coral" },
+  { label: "Gig Work", icon: BriefcaseBusiness, tone: "phone-app-gold" },
   { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
   { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue", emphasis: "important" },
@@ -505,6 +509,7 @@ export function PhoneLauncher({
     if (appName === "City Services") return <CityServicesApp />;
     if (appName === "Camera") return <CameraApp />;
     if (appName === "VitalStat") return <VitalStatApp />;
+    if (appName === "Gig Work") return <GigWorkApp />;
     if (appName === "Nesta") return <NestaApp onOpenApp={(app) => openApp(app)} />;
     if (appName === "Property Exchange") return <PropertyExchangeApp />;
 
