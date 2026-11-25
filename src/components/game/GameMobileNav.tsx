@@ -62,7 +62,7 @@ export function GameMobileNav({
         data-core-action="true"
         activeProps={{ className: "gbb-active" }}
         className="gbb-link"
-        onClick={(event) => navigateHud(event, "jobs")}
+        onClick={onNavigate}
       >
         <Briefcase className="h-4.75 w-4.75" />
         <span>Career</span>
