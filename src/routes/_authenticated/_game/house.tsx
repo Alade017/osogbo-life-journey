@@ -50,7 +50,6 @@ import {
   houseWallsDefaultClosed,
   houseRoomViews,
   roomViewContains,
-  WHOLE_HOME_LABEL,
 } from "@/components/game/housing/house-room-contract";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
@@ -731,23 +730,14 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     HOUSE_ROOM_SIZE[serverState?.house?.house_type_id ?? "shared-room"] ??
     HOUSE_ROOM_SIZE["shared-room"]!;
   const movement = useHouseMovement(serverState?.house?.id ?? "none", [0, 0.06, roomDepth * 0.18]);
-  // The room view shows one room close up. It follows the character until a room or the whole home is picked.
   const [activeFloor, setActiveFloor] = useState<0 | 1>(0);
   const [climbingStairs, setClimbingStairs] = useState(false);
   const roomViews = serverState?.house
     ? houseRoomViews(serverState.house.house_type_id, roomWidth, roomDepth, activeFloor)
     : [];
-  const [pinnedRoom, setPinnedRoom] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     setActiveFloor(0);
-    setPinnedRoom(undefined);
   }, [serverState?.house?.id]);
-  const followedRoom =
-    roomViews.find((room) => roomViewContains(room, movement.position[0], movement.position[2]))
-      ?.id ??
-    roomViews[0]?.id ??
-    null;
-  const roomView = pinnedRoom === undefined ? followedRoom : pinnedRoom;
   const [walkingTask, setWalkingTask] = useState<string | null>(null);
   const interactionVersion = useRef(0);
   const interactionLock = useRef(false);
@@ -773,7 +763,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     interactionLock.current = true;
     setClimbingStairs(true);
     setSelectedPlacement(null);
-    setPinnedRoom(null);
     setActivityError("");
     try {
       const arrived = await runHouseStairTransition({
@@ -784,7 +773,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         setFloor: setActiveFloor,
         place: movement.place,
       });
-      if (arrived) setPinnedRoom(undefined);
       return arrived;
     } finally {
       interactionLock.current = false;
@@ -869,7 +857,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     doorSequenceLock.current = true;
     setDoorSequence(true);
     setActiveFloor(0);
-    setPinnedRoom(null);
     setDoorFacing("south");
     movement.place(exterior);
     const walkLeg = (path: RoomPoint[]) =>
@@ -1153,7 +1140,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         if (clear?.length) movement.place(clear[clear.length - 1]!);
       }
       setSelectedPlacement(null);
-      setPinnedRoom(null);
       setActivityError("");
       toast.success("Furniture rearranged. Walking paths are clear.");
     },
@@ -1323,7 +1309,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     const start = draftStartFor(placement, slots);
     if (!start) return;
     movement.cancel();
-    setPinnedRoom(null);
     setEditing(true);
     setCatalogueOpen(false);
     setSelectedPlacement(placement);
@@ -1829,7 +1814,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             disabled={taskBusy || actionMutation.isPending || (houseOverdue && !editing)}
             onClick={() => {
               movement.cancel();
-              setPinnedRoom(null);
               setCatalogueOpen(!editing);
               setDraftMove(null);
               setEditing((value) => !value);
@@ -1893,62 +1877,21 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             </label>
           )}
         </HomeToolsMenu>
-        {!editing && roomViews.length > 0 && (
-          <div className="house-room-views" role="group" aria-label="Room view">
-            {roomViews.length > 4 ? (
-              <select
-                aria-label="View room"
-                value={roomView ?? "whole"}
-                onChange={(event) =>
-                  setPinnedRoom(event.target.value === "whole" ? null : event.target.value)
-                }
-              >
-                <option value="whole">{WHOLE_HOME_LABEL}</option>
-                {roomViews.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {room.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <>
-                {roomViews.map((room) => (
-                  <button
-                    key={room.id}
-                    type="button"
-                    aria-pressed={roomView === room.id}
-                    className={roomView === room.id ? "is-active" : undefined}
-                    onClick={() => setPinnedRoom(room.id)}
-                  >
-                    {room.label}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  aria-pressed={roomView === null}
-                  className={roomView === null ? "is-active" : undefined}
-                  onClick={() => setPinnedRoom(null)}
-                >
-                  {WHOLE_HOME_LABEL}
-                </button>
-              </>
-            )}
-            {layoutConflicts.length > 0 && (
-              <button
-                type="button"
-                disabled={taskBusy || isOffline}
-                title="Some saved furniture overlaps the new walls. Reposition these items in Arrange."
-                aria-label={`Reposition ${layoutConflicts.length} items overlapping walls`}
-                onClick={() => {
-                  movement.cancel();
-                  setPinnedRoom(null);
-                  setEditing(true);
-                  setSelectedPlacement(layoutConflicts[0] ?? null);
-                }}
-              >
-                Arrange ({layoutConflicts.length})
-              </button>
-            )}
+        {!editing && layoutConflicts.length > 0 && (
+          <div className="house-room-views">
+            <button
+              type="button"
+              disabled={taskBusy || isOffline}
+              title="Some saved furniture overlaps the new walls. Reposition these items in Arrange."
+              aria-label={`Reposition ${layoutConflicts.length} items overlapping walls`}
+              onClick={() => {
+                movement.cancel();
+                setEditing(true);
+                setSelectedPlacement(layoutConflicts[0] ?? null);
+              }}
+            >
+              Arrange ({layoutConflicts.length})
+            </button>
           </div>
         )}
         {!editing && stairs && (
@@ -1968,7 +1911,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       >
         <HouseRoomRenderer
           onSceneAvailability={setSceneAvailable}
-          roomView={roomView}
           guideZone={guide?.zoneBounds ?? null}
           inputBlocked={
             taskBusy ||
