@@ -110,6 +110,7 @@ export function SettingsPage() {
   const { saved, flash } = useSavedFlash();
 
   const [nameDraft, setNameDraft] = useState("");
+  const [settingsTab, setSettingsTab] = useState<"display" | "sound" | "privacy" | "account">("display");
 
   const { data: summaryData } = useQuery(q.accountSummary());
   const summary = summaryData as
@@ -212,7 +213,7 @@ export function SettingsPage() {
           />
         </div>
         <div className="sx-hero-copy">
-          <p className="sx-eyebrow">Make it yours</p>
+          <p className="sx-eyebrow">OSOGBO LIFE · GAME SETTINGS</p>
           <h1>{profile.display_name || "Your character"}</h1>
           <span className={`sx-badge${account.isGuest ? " is-guest" : ""}`}>
             <ShieldCheck aria-hidden="true" /> {accountLabel}
@@ -220,6 +221,26 @@ export function SettingsPage() {
         </div>
       </header>
 
+      <nav className="sx-tabs" aria-label="Settings categories">
+        {([
+          ["display", "Display"],
+          ["sound", "Sound & play"],
+          ["privacy", "Privacy"],
+          ["account", "Account"],
+        ] as const).map(([value, label]) => (
+          <button
+            key={value}
+            type="button"
+            className="sx-tab"
+            aria-pressed={settingsTab === value}
+            onClick={() => setSettingsTab(value)}
+          >
+            {label}
+          </button>
+        ))}
+      </nav>
+
+      {settingsTab === "display" && <>
       <Section
         id="sx-name"
         icon={UserRound}
@@ -262,6 +283,9 @@ export function SettingsPage() {
         </form>
       </Section>
 
+      </>}
+
+      {settingsTab === "sound" && <>
       <Section
         id="sx-sound"
         icon={Volume2}
@@ -272,6 +296,9 @@ export function SettingsPage() {
         <AudioControls profile={profile} onSave={(patch) => savePreferences.mutate(patch)} />
       </Section>
 
+      </>}
+
+      {settingsTab === "display" && <>
       <Section
         id="sx-tiles"
         icon={LayoutGrid}
@@ -343,6 +370,9 @@ export function SettingsPage() {
         </div>
       </Section>
 
+      </>}
+
+      {settingsTab === "privacy" && <>
       <Section
         id="sx-privacy"
         icon={Eye}
@@ -379,6 +409,9 @@ export function SettingsPage() {
         </ul>
       </Section>
 
+      </>}
+
+      {settingsTab === "account" && <>
       <AccountSection
         fieldId={fieldId}
         email={account.email}
@@ -389,6 +422,7 @@ export function SettingsPage() {
       />
 
       <SessionSection isGuest={account.isGuest} />
+      </>}
     </div>
   );
 }
