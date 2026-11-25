@@ -240,3 +240,49 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+/* Owned-home cards use the same live 3D building model as the town world. */
+.property-market-card .property-market-exterior {
+  position: relative;
+  width: 100%;
+  height: clamp(9rem, 38vw, 14rem);
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 1rem 1rem 0 0;
+  background: linear-gradient(180deg, #dceaf5 0%, #edf1e9 72%, #b8a27b 100%);
+  isolation: isolate;
+}
+.property-market-card .property-market-exterior canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+.phone-ui-refresh .property-market-page,
+.phone-ui-refresh .property-market-page :where(section, article, nav, div) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .property-market-page .property-market-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.9rem;
+}
+.phone-ui-refresh .property-market-page .property-market-card {
+  overflow: hidden;
+}
+.phone-ui-refresh .property-market-page .property-market-card-body {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.phone-ui-refresh .property-market-page .property-market-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.phone-ui-refresh .property-market-page .property-market-actions > * {
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+}
