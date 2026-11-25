@@ -182,7 +182,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
 ] as const;
 
-const APPS_PER_PAGE = 16;
+const APPS_PER_PAGE = 20;
 
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
 
