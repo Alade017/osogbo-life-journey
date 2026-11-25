@@ -1,5 +1,8 @@
+import districtDirectory from "@/data/osogbo-map.json";
 import type { ThreeEvent } from "@react-three/fiber";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
+
+const districtNames = new Map(districtDirectory.districts.map((d) => [d.id, d.name]));
 
 type District = {
   id: string;
@@ -37,10 +40,10 @@ export function DistrictZones({
               <planeGeometry args={[a.width * cell * 0.96, a.depth * cell * 0.96]} />
               <meshBasicMaterial transparent opacity={0} depthWrite={false} />
             </mesh>
-            {showLabels && (
+            {(showLabels || districtNames.has(district.id)) && (
               <Html position={[cx, 0.2, cz]} center zIndexRange={[10, 0]} pointerEvents="none">
                 <span className="district-label" data-traffic={district.traffic}>
-                  {district.name}
+                  {districtNames.get(district.id) ?? district.name}
                 </span>
               </Html>
             )}

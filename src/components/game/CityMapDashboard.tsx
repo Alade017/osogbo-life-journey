@@ -1,3 +1,4 @@
+import type { MapProperty } from "@/components/map/MapCanvas";
 import { transportPreference } from "@/lib/transport-park";
 import "@/components/map/map-compact.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -128,6 +129,7 @@ export function CityMapDashboard(
       return mapHousingMarkers(await response.json());
     },
   });
+  const districtJobs = useQuery({ ...q.jobs(), enabled: !!selectedDistrict && !offline });
   const wallet = useQuery(q.wallet());
   const worldClock = useWorldClock();
   const cityEvents = useCityEvents();
@@ -138,6 +140,30 @@ export function CityMapDashboard(
     staleTime: 60_000,
     enabled: !offline,
   });
+  const districtDestinations = new Set(
+    townData.landmarks
+      .filter((place) => place.districtId === selectedDistrict?.id)
+      .map((place) => place.locationSlug),
+  );
+  const districtLocations = (locations.data ?? []).filter((location) =>
+    districtDestinations.has(location.slug),
+  );
+  const districtWorkspaces = districtLocations.flatMap((location) => {
+    const roles = (districtJobs.data ?? []).filter(
+      (job) => job.location_id === location.id && job.is_available,
+    );
+    return roles.length
+      ? [{ id: location.id, name: location.name, roles: roles.map((role) => role.name) }]
+      : [];
+  });
+  function openProperty(property: MapProperty) {
+    setSelectedDistrict(null);
+    window.dispatchEvent(
+      new CustomEvent("osogbo-open-phone-app", {
+        detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
+      }),
+    );
+  }
   const currentLocation = locations.data?.find(
     (row) => row.id === character.data?.current_location_id,
   );
@@ -438,13 +464,7 @@ export function CityMapDashboard(
                   ) ?? null,
                 );
               }}
-              onSelectProperty={(property) => {
-                window.dispatchEvent(
-                  new CustomEvent("osogbo-open-phone-app", {
-                    detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
-                  }),
-                );
-              }}
+              onSelectProperty={openProperty}
             />
           </div>
         </div>
@@ -461,12 +481,27 @@ export function CityMapDashboard(
       />
       {mapLevel === "town" && selectedDistrict && (
         <DistrictSheet
-          district={{
-            ...selectedDistrict,
-            landmarks: selectedDistrict.landmarks.filter((landmark) =>
-              availableLandmarks.data?.includes(landmark.id),
-            ),
-          }}
+          district={selectedDistrict}
+          availablePlaces={availableLandmarks.data ?? []}
+          homes={(housingMarkers.data ?? []).filter(
+            (home) => home.districtId === selectedDistrict.id,
+          )}
+          homesStatus={
+            housingMarkers.isError
+              ? "Housing listings unavailable."
+              : housingMarkers.isLoading
+                ? "Loading housing listings…"
+                : "No listed properties here."
+          }
+          workspaces={districtWorkspaces}
+          jobsStatus={
+            districtJobs.isError || locations.isError
+              ? "Workplace listings unavailable."
+              : districtJobs.isLoading || locations.isLoading
+                ? "Loading workplaces…"
+                : "No workplaces with listed roles here."
+          }
+          onProperty={openProperty}
           event={
             activeEvents[0]
               ? { label: activeEvents[0].title, endsAt: activeEvents[0].endsAt }

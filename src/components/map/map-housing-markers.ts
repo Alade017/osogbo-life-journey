@@ -39,6 +39,9 @@ export function mapHousingMarkers(value: unknown): MapProperty[] {
     const point = mapTownGridToScene({ ...grid, cells: [{ x, z, kind: "plot" }] })[0]!;
     return [
       {
+        districtId: town.districts.find(
+          ({ gridArea: a }) => x >= a.x && x < a.x + a.width && z >= a.z && z < a.z + a.depth,
+        )?.id,
         id: row["propertyId"],
         label: row["label"],
         type: row["model"] as MapProperty["type"],

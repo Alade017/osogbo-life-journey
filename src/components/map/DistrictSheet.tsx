@@ -1,3 +1,4 @@
+import type { MapProperty } from "./MapCanvas";
 import { useRef, useState, type PointerEvent } from "react";
 import { createPortal } from "react-dom";
 import { MapPin, X } from "lucide-react";
@@ -6,11 +7,23 @@ import { formatGameHourInLagos, formatMapEventEnd } from "@/components/map/map-u
 
 export function DistrictSheet({
   district,
+  homes,
+  workspaces,
+  homesStatus,
+  jobsStatus,
+  availablePlaces,
+  onProperty,
   event,
   onClose,
   onLandmark,
 }: {
   district: MapDistrict;
+  availablePlaces: readonly string[];
+  homes: readonly MapProperty[];
+  homesStatus: string;
+  jobsStatus: string;
+  workspaces: readonly { id: string; name: string; roles: string[] }[];
+  onProperty: (home: MapProperty) => void;
   event?: { label: string; endsAt?: string; endHour?: number } | null;
   onClose: () => void;
   onLandmark: (id: string) => void;
@@ -80,14 +93,46 @@ export function DistrictSheet({
           </span>
         </p>
       )}
-      <h3>Landmarks</h3>
+      <h3>Homes</h3>
+      {homes.length ? (
+        <ul className="map-sheet-list">
+          {homes.map((home) => (
+            <li key={home.id}>
+              <button onClick={() => onProperty(home)}>
+                {home.label ?? home.type}
+                <span>{home.status === "vacant" ? "Find homes" : "Property details"}</span>
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>{homesStatus}</p>
+      )}
+      <h3>Workplaces</h3>
+      {workspaces.length ? (
+        <ul>
+          {workspaces.map((site) => (
+            <li key={site.id}>
+              <strong>{site.name}</strong> · {site.roles.join(", ")}
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p>{jobsStatus}</p>
+      )}
+      <h3>Places and landmarks</h3>
+      {!district.landmarks.length && <p>No mapped places here yet.</p>}
       <ul className="map-sheet-list">
         {district.landmarks.map((place) => (
           <li key={place.id}>
-            <button onClick={() => onLandmark(place.id)}>
-              {place.label}
-              <span>Open details</span>
-            </button>
+            {availablePlaces.includes(place.id) ? (
+              <button onClick={() => onLandmark(place.id)}>
+                {place.label}
+                <span>Open details</span>
+              </button>
+            ) : (
+              <span>{place.label}</span>
+            )}
           </li>
         ))}
       </ul>
