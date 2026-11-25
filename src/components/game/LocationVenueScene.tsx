@@ -20,15 +20,15 @@ import { resolveVenueScene } from "@/lib/venue-scene-resolver";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 import { SpecializedVenueFallback } from "./SpecializedVenueFallback";
 
-import { venueSceneLoaders } from "./venue-scene-loaders";
+import { commercialVenueLoaders, venueSceneLoaders } from "./venue-scene-loaders";
 
 const CivicServiceScene = lazy(venueSceneLoaders.civic);
 const BankInteriorScene = lazy(venueSceneLoaders.bank);
 const TransitParkScene = lazy(venueSceneLoaders.transport);
 const HealthcareScene = lazy(venueSceneLoaders.healthcare);
-const HarvestTechHubVenue = lazy(() => import("./HarvestTechHubVenue"));
-const DealershipVenue = lazy(() => import("./DealershipVenue"));
-const ElectronicsVenue = lazy(() => import("./ElectronicsVenue"));
+const HarvestTechHubVenue = lazy(commercialVenueLoaders.workplace);
+const DealershipVenue = lazy(commercialVenueLoaders.dealership);
+const ElectronicsVenue = lazy(commercialVenueLoaders.electronics);
 const WorkplaceScene = lazy(venueSceneLoaders.workplace);
 const RetailInteriorScene = lazy(venueSceneLoaders.retail);
 const BukaInteriorScene = lazy(venueSceneLoaders.food);

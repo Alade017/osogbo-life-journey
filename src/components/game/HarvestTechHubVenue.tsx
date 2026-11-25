@@ -18,7 +18,9 @@ import { useHouseMovement } from "@/hooks/use-house-movement";
 import type { LocationVenueDesign, VenueFixture } from "@/lib/location-venue-designs";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 
-const ElectronicsVenue = lazy(() => import("./ElectronicsVenue"));
+import { commercialVenueLoaders } from "./venue-scene-loaders";
+
+const ElectronicsVenue = lazy(commercialVenueLoaders.electronics);
 
 export default function HarvestTechHubVenue({ venue }: { venue: LocationVenueDesign }) {
   const [inStore, setInStore] = useState(false);
@@ -92,6 +94,7 @@ function HarvestWorkplace({ venue, onEnterStore }: { venue: LocationVenueDesign;
     if (!path) { setMessage("That path is blocked. Choose a clear spot."); return; }
     entering.current = true;
     setEnteringStore(true);
+    void commercialVenueLoaders.electronics().catch(() => undefined);
     setMessage("Walking to the computer store entrance…");
     void walker.walk(path.map(([px, pz]) => [px, 0.06, pz])).then((arrived) => {
       if (ticket !== request.current) return;

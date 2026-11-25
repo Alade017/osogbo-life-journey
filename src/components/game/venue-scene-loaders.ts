@@ -45,3 +45,18 @@ export const venueSceneLoaders = loaders satisfies Record<
   Exclude<VenueSceneKind, "environment" | "generic">,
   () => Promise<unknown>
 >;
+
+/** Immersive venue modules are shared by rendering and travel preloading. */
+export const commercialVenueLoaders = {
+  dealership: createPreloadableLoader(() => import("./DealershipVenue")),
+  electronics: createPreloadableLoader(() => import("./ElectronicsVenue")),
+  workplace: createPreloadableLoader(() => import("./HarvestTechHubVenue")),
+};
+
+export function getCommercialVenueKind(slug: string, locationId: string | undefined, sceneKind: VenueSceneKind) {
+  if (!locationId) return undefined;
+  if (slug === "fuel-station" || slug === "cinema-event-hall") return "dealership";
+  if (slug === "post-office-cafe") return "electronics";
+  if (sceneKind === "workplace") return "workplace";
+  return undefined;
+}
