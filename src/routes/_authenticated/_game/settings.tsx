@@ -101,7 +101,7 @@ function useSavedFlash() {
   return { saved, flash };
 }
 
-export function SettingsPage() {
+export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) {
   const fieldId = useId();
   const qc = useQueryClient();
   const { data: profile, isPending, isError, error, isFetching, refetch } = useQuery(q.profile());
@@ -202,7 +202,7 @@ export function SettingsPage() {
 
   return (
     <div className="sx-page" data-reduced={profile.reduced_motion ? "true" : "false"}>
-      <header className="sx-hero">
+      {!embedded && <header className="sx-hero">
         <div className="sx-hero-avatar" aria-hidden="true">
           <CharacterPreview
             appearance={appearance}
@@ -219,7 +219,7 @@ export function SettingsPage() {
             <ShieldCheck aria-hidden="true" /> {accountLabel}
           </span>
         </div>
-      </header>
+      </header>}
 
       <nav className="sx-tabs" aria-label="Settings categories">
         {([
