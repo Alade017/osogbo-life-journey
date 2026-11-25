@@ -14,8 +14,6 @@ import {
   findMallPath,
 } from "./osun-mall-layout.ts";
 
-/** Shoppers on the floor at once, on top of any real players who are in the mall. */
-export const MALL_CROWD_TARGET = 20;
 /** Ambient attendance policy, not authoritative opening hours or named NPC schedules. */
 export function mallCrowdTarget(time: Pick<GameTime, "hour" | "weekday">, weather: Weather = "sunny"): number {
   const period = getDayPeriod(time.hour);
@@ -262,6 +260,15 @@ export const MALL_WAITING_SPOTS: readonly WalkPoint[] = MALL_TILL_QUEUE
     distance(point, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING * 2 &&
     MALL_STAFF.every(member => distance(point, member.position) >= MALL_SHOPPER_SPACING));
 
+/** Conservative ambient occupancy budget based on authored activity positions.
+ * Real visitors consume the same admission budget, without evicting existing shoppers. */
+export const MALL_CROWD_TARGET = MALL_BROWSE_SPOTS.length + MALL_TILL_QUEUE.length + MALL_WAITING_SPOTS.length;
+
+export function mallAdmissionLimit(target: number, visitorCount: number): number {
+  if (!Number.isFinite(target) || !Number.isFinite(visitorCount)) return 0;
+  return Math.max(0, Math.min(MALL_CROWD_TARGET, Math.floor(target)) - Math.max(0, Math.floor(visitorCount)));
+}
+
 /** Oldest ready shopper gets first choice of a reachable, unoccupied checkout.
  * If every checkout is busy, walk to a reserved waiting spot when possible. */
 export function assignWaitingCheckouts(shoppers: readonly MallShopper[], visitors: readonly WalkPoint[] = []): MallShopper[] {
@@ -333,7 +340,7 @@ export function advanceCrowd(
   });
   const remaining = assignWaitingCheckouts(moved.filter((shopper) => !shopper.walker.done || shopper.awaitingCheckout), visitors);
   let seed = nextSeed;
-  if (remaining.length < target && remaining.every(shopper => distance(shopper.walker.pos, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING) &&
+  if (remaining.length < mallAdmissionLimit(target, visitors.length) && remaining.every(shopper => distance(shopper.walker.pos, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING) &&
       visitors.every(point => distance(point, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING)) {
     const browse = availableStop(MALL_BROWSE_SPOTS, [...reservedShopperStops(remaining, MALL_BROWSE_SECONDS), ...remaining.map(shopper => shopper.walker.pos), ...visitors], seed);
     if (browse !== null) {

@@ -3,6 +3,7 @@ import {
   isPaying,
   MALL_CROWD_TARGET,
   mallCrowdTarget,
+  mallAdmissionLimit,
   reservedShopperStops,
   recoverShopperRoute,
   assignWaitingCheckouts,
@@ -18,7 +19,7 @@ import {
   getShopperById,
 } from "@/game/mall-crowd";
 import { createWalker, stepWalker } from "@/game/mall-movement";
-import { MALL_ENTRANCE, MALL_TILL_QUEUE, canWalkInMall } from "@/game/osun-mall-layout";
+import { MALL_ENTRANCE, MALL_TILL_QUEUE, MALL_BROWSE_SPOTS, canWalkInMall } from "@/game/osun-mall-layout";
 
 describe("mall shopper routes", () => {
   it("builds a walkable route for every seed, with stops at browse and pay", () => {
@@ -55,6 +56,19 @@ describe("mall shopper routes", () => {
 });
 
 describe("mall attendance policy", () => {
+  it("derives a conservative capacity from the available activity positions", () => {
+    expect(MALL_CROWD_TARGET).toBe(MALL_BROWSE_SPOTS.length + MALL_TILL_QUEUE.length + MALL_WAITING_SPOTS.length);
+    expect(mallAdmissionLimit(MALL_CROWD_TARGET + 10, 2)).toBe(MALL_CROWD_TARGET - 2);
+    expect(mallAdmissionLimit(2, 3)).toBe(0);
+    expect(mallAdmissionLimit(NaN, 0)).toBe(0);
+  });
+  it("does not remove an existing shopper when visitors exhaust the admission budget", () => {
+    const initial = advanceCrowd([], 0, 0);
+    const next = advanceCrowd(initial.shoppers, 0, initial.nextSeed, 1, [[0, 0]]);
+    expect(next.shoppers.map(shopper => shopper.id)).toEqual(initial.shoppers.map(shopper => shopper.id));
+    expect(next.nextSeed).toBe(initial.nextSeed);
+    expect(advanceCrowd([], 0, 0, 1, [[0, 0]]).shoppers).toEqual([]);
+  });
   it("reduces arrivals during rain without changing the clear-weather baseline", () => {
     const time = { hour: 12, weekday: 5 };
     expect(mallCrowdTarget(time, "cloudy")).toBe(MALL_CROWD_TARGET);
