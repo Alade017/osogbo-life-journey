@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import phoneStyles from "@/components/game/phone.css?raw";
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+// Read the stylesheet from disk: vitest returns an empty string for `?raw` CSS imports here.
+const phoneStyles = readFileSync(resolve(process.cwd(), "src/components/game/phone.css"), "utf8");
 
 function getCssRule(source: string, selector: string, startAt = 0) {
   const selectorIndex = source.indexOf(selector, startAt);
@@ -24,11 +28,7 @@ describe("phone launcher responsive layout", () => {
     const mediaIndex = phoneStyles.lastIndexOf(mediaQuery);
     expect(mediaIndex).toBeGreaterThanOrEqual(0);
 
-    const pagesRule = getCssRule(
-      phoneStyles,
-      ".phone-screen-home .phone-app-pages",
-      mediaIndex,
-    );
+    const pagesRule = getCssRule(phoneStyles, ".phone-screen-home .phone-app-pages", mediaIndex);
 
     expect(pagesRule).not.toBe("");
     expect(pagesRule).toMatch(/overflow-x:\s*auto;/);
@@ -41,11 +41,7 @@ describe("phone launcher responsive layout", () => {
     const mediaIndex = phoneStyles.lastIndexOf(
       "@media (orientation: landscape) and (max-height: 500px)",
     );
-    const gridRule = getCssRule(
-      phoneStyles,
-      ".phone-screen-home .phone-app-grid",
-      mediaIndex,
-    );
+    const gridRule = getCssRule(phoneStyles, ".phone-screen-home .phone-app-grid", mediaIndex);
 
     expect(gridRule).not.toBe("");
     expect(gridRule).toMatch(/grid-template-rows:\s*repeat\(5,/);
