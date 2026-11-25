@@ -1,0 +1,157 @@
+/* VitalStat and Nesta: phone apps for the player's vitals and home. */
+.vitalstat-app,
+.nesta-app {
+  display: flex;
+  min-height: 100%;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  color: #0f172a;
+}
+
+.vitalstat-hero,
+.nesta-hero {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.vitalstat-hero h2,
+.nesta-hero h2 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.vitalstat-hero p,
+.nesta-hero p {
+  margin: 2px 0 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.vitalstat-mark,
+.nesta-mark {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 14px;
+  background: #e0ecff;
+  color: #1d4ed8;
+}
+
+.vitalstat-list {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.vitalstat-row {
+  padding: 12px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 6px 14px -10px rgb(15 35 65 / 35%);
+}
+
+.vitalstat-row-head {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.vitalstat-bar {
+  height: 8px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.vitalstat-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #16a34a;
+}
+
+.vitalstat-warning .vitalstat-bar span {
+  background: #f59e0b;
+}
+
+.vitalstat-critical .vitalstat-bar span {
+  background: #dc2626;
+}
+
+.vitalstat-advice {
+  margin: 8px 0 0;
+  color: #475569;
+  font-size: 12.5px;
+}
+
+.nesta-card {
+  display: grid;
+  gap: 10px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: 0 8px 18px -12px rgb(15 35 65 / 40%);
+}
+
+.nesta-card h3 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.nesta-muted,
+.nesta-note {
+  margin: 0;
+  color: #475569;
+  font-size: 13px;
+}
+
+.nesta-facts {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+}
+
+.nesta-facts div {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+}
+
+.nesta-facts dt {
+  color: #475569;
+}
+
+.nesta-facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+.nesta-button {
+  min-height: 44px;
+  border-radius: 14px;
+  background: #1d4ed8;
+  color: #fff;
+  font-weight: 700;
+}
+
+.nesta-button:disabled {
+  background: #cbd5e1;
+  color: #475569;
+}
+
+.nesta-links {
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1d4ed8;
+}
