@@ -376,14 +376,16 @@ export function PropertyPage() {
                       aria-label={`3D exterior view of ${row.game_properties?.name ?? "your house"}`}
                     >
                       <WorldCanvas
+                        persistent={false}
                         orthographic
                         camera={{ position: [7, 5.5, 8], zoom: 42, near: 0.1, far: 100 }}
                         dpr={[1, 1.5]}
                         gl={{ alpha: true, antialias: true }}
                         shadows
+                        frameloop="demand"
                         style={{ width: "100%", height: "100%" }}
                       >
-                        <WorldLighting size={12} refined contactShadows />
+                        <WorldLighting size={12} refined contactShadows={false} />
                         <group position={[0, -0.35, 0]}>
                           <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
                             <planeGeometry args={[14, 14]} />
