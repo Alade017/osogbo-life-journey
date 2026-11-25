@@ -3,6 +3,9 @@ import {
   isPaying,
   MALL_CROWD_TARGET,
   mallCrowdTarget,
+  reservedShopperStops,
+  MALL_PAY_SECONDS,
+  payingCashierId,
   MALL_SHOPPER_SPACING,
   advanceCrowd,
   buildShopperRoute,
@@ -82,6 +85,22 @@ describe("mall crowd", () => {
     expect(next.nextSeed).toBe(initial.nextSeed);
     const shopper = next.shoppers[0]!;
     expect(Math.hypot(shopper.walker.pos[0] - MALL_ENTRANCE[0], shopper.walker.pos[1] - MALL_ENTRANCE[1])).toBeLessThan(MALL_SHOPPER_SPACING);
+  });
+});
+
+describe("mall stop reservations", () => {
+  it("reserves a checkout until its payment dwell has finished", () => {
+    const shopper = createShopper(0)!;
+    const index = [...shopper.walker.dwellAt].find(([, seconds]) => seconds === MALL_PAY_SECONDS)![0];
+    const point = shopper.walker.points[index]!;
+    expect(reservedShopperStops([shopper], MALL_PAY_SECONDS)).toEqual([point]);
+    const paying = { ...shopper, walker: { ...shopper.walker, pos: point, next: index + 1, dwellLeft: 1 } };
+    expect(reservedShopperStops([paying], MALL_PAY_SECONDS)).toEqual([point]);
+    expect(payingCashierId(paying.walker)).not.toBeNull();
+    expect(reservedShopperStops([{ ...paying, walker: { ...paying.walker, dwellLeft: 0 } }], MALL_PAY_SECONDS)).toEqual([]);
+  });
+  it("does not admit a shopper on top of a visitor", () => {
+    expect(advanceCrowd([], 0.1, 0, MALL_CROWD_TARGET, [MALL_ENTRANCE]).shoppers).toEqual([]);
   });
 });
 

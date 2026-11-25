@@ -7,10 +7,11 @@ import {
   advanceCrowd,
   getShopperById,
   isPaying,
+  payingCashierId,
   MALL_CROWD_TARGET,
   type MallShopper,
 } from "@/game/mall-crowd";
-import { createWalker, stepWalker, type MallWalker } from "@/game/mall-movement";
+import { createWalker, stepWalker, isSegmentWalkable, type MallWalker } from "@/game/mall-movement";
 import {
   MALL_BOUNDS,
   MALL_ENTRANCE,
@@ -202,10 +203,10 @@ function MallStaffLayer({
   onInteract: (target: MallTarget) => void;
 }) {
   // Cashiers reach forward to take money whenever a shopper is paying at a till.
-  const [paying, setPaying] = useState(false);
+  const [paying, setPaying] = useState<ReadonlySet<string>>(() => new Set());
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setPaying(sim.current.shoppers.some((shopper) => isPaying(shopper.walker)));
+      setPaying(new Set(sim.current.shoppers.map(shopper => payingCashierId(shopper.walker)).filter((id): id is string => id !== null)));
     }, SNAPSHOT_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [sim]);
@@ -228,7 +229,7 @@ function MallStaffLayer({
               appearance={look.appearance}
               name={member.id}
               facing={member.facing}
-              animation={member.role === "till" ? (paying ? "interact" : "work") : "idle"}
+              animation={member.role === "till" ? (paying.has(member.id) ? "interact" : "work") : "idle"}
               position={[0, 0, 0]}
             />
           </group>
@@ -321,7 +322,7 @@ function lookTargetFor(
     if (nearest) return [nearest[0] - sx, 0, nearest[1] - sz];
   }
   const toPlayer = Math.hypot(player[0] - sx, player[1] - sz);
-  if (toPlayer < 6) return [player[0] - sx, 0, player[1] - sz];
+  if (toPlayer < 2 && toPlayer > 0.01 && isSegmentWalkable(shopper.walker.pos, player)) return [player[0] - sx, 0, player[1] - sz];
   return null;
 }
 
@@ -367,6 +368,7 @@ function CrowdLayer({
       Math.min(delta, 0.1),
       state.nextSeed,
       crowdTarget,
+      [state.player.pos, ...state.people.map(person => person.position)],
     );
     state.shoppers = next.shoppers;
     state.nextSeed = next.nextSeed;
