@@ -24,6 +24,8 @@ export type MallShopper = {
   gender: MallGender;
   appearance: Appearance;
   walker: MallWalker;
+  /** Most recent nonzero travel heading, retained through idle and browsing. */
+  heading?: number;
 };
 
 const shopperIndexes = new WeakMap<readonly MallShopper[], Map<string, MallShopper>>();
@@ -167,7 +169,10 @@ export function advanceCrowd(
     const occupied = positions.filter((_, other) => other !== index && !shoppers[other]?.walker.done);
     const walker = advanceShopper(shopper, occupied, elapsed);
     positions[index] = walker.pos;
-    return { ...shopper, walker };
+    const dx = walker.pos[0] - shopper.walker.pos[0];
+    const dz = walker.pos[1] - shopper.walker.pos[1];
+    const heading = Math.hypot(dx, dz) > 1e-6 ? Math.atan2(dx, dz) : shopper.heading ?? 0;
+    return { ...shopper, walker, heading };
   });
   const remaining = moved.filter((shopper) => !shopper.walker.done);
   let seed = nextSeed;

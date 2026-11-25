@@ -243,7 +243,6 @@ function ShopperFigure({
   id,
   moving,
   paying,
-  lookAt,
   gender,
   appearance,
   sim,
@@ -252,20 +251,23 @@ function ShopperFigure({
   id: string;
   moving: boolean;
   paying: boolean;
-  /** Local point to turn toward, relative to this shopper; null when facing ahead. */
-  lookAt: readonly [number, number, number] | null;
   gender: MallGender;
   appearance: Appearance;
   sim: { current: MallSim };
   onInteract: (target: MallTarget) => void;
 }) {
   const group = useRef<Group>(null);
-  useFrame(() => {
+  useFrame((_, delta) => {
     const shopper = getShopperById(sim.current.shoppers, id);
     const node = group.current;
     if (!node) return;
     node.visible = Boolean(shopper);
-    if (shopper) node.position.set(shopper.walker.pos[0], 0, shopper.walker.pos[1]);
+    if (!shopper) return;
+    node.position.set(shopper.walker.pos[0], 0, shopper.walker.pos[1]);
+    const target = lookTargetFor(shopper, sim.current.player.pos);
+    const yaw = target && !shopper.walker.moving ? Math.atan2(target[0], target[2]) : shopper.heading ?? 0;
+    const difference = Math.atan2(Math.sin(yaw - node.rotation.y), Math.cos(yaw - node.rotation.y));
+    node.rotation.y += difference * (1 - Math.exp(-10 * Math.min(delta, 0.1)));
   });
   return (
     <group
@@ -282,7 +284,6 @@ function ShopperFigure({
         name={id}
         facing="south"
         animation={paying ? "interact" : moving ? "walk" : "idle"}
-        lookAt={lookAt}
         held={paying ? <PaymentNote /> : null}
         position={[0, 0, 0]}
       />
@@ -353,7 +354,6 @@ function CrowdLayer({
       id: string;
       moving: boolean;
       paying: boolean;
-      lookAt: readonly [number, number, number] | null;
       gender: MallGender;
       appearance: Appearance;
     }>
@@ -371,13 +371,11 @@ function CrowdLayer({
   });
   useEffect(() => {
     const timer = window.setInterval(() => {
-      const player = sim.current.player.pos;
       setSnapshot(
         sim.current.shoppers.map((shopper) => ({
           id: shopper.id,
           moving: shopper.walker.moving,
           paying: isPaying(shopper.walker),
-          lookAt: lookTargetFor(shopper, player),
           gender: shopper.gender,
           appearance: shopper.appearance,
         })),
@@ -393,7 +391,6 @@ function CrowdLayer({
           id={shopper.id}
           moving={shopper.moving}
           paying={shopper.paying}
-          lookAt={shopper.lookAt}
           gender={shopper.gender}
           appearance={shopper.appearance}
           sim={sim}
