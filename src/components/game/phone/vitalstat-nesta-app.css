@@ -155,3 +155,58 @@
   font-weight: 600;
   color: #1d4ed8;
 }
+
+.gig-tabs {
+  display: flex;
+  gap: 8px;
+}
+.gig-tab {
+  flex: 1;
+  border: 1px solid rgb(0 0 0 / 0.12);
+  border-radius: 999px;
+  background: transparent;
+  padding: 8px 10px;
+  font: inherit;
+  font-size: 13px;
+}
+.gig-tab-on {
+  background: #1f6f4a;
+  border-color: #1f6f4a;
+  color: #fff;
+}
+.gig-form label,
+.nesta-card label {
+  display: grid;
+  gap: 4px;
+  font-size: 13px;
+}
+.gig-form input,
+.gig-form textarea,
+.nesta-card input {
+  font: inherit;
+  padding: 8px 10px;
+  border: 1px solid rgb(0 0 0 / 0.15);
+  border-radius: 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.gig-form textarea {
+  min-height: 72px;
+  resize: vertical;
+}
+.gig-applicant {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+}
+.nesta-link {
+  align-self: start;
+  border: 0;
+  background: none;
+  padding: 0;
+  font: inherit;
+  font-size: 13px;
+  text-decoration: underline;
+  cursor: pointer;
+}

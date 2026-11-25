@@ -1,0 +1,100 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { GigWorkApp } from "@/components/game/phone/GigWorkApp";
+
+const { board, act } = vi.hoisted(() => ({
+  board: {
+    open: [] as Array<Record<string, unknown>>,
+    mine: [] as Array<Record<string, unknown>>,
+    jobs: [] as Array<Record<string, unknown>>,
+  },
+  act: vi.fn(),
+}));
+
+vi.mock("@tanstack/react-query", () => ({
+  useQuery: (opts: { queryKey?: unknown[] }) =>
+    opts?.queryKey?.[0] === "character"
+      ? { data: { id: "char-1" } }
+      : { data: board, isPending: false, isError: false },
+  useMutation: (opts: { mutationFn: (input: unknown) => unknown }) => ({
+    isPending: false,
+    mutate: (input: unknown) => {
+      act(input);
+      void opts.mutationFn(input);
+    },
+  }),
+  useQueryClient: () => ({ invalidateQueries: vi.fn() }),
+}));
+vi.mock("@/lib/game", () => ({
+  q: { character: () => ({ queryKey: ["character"] }) },
+  formatNaira: (minor: number) => `₦${(minor / 100).toLocaleString("en-NG")}`,
+}));
+vi.mock("@/lib/gig-work-client", () => ({
+  getGigBoard: vi.fn(),
+  gigBoardQueryKey: () => ["gigWork"],
+  submitGigAction: vi.fn(async () => ({})),
+}));
+vi.mock("sonner", () => ({ toast: { success: vi.fn(), error: vi.fn() } }));
+
+describe("Gig Work", () => {
+  beforeEach(() => {
+    act.mockClear();
+    board.open = [];
+    board.mine = [];
+    board.jobs = [];
+  });
+
+  it("shows an empty browse list with a post form", () => {
+    render(<GigWorkApp onOpenApp={vi.fn()} />);
+    expect(screen.getByText(/No open jobs right now/)).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Post job" })).toBeTruthy();
+  });
+
+  it("lets a player apply to someone else's open job", () => {
+    board.open = [
+      {
+        id: "11111111-1111-4111-8111-111111111111",
+        title: "Fix fence",
+        description: "Repair the back fence",
+        pay: 500000,
+        expiresAt: "2026-11-26T10:00:00Z",
+        posterName: "Ade",
+        applied: false,
+      },
+    ];
+    render(<GigWorkApp onOpenApp={vi.fn()} />);
+    expect(screen.getByText(/Posted by Ade/)).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+    expect(act).toHaveBeenCalledWith({
+      action: "apply",
+      gigId: "11111111-1111-4111-8111-111111111111",
+      offer: null,
+    });
+  });
+
+  it("lets the poster pick an applicant and confirm completion", () => {
+    board.mine = [
+      {
+        id: "22222222-2222-4222-8222-222222222222",
+        title: "Paint gate",
+        description: "Paint the gate blue",
+        pay: 300000,
+        status: "open",
+        expiresAt: "2026-11-26T10:00:00Z",
+        workerId: null,
+        workerName: null,
+        applicants: [
+          { characterId: "33333333-3333-4333-8333-333333333333", name: "Bola", offer: 250000 },
+        ],
+      },
+    ];
+    render(<GigWorkApp onOpenApp={vi.fn()} />);
+    fireEvent.click(screen.getByRole("button", { name: "My posts" }));
+    fireEvent.click(screen.getByRole("button", { name: "Pick" }));
+    expect(act).toHaveBeenCalledWith({
+      action: "accept",
+      gigId: "22222222-2222-4222-8222-222222222222",
+      applicantId: "33333333-3333-4333-8333-333333333333",
+    });
+  });
+});
