@@ -50,4 +50,16 @@ describe("settings page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Account" }));
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
   });
+
+  it("supports embedded mode without duplicating the player hub identity header", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { container } = render(
+      <QueryClientProvider client={client}>
+        <SettingsPage embedded />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByDisplayValue("Adeyemi")).toBeTruthy();
+    expect(container.querySelector(".sx-hero")).toBeNull();
+    expect(screen.getByRole("navigation", { name: "Settings categories" })).toBeInTheDocument();
+  });
 });
