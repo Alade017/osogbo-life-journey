@@ -104,7 +104,7 @@ it("groups launcher apps into pages of twenty and includes optional Shortcuts", 
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
 
   const pages = document.querySelectorAll(".phone-app-grid");
-  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([20, 9]);
+  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([20, 7]);
   expect(pages[0]?.querySelector('[aria-label="Open Shortcuts"]')).not.toBeNull();
   expect(screen.getAllByRole("button", { name: /Go to app page/ })).toHaveLength(pages.length);
   expect(screen.getByRole("button", { name: "Go to app page 1" })).toHaveAttribute(
@@ -146,11 +146,14 @@ it("moves one launcher page per swipe and closes from the external Cancel button
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
 
-it("uses the dedicated native scroll layout when Settings opens inside the phone", () => {
+it("keeps Profile and Settings out of the phone without changing the remaining apps", () => {
   render(<PhoneLauncher />);
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
-  fireEvent.click(screen.getByRole("button", { name: "Open Settings" }));
-  expect(document.querySelector(".phone-app-body--sx")).toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Open Profile" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Open Settings" })).not.toBeInTheDocument();
+  for (const app of ["Camera", "Map", "Career Life", "Bank", "Messages", "Support"]) {
+    expect(screen.getByRole("button", { name: `Open ${app}` })).toBeInTheDocument();
+  }
 });
 
 it("restores a Career HUD request without leaving the underlying world", async () => {
