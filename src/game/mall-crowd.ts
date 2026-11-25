@@ -6,6 +6,7 @@ import { shopperLook, type MallGender } from "./mall-appearance.ts";
 import { createWalker, stepWalker, isSegmentWalkable, type MallWalker } from "./mall-movement.ts";
 import {
   MALL_BODY_RADIUS,
+  canWalkInMall,
   MALL_BROWSE_SPOTS,
   MALL_ENTRANCE,
   MALL_TILL_QUEUE,
@@ -41,6 +42,10 @@ export type MallShopper = {
   heading?: number;
   /** Runtime shoppers reserve checkout only after browsing. */
   awaitingCheckout?: boolean;
+  /** Reserved physical waiting position, if walking to or standing in the queue. */
+  queueSlot?: WalkPoint | undefined;
+  /** Time spent ready for checkout, including walking to the waiting area. */
+  checkoutWait?: number;
 };
 
 const shopperIndexes = new WeakMap<readonly MallShopper[], Map<string, MallShopper>>();
@@ -174,8 +179,8 @@ function advanceShopper(shopper: MallShopper, occupied: readonly WalkPoint[], el
 /** Reserve upcoming or active stops, releasing them after the dwell ends. */
 export function reservedShopperStops(shoppers: readonly MallShopper[], dwellSeconds: number): WalkPoint[] {
   const stops: WalkPoint[] = [];
-  for (const { walker, awaitingCheckout } of shoppers) {
-    if (awaitingCheckout && walker.done && dwellSeconds === MALL_BROWSE_SECONDS) {
+  for (const { walker, awaitingCheckout, queueSlot } of shoppers) {
+    if (awaitingCheckout && walker.done && !queueSlot && dwellSeconds === MALL_BROWSE_SECONDS) {
       stops.push(walker.pos);
       continue;
     }
@@ -225,24 +230,51 @@ function createBrowsingShopper(seed: number, browseIndex: number): MallShopper |
   };
 }
 
-/** Assign available checkout destinations in crowd arrival order.
- * Waiting shoppers retain their browse position until a checkout becomes available. */
+/** Reuse the checkout layout: a second row behind the tills, filtered against fixtures
+ * and staff. Preserve a clear entrance corridor rather than adding a new floor plan. */
+export const MALL_WAITING_SPOTS: readonly WalkPoint[] = MALL_TILL_QUEUE
+  .map(([x, z]): WalkPoint => [x, z + MALL_SHOPPER_SPACING * 1.5])
+  .filter(point => canWalkInMall(point) &&
+    distance(point, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING * 2 &&
+    MALL_STAFF.every(member => distance(point, member.position) >= MALL_SHOPPER_SPACING));
+
+/** Oldest ready shopper gets first choice of a reachable, unoccupied checkout.
+ * If every checkout is busy, walk to a reserved waiting spot when possible. */
 export function assignWaitingCheckouts(shoppers: readonly MallShopper[], visitors: readonly WalkPoint[] = []): MallShopper[] {
   const reserved = reservedShopperStops(shoppers, MALL_PAY_SECONDS);
-  return shoppers.map(shopper => {
-    if (!shopper.awaitingCheckout || !shopper.walker.done) return shopper;
-    const index = availableStop(MALL_TILL_QUEUE, [...reserved, ...visitors,
-      ...shoppers.filter(other => other.id !== shopper.id).map(other => other.walker.pos)], 0);
-    if (index === null) return shopper;
-    const checkout = MALL_TILL_QUEUE[index];
-    if (!checkout) return shopper;
-    const approach = findMallPath(shopper.walker.pos, checkout);
-    const exit = findMallPath(checkout, MALL_ENTRANCE);
-    if (!approach?.length || !exit?.length) return shopper;
-    reserved.push(checkout);
-    return { ...shopper, awaitingCheckout: false, walker: createWalker(shopper.walker.pos,
-      [...approach, ...exit], { speed: shopper.walker.speed, dwellAt: new Map([[approach.length - 1, MALL_PAY_SECONDS]]) }) };
-  });
+  const queueReserved = shoppers.flatMap(shopper => shopper.queueSlot ? [shopper.queueSlot] : []);
+  const result = [...shoppers];
+  const ready = shoppers.map((shopper, index) => ({ shopper, index }))
+    .filter(({ shopper }) => shopper.awaitingCheckout && shopper.walker.done)
+    .sort((a, b) => (b.shopper.checkoutWait ?? 0) - (a.shopper.checkoutWait ?? 0) || a.index - b.index);
+  for (const { shopper, index } of ready) {
+    const occupied = [...visitors, ...shoppers.filter((_, other) => other !== index).map(other => other.walker.pos)];
+    let assigned = false;
+    for (const checkout of MALL_TILL_QUEUE) {
+      if ([...reserved, ...occupied].some(point => distance(point, checkout) < MALL_SHOPPER_SPACING)) continue;
+      const approach = findMallPath(shopper.walker.pos, checkout);
+      const exit = findMallPath(checkout, MALL_ENTRANCE);
+      if (!approach?.length || !exit?.length) continue;
+      reserved.push(checkout);
+      result[index] = { ...shopper, awaitingCheckout: false, queueSlot: undefined,
+        walker: createWalker(shopper.walker.pos, [...approach, ...exit], {
+          speed: shopper.walker.speed, dwellAt: new Map([[approach.length - 1, MALL_PAY_SECONDS]]),
+        }) };
+      assigned = true;
+      break;
+    }
+    if (assigned || shopper.queueSlot) continue;
+    for (const slot of MALL_WAITING_SPOTS) {
+      if ([...queueReserved, ...occupied].some(point => distance(point, slot) < MALL_SHOPPER_SPACING)) continue;
+      const path = findMallPath(shopper.walker.pos, slot);
+      if (!path?.length) continue;
+      queueReserved.push(slot);
+      result[index] = { ...shopper, queueSlot: slot,
+        walker: createWalker(shopper.walker.pos, path, { speed: shopper.walker.speed }) };
+      break;
+    }
+  }
+  return result;
 }
 
 /** Advance the crowd and admit newcomers only when the entrance has space. */
@@ -264,13 +296,15 @@ export function advanceCrowd(
     const dx = walker.pos[0] - shopper.walker.pos[0];
     const dz = walker.pos[1] - shopper.walker.pos[1];
     const heading = Math.hypot(dx, dz) > 1e-6 ? Math.atan2(dx, dz) : shopper.heading ?? 0;
-    return { ...shopper, walker, heading };
+    const checkoutWait = shopper.awaitingCheckout && (walker.done || shopper.queueSlot)
+      ? (shopper.checkoutWait ?? 0) + elapsed : shopper.checkoutWait ?? 0;
+    return { ...shopper, walker, heading, checkoutWait };
   });
   const remaining = assignWaitingCheckouts(moved.filter((shopper) => !shopper.walker.done || shopper.awaitingCheckout), visitors);
   let seed = nextSeed;
   if (remaining.length < target && remaining.every(shopper => distance(shopper.walker.pos, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING) &&
       visitors.every(point => distance(point, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING)) {
-    const browse = availableStop(MALL_BROWSE_SPOTS, reservedShopperStops(remaining, MALL_BROWSE_SECONDS), seed);
+    const browse = availableStop(MALL_BROWSE_SPOTS, [...reservedShopperStops(remaining, MALL_BROWSE_SECONDS), ...remaining.map(shopper => shopper.walker.pos), ...visitors], seed);
     if (browse !== null) {
       const fresh = createBrowsingShopper(seed, browse);
       seed += 1;

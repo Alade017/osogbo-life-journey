@@ -6,6 +6,7 @@ import {
   reservedShopperStops,
   assignWaitingCheckouts,
   MALL_BROWSE_SECONDS,
+  MALL_WAITING_SPOTS,
   MALL_PAY_SECONDS,
   payingCashierId,
   MALL_SHOPPER_SPACING,
@@ -103,7 +104,14 @@ describe("mall stop reservations", () => {
     const pos = shopper.walker.points.at(-1)!;
     const waiting = { ...shopper, walker: { ...shopper.walker, pos, next: shopper.walker.points.length, done: true, dwellLeft: 0 } };
     expect(reservedShopperStops([waiting], MALL_BROWSE_SECONDS)).toEqual([pos]);
-    expect(assignWaitingCheckouts([waiting], MALL_TILL_QUEUE)[0]).toBe(waiting);
+    const queued = assignWaitingCheckouts([waiting], MALL_TILL_QUEUE)[0]!;
+    expect(queued.awaitingCheckout).toBe(true);
+    expect(reservedShopperStops([queued], MALL_PAY_SECONDS)).toEqual([]);
+    expect(queued.queueSlot).toBeDefined();
+    expect(queued.walker.pos).toEqual(pos);
+    expect(queued.walker.points.at(-1)).toEqual(queued.queueSlot);
+    expect(queued.walker.points.every(canWalkInMall)).toBe(true);
+    expect(assignWaitingCheckouts([waiting], [...MALL_TILL_QUEUE, ...MALL_WAITING_SPOTS])[0]).toBe(waiting);
     const assigned = assignWaitingCheckouts([waiting])[0]!;
     expect(assigned.awaitingCheckout).toBe(false);
     expect(assigned.walker.done).toBe(false);
