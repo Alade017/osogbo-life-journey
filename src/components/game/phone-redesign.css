@@ -3,15 +3,10 @@
 @media (min-width: 641px) {
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh,
   .phone-dialog.phone-ui-refresh {
-    width: 400px !important;
-    max-width: calc(100% - 32px) !important;
-    height: min(
-      840px,
-      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 36px)
-    ) !important;
-    max-height: calc(
-      100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 36px
-    ) !important;
+    width: clamp(18rem, 28vw, 25rem) !important;
+    max-width: min(92vw, calc(100vw - 2rem)) !important;
+    height: min(85dvh, 52.5rem, calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)) !important;
+    max-height: min(85dvh, calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)) !important;
     padding: 0 !important;
     border: 4px solid #707985 !important;
     border-radius: 43px !important;
@@ -39,8 +34,9 @@
 
 .phone-dialog-shell {
   --phone-frame-height: min(
-    760px,
-    calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 112px)
+    85dvh,
+    52.5rem,
+    calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
   );
   --phone-frame-bottom: calc(var(--game-dock-space) + var(--game-keyboard-inset, 0px) + 8px);
 }
@@ -91,8 +87,9 @@
 
 .phone-dialog-shell-solo {
   --phone-frame-height: min(
-    760px,
-    calc(100dvh - var(--game-keyboard-inset, 0px) - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+    85dvh,
+    52.5rem,
+    calc(100dvh - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
   );
 }
 
@@ -195,23 +192,23 @@
 @media (max-width: 640px) {
   .phone-dialog-shell {
     --phone-frame-height: min(
-      720px,
-      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+      85dvh,
+      45rem,
+      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
     );
   }
 
   .phone-dialog-shell-solo {
     --phone-frame-height: min(
-      720px,
-      calc(100dvh - var(--game-keyboard-inset, 0px) - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+      85dvh,
+      45rem,
+      calc(100dvh - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
     );
   }
 
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
-    width: calc(100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
-    max-width: calc(
-      100vw - 24px - env(safe-area-inset-left) - env(safe-area-inset-right)
-    ) !important;
+    width: min(88vw, 26rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)) !important;
+    max-width: min(88vw, 26rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)) !important;
     height: var(--phone-frame-height) !important;
     border-radius: 38px !important;
   }
@@ -617,10 +614,10 @@
     inset: max(6px, env(safe-area-inset-top)) 0 0 !important;
     display: flex !important;
     width: 100vw !important;
-    height: auto !important;
+    height: 100dvh !important;
     max-width: 100vw !important;
     max-height: none !important;
-    align-items: stretch !important;
+    align-items: center !important;
     justify-content: center !important;
     transform: none !important;
     pointer-events: none;
@@ -631,19 +628,17 @@
     inset: auto !important;
     /* The desktop centring offset would push the handset off the left edge. */
     transform: none !important;
-    width: calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
-    max-width: calc(
-      100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)
-    ) !important;
-    height: 100% !important;
-    max-height: none !important;
+    width: min(88vw, 26rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)) !important;
+    max-width: min(88vw, 26rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)) !important;
+    height: var(--phone-frame-height) !important;
+    max-height: var(--phone-frame-height) !important;
     margin: 0 !important;
-    border-radius: 25px 25px 0 0 !important;
+    border-radius: clamp(1.5rem, 5vw, 2.4rem) !important;
     pointer-events: auto;
   }
 
   .phone-dialog-shell-docked > .phone-dialog.phone-ui-refresh .phone-screen {
-    border-radius: 20px 20px 0 0 !important;
+    border-radius: clamp(1.25rem, 4vw, 2rem) !important;
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -683,10 +678,10 @@
     margin: 0 !important;
     transform: none !important;
     translate: none !important;
-    width: 88vw !important;
-    max-width: 88vw !important;
-    height: 88dvh !important;
-    max-height: 88dvh !important;
+    width: min(88vw, 26rem) !important;
+    max-width: min(88vw, 26rem) !important;
+    height: var(--phone-frame-height) !important;
+    max-height: var(--phone-frame-height) !important;
     pointer-events: auto;
   }
 }
@@ -712,13 +707,30 @@
 }
 @media (max-width: 640px) {
   .phone-dialog-shell-solo {
-    --phone-frame-height: calc(100dvh - 40px);
+    --phone-frame-height: min(
+      85dvh,
+      45rem,
+      calc(100dvh - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
+    );
   }
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh .phone-screen {
     border-radius: 32px !important;
   }
 }
 
+
+/* Fluid handset/app scale: viewport-relative sizing first, rem-based component rhythm. */
+.phone-ui-refresh,
+.phone-dialog {
+  --phone-space-xs: clamp(0.35rem, 1.2vw, 0.55rem);
+  --phone-space-sm: clamp(0.55rem, 1.8vw, 0.8rem);
+  --phone-space-md: clamp(0.75rem, 2.4vw, 1.1rem);
+  --phone-space-lg: clamp(1rem, 3vw, 1.5rem);
+  --phone-control-size: clamp(2.5rem, 7.5vw, 2.9rem);
+  --phone-heading-size: clamp(1.15rem, 4.5vw, 1.5rem);
+  --phone-body-size: clamp(0.82rem, 2.5vw, 0.95rem);
+  --phone-radius-shell: clamp(1.8rem, 5vw, 2.7rem);
+}
 
 /* One UI-inspired app and dialog system.
    All surfaces inherit OSOGBO LIFE design tokens; no app-specific palette is introduced. */
@@ -750,8 +762,8 @@
 
 .phone-ui-refresh .phone-app-toolbar,
 .phone-dialog .phone-app-toolbar {
-  min-height: 56px;
-  padding: 8px 16px;
+  min-height: clamp(3rem, 7.5dvh, 3.5rem);
+  padding: var(--phone-space-sm) var(--phone-space-md);
   border-bottom: 1px solid var(--phone-line);
   background: color-mix(in srgb, var(--phone-card) 94%, var(--phone-surface));
   -webkit-backdrop-filter: saturate(1.4) blur(18px);
@@ -761,7 +773,7 @@
 .phone-ui-refresh .phone-app-toolbar > strong,
 .phone-dialog .phone-app-toolbar > strong {
   color: var(--phone-ink);
-  font-size: 0.9rem;
+  font-size: var(--phone-body-size);
   font-weight: 750;
   letter-spacing: -0.025em;
 }
@@ -975,7 +987,7 @@ body:has(.phone-ui-refresh) :is(
   box-sizing: border-box;
   min-width: 0;
   width: 100%;
-  padding: 14px;
+  padding: var(--phone-space-md);
   color: var(--foreground);
   background: var(--brand-porcelain, var(--background));
 }
@@ -1012,7 +1024,7 @@ body:has(.phone-ui-refresh) :is(
 ) {
   min-width: 0;
   border: 1px solid var(--border);
-  border-radius: 1.15rem;
+  border-radius: clamp(0.85rem, 3vw, 1.15rem);
   background: var(--card);
   box-shadow: 0 2px 8px color-mix(in srgb, var(--foreground) 5%, transparent);
 }
@@ -1132,8 +1144,8 @@ body:has(.phone-ui-refresh) :is(
   box-sizing: border-box;
   width: 100%;
   min-width: 0;
-  min-height: 42px;
-  padding: 9px 12px;
+  min-height: var(--phone-control-size);
+  padding: var(--phone-space-sm) var(--phone-space-md);
   border: 1px solid var(--border);
   border-radius: 0.9rem;
   color: var(--foreground);
@@ -1142,7 +1154,7 @@ body:has(.phone-ui-refresh) :is(
 }
 
 .phone-ui-refresh .phone-app-body textarea {
-  min-height: 96px;
+  min-height: clamp(5.5rem, 18dvh, 8rem);
   resize: vertical;
 }
 
@@ -1154,7 +1166,8 @@ body:has(.phone-ui-refresh) :is(
   .support-submit,
   .phone-map-open
 ) {
-  min-height: 44px;
+  min-height: var(--phone-control-size);
+  padding-inline: var(--phone-space-md);
   border-radius: 999px;
   font-weight: 750;
 }
