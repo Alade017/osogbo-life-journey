@@ -1673,11 +1673,6 @@ body:has(.phone-ui-refresh) :is(
   flex: 1 1 0;
 }
 
-/* The launcher trigger must not remain visible beneath its own open dialog. */
-.gbb.is-open .gbb-phone {
-  display: none !important;
-}
-
 @media (max-width: 380px) {
   .phone-ui-refresh .phone-app-body .city-services-filters {
     grid-template-columns: repeat(2, minmax(0, 1fr));
