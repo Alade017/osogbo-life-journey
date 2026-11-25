@@ -4362,10 +4362,10 @@
 .phone-screen-home .phone-app-grid {
   box-sizing: border-box;
   min-height: 100%;
-  grid-template-rows: repeat(5, minmax(62px, auto));
-  align-content: space-evenly;
+  grid-template-rows: repeat(5, minmax(68px, auto));
+  align-content: center;
   align-items: center;
-  gap: clamp(2px, 0.55vh, 6px) clamp(4px, 1.2vw, 8px);
+  gap: clamp(6px, 0.8vh, 10px) clamp(4px, 1.2vw, 8px);
   padding: clamp(6px, 1.2vh, 10px) clamp(5px, 1.6vw, 9px);
   background: transparent !important;
 }
