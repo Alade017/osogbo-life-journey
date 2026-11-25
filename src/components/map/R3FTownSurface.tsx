@@ -1,5 +1,3 @@
-import { findTownRoute } from "@/game/town-route";
-import { TownRoute3D } from "./TownRoute3D";
 import { MapPointerGesture } from "./map-pointer-gesture";
 import { MapMarkerLayout } from "./MapMarkerLayout";
 import { DistrictZones } from "./DistrictZones";
@@ -10,14 +8,9 @@ import {
   WorldBusStops,
   WorldRoadSigns,
   WorldMaterial,
-  WorldRoads,
-  WorldRoadMarkings,
-  WorldPedestrianCrossings,
-  WorldSidewalks,
   WorldTrees,
   type WorldTree,
   WorldInstances,
-  type WorldInstance,
 } from "../3d/WorldScene";
 import { WORLD_SCALE, WORLD_PALETTE } from "../3d/world-theme";
 import { TownBrandBillboards3D } from "./TownBrandBillboards3D";
@@ -29,11 +22,11 @@ import { CompoundPlot3D } from "./CompoundPlot3D";
 import { LandmarkItem3D } from "./LandmarkItem3D";
 import { SelectionRing3D } from "./SelectionRing3D";
 import { MapCameraRig } from "./MapCameraRig";
-import { Terrain3D } from "./Terrain3D";
+import { AtlasGround, AtlasPlaceModels } from "./OsogboAtlas";
 import { LockedPlaces3D, type LockedSourcePlace } from "./LockedPlaces3D";
 import { validateTownMapData } from "@/game/town-map-validation";
 
-type TownMapPlace = {
+export type TownMapPlace = {
   id: string;
   label: string;
   category: string;
@@ -176,107 +169,7 @@ export function R3FTownSurface(props: Props) {
       type: "landmark",
     });
   }, [props.selectedLandmarkId]);
-  const routeDestination = town.landmarks.find((p) => p.id === props.selectedLandmarkId);
-  const originX = props.playerLocation ? Math.round(props.playerLocation.x) : undefined,
-    originZ = props.playerLocation ? Math.round(props.playerLocation.y) : undefined;
-  const roadRoute = useMemo(
-    () =>
-      originX !== undefined && originZ !== undefined && routeDestination
-        ? findTownRoute(
-            town.grid.rows,
-            [originX, originZ],
-            [routeDestination.grid.x, routeDestination.grid.z],
-          )
-        : null,
-    [originX, originZ, routeDestination],
-  );
   const closeUpTarget = props.focusCloseUp && selectedTarget ? selectedTarget.position : undefined;
-  const roads = useMemo(
-    () =>
-      town.grid.rows.flatMap((row, z) =>
-        Array.from(row).flatMap((tile, x): WorldInstance[] =>
-          tile === "r"
-            ? [{ position: [point(x, z)[0], 0.03, point(x, z)[2]], scale: [cell, 0.06, cell] }]
-            : [],
-        ),
-      ),
-    [],
-  );
-  const roadMarkings = useMemo<WorldInstance[]>(() => {
-    const result: WorldInstance[] = [];
-    const rows = town.grid.rows;
-
-    rows.forEach((row, z) => {
-      Array.from(row).forEach((tile, x) => {
-        if (tile !== "r") return;
-
-        const left = rows[z]?.[x - 1] === "r";
-        const right = rows[z]?.[x + 1] === "r";
-        const up = rows[z - 1]?.[x] === "r";
-        const down = rows[z + 1]?.[x] === "r";
-
-        const horizontal = left && right;
-        const vertical = up && down;
-
-        // Skip intersections, corners and road endpoints.
-        if (horizontal === vertical) return;
-
-        // Keep the centre marking legible on longer streets without turning
-        // the narrow grid roads into solid painted strips.
-        if ((x + z) % 2 !== 0) return;
-
-        const p = point(x, z);
-
-        result.push({
-          position: [p[0], 0.067, p[2]],
-          scale: horizontal
-            ? [cell * 0.38, 0.012, cell * 0.035]
-            : [cell * 0.035, 0.012, cell * 0.38],
-        });
-      });
-    });
-
-    return result;
-  }, []);
-  const pedestrianCrossings = useMemo<WorldInstance[]>(() => {
-    const result: WorldInstance[] = [];
-    const rows = town.grid.rows;
-
-    rows.forEach((row, z) => {
-      Array.from(row).forEach((tile, x) => {
-        if (tile !== "r") return;
-
-        const left = rows[z]?.[x - 1] === "r";
-        const right = rows[z]?.[x + 1] === "r";
-        const up = rows[z - 1]?.[x] === "r";
-        const down = rows[z + 1]?.[x] === "r";
-
-        // Only target intersections where roads connect in both axes.
-        const isIntersection = (left || right) && (up || down);
-
-        if (!isIntersection) return;
-
-        // Mark every connected junction so pedestrian crossings form a consistent
-        // city-wide network instead of appearing only at a sparse subset.
-        const horizontalRoad = left || right;
-        const p = point(x, z);
-
-        // Six narrow white stripes across the road.
-        for (let stripe = 0; stripe < 6; stripe++) {
-          const offset = (stripe - 2.5) * cell * 0.13;
-
-          result.push({
-            position: horizontalRoad ? [p[0] + offset, 0.075, p[2]] : [p[0], 0.075, p[2] + offset],
-            scale: horizontalRoad
-              ? [cell * 0.075, 0.012, cell * 0.42]
-              : [cell * 0.42, 0.012, cell * 0.075],
-          });
-        }
-      });
-    });
-
-    return result;
-  }, []);
   const busStops = useMemo<[number, number][]>(() => {
     const result: [number, number][] = [];
     const rows = town.grid.rows;
@@ -382,103 +275,6 @@ export function R3FTownSurface(props: Props) {
         ...destinations[index]!,
       }));
   }, [busStops]);
-  const { sidewalks, curbs } = useMemo(() => {
-    const occupied = new Set<string>();
-
-    town.grid.buildings.forEach((building) => {
-      occupied.add(`${building.x},${building.z}`);
-      occupied.add(`${building.x + 1},${building.z}`);
-      occupied.add(`${building.x},${building.z + 1}`);
-      occupied.add(`${building.x + 1},${building.z + 1}`);
-    });
-
-    [...town.grid.waterCells, ...town.grid.plotCells].forEach(([x, z]) => {
-      occupied.add(`${x},${z}`);
-    });
-
-    const sidewalkItems: WorldInstance[] = [];
-    const curbItems: WorldInstance[] = [];
-
-    const sidewalkWidth = cell * 0.28;
-    const curbWidth = cell * 0.09;
-
-    const directions = [
-      { dx: 0, dz: -1 },
-      { dx: 0, dz: 1 },
-      { dx: -1, dz: 0 },
-      { dx: 1, dz: 0 },
-    ] as const;
-
-    town.grid.rows.forEach((row, z) => {
-      Array.from(row).forEach((tile, x) => {
-        if (tile !== "r") return;
-
-        // Important: align with the existing road geometry.
-        const center = point(x, z);
-
-        const greenNeighbors = new Set<string>();
-
-        directions.forEach(({ dx, dz }) => {
-          const neighborX = x + dx;
-          const neighborZ = z + dz;
-          const neighborRow = town.grid.rows[neighborZ];
-
-          if (!neighborRow || neighborRow[neighborX] !== "g") return;
-          if (occupied.has(`${neighborX},${neighborZ}`)) return;
-
-          greenNeighbors.add(`${dx},${dz}`);
-
-          const horizontal = dx === 0;
-
-          const sidewalkX = center[0] + dx * (cell / 2 + sidewalkWidth / 2);
-          const sidewalkZ = center[2] + dz * (cell / 2 + sidewalkWidth / 2);
-
-          sidewalkItems.push({
-            position: [sidewalkX, 0.035, sidewalkZ],
-            scale: horizontal ? [cell, 0.05, sidewalkWidth] : [sidewalkWidth, 0.05, cell],
-          });
-
-          curbItems.push({
-            position: [center[0] + dx * (cell / 2), 0.105, center[2] + dz * (cell / 2)],
-            scale: horizontal ? [cell, 0.09, curbWidth] : [curbWidth, 0.09, cell],
-          });
-        });
-
-        // Fill outer sidewalk corners where both adjoining
-        // pedestrian edges and the diagonal ground tile exist.
-        for (const dx of [-1, 1] as const) {
-          for (const dz of [-1, 1] as const) {
-            const hasHorizontalEdge = greenNeighbors.has(`0,${dz}`);
-            const hasVerticalEdge = greenNeighbors.has(`${dx},0`);
-
-            if (!hasHorizontalEdge || !hasVerticalEdge) continue;
-
-            const diagonalX = x + dx;
-            const diagonalZ = z + dz;
-            const diagonalRow = town.grid.rows[diagonalZ];
-
-            if (!diagonalRow || diagonalRow[diagonalX] !== "g") continue;
-            if (occupied.has(`${diagonalX},${diagonalZ}`)) continue;
-
-            sidewalkItems.push({
-              position: [
-                center[0] + dx * (cell / 2 + sidewalkWidth / 2),
-                0.035,
-                center[2] + dz * (cell / 2 + sidewalkWidth / 2),
-              ],
-              scale: [sidewalkWidth, 0.05, sidewalkWidth],
-            });
-          }
-        }
-      });
-    });
-
-    return {
-      sidewalks: sidewalkItems,
-      curbs: curbItems,
-    };
-  }, []);
-
   const trees = useMemo<WorldTree[]>(() => {
     const occupied = new Set<string>();
 
@@ -563,13 +359,6 @@ export function R3FTownSurface(props: Props) {
           if (event.key === "Enter" || event.key === " ") gesture.current.keyboard();
         }}
       >
-        {props.selectedLandmarkId && (
-          <p className="town-route-status" role="status">
-            {roadRoute
-              ? `${props.travelPending ? "Submitting trip · " : ""}${props.travelMode === "walking" ? "Walking access" : "Road"} route preview · Nearest road access points`
-              : "Route preview unavailable from this position"}
-          </p>
-        )}
         <div className="town-camera-tools" role="toolbar" aria-label="3D town camera">
           <button
             type="button"
@@ -635,15 +424,9 @@ export function R3FTownSurface(props: Props) {
             <hemisphereLight args={["#fff5df", "#afc4ad", 1.7]} />
             <directionalLight position={[18, 32, 12]} intensity={1.8} />
             {/* Fixed-angle maps need clear visibility across the full authored city. */}
-            <Terrain3D rows={town.grid.rows} cellSize={cell} />
+            <AtlasGround width={gridCols * cell} depth={gridRows * cell} />
+            <AtlasPlaceModels places={props.places} point={point} cell={cell} />
 
-            <WorldRoads items={roads} />
-            {roadRoute && (
-              <TownRoute3D route={roadRoute} walking={props.travelMode === "walking"} />
-            )}
-            <WorldRoadMarkings items={roadMarkings} />
-            <WorldPedestrianCrossings items={pedestrianCrossings} />
-            <WorldSidewalks sidewalks={sidewalks} curbs={curbs} />
             <WorldBusStops
               positions={busStops}
               size={cell}
