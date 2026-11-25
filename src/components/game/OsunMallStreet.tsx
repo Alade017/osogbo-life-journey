@@ -95,6 +95,7 @@ export function OsunMallStreet({
       return undefined;
     }
     const timer = window.setInterval(() => {
+      if (sim.current.passenger !== "walking") return;
       const visitor = sim.current.player;
       setRiderTarget((previous) =>
         nextRiderTarget(previous ?? [visitor.pos[0], visitor.pos[1]], visitor.pos, visitor.moving),
@@ -146,6 +147,7 @@ export function OsunMallStreet({
   });
 
   const onWalk = (point: WalkPoint) => {
+    if (sim.current.passenger !== "walking") return;
     if (!canWalkOnStreet(point)) {
       setMessage("You can't walk there.");
       return;
@@ -192,9 +194,10 @@ export function OsunMallStreet({
             playerAppearance={playerAppearance}
             playerGender={character?.gender ?? "nonbinary"}
             onWalk={onWalk}
-            onEnterMall={onEnterMall}
+            onEnterMall={() => { if (sim.current.passenger === "walking") onEnterMall(); }}
             onRider={() => setRiderOpen(true)}
             riderTarget={riderTarget}
+            assignedRideId={assignedRideId}
           />
         </Canvas>
 

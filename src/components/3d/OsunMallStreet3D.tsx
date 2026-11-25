@@ -14,16 +14,21 @@ import {
   findOkadaPickup,
 } from "@/game/osun-mall-street-layout";
 import { trafficFrameSeconds, trafficSpeed, trafficBrakingSpeed, trafficHeading } from "@/game/town-traffic-motion";
+import { bikePoint, boardingPath, mountProgress, MOUNT_SECONDS, OKADA_SEAT, PASSENGER_SEAT_Z, type PassengerPhase } from "@/game/okada-passenger";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
 
 /** Mutable state for the visitor on the street. Lives in a ref, so frames never re-render React. */
 export type StreetSim = {
   player: { pos: WalkPoint; walker: MallWalker | null; moving: boolean };
+  passenger: PassengerPhase;
+  bike: { pos: WalkPoint; yaw: number; stopped: boolean };
 };
 
 export function createStreetSim(): StreetSim {
   return {
+    passenger: "walking",
+    bike: { pos: STREET_RIDER_SPOT, yaw: 0, stopped: false },
     player: { pos: [STREET_DOOR_FRONT[0], STREET_DOOR_FRONT[1]], walker: null, moving: false },
   };
 }
@@ -34,7 +39,6 @@ function isClick(event: ThreeEvent<MouseEvent>) {
 }
 
 /** The okada rider's look: an orange vest over dark trousers. */
-const OKADA_SEAT = { height: 0.65, thickness: 0.12, centerZ: -0.22, length: 0.65 } as const;
 const RIDER_APPEARANCE: Appearance = {
   clothed: true,
   skin: 2,
@@ -46,20 +50,32 @@ const RIDER_APPEARANCE: Appearance = {
 };
 
 /** The bike and its seated rider share one moving root. Local motion never confirms a ride. */
-function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoint | null }) {
+function OkadaRider({ onRider, target, sim, assignedRideId }: { onRider: () => void; target: WalkPoint | null; sim: { current: StreetSim }; assignedRideId: string | null }) {
   const group = useRef<Group>(null);
+  const lastPhase = useRef<PassengerPhase>("walking");
   const rider = useRef<{ pos: WalkPoint; walker: MallWalker | null; speed: number; yaw: number }>({
     pos: STREET_RIDER_SPOT, walker: null, speed: 0, yaw: 0,
   });
   useEffect(() => {
     const state = rider.current;
+    if (sim.current.passenger !== "walking") return;
+    sim.current.bike.stopped = false;
     const path = target ? findOkadaPickup(state.pos, target) : findStreetPath(state.pos, STREET_RIDER_SPOT);
     state.walker = path ? createWalker(state.pos, path) : null;
     if (!path) state.speed = 0;
-  }, [target]);
+  }, [target, sim]);
   useFrame((_, delta) => {
     const state = rider.current;
     const dt = trafficFrameSeconds(delta);
+    if (lastPhase.current !== "walking" && sim.current.passenger === "walking" && !target) {
+      const path = findStreetPath(state.pos, STREET_RIDER_SPOT);
+      state.walker = path ? createWalker(state.pos, path) : null;
+    }
+    lastPhase.current = sim.current.passenger;
+    if (sim.current.passenger !== "walking") {
+      state.walker = null;
+      state.speed = 0;
+    }
     if (state.walker && dt > 0) {
       const remaining = state.walker.points.slice(state.walker.next).reduce((acc, point) => ({
         pos: point, distance: acc.distance + Math.hypot(point[0]-acc.pos[0],point[1]-acc.pos[1]),
@@ -72,6 +88,7 @@ function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoin
       state.walker = next.done ? null : {...next, speed: state.walker.speed};
       if (next.done) state.speed = 0;
     }
+    sim.current.bike = { pos: state.pos, yaw: state.yaw, stopped: Boolean(assignedRideId && target && !state.walker && Math.hypot(state.pos[0]-target[0],state.pos[1]-target[1]) <= 1.3) };
     if (group.current) {
       group.current.position.set(state.pos[0],0,state.pos[1]);
       group.current.rotation.y = state.yaw;
@@ -110,12 +127,18 @@ function StreetPlayer({
   sim,
   appearance,
   gender,
+  assignedRideId,
 }: {
+  assignedRideId: string | null;
   sim: { current: StreetSim };
   appearance: Appearance;
   gender: string;
 }) {
   const group = useRef<Group>(null);
+  const [passenger, setPassenger] = useState<PassengerPhase>("walking");
+  const transition = useRef<{ from: WalkPoint; to: WalkPoint; elapsed: number } | null>(null);
+  const activeRide = useRef<string | null>(null);
+  const setPhase = (phase: PassengerPhase) => { sim.current.passenger = phase; setPassenger(phase); };
   const [pose, setPose] = useState({ moving: false, facing: "south" });
   const poseRef = useRef(pose);
   const updatePose = (moving: boolean, dx: number, dz: number) => {
@@ -136,6 +159,49 @@ function StreetPlayer({
   };
   useFrame((_, delta) => {
     const player = sim.current.player;
+    const bike = sim.current.bike;
+    const dt = trafficFrameSeconds(delta);
+    const phase = sim.current.passenger;
+    const seat = bikePoint(bike.pos, bike.yaw, 0, PASSENGER_SEAT_Z);
+    if (phase === "walking" && assignedRideId && bike.stopped && !player.walker) {
+      const path = boardingPath(player.pos, bike.pos, bike.yaw);
+      if (path) {
+        activeRide.current = assignedRideId;
+        player.walker = createWalker(player.pos, path);
+        setPhase("approaching");
+      }
+    } else if (phase === "approaching" && activeRide.current !== assignedRideId) {
+      player.walker = null; player.moving = false; setPhase("walking");
+    } else if (phase === "approaching" && !player.walker) {
+      transition.current = { from: player.pos, to: seat, elapsed: 0 };
+      setPhase("mounting");
+    } else if ((phase === "mounting" || phase === "mounted") && activeRide.current !== assignedRideId) {
+      const path = boardingPath(player.pos, bike.pos, bike.yaw);
+      const landing = path?.at(-1) ?? transition.current?.from;
+      if (landing) {
+        transition.current = { from: player.pos, to: landing, elapsed: 0 };
+        setPhase("dismounting");
+      } else { setPhase("walking"); }
+    } else if (phase === "mounting" || phase === "dismounting") {
+      const motion = transition.current;
+      if (motion) {
+        motion.elapsed += dt;
+        const t = mountProgress(motion.elapsed);
+        player.pos = [motion.from[0]+(motion.to[0]-motion.from[0])*t, motion.from[1]+(motion.to[1]-motion.from[1])*t];
+        group.current?.position.set(player.pos[0], Math.sin(t*Math.PI)*0.16, player.pos[1]);
+        if (group.current) group.current.rotation.y = bike.yaw;
+        if (motion.elapsed >= MOUNT_SECONDS) {
+          setPhase(phase === "mounting" ? "mounted" : "walking");
+          if (phase === "dismounting") { activeRide.current = null; transition.current = null; }
+        }
+      }
+      return;
+    } else if (phase === "mounted") {
+      player.pos = seat;
+      group.current?.position.set(seat[0],0,seat[1]);
+      if (group.current) group.current.rotation.y = bike.yaw;
+      return;
+    }
     const previous = player.pos;
     if (player.walker) {
       const next = stepWalker(player.walker, Math.min(delta, 0.1));
@@ -146,6 +212,7 @@ function StreetPlayer({
     }
     updatePose(player.moving, player.pos[0] - previous[0], player.pos[1] - previous[1]);
     group.current?.position.set(player.pos[0], 0, player.pos[1]);
+    if (group.current) group.current.rotation.y = 0;
   });
   return (
     <group ref={group}>
@@ -153,7 +220,9 @@ function StreetPlayer({
         name="You"
         gender={gender}
         appearance={appearance}
-        facing={pose.facing}
+        facing={passenger === "mounted" || passenger === "mounting" || passenger === "dismounting" ? "south" : pose.facing}
+        taskPose={passenger === "mounted" || passenger === "mounting" ? "motorcyclePassenger" : undefined}
+        {...(passenger === "mounted" || passenger === "mounting" ? { seatHeight: OKADA_SEAT.height + OKADA_SEAT.thickness / 2 } : {})}
         animation={pose.moving ? "walk" : "idle"}
         position={[0, 0, 0]}
       />
@@ -170,6 +239,7 @@ export function OsunMallStreet3D({
   onEnterMall,
   onRider,
   riderTarget,
+  assignedRideId = null,
 }: {
   sim: { current: StreetSim };
   playerAppearance: Appearance;
@@ -178,6 +248,7 @@ export function OsunMallStreet3D({
   onEnterMall: () => void;
   /** Where the rider should come to, when a ride has been found; null to wait at the stand. */
   riderTarget: WalkPoint | null;
+  assignedRideId?: string | null;
   onRider: () => void;
 }) {
   return (
@@ -208,7 +279,7 @@ export function OsunMallStreet3D({
       </mesh>
 
       <MallStreetArchitecture onEnterMall={onEnterMall} />
-      <OkadaRider onRider={onRider} target={riderTarget} />
+      <OkadaRider onRider={onRider} target={riderTarget} sim={sim} assignedRideId={assignedRideId} />
 
       {STREET_PEDESTRIANS.map((spot, index) => {
         const look = shopperLook(index + 40);
@@ -226,7 +297,7 @@ export function OsunMallStreet3D({
         );
       })}
 
-      <StreetPlayer sim={sim} appearance={playerAppearance} gender={playerGender} />
+      <StreetPlayer sim={sim} appearance={playerAppearance} gender={playerGender} assignedRideId={assignedRideId} />
     </>
   );
 }
