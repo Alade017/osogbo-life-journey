@@ -31,10 +31,10 @@ describe("phone launcher responsive layout", () => {
     );
 
     expect(pagesRule).not.toBe("");
-    expect(pagesRule).toMatch(/overflow-x:\\s*auto;/);
-    expect(pagesRule).toMatch(/overflow-y:\\s*auto;/);
-    expect(pagesRule).toMatch(/touch-action:\\s*pan-x pan-y pinch-zoom;/);
-    expect(pagesRule).toMatch(/-webkit-overflow-scrolling:\\s*touch;/);
+    expect(pagesRule).toMatch(/overflow-x:\s*auto;/);
+    expect(pagesRule).toMatch(/overflow-y:\s*auto;/);
+    expect(pagesRule).toMatch(/touch-action:\s*pan-x pan-y pinch-zoom;/);
+    expect(pagesRule).toMatch(/-webkit-overflow-scrolling:\s*touch;/);
   });
 
   it("retains all five launcher rows in the short-landscape grid rule", () => {
@@ -48,7 +48,7 @@ describe("phone launcher responsive layout", () => {
     );
 
     expect(gridRule).not.toBe("");
-    expect(gridRule).toMatch(/grid-template-rows:\\s*repeat\\(5,/);
-    expect(gridRule).toMatch(/height:\\s*max-content;/);
+    expect(gridRule).toMatch(/grid-template-rows:\s*repeat\(5,/);
+    expect(gridRule).toMatch(/height:\s*max-content;/);
   });
 });
