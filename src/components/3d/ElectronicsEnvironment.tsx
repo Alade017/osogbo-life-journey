@@ -2,7 +2,7 @@ import { ShowroomAsset } from "./ShowroomAsset";
 import { useMemo } from "react";
 import { WorldMaterial, WorldInstances, type WorldInstance } from "./WorldScene";
 import type { WorldTone } from "./world-theme";
-import { RETAIL_ROOM as room, RETAIL_COUNTER as counter, type RetailDisplay } from "@/game/electronics-navigation";
+import { RETAIL_ROOM as room, RETAIL_COUNTER as counter, RETAIL_EXTERIOR as exterior, type RetailDisplay } from "@/game/electronics-navigation";
 import type { WalkPoint } from "@/game/grid-walk-path";
 
 type Point = [number, number, number];
@@ -48,7 +48,9 @@ export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, o
       <Block at={[0,0.5,0]} size={[counter.width-0.1,1,counter.depth-0.1]} tone="timber" />
       <Block at={[0,1.03,0]} size={[counter.width,0.06,counter.depth]} tone="linen" />
     </group>
-    <WorldInstances items={legs} tone="metal" />
+    <group onClick={event => { event.stopPropagation(); if (event.delta <= 5 && event.instanceId !== undefined) onSelect(Math.floor(event.instanceId / 4)); }}>
+      <WorldInstances items={legs} tone="metal" />
+    </group>
     {displays.map((display,index) => {
       const product = products[index];
       if (!product) return null;
@@ -60,5 +62,33 @@ export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, o
         {selected===index && <mesh position={[0,0.898,display.depth/2-0.025]}><boxGeometry args={[display.width,0.012,0.04]} /><meshBasicMaterial color="#c47c45" /></mesh>}
       </group>;
     })}
+  </group>;
+}
+
+export function ElectronicsExterior({ onWalk, onEnter }: { onWalk: (point: WalkPoint) => void; onEnter: () => void }) {
+  const front = room.depth / 2;
+  const windowWidth = (room.width - room.entranceWidth) / 2;
+  const wallHeight = 3.6;
+  return <group name="electronics-storefront">
+    <group onClick={event => { event.stopPropagation(); if (event.delta <= 5) onWalk([event.point.x, event.point.z]); }}>
+      <Block at={[0, -0.1, front + exterior.depth / 2]} size={[room.width, 0.2, exterior.depth]} tone="sidewalk" />
+    </group>
+    <Block at={[0, -0.1, front + exterior.depth + 2.5]} size={[room.width + 6, 0.18, 5]} tone="road" />
+    <Block at={[0, wallHeight / 2, -front]} size={[room.width, wallHeight, 0.16]} tone="wall" />
+    {[-1, 1].map(side => <group key={side}>
+      <Block at={[side * room.width / 2, wallHeight / 2, 0]} size={[0.16, wallHeight, room.depth]} tone="wall" />
+      <Block at={[side * (room.entranceWidth + windowWidth) / 2, 0.35, front]} size={[windowWidth, 0.7, 0.2]} tone="slate" />
+      <mesh position={[side * (room.entranceWidth + windowWidth) / 2, 1.85, front]}>
+        <boxGeometry args={[windowWidth, 2.3, 0.08]} />
+        <meshStandardMaterial color="#819ba8" roughness={0.22} metalness={0.25} />
+      </mesh>
+      {[0, 0.5, 1].map(fraction => <Block key={fraction} at={[side * (room.entranceWidth / 2 + fraction * windowWidth), 1.85, front]} size={[0.12, 2.3, 0.16]} tone="windowFrame" />)}
+    </group>)}
+    <Block at={[0, wallHeight, 0]} size={[room.width + 0.3, 0.24, room.depth + 0.3]} tone="roof" />
+    <Block at={[0, 3.28, front + 0.12]} size={[room.width, 0.62, 0.24]} tone="slate" />
+    <Block at={[0, 3.02, front + 0.7]} size={[room.entranceWidth + 1, 0.14, 1.5]} tone="metal" />
+    <group onClick={event => { event.stopPropagation(); if (event.delta <= 5) onEnter(); }}>
+      <Block at={[0, -0.05, front + 0.5]} size={[room.entranceWidth, 0.1, 1]} tone="path" />
+    </group>
   </group>;
 }
