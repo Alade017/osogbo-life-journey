@@ -39,11 +39,12 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
   const [tab, setTab] = useState<HubTab>(initialTab);
   const [expanded, setExpanded] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
-  const dragRef = useRef<{ pointerId: number; startY: number; offset: number } | null>(null);
+  const dragRef = useRef<{ pointerId: number; startY: number; offset: number; moved: boolean } | null>(null);
   const { simulation, ready } = useGameTime();
   const { data: character } = useQuery(q.character());
   const { data: skills } = useQuery(q.playerSkills());
   const { data: relationships } = useQuery(q.npcRelationships());
+  const { data: npcs } = useQuery(q.npcs());
   const { data: jobs } = useQuery(q.jobs());
   const { data: employment } = useQuery(q.myJobs());
   const { data: missions } = useMissions();
@@ -77,20 +78,47 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
   if (!open) return null;
   const activeMissions = (missions ?? []).filter((mission) => !mission.completed_at && !mission.claimed_at);
   const completedMissions = (missions ?? []).filter((mission) => mission.completed_at || mission.claimed_at);
-  const skillRows = (skills ?? []) as Array<Record<string, unknown>>;
-  const relationshipRows = (relationships ?? []) as Array<Record<string, unknown>>;
-  const employmentRows = (employment ?? []) as Array<Record<string, unknown>>;
-  const job = (jobs ?? []).find((item) => item.slug === character?.occupation_preference);
-  const currentEmployment = employmentRows.find((row) =>
-    row["status"] === "active" || row["is_active"] === true,
-  ) ?? employmentRows[0];
+  const skillRows = skills ?? [];
+  const relationshipRows = relationships ?? [];
+  const npcRows = npcs ?? [];
+  const employmentRows = employment ?? [];
+  const preferredJob = (jobs ?? []).find((item) => item.slug === character?.occupation_preference);
+  const currentEmployment = employmentRows.find((row) => row.is_current);
+  const currentJob = (jobs ?? []).find((item) => item.id === currentEmployment?.job_id) ?? preferredJob;
 
   return (
     <div className="player-hub-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
       <section className={`player-hub-sheet${expanded ? " is-expanded" : ""}`} role="dialog" aria-modal="true" aria-label="Player life hub" style={dragOffset ? { transform: `translateY(${dragOffset}px)`, transition: "none" } : undefined}>
-        <button className="player-hub-grabber" type="button" aria-label="Expand player hub" onClick={() => setExpanded(true)} onPointerDown={(event) => { dragRef.current = { pointerId: event.pointerId, startY: event.clientY, offset: 0 }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => { const drag = dragRef.current; if (!drag || drag.pointerId !== event.pointerId) return; drag.offset = event.clientY - drag.startY; setDragOffset(Math.max(-120, Math.min(220, drag.offset))); }} onPointerUp={(event) => { const drag = dragRef.current; if (!drag || drag.pointerId !== event.pointerId) return; if (drag.offset > 105) onClose(); else if (drag.offset < -45) setExpanded(true); else if (expanded && drag.offset > 35) setExpanded(false); dragRef.current = null; setDragOffset(0); }} onPointerCancel={() => { dragRef.current = null; setDragOffset(0); }}><span /></button>
+        <button className="player-hub-grabber" type="button" aria-label="Expand player hub" onClick={() => {
+          if (dragRef.current?.moved) {
+            dragRef.current = null;
+            return;
+          }
+          setExpanded(true);
+        }} onPointerDown={(event) => {
+          dragRef.current = { pointerId: event.pointerId, startY: event.clientY, offset: 0, moved: false };
+          event.currentTarget.setPointerCapture(event.pointerId);
+        }} onPointerMove={(event) => {
+          const drag = dragRef.current;
+          if (!drag || drag.pointerId !== event.pointerId) return;
+          drag.offset = event.clientY - drag.startY;
+          if (Math.abs(drag.offset) > 8) drag.moved = true;
+          setDragOffset(Math.max(-120, Math.min(220, drag.offset)));
+        }} onPointerUp={(event) => {
+          const drag = dragRef.current;
+          if (!drag || drag.pointerId !== event.pointerId) return;
+          if (drag.offset > 105) onClose();
+          else if (drag.offset < -45) setExpanded(true);
+          else if (expanded && drag.offset > 35) setExpanded(false);
+          if (!drag.moved) dragRef.current = null;
+          else dragRef.current = { ...drag, pointerId: -1 };
+          setDragOffset(0);
+        }} onPointerCancel={() => {
+          dragRef.current = null;
+          setDragOffset(0);
+        }}><span /></button>
         <header className="player-hub-header">
           <div className="player-hub-identity">
             <div className="player-hub-avatar">
@@ -99,7 +127,7 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
             <div className="player-hub-heading">
               <span className="player-hub-eyebrow">YOUR OSOGBO LIFE</span>
               <h2>{player.name}</h2>
-              <p>Level {player.level} · {readable(job?.name, "Finding your path")}</p>
+              <p>Level {player.level} · {readable(currentJob?.name, "Finding your path")}</p>
             </div>
           </div>
           <button className="player-hub-close" type="button" onClick={onClose} aria-label="Close player hub"><X size={20} /></button>
@@ -122,7 +150,7 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
               <article><span>Level</span><strong>{player.level}</strong></article>
               <article><span>Cash</span><strong>₦{numberValue(player.cash).toLocaleString("en-NG")}</strong></article>
               <article><span>Reputation</span><strong>{player.reputation}/100</strong></article>
-              <article><span>Location</span><strong>{readable(player.location?.name, "Osogbo")}</strong></article>
+              <article><span>Location</span><strong>{readable(player.location?.name, "Location unavailable")}</strong></article>
             </div>
             <p className="player-hub-note">Your equipped appearance is shared with your in-world character.</p>
           </div>}
@@ -144,22 +172,18 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
           {tab === "goals" && <div className="player-hub-list">
             <div className="player-hub-section-intro"><h3>Your goals</h3><p>Progress from your existing mission records.</p></div>
             <div className="player-hub-summary-strip"><strong>{activeMissions.length}</strong><span>Active</span><strong>{completedMissions.length}</strong><span>Completed</span></div>
-            {activeMissions.length ? activeMissions.map((mission) => <article className="player-hub-record" key={mission.id}>
-              <Target size={18} /><div><strong>{mission.title}</strong><p>{mission.description}</p></div><span>In progress</span>
+            {activeMissions.length ? activeMissions.map((playerMission) => <article className="player-hub-record" key={playerMission.id}>
+              <Target size={18} /><div><strong>{readable(playerMission.mission?.title, "Mission")}</strong><p>{readable(playerMission.mission?.description, "Mission details unavailable.")}</p></div><span>In progress</span>
             </article>) : <p className="player-hub-empty">No active missions right now. Check the game objectives for your next challenge.</p>}
             {completedMissions.length > 0 && <p className="player-hub-muted"><CheckCircle2 size={15} /> {completedMissions.length} completed mission{completedMissions.length === 1 ? "" : "s"}</p>}
           </div>}
 
           {tab === "skills" && <div className="player-hub-list">
             <div className="player-hub-section-intro"><h3>Skills & progression</h3><p>Skill levels recorded for your character.</p></div>
-            {skillRows.length ? skillRows.map((skill, index) => {
-              const label = readable(skill["skill_name"] ?? skill["name"] ?? skill["skill"], `Skill ${index + 1}`);
-              const level = numberValue(skill["level"]);
-              const xp = numberValue(skill["experience"] ?? skill["xp"]);
-              const progress = Math.max(0, Math.min(100, numberValue(skill["progress"] ?? skill["progress_percent"])));
-              return <article className="player-hub-skill" key={String(skill["id"] ?? label)}>
-                <div><strong>{label}</strong><span>Level {level}{xp ? ` · ${xp} XP` : ""}</span></div>
-                <div className="player-hub-meter"><span style={{ width: `${progress}%` }} /></div>
+            {skillRows.length ? skillRows.map((skill) => {
+              const label = skill.skill_slug.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+              return <article className="player-hub-skill" key={skill.id}>
+                <div><strong>{label}</strong><span>Level {skill.level} · {skill.experience.toLocaleString("en-NG")} XP</span></div>
               </article>;
             }) : <p className="player-hub-empty">Your skill record is not available yet. Skills will appear here as the game records them.</p>}
           </div>}
@@ -167,17 +191,20 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
           {tab === "people" && <div className="player-hub-list">
             <div className="player-hub-section-intro"><h3>Your connections</h3><p>Relationships saved in your neighbourhood life.</p></div>
             <div className="player-hub-summary-strip"><strong>{relationshipRows.length}</strong><span>Relationships</span></div>
-            {relationshipRows.length ? relationshipRows.slice(0, 8).map((relation, index) => <article className="player-hub-record" key={String(relation["id"] ?? index)}>
-              <Heart size={18} /><div><strong>{readable(relation["npc_name"] ?? relation["name"], "Neighbour")}</strong><p>Friendship {numberValue(relation["friendship"])} · Trust {numberValue(relation["trust"])}</p></div>
-            </article>) : <p className="player-hub-empty">You have not built any recorded relationships yet. Meet people around Osogbo to get started.</p>}
+            {relationshipRows.length ? relationshipRows.slice(0, 8).map((relation) => {
+              const npc = npcRows.find((item) => item.id === relation.npc_id);
+              return <article className="player-hub-record" key={relation.id}>
+                <Heart size={18} /><div><strong>{readable(npc?.name, "Neighbour")}</strong><p>Friendship {relation.friendship} · Trust {relation.trust}</p></div>
+              </article>;
+            }) : <p className="player-hub-empty">You have not built any recorded relationships yet. Meet people around Osogbo to get started.</p>}
           </div>}
 
           {tab === "settings" && <div className="player-hub-settings"><SettingsPage embedded /></div>}
 
           {tab === "career" && <div className="player-hub-list">
             <div className="player-hub-section-intro"><h3>Career & work</h3><p>Your current occupation and saved employment records.</p></div>
-            <article className="player-hub-career-card"><BriefcaseBusiness size={24} /><div><span>Preferred occupation</span><strong>{readable(job?.name, "Exploring opportunities")}</strong><p>{readable(job?.description, "Choose a career path to begin building your work life.")}</p></div></article>
-            {currentEmployment && <article className="player-hub-record"><CheckCircle2 size={18} /><div><strong>{readable(currentEmployment["job_title"] ?? currentEmployment["position"] ?? currentEmployment["role"], "Employment record")}</strong><p>{readable(currentEmployment["status"], "Saved employment")}</p></div></article>}
+            <article className="player-hub-career-card"><BriefcaseBusiness size={24} /><div><span>{currentEmployment ? "Current occupation" : "Preferred occupation"}</span><strong>{readable(currentJob?.name, "Exploring opportunities")}</strong><p>{readable(currentJob?.description, "Choose a career path to begin building your work life.")}</p></div></article>
+            {currentEmployment && <article className="player-hub-record"><CheckCircle2 size={18} /><div><strong>Career level {currentEmployment.career_level}</strong><p>{currentEmployment.times_performed.toLocaleString("en-NG")} completed shifts</p></div></article>}
             <p className="player-hub-note">Career pay and progression continue to be managed by the existing career system.</p>
           </div>}
         </div>
