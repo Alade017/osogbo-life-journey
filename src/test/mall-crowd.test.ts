@@ -4,6 +4,7 @@ import {
   MALL_CROWD_TARGET,
   mallCrowdTarget,
   reservedShopperStops,
+  recoverShopperRoute,
   assignWaitingCheckouts,
   MALL_BROWSE_SECONDS,
   MALL_WAITING_SPOTS,
@@ -16,7 +17,7 @@ import {
   clearsShopperSegment,
   getShopperById,
 } from "@/game/mall-crowd";
-import { stepWalker } from "@/game/mall-movement";
+import { createWalker, stepWalker } from "@/game/mall-movement";
 import { MALL_ENTRANCE, MALL_TILL_QUEUE, canWalkInMall } from "@/game/osun-mall-layout";
 
 describe("mall shopper routes", () => {
@@ -129,6 +130,25 @@ describe("mall stop reservations", () => {
   });
   it("does not admit a shopper on top of a visitor", () => {
     expect(advanceCrowd([], 0.1, 0, MALL_CROWD_TARGET, [MALL_ENTRANCE]).shoppers).toEqual([]);
+  });
+});
+
+describe("mall route recovery", () => {
+  it("reroutes around a stationary visitor while preserving upcoming dwell stops", () => {
+    const walker = createWalker([0, 0], [[0, 1], [0, 3], [0, 4]], {
+      dwellAt: new Map([[1, MALL_BROWSE_SECONDS], [2, MALL_PAY_SECONDS]]),
+    });
+    const recovered = recoverShopperRoute(walker, [[0, 1]]);
+    expect(recovered).not.toBe(walker);
+    expect(recovered.pos).toEqual(walker.pos);
+    expect(recovered.points.at(-1)).toEqual([0, 4]);
+    expect([...recovered.dwellAt].map(([index, seconds]) => [recovered.points[index], seconds]))
+      .toEqual([[[0, 3], MALL_BROWSE_SECONDS], [[0, 4], MALL_PAY_SECONDS]]);
+    expect(recovered.points.every(canWalkInMall)).toBe(true);
+  });
+  it("preserves the current walker when a destination remains occupied", () => {
+    const walker = createWalker([0, 0], [[0, 1]]);
+    expect(recoverShopperRoute(walker, [[0, 1]])).toBe(walker);
   });
 });
 
