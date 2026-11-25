@@ -48,3 +48,11 @@
 @media(max-width:420px){.player-hub-backdrop{padding:0 0 max(0px,env(safe-area-inset-bottom))}.player-hub-sheet{width:100%;max-height:88dvh;min-height:min(430px,78dvh);border-radius:25px 25px 0 0}.player-hub-tab{gap:5px;padding-inline:11px;font-size:11px}.player-hub-content{padding:13px}.player-hub-character-stage{height:clamp(180px,30dvh,250px)}}
 @media(orientation:landscape) and (max-height:500px){.player-hub-sheet{max-height:94dvh;min-height:0}.player-hub-header{padding-block:6px}.player-hub-avatar{width:44px;height:44px}.player-hub-content{padding:10px}.player-hub-character-stage{height:150px}}
 @media(prefers-reduced-motion:reduce){.player-hub-backdrop,.player-hub-sheet{animation:none}.player-hub-meter>span{transition:none}}
+
+
+/* Settings renders inside the player panel, below its shared identity header. */
+.player-hub-settings{min-width:0}
+.player-hub-settings>.sx-page{max-width:none;gap:10px;padding:0;background:transparent}
+.player-hub-settings .sx-hero{display:none}
+.player-hub-settings .sx-tabs{position:sticky;top:-1px;z-index:2;margin:0;border-radius:13px;background:var(--card)}
+.player-hub-settings .sx-card{box-shadow:none}
