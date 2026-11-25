@@ -112,8 +112,8 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
   }, [open, onClose]);
 
   if (!open) return null;
-  const activeMissions = (missions ?? []).filter((mission) => !mission.completed_at && !mission.claimed_at);
-  const completedMissions = (missions ?? []).filter((mission) => mission.completed_at || mission.claimed_at);
+  const activeMissions = (missions ?? []).filter((mission) => mission.status !== "completed" && !mission.completed_at && !mission.claimed_at);
+  const completedMissions = (missions ?? []).filter((mission) => mission.status === "completed" || mission.completed_at || mission.claimed_at);
   const skillRows = skills ?? [];
   const relationshipRows = relationships ?? [];
   const npcRows = npcs ?? [];
