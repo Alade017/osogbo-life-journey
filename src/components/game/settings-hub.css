@@ -708,3 +708,79 @@
     flex-wrap: wrap;
   }
 }
+
+
+/* In-phone Settings: let the page itself grow naturally inside one native scroll area. */
+.phone-ui-refresh .phone-app-body--sx {
+  display: block;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+  scroll-behavior: auto !important;
+  scrollbar-gutter: stable;
+}
+
+.phone-ui-refresh .phone-app-body--sx > .sx-page {
+  display: grid;
+  min-height: max-content;
+  height: auto;
+  align-content: start;
+  width: 100%;
+  padding-bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+.phone-ui-refresh .phone-app-body--sx [role="switch"] {
+  box-sizing: border-box;
+  display: inline-flex;
+  width: 2.75rem;
+  min-width: 2.75rem;
+  height: 1.625rem;
+  min-height: 1.625rem;
+  flex: 0 0 2.75rem;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 78%, var(--card));
+  box-shadow: inset 0 1px 2px rgb(15 23 42 / 10%);
+  transition: background-color 160ms ease, border-color 160ms ease;
+}
+
+.phone-ui-refresh .phone-app-body--sx [role="switch"][data-state="checked"] {
+  justify-content: flex-end;
+  border-color: var(--brand-royal);
+  background: var(--brand-royal);
+}
+
+.phone-ui-refresh .phone-app-body--sx [role="switch"] > span {
+  display: block;
+  width: 1.25rem;
+  height: 1.25rem;
+  flex: 0 0 1.25rem;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgb(15 23 42 / 24%);
+  transform: none;
+  transition: transform 160ms ease;
+}
+
+.phone-ui-refresh .phone-app-body--sx [role="switch"]:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 3px;
+}
+
+.phone-ui-refresh .phone-app-body--sx [role="switch"]:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-ui-refresh .phone-app-body--sx [role="switch"],
+  .phone-ui-refresh .phone-app-body--sx [role="switch"] > span {
+    transition: none;
+  }
+}
