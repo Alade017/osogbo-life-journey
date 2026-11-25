@@ -4321,3 +4321,216 @@
 .phone-app-body :where(img, video, canvas, input, select, textarea) {
   max-width: 100%;
 }
+
+
+/* OSOGBO LIFE launcher refresh: a location-inspired wallpaper and a balanced app grid. */
+.phone-screen-home .phone-launcher-home {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 14% 8%, rgb(147 197 253 / 48%), transparent 42%),
+    radial-gradient(ellipse at 88% 76%, rgb(251 191 36 / 18%), transparent 38%),
+    linear-gradient(155deg, #e8f2ff 0%, #f8fbff 48%, #f2f5fa 100%);
+}
+
+.phone-screen-home .phone-launcher-home::after {
+  position: absolute;
+  z-index: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: clamp(3.8rem, 14%, 6.5rem);
+  background: linear-gradient(180deg, transparent, rgb(30 64 175 / 5%)), #244d83;
+  clip-path: polygon(0 70%, 7% 70%, 7% 46%, 12% 46%, 12% 70%, 19% 70%, 19% 27%, 25% 27%, 25% 70%, 32% 70%, 32% 52%, 38% 52%, 38% 70%, 45% 70%, 45% 39%, 52% 39%, 52% 70%, 59% 70%, 59% 18%, 65% 18%, 65% 70%, 73% 70%, 73% 48%, 79% 48%, 79% 70%, 86% 70%, 86% 34%, 92% 34%, 92% 70%, 100% 70%, 100% 100%, 0 100%);
+  opacity: 0.09;
+  content: "";
+  pointer-events: none;
+}
+
+.phone-screen-home .phone-launcher-home > * {
+  position: relative;
+  z-index: 1;
+}
+
+.phone-screen-home .phone-app-pages {
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.phone-screen-home .phone-app-grid {
+  box-sizing: border-box;
+  min-height: 100%;
+  grid-template-rows: repeat(5, minmax(68px, auto));
+  align-content: center;
+  align-items: center;
+  gap: clamp(6px, 0.8vh, 10px) clamp(4px, 1.2vw, 8px);
+  padding: clamp(6px, 1.2vh, 10px) clamp(5px, 1.6vw, 9px);
+  background: transparent !important;
+}
+
+.phone-screen-home .phone-app {
+  display: flex;
+  min-height: 62px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(5px, 1vh, 8px);
+  padding: 3px 1px;
+  color: #172b46;
+  font-size: clamp(9px, 2.7vw, 11px);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+  width: clamp(48px, 14vw, 58px);
+  height: clamp(48px, 14vw, 58px);
+  flex: 0 0 auto;
+  border-radius: clamp(15px, 4.2vw, 19px);
+  box-shadow: 0 7px 16px rgb(15 35 65 / 12%), inset 0 1px 0 rgb(255 255 255 / 48%);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.phone-screen-home .phone-app-icon > svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
+}
+
+.phone-screen-home .phone-app:focus-visible .phone-app-icon {
+  outline: 3px solid #f4b942;
+  outline-offset: 3px;
+}
+
+.phone-screen-home .phone-app:active .phone-app-icon {
+  transform: scale(0.93);
+  box-shadow: 0 3px 8px rgb(15 35 65 / 14%);
+}
+
+.phone-screen-home .phone-page-dots {
+  min-height: 28px;
+  padding-bottom: 1px;
+}
+
+.phone-screen-home .phone-page-dot::before {
+  background: #8b9bb0;
+  opacity: 0.65;
+}
+
+.phone-screen-home .phone-page-dot[aria-current="page"]::before {
+  background: #174b91;
+  box-shadow: 0 2px 7px rgb(23 75 145 / 25%);
+}
+
+@media (max-width: 360px) {
+  .phone-screen-home .phone-app-grid {
+    gap: 2px 3px;
+    padding: 4px 3px;
+  }
+
+  .phone-screen-home .phone-app {
+    font-size: 9px;
+  }
+
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    transition: none;
+  }
+}
+
+
+/* Launcher density and pagination refinements for compact handset viewports. */
+.phone-screen-home .phone-app-pages {
+  scroll-behavior: smooth;
+  touch-action: pan-y pinch-zoom;
+  overscroll-behavior-x: contain;
+}
+
+.phone-screen-home .phone-page-dots {
+  gap: 0;
+  min-height: 26px;
+}
+
+.phone-screen-home .phone-page-dot {
+  width: 24px;
+  height: 26px;
+}
+
+.phone-screen-home .phone-page-dot::before {
+  width: 6px;
+  height: 6px;
+}
+
+.phone-screen-home .phone-page-dot[aria-current="page"]::before {
+  width: 18px;
+  height: 6px;
+}
+
+@media (max-height: 700px) {
+  .phone-screen-home .phone-app-grid {
+    grid-template-rows: repeat(5, minmax(54px, auto));
+    gap: 2px 4px;
+    padding-block: 4px;
+  }
+
+  .phone-screen-home .phone-app {
+    min-height: 54px;
+    gap: 3px;
+  }
+
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    width: clamp(40px, 11vw, 48px);
+    height: clamp(40px, 11vw, 48px);
+  }
+}
+
+
+/* In landscape, keep the five-row launcher reachable on short phone viewports.
+   Horizontal paging remains available; vertical overflow scrolls within the app
+   viewport instead of being clipped by the fixed-height handset shell. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .phone-screen-home .phone-app-pages {
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+    touch-action: pan-x pan-y pinch-zoom;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: contain;
+    scroll-snap-type: x mandatory;
+  }
+
+  .phone-screen-home .phone-app-grid {
+    min-height: 100%;
+    height: max-content;
+    grid-template-rows: repeat(5, minmax(54px, auto));
+    align-content: start;
+    gap: 2px 4px;
+    padding: 4px 5px 8px;
+  }
+
+  .phone-screen-home .phone-app {
+    min-height: 54px;
+    gap: 3px;
+  }
+
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    width: clamp(36px, 7vh, 42px);
+    height: clamp(36px, 7vh, 42px);
+  }
+
+  .phone-screen-home .phone-page-dots {
+    flex: 0 0 24px;
+    min-height: 24px;
+  }
+}

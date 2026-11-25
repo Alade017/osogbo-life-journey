@@ -84,15 +84,14 @@ it("closes the directory instead of reopening it when Map is tapped on the city 
 it("opens HUDs and follows Back/Forward without remounting the world route", async () => {
   const { router, mounted, departed } = fixture("/house?floor=1#bed");
   await screen.findByText("Home world remains mounted");
+  // Career Life is a page link now (see be8a6d8b), so only the Map HUD is opened from here.
   expect(screen.getByRole("link", { name: "Career Life" })).toHaveAttribute("href", "/jobs");
   expect(screen.getByRole("link", { name: "Map" })).toHaveAttribute("href", "/map");
-  fireEvent.click(screen.getByRole("link", { name: "Career Life" }));
-  await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("Career Life"));
-  expect(screen.getByTestId("href")).toHaveTextContent("/house?floor=1&hud=jobs#bed");
   fireEvent.click(screen.getByRole("link", { name: "Map" }));
   await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("Map"));
+  expect(screen.getByTestId("href")).toHaveTextContent("/house?floor=1&hud=map#bed");
   await act(async () => router.history.back());
-  await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("Career Life"));
+  await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("closed"));
   await act(async () => router.history.forward());
   await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("Map"));
   fireEvent.click(screen.getByRole("button", { name: "Open inventory" }));

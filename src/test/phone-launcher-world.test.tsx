@@ -36,7 +36,11 @@ vi.mock("@/components/game/phone/PropertyExchangeApp", () => ({
   default: () => <div>Property Exchange content</div>,
 }));
 vi.mock("@/components/game/phone/PhoneMapApp", () => ({
-  PhoneMapApp: () => <div>Map HUD content <a href="/map">Open full city map</a></div>,
+  PhoneMapApp: () => (
+    <div>
+      Map HUD content <a href="/map">Open full city map</a>
+    </div>
+  ),
 }));
 beforeEach(() => {
   state.href = "/jobs";
@@ -95,12 +99,12 @@ it("keeps the navigation out of the phone so the handset shows only the phone", 
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
 
-it("groups launcher apps into pages of sixteen and includes optional Shortcuts", () => {
+it("groups launcher apps into pages of twenty and includes optional Shortcuts", () => {
   render(<PhoneLauncher shortcutEditor={<div>Editor</div>} />);
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
 
   const pages = document.querySelectorAll(".phone-app-grid");
-  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([16, 12]);
+  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([20, 9]);
   expect(pages[0]?.querySelector('[aria-label="Open Shortcuts"]')).not.toBeNull();
   expect(screen.getAllByRole("button", { name: /Go to app page/ })).toHaveLength(pages.length);
   expect(screen.getByRole("button", { name: "Go to app page 1" })).toHaveAttribute(
@@ -142,6 +146,13 @@ it("moves one launcher page per swipe and closes from the external Cancel button
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
 
+it("uses the dedicated native scroll layout when Settings opens inside the phone", () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open Settings" }));
+  expect(document.querySelector(".phone-app-body--sx")).toBeInTheDocument();
+});
+
 it("restores a Career HUD request without leaving the underlying world", async () => {
   state.href = "/house?hud=jobs";
   render(<PhoneLauncher open requestedNavigation={{ app: "Career Life" }} />);
@@ -178,7 +189,6 @@ it("publishes phone app and Back-to-apps changes to the URL owner", async () => 
   expect(selected).toHaveBeenLastCalledWith({ app: null });
 });
 
-
 it("opens the replacement City Services and Property Exchange apps from the launcher", async () => {
   render(<PhoneLauncher />);
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
@@ -189,7 +199,6 @@ it("opens the replacement City Services and Property Exchange apps from the laun
   expect(await screen.findByText("Property Exchange content")).toBeVisible();
   expect(screen.queryByRole("button", { name: "Open Activities" })).toBeNull();
 });
-
 
 it("opens the Camera app from the launcher and from the global shortcut event", async () => {
   render(<PhoneLauncher />);
