@@ -40,6 +40,7 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
   const [expanded, setExpanded] = useState(false);
   const [dragOffset, setDragOffset] = useState(0);
   const dragRef = useRef<{ pointerId: number; startY: number; offset: number; moved: boolean } | null>(null);
+  const sheetRef = useRef<HTMLElement | null>(null);
   const { simulation, ready } = useGameTime();
   const { data: character } = useQuery(q.character());
   const { data: skills } = useQuery(q.playerSkills());
@@ -63,15 +64,50 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
 
   useEffect(() => {
     if (!open) return;
-    const previous = document.body.style.overflow;
+    const previousOverflow = document.body.style.overflow;
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     document.body.style.overflow = "hidden";
+    sheetRef.current?.querySelector<HTMLElement>(".player-hub-close")?.focus();
+
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab") return;
+
+      const sheet = sheetRef.current;
+      if (!sheet) return;
+      const focusable = Array.from(sheet.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+      )).filter((element) => element.getClientRects().length > 0);
+      if (!focusable.length) {
+        event.preventDefault();
+        sheet.focus();
+        return;
+      }
+
+      // Let nested account confirmation dialogs manage their own focus cycle.
+      const nestedAlertOpen = document.querySelector('[role="alertdialog"]') !== null;
+      const active = document.activeElement;
+      if (nestedAlertOpen && active instanceof HTMLElement && !sheet.contains(active)) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (active === first || !(active instanceof HTMLElement) || !sheet.contains(active))) {
+        event.preventDefault();
+        last?.focus();
+      } else if (!event.shiftKey && (active === last || !(active instanceof HTMLElement) || !sheet.contains(active))) {
+        event.preventDefault();
+        first?.focus();
+      }
     };
     window.addEventListener("keydown", onKeyDown);
     return () => {
-      document.body.style.overflow = previous;
+      document.body.style.overflow = previousOverflow;
       window.removeEventListener("keydown", onKeyDown);
+      if (previousFocus?.isConnected) previousFocus.focus();
     };
   }, [open, onClose]);
 
@@ -90,7 +126,7 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
     <div className="player-hub-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
-      <section className={`player-hub-sheet${expanded ? " is-expanded" : ""}`} role="dialog" aria-modal="true" aria-label="Player life hub" style={dragOffset ? { transform: `translateY(${dragOffset}px)`, transition: "none" } : undefined}>
+      <section ref={sheetRef} className={`player-hub-sheet${expanded ? " is-expanded" : ""}`} role="dialog" aria-modal="true" aria-label="Player life hub" style={dragOffset ? { transform: `translateY(${dragOffset}px)`, transition: "none" } : undefined}>
         <button className="player-hub-grabber" type="button" aria-label="Expand player hub" onClick={() => {
           if (dragRef.current?.moved) {
             dragRef.current = null;
