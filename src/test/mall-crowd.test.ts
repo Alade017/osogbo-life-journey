@@ -2,13 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   isPaying,
   MALL_CROWD_TARGET,
+  MALL_SHOPPER_SPACING,
   advanceCrowd,
   buildShopperRoute,
   createShopper,
   getShopperById,
 } from "@/game/mall-crowd";
 import { stepWalker } from "@/game/mall-movement";
-import { canWalkInMall } from "@/game/osun-mall-layout";
+import { MALL_ENTRANCE, canWalkInMall } from "@/game/osun-mall-layout";
 
 describe("mall shopper routes", () => {
   it("builds a walkable route for every seed, with stops at browse and pay", () => {
@@ -45,13 +46,26 @@ describe("mall shopper routes", () => {
 });
 
 describe("mall crowd", () => {
-  it("keeps the floor at the shopper target by replacing shoppers who leave", () => {
+  it("admits shoppers gradually without exceeding the population target", () => {
     let state = advanceCrowd([], 0, 0);
-    expect(state.shoppers).toHaveLength(MALL_CROWD_TARGET);
+    expect(state.shoppers).toHaveLength(1);
+    let admitted = 0;
     for (let step = 0; step < 600; step += 1) {
       state = advanceCrowd(state.shoppers, 0.5, state.nextSeed);
-      expect(state.shoppers.length).toBeGreaterThanOrEqual(MALL_CROWD_TARGET);
+      expect(state.shoppers.length).toBeLessThanOrEqual(MALL_CROWD_TARGET);
+      admitted = Math.max(admitted, state.nextSeed);
+      for (const shopper of state.shoppers) expect(canWalkInMall(shopper.walker.pos)).toBe(true);
     }
+    expect(admitted).toBeGreaterThan(1);
+  });
+
+  it("does not spawn another shopper into an occupied entrance", () => {
+    const initial = advanceCrowd([], 0, 0);
+    const next = advanceCrowd(initial.shoppers, 0, initial.nextSeed);
+    expect(next.shoppers).toHaveLength(1);
+    expect(next.nextSeed).toBe(initial.nextSeed);
+    const shopper = next.shoppers[0]!;
+    expect(Math.hypot(shopper.walker.pos[0] - MALL_ENTRANCE[0], shopper.walker.pos[1] - MALL_ENTRANCE[1])).toBeLessThan(MALL_SHOPPER_SPACING);
   });
 });
 

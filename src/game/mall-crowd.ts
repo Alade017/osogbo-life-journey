@@ -3,6 +3,7 @@ import type { WalkPoint } from "./grid-walk-path.ts";
 import { shopperLook, type MallGender } from "./mall-appearance.ts";
 import { createWalker, stepWalker, type MallWalker } from "./mall-movement.ts";
 import {
+  MALL_BODY_RADIUS,
   MALL_BROWSE_SPOTS,
   MALL_ENTRANCE,
   MALL_TILL_QUEUE,
@@ -91,7 +92,31 @@ export function createShopper(seed: number): MallShopper | null {
   };
 }
 
-/** Advances every shopper by `dt`, then replaces finished shoppers so the crowd stays at target. */
+/** Presentation-only following distance, derived from the existing body footprint. */
+export const MALL_SHOPPER_SPACING = MALL_BODY_RADIUS * 2;
+function distance(a: WalkPoint, b: WalkPoint) {
+  return Math.hypot(a[0] - b[0], a[1] - b[1]);
+}
+
+/** Slow approaching shoppers without blocking shared narrow routes indefinitely.
+ * Keep a minimum speed: full detour planning and queue reservations are separate concerns. */
+function advanceShopper(shopper: MallShopper, crowd: readonly MallShopper[], elapsed: number) {
+  const walker = shopper.walker;
+  const proposed = stepWalker(walker, elapsed);
+  if (walker.dwellLeft > 0 || walker.done || distance(walker.pos, proposed.pos) === 0) return proposed;
+  let factor = 1;
+  for (const other of crowd) {
+    if (other.id === shopper.id || other.walker.done) continue;
+    const before = distance(walker.pos, other.walker.pos);
+    const after = distance(proposed.pos, other.walker.pos);
+    if (after < before && after < MALL_SHOPPER_SPACING) {
+      factor = Math.min(factor, Math.max(0.35, after / MALL_SHOPPER_SPACING));
+    }
+  }
+  return factor === 1 ? proposed : stepWalker(walker, elapsed * factor);
+}
+
+/** Advance the crowd and admit newcomers only when the entrance has space. */
 export function advanceCrowd(
   shoppers: readonly MallShopper[],
   dt: number,
@@ -102,15 +127,14 @@ export function advanceCrowd(
   const elapsed = Number.isFinite(dt) ? Math.min(0.5, Math.max(0, dt)) : 0;
   const moved = shoppers.map((shopper) => ({
     ...shopper,
-    walker: stepWalker(shopper.walker, elapsed),
+    walker: advanceShopper(shopper, shoppers, elapsed),
   }));
   const remaining = moved.filter((shopper) => !shopper.walker.done);
   let seed = nextSeed;
-  while (remaining.length < target) {
+  if (remaining.length < target && remaining.every(shopper => distance(shopper.walker.pos, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING)) {
     const fresh = createShopper(seed);
     seed += 1;
-    if (!fresh) break;
-    remaining.push(fresh);
+    if (fresh) remaining.push(fresh);
   }
   return { shoppers: remaining, nextSeed: seed };
 }
