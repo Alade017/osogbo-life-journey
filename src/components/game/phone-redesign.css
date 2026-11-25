@@ -927,10 +927,10 @@ body:has(.phone-ui-refresh) :is(
 
 @media (max-width: 380px) {
   body:has(.phone-ui-refresh) :is(
-    [role="dialog"]:not(.phone-dialog),
-    [role="alertdialog"],
-    [data-radix-dialog-content],
-    [data-radix-alert-dialog-content]
+    [role="dialog"]:not(.phone-dialog):not(.phone-dialog-shell),
+    [role="alertdialog"]:not(.phone-dialog-shell),
+    [data-radix-dialog-content]:not(.phone-dialog-shell),
+    [data-radix-alert-dialog-content]:not(.phone-dialog-shell)
   ) {
     width: calc(100vw - 24px);
     max-width: calc(100vw - 24px);
