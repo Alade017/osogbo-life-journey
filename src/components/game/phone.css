@@ -4493,3 +4493,44 @@
     height: clamp(40px, 11vw, 48px);
   }
 }
+
+
+/* In landscape, keep the five-row launcher reachable on short phone viewports.
+   Horizontal paging remains available; vertical overflow scrolls within the app
+   viewport instead of being clipped by the fixed-height handset shell. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .phone-screen-home .phone-app-pages {
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+    touch-action: pan-x pan-y pinch-zoom;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: contain;
+    scroll-snap-type: x mandatory;
+  }
+
+  .phone-screen-home .phone-app-grid {
+    min-height: 100%;
+    height: max-content;
+    grid-template-rows: repeat(5, minmax(54px, auto));
+    align-content: start;
+    gap: 2px 4px;
+    padding: 4px 5px 8px;
+  }
+
+  .phone-screen-home .phone-app {
+    min-height: 54px;
+    gap: 3px;
+  }
+
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    width: clamp(36px, 7vh, 42px);
+    height: clamp(36px, 7vh, 42px);
+  }
+
+  .phone-screen-home .phone-page-dots {
+    flex: 0 0 24px;
+    min-height: 24px;
+  }
+}
