@@ -1500,7 +1500,7 @@
     },
     {
       "id": "harvest-tech-hub",
-      "label": "Harvest Tech Hub",
+      "label": "Harvest Tech Store & Hub",
       "category": "services",
       "districtId": "river-quarter",
       "locationSlug": "harvest-tech-hub",
@@ -2187,7 +2187,7 @@
     },
     {
       "id": "fuel-station",
-      "label": "Fuel Station",
+      "label": "Osun Motors",
       "category": "transport",
       "districtId": "south-quarter",
       "locationSlug": "fuel-station",
@@ -2219,7 +2219,7 @@
     },
     {
       "id": "cinema-event-hall",
-      "label": "Cinema and Event Hall",
+      "label": "Exotic Motors Gallery",
       "category": "services",
       "districtId": "south-quarter",
       "locationSlug": "cinema-event-hall",
@@ -2235,7 +2235,7 @@
     },
     {
       "id": "post-office-cafe",
-      "label": "Post Office and Internet Cafe",
+      "label": "Electronics World",
       "category": "services",
       "districtId": "south-quarter",
       "locationSlug": "post-office-cafe",
