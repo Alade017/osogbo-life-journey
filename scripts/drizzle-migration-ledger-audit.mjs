@@ -3,7 +3,9 @@
  *
  * Exact timestamps are authoritative when present. A unique checksum can
  * identify an already-applied migration when its timestamp differs, but the
- * discrepancy is surfaced for review. Ambiguous identities fail closed.
+ * discrepancy is surfaced for review. Raw and LF-normalized checksums are
+ * accepted for compatibility with historical line-ending differences.
+ * Ambiguous identities fail closed.
  */
 export function auditDrizzleLedger(journalEntries, databaseRows) {
   const issues = [];
@@ -39,23 +41,33 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
   };
 
   for (const entry of journalEntries) {
+    const acceptedHashes = Array.isArray(entry?.acceptedHashes)
+      ? entry.acceptedHashes
+      : [];
+    const hashes = [...new Set([entry?.hash, ...acceptedHashes].map((value) =>
+      String(value ?? "").toLowerCase(),
+    ).filter((value) => /^[a-f0-9]{64}$/.test(value)))];
+
     if (
       !entry ||
       typeof entry.tag !== "string" ||
       !Number.isSafeInteger(Number(entry.when)) ||
-      !/^[a-f0-9]{64}$/i.test(String(entry.hash ?? ""))
+      !/^[a-f0-9]{64}$/i.test(String(entry.hash ?? "")) ||
+      hashes.length === 0
     ) {
       issues.push(`Invalid Drizzle journal migration entry: ${entry?.tag ?? "unknown"}`);
       continue;
     }
+
     const normalized = {
       ...entry,
       when: Number(entry.when),
       hash: String(entry.hash).toLowerCase(),
+      acceptedHashes: hashes,
     };
     validEntries.push(normalized);
     addToIndex(journalTimestamps, normalized.when, normalized);
-    addToIndex(journalHashes, normalized.hash, normalized);
+    for (const hash of normalized.acceptedHashes) addToIndex(journalHashes, hash, normalized);
   }
 
   for (const row of databaseRows) {
@@ -77,7 +89,7 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
     if (entries.length > 1) issues.push(`Duplicate Drizzle journal timestamp: ${timestamp}`);
   }
   for (const [hash, entries] of journalHashes) {
-    if (entries.length > 1) issues.push(`Duplicate Drizzle journal checksum: ${hash}`);
+    if (new Set(entries).size > 1) issues.push(`Duplicate Drizzle journal checksum: ${hash}`);
   }
   for (const [timestamp, rows] of databaseTimestamps) {
     if (rows.length > 1) issues.push(`Duplicate Drizzle database timestamp: ${timestamp}`);
@@ -97,12 +109,13 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
         continue;
       }
       consumedRows.add(row);
-      if (row.hash === entry.hash) {
+      if (entry.acceptedHashes.includes(row.hash)) {
         appliedMigrations.push(entry.tag);
       } else {
         mismatches.push({
           tag: entry.tag,
           expectedHash: entry.hash,
+          acceptedHashes: entry.acceptedHashes,
           actualHash: row.hash,
           createdAt: row.created_at,
         });
@@ -110,24 +123,32 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
       continue;
     }
 
-    // A checksum fallback is safe only when it is unique on both sides.
-    const journalHashMatches = journalHashes.get(entry.hash) ?? [];
-    const checksumMatches = (databaseHashes.get(entry.hash) ?? []).filter(
-      (row) => !consumedRows.has(row),
-    );
-    if (journalHashMatches.length !== 1 || checksumMatches.length !== 1) {
-      if (checksumMatches.length === 0) pending.push(entry);
+    // Union aliases before matching so one database row cannot be counted twice.
+    const candidateRows = new Set();
+    for (const hash of entry.acceptedHashes) {
+      for (const row of databaseHashes.get(hash) ?? []) {
+        if (!consumedRows.has(row)) candidateRows.add(row);
+      }
+    }
+    if (candidateRows.size === 0) {
+      pending.push(entry);
+      continue;
+    }
+    if (candidateRows.size !== 1) continue;
+
+    const row = [...candidateRows][0];
+    const matchingJournalEntries = journalHashes.get(row.hash) ?? [];
+    if (new Set(matchingJournalEntries).size !== 1 || matchingJournalEntries[0] !== entry) {
       continue;
     }
 
-    const row = checksumMatches[0];
     consumedRows.add(row);
     appliedMigrations.push(entry.tag);
     timestampWarnings.push({
       tag: entry.tag,
       expectedTimestamp: entry.when,
       actualTimestamp: row.created_at,
-      hash: entry.hash,
+      hash: row.hash,
     });
   }
 
