@@ -11,7 +11,9 @@ import {
   STREET_PEDESTRIANS,
   STREET_RIDER_SPOT,
   findStreetPath,
+  findOkadaPickup,
 } from "@/game/osun-mall-street-layout";
+import { trafficFrameSeconds, trafficSpeed, trafficBrakingSpeed, trafficHeading } from "@/game/town-traffic-motion";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
 
@@ -42,88 +44,62 @@ const RIDER_APPEARANCE: Appearance = {
   shoes: 0,
 };
 
-/** The bike's place relative to the rider's stand, so the bike moves with the rider. */
-const BIKE_OFFSET: WalkPoint = [2.6, -0.5];
-
-/**
- * The okada: the rider and the bike together. The rider walks to `target` when a ride is found,
- * and walks back to the stand when `target` clears. Clicking either opens the ride panel.
- */
+/** The bike and its seated rider share one moving root. Local motion never confirms a ride. */
 function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoint | null }) {
   const group = useRef<Group>(null);
-  const [pose, setPose] = useState({ moving: false, facing: "south" });
-  const poseRef = useRef(pose);
-  const updatePose = (moving: boolean, dx: number, dz: number) => {
-    const facing =
-      Math.abs(dx) + Math.abs(dz) < 0.0001
-        ? poseRef.current.facing
-        : Math.abs(dx) > Math.abs(dz)
-          ? dx > 0
-            ? "east"
-            : "west"
-          : dz > 0
-            ? "south"
-            : "north";
-    if (moving !== poseRef.current.moving || facing !== poseRef.current.facing) {
-      poseRef.current = { moving, facing };
-      setPose(poseRef.current);
-    }
-  };
-  const rider = useRef<{ pos: WalkPoint; walker: MallWalker | null }>({
-    pos: [STREET_RIDER_SPOT[0], STREET_RIDER_SPOT[1]],
-    walker: null,
+  const rider = useRef<{ pos: WalkPoint; walker: MallWalker | null; speed: number; yaw: number }>({
+    pos: STREET_RIDER_SPOT, walker: null, speed: 0, yaw: 0,
   });
-  const goal = useRef<string | null>(null);
   useEffect(() => {
-    const key = target ? `${target[0]},${target[1]}` : "stand";
-    if (goal.current === key) return;
-    goal.current = key;
-    const to = target ?? STREET_RIDER_SPOT;
-    const path = findStreetPath(rider.current.pos, to);
-    if (path) rider.current.walker = createWalker(rider.current.pos, path);
+    const state = rider.current;
+    const path = target ? findOkadaPickup(state.pos, target) : findStreetPath(state.pos, STREET_RIDER_SPOT);
+    state.walker = path ? createWalker(state.pos, path) : null;
+    if (!path) state.speed = 0;
   }, [target]);
   useFrame((_, delta) => {
     const state = rider.current;
-    const previous = state.pos;
-    let moving = false;
-    if (state.walker) {
-      const next = stepWalker(state.walker, Math.min(delta, 0.1));
+    const dt = trafficFrameSeconds(delta);
+    if (state.walker && dt > 0) {
+      const remaining = state.walker.points.slice(state.walker.next).reduce((acc, point) => ({
+        pos: point, distance: acc.distance + Math.hypot(point[0]-acc.pos[0],point[1]-acc.pos[1]),
+      }), {pos: state.pos, distance: 0}).distance;
+      state.speed = trafficSpeed(state.speed, Math.min(state.walker.speed, trafficBrakingSpeed(remaining)), dt);
+      const next = stepWalker({...state.walker, speed: state.speed}, dt);
+      const dx = next.pos[0]-state.pos[0], dz = next.pos[1]-state.pos[1];
+      if (Math.hypot(dx,dz)>0.00001) state.yaw = trafficHeading(state.yaw, Math.atan2(dx,dz), dt);
       state.pos = next.pos;
       state.walker = next.done ? null : next;
-      moving = next.moving;
+      if (next.done) state.speed = 0;
     }
-    updatePose(moving, state.pos[0] - previous[0], state.pos[1] - previous[1]);
-    group.current?.position.set(state.pos[0], 0, state.pos[1]);
+    if (group.current) {
+      group.current.position.set(state.pos[0],0,state.pos[1]);
+      group.current.rotation.y = state.yaw;
+    }
   });
   return (
-    <group
-      ref={group}
-      onClick={(event) => {
-        if (!isClick(event)) return;
-        event.stopPropagation();
-        onRider();
-      }}
-    >
-      <group position={[BIKE_OFFSET[0], 0, BIKE_OFFSET[1]]}>
-        <mesh position={[0, 0.42, 0]} castShadow>
-          <boxGeometry args={[1, 0.3, 0.25]} />
-          <meshStandardMaterial color="#f5c400" roughness={0.6} />
+    <group ref={group} position={[STREET_RIDER_SPOT[0],0,STREET_RIDER_SPOT[1]]}
+      onClick={event => { if (!isClick(event)) return; event.stopPropagation(); onRider(); }}>
+      {/* Longitudinal axis matches the character's forward direction. */}
+      <mesh position={[0,0.47,0.08]} castShadow>
+        <boxGeometry args={[0.28,0.28,0.85]} />
+        <meshStandardMaterial color="#f5c400" roughness={0.6} />
+      </mesh>
+      <mesh position={[0,0.65,-0.22]} castShadow>
+        <boxGeometry args={[0.3,0.12,0.65]} />
+        <WorldMaterial tone="road" />
+      </mesh>
+      <mesh position={[0,0.88,0.43]}>
+        <boxGeometry args={[0.62,0.06,0.08]} />
+        <WorldMaterial tone="metal" />
+      </mesh>
+      {[-0.48,0.48].map(z => (
+        <mesh key={z} position={[0,0.24,z]} rotation={[0,0,Math.PI/2]} castShadow>
+          <cylinderGeometry args={[0.24,0.24,0.12,12]} />
+          <WorldMaterial tone="road" />
         </mesh>
-        {[-0.36, 0.36].map((offset) => (
-          <mesh key={offset} position={[offset, 0.24, 0]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-            <cylinderGeometry args={[0.22, 0.22, 0.1, 12]} />
-            <meshStandardMaterial color="#1f2328" roughness={0.9} />
-          </mesh>
-        ))}
-      </group>
-      <WorldCharacter
-        name="Okada rider"
-        gender="male"
-        appearance={RIDER_APPEARANCE}
-        facing={pose.facing}
-        animation={pose.moving ? "walk" : "idle"}
-        position={[0, 0, 0]}
-      />
+      ))}
+      <WorldCharacter name="Okada rider" gender="male" appearance={RIDER_APPEARANCE}
+        facing="south" taskPose="sit" position={[0,0.3,0]} />
     </group>
   );
 }

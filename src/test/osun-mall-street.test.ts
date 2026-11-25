@@ -6,6 +6,7 @@ import {
   STREET_RIDER_SPOT,
   canWalkOnStreet,
   findStreetPath,
+  findOkadaPickup,
   nextRiderTarget,
 } from "@/game/osun-mall-street-layout";
 import {
@@ -43,6 +44,12 @@ describe("street outside the Osun Mall", () => {
 });
 
 describe("okada rides", () => {
+  it("finds a walkable pickup near the visitor without sharing their position", () => {
+    const route = findOkadaPickup(STREET_RIDER_SPOT, STREET_DOOR_FRONT);
+    expect(route).not.toBeNull();
+    expect(route?.at(-1)).not.toEqual(STREET_DOOR_FRONT);
+    expect(route?.every(canWalkOnStreet)).toBe(true);
+  });
   it("offers home and real places as destinations", () => {
     expect(OKADA_DESTINATIONS[0]).toBe(OKADA_HOME);
     expect(new Set(OKADA_DESTINATIONS).size).toBe(OKADA_DESTINATIONS.length);

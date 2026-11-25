@@ -78,3 +78,12 @@ export function nextRiderTarget(
   const moved = Math.hypot(previous[0] - visitor[0], previous[1] - visitor[1]);
   return moved < 0.3 ? previous : [visitor[0], visitor[1]];
 }
+
+/** Local pickup clearance, not a server ride milestone. Keep the bike off the visitor. */
+export function findOkadaPickup(from: WalkPoint, visitor: WalkPoint): WalkPoint[] | null {
+  const clearance = MALL_BODY_RADIUS * 4;
+  const candidates: WalkPoint[] = [[visitor[0]+clearance,visitor[1]],[visitor[0]-clearance,visitor[1]],[visitor[0],visitor[1]+clearance],[visitor[0],visitor[1]-clearance]];
+  const routes = candidates.filter(point => STREET_PEDESTRIANS.every(other => Math.hypot(point[0]-other[0],point[1]-other[1]) >= clearance)).map(point => findStreetPath(from,point)).filter((route): route is WalkPoint[] => route !== null);
+  const length = (route: WalkPoint[]) => route.reduce((sum, point, index) => { const prev = route[index-1]; return sum + (prev ? Math.hypot(point[0]-prev[0],point[1]-prev[1]) : 0); },0);
+  return routes.sort((a,b) => length(a)-length(b))[0] ?? null;
+}
