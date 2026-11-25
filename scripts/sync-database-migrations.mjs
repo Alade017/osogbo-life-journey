@@ -39,9 +39,18 @@ try {
     const ledger =
       await tx`select hash,created_at from drizzle.__drizzle_migrations order by created_at`;
     const journalMigrations = journal.entries.map((entry) => {
-      const content = readFileSync(`drizzle/migrations/${entry.tag}.sql`, "utf8");
-      const hash = createHash("sha256").update(content).digest("hex");
-      return { ...entry, content, hash };
+      const filePath = `drizzle/migrations/${entry.tag}.sql`;
+      const rawContent = readFileSync(filePath, "utf8");
+      const content = rawContent.replace(/\r\n?/g, "\n");
+      const rawHash = createHash("sha256").update(rawContent, "utf8").digest("hex");
+      const hash = createHash("sha256").update(content, "utf8").digest("hex");
+      return {
+        ...entry,
+        content,
+        hash,
+        rawHash,
+        acceptedHashes: [...new Set([rawHash, hash])],
+      };
     });
     const drizzleAudit = auditDrizzleLedger(journalMigrations, ledger);
     const mismatchTags = drizzleAudit.mismatches.map((mismatch) => mismatch.tag);
@@ -57,7 +66,7 @@ try {
     }
     for (const mismatch of drizzleAudit.mismatches) {
       console.error(
-        `Drizzle checksum mismatch for ${mismatch.tag} at ${mismatch.createdAt}: expected ${mismatch.expectedHash}, found ${mismatch.actualHash}`,
+        `Drizzle checksum mismatch for ${mismatch.tag} at ${mismatch.createdAt}: expected ${mismatch.expectedHash}, accepted ${mismatch.acceptedHashes.join(" or ")}, found ${mismatch.actualHash}`,
       );
     }
     for (const issue of drizzleAudit.issues) console.error(issue);
