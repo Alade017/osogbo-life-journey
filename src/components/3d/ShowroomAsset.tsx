@@ -9,7 +9,7 @@ type Limits = readonly [number, number, number];
 const LOAD_MARGIN = 2;
 export const SHOWROOM_LOAD_RADIUS = { standard: 14, performance: 9 } as const;
 
-function Model({ product, limits, onReady }: { product: Product; limits: Limits; onReady: (id: string) => void }) {
+function Model({ product, limits, onReady, onUnmount }: { product: Product; limits: Limits; onReady: (id: string) => void; onUnmount: (id: string) => void }) {
   const { scene } = useGLTF(product.url);
   const [width, height, depth] = limits;
   const transform = useMemo(() => {
@@ -24,12 +24,12 @@ function Model({ product, limits, onReady }: { product: Product; limits: Limits;
       offset: [-center.x, -box.min.y, -center.z] as [number, number, number],
     };
   }, [scene, width, height, depth]);
-  useEffect(() => { onReady(product.id); }, [product.id, onReady]);
+  useEffect(() => { onReady(product.id); return () => onUnmount(product.id); }, [product.id, onReady, onUnmount]);
   // GLTF cache owns the shared resources. Unmounting a clone must not dispose them.
   return <group dispose={null} scale={transform.scale}><group position={transform.offset}><Clone object={scene} /></group></group>;
 }
 
-export function ShowroomAsset({ product, viewer, position, radius, pinned, limits, onReady, onError }: {
+export function ShowroomAsset({ product, viewer, position, radius, pinned, limits, onReady, onError, onUnmount }: {
   product: Product;
   viewer: WalkPoint;
   position: WalkPoint;
@@ -38,6 +38,7 @@ export function ShowroomAsset({ product, viewer, position, radius, pinned, limit
   limits: Limits;
   onReady: (id: string) => void;
   onError: (id: string) => void;
+  onUnmount: (id: string) => void;
 }) {
   const distance = Math.hypot(viewer[0] - position[0], viewer[1] - position[1]);
   const [resident, setResident] = useState(() => pinned || distance <= radius);
@@ -46,6 +47,6 @@ export function ShowroomAsset({ product, viewer, position, radius, pinned, limit
   // The exit radius is larger than the entry radius to avoid threshold churn.
   // Keep the error boundary mounted so failed assets do not retry on every approach.
   return <VenueSceneBoundary resetKey={product.url} onError={() => onError(product.id)}>
-    { shouldMount && <Suspense fallback={null}><Model product={product} limits={limits} onReady={onReady} /></Suspense> }
+    { shouldMount && <Suspense fallback={null}><Model product={product} limits={limits} onReady={onReady} onUnmount={onUnmount} /></Suspense> }
   </VenueSceneBoundary>;
 }
