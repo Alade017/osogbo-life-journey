@@ -13,6 +13,23 @@ describe("showroom ownership", () => {
     second();
     expect(registry.canClear("vehicle.glb")).toBe(true);
   });
+  it("protects a pending reservation before a clone commits and until both release", () => {
+    const registry = createShowroomOwnership();
+    const releaseReservation = registry.retain("vehicle.glb");
+    expect(registry.canClear("vehicle.glb")).toBe(false);
+    const releaseClone = registry.retain("vehicle.glb");
+    releaseReservation();
+    expect(registry.canClear("vehicle.glb")).toBe(false);
+    releaseClone();
+    expect(registry.canClear("vehicle.glb")).toBe(true);
+  });
+  it("releases a failed or abandoned reservation without a committed clone", () => {
+    const registry = createShowroomOwnership();
+    const release = registry.retain("computer.glb");
+    expect(registry.canClear("computer.glb")).toBe(false);
+    release();
+    expect(registry.canClear("computer.glb")).toBe(true);
+  });
   it("keeps unrelated models independent", () => {
     const registry = createShowroomOwnership();
     const release = registry.retain("vehicle.glb");

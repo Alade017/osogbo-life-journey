@@ -1,5 +1,6 @@
-/** Tracks committed clones only. Suspended renders may still reference the loader cache,
- * so this is a guard for explicit failed-request retries, not a disposal authority. */
+/** Tracks committed clones and reservations made before suspending loads.
+ * Released requests can still be in flight in the GLTF loader cache; this is
+ * a guard for explicit failed-request retries, not a disposal authority. */
 export function createShowroomOwnership() {
   const owners = new Map<string, number>();
   function retain(url: string) {

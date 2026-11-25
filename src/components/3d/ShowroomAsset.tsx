@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useMemo, useState } from "react";
 import { Clone, useGLTF } from "@react-three/drei";
 import { Box3, Vector3 } from "three";
 import { VenueSceneBoundary } from "@/components/game/VenueSceneBoundary";
@@ -35,6 +35,19 @@ function Model({ product, limits, onReady, onUnmount }: { product: Product; limi
   return <group dispose={null} scale={transform.scale}><group position={transform.offset}><Clone object={scene} /></group></group>;
 }
 
+/** Reserve the URL in a committed wrapper before starting a suspending model render.
+ * The reservation survives Suspense, but releases when the boundary fails or the display unloads. */
+function ReservedModel(props: Parameters<typeof Model>[0]) {
+  const { product } = props;
+  const [reservedUrl, setReservedUrl] = useState<string | null>(null);
+  useLayoutEffect(() => {
+    const release = ownership.retain(product.url);
+    setReservedUrl(product.url);
+    return release;
+  }, [product.url]);
+  return reservedUrl === product.url ? <Suspense fallback={null}><Model {...props} /></Suspense> : null;
+}
+
 // Only clear a failed request on explicit retry; successful shared resources remain cached.
 export function clearFailedShowroomAsset(url: string) {
   if (ownership.canClear(url)) useGLTF.clear(url);
@@ -59,6 +72,6 @@ export function ShowroomAsset({ product, viewer, position, radius, pinned, limit
   // The exit radius is larger than the entry radius to avoid threshold churn.
   // Keep the error boundary mounted so failed assets do not retry on every approach.
   return <VenueSceneBoundary resetKey={`${product.url}:${attempt}`} onError={() => onError(product.id)}>
-    { shouldMount && <Suspense fallback={null}><Model product={product} limits={limits} onReady={onReady} onUnmount={onUnmount} /></Suspense> }
+    { shouldMount && <ReservedModel key={product.url} product={product} limits={limits} onReady={onReady} onUnmount={onUnmount} /> }
   </VenueSceneBoundary>;
 }
