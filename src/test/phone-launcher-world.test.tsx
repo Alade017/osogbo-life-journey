@@ -95,12 +95,12 @@ it("keeps the navigation out of the phone so the handset shows only the phone", 
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
 
-it("groups launcher apps into pages of sixteen and includes optional Shortcuts", () => {
+it("groups launcher apps into pages of twenty and includes optional Shortcuts", () => {
   render(<PhoneLauncher shortcutEditor={<div>Editor</div>} />);
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
 
   const pages = document.querySelectorAll(".phone-app-grid");
-  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([16, 12]);
+  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([20, 9]);
   expect(pages[0]?.querySelector('[aria-label="Open Shortcuts"]')).not.toBeNull();
   expect(screen.getAllByRole("button", { name: /Go to app page/ })).toHaveLength(pages.length);
   expect(screen.getByRole("button", { name: "Go to app page 1" })).toHaveAttribute(
