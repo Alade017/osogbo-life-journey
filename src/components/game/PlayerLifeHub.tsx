@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   BriefcaseBusiness, CheckCircle2, Heart, Settings2, Sparkles, Target, UserRound, Users, X, Zap,
@@ -33,10 +33,13 @@ function numberValue(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : 0;
 }
 
-export function PlayerLifeHub({ player, open, onClose }: {
-  player: PlayerState; open: boolean; onClose: () => void;
+export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }: {
+  player: PlayerState; open: boolean; initialTab?: "profile" | "settings"; onClose: () => void;
 }) {
-  const [tab, setTab] = useState<HubTab>("profile");
+  const [tab, setTab] = useState<HubTab>(initialTab);
+  const [expanded, setExpanded] = useState(false);
+  const [dragOffset, setDragOffset] = useState(0);
+  const dragRef = useRef<{ pointerId: number; startY: number; offset: number } | null>(null);
   const { simulation, ready } = useGameTime();
   const { data: character } = useQuery(q.character());
   const { data: skills } = useQuery(q.playerSkills());
@@ -49,6 +52,13 @@ export function PlayerLifeHub({ player, open, onClose }: {
     (player.avatar && typeof player.avatar === "object" && !Array.isArray(player.avatar)
       ? player.avatar : {}) as Appearance, gender,
   ), [player.avatar, gender]);
+
+  useEffect(() => {
+    if (!open) return;
+    setTab(initialTab);
+    setExpanded(false);
+    setDragOffset(0);
+  }, [open, initialTab]);
 
   useEffect(() => {
     if (!open) return;
@@ -162,7 +172,7 @@ export function PlayerLifeHub({ player, open, onClose }: {
             </article>) : <p className="player-hub-empty">You have not built any recorded relationships yet. Meet people around Osogbo to get started.</p>}
           </div>}
 
-          {tab === "settings" && <div className="player-hub-settings"><SettingsPage /></div>}
+          {tab === "settings" && <div className="player-hub-settings"><SettingsPage embedded /></div>}
 
           {tab === "career" && <div className="player-hub-list">
             <div className="player-hub-section-intro"><h3>Career & work</h3><p>Your current occupation and saved employment records.</p></div>
