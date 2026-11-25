@@ -853,6 +853,7 @@ export function PhoneLauncher({
           <button
             type="button"
             className={cn("phone-launcher", compact && "phone-launcher-compact", className)}
+            style={{ display: dialogOpen ? "none" : undefined }}
             aria-label="Open in-game phone"
           >
             <span className="phone-launcher-icon">
