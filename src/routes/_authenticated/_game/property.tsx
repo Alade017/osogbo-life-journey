@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 import { useThree } from "@react-three/fiber";
-import type { OrthographicCamera } from "three";
+import { OrthographicCamera } from "three";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira, q } from "@/lib/game";
@@ -25,6 +25,16 @@ export const Route = createFileRoute("/_authenticated/_game/property")({
   head: () => pageMeta("My Property", "Your houses, stalls, businesses and shares."),
   component: PropertyPage,
 });
+
+/** Fixed three-quarter camera for the house exterior, built once: WorldCanvas takes a camera instance. */
+const exteriorCamera = (() => {
+  const camera = new OrthographicCamera();
+  camera.position.set(7, 5.5, 8);
+  camera.zoom = 1;
+  camera.near = 0.1;
+  camera.far = 100;
+  return camera;
+})();
 
 function PropertyHouseCamera({ width, height }: { width: number; height: number }) {
   const { camera, size, invalidate } = useThree();
@@ -401,7 +411,7 @@ export function PropertyPage() {
                     <WorldCanvas
                       persistent={false}
                       orthographic
-                      camera={{ position: [7, 5.5, 8], zoom: 1, near: 0.1, far: 100 }}
+                      camera={exteriorCamera}
                       dpr={[1, 1.25]}
                       gl={{ alpha: true, antialias: true }}
                       shadows

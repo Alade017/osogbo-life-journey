@@ -21,18 +21,18 @@ type BoundaryProps = { children: ReactNode; onUnavailable: () => void };
 type BoundaryState = { failed: boolean };
 
 class PreviewErrorBoundary extends Component<BoundaryProps, BoundaryState> {
-  state: BoundaryState = { failed: false };
+  override state: BoundaryState = { failed: false };
 
   static getDerivedStateFromError(): BoundaryState {
     return { failed: true };
   }
 
-  componentDidCatch(error: Error) {
+  override componentDidCatch(error: Error) {
     console.error("The landing-page town preview failed to load.", error);
     this.props.onUnavailable();
   }
 
-  render() {
+  override render() {
     return this.state.failed ? null : this.props.children;
   }
 }
