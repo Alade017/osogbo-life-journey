@@ -106,3 +106,17 @@ it("does not let the synthetic click after a downward drag undo sheet collapse",
 
   expect(document.querySelector(".player-hub-sheet")).not.toHaveClass("is-expanded");
 });
+
+it("moves keyboard focus into the hub and keeps Tab navigation inside it", () => {
+  vi.spyOn(HTMLElement.prototype, "getClientRects").mockReturnValue({ length: 1 } as DOMRectList);
+  render(<PlayerLifeHub player={player} open initialTab="profile" onClose={vi.fn()} />);
+
+  const close = screen.getByRole("button", { name: "Close player hub" });
+  const handle = screen.getByRole("button", { name: "Expand player hub" });
+  const lastTab = screen.getByRole("button", { name: "Settings" });
+  expect(document.activeElement).toBe(close);
+
+  lastTab.focus();
+  fireEvent.keyDown(lastTab, { key: "Tab" });
+  expect(document.activeElement).toBe(handle);
+});
