@@ -7723,31 +7723,11 @@
   border-bottom: 1px solid var(--color-surface-dark-border);
 }
 
-
 .phone-app-toolbar button {
   display: flex;
   align-items: center;
   gap: 3px;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 .game-panel {
   border-color: var(--color-border);
@@ -8686,7 +8666,6 @@
 .phone-app-view {
   flex: 1;
 }
-
 
 /* Compact floating player dashboard: preserve live state while reducing chrome. */
 .game-hud.hud-v2 {
@@ -9997,30 +9976,11 @@
   font-weight: 700;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .phone-chat-utility {
   width: 32px;
   height: 32px;
   color: var(--muted-foreground);
 }
-
-
 
 @media (max-width: 820px) {
   .city-game-content {
@@ -10218,31 +10178,9 @@
   outline-offset: 3px;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 .message-actions button[aria-pressed="true"] {
   color: var(--primary);
 }
-
-
-
 
 .phone-dialog.phone-dialog {
   box-shadow: 0 3px 12px #17212b24;
