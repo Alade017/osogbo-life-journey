@@ -91,7 +91,7 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
         </span>
       </span>
     </button>
-    <PlayerLifeHub player={player} open={hubOpen} initialTab={hubInitialTab} onClose={() => setHubOpen(false)} />
+    {hubOpen && <PlayerLifeHub player={player} open={hubOpen} initialTab={hubInitialTab} onClose={() => setHubOpen(false)} />}
     </>
   );
 }
