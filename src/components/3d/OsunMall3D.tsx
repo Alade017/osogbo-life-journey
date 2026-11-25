@@ -245,6 +245,7 @@ const ShopperFigure = memo(function ShopperFigure({
   id,
   moving,
   paying,
+  distant,
   gender,
   appearance,
   sim,
@@ -253,6 +254,7 @@ const ShopperFigure = memo(function ShopperFigure({
   id: string;
   moving: boolean;
   paying: boolean;
+  distant: boolean;
   gender: MallGender;
   appearance: Appearance;
   sim: { current: MallSim };
@@ -286,6 +288,7 @@ const ShopperFigure = memo(function ShopperFigure({
         name={id}
         facing="south"
         animation={paying ? "interact" : moving ? "walk" : "idle"}
+        poseUpdateInterval={distant ? 1 / 15 : 0}
         held={paying ? <PaymentNote /> : null}
         position={[0, 0, 0]}
       />
@@ -358,6 +361,7 @@ function CrowdLayer({
       id: string;
       moving: boolean;
       paying: boolean;
+      distant: boolean;
       gender: MallGender;
       appearance: Appearance;
     }>
@@ -376,17 +380,19 @@ function CrowdLayer({
   });
   useEffect(() => {
     const timer = window.setInterval(() => {
+      const player = sim.current.player.pos;
       const next = sim.current.shoppers.map((shopper) => ({
         id: shopper.id,
         moving: shopper.walker.moving,
         paying: isPaying(shopper.walker),
+        distant: Math.hypot(shopper.walker.pos[0] - player[0], shopper.walker.pos[1] - player[1]) > MALL_CHAT_RADIUS * 4,
         gender: shopper.gender,
         appearance: shopper.appearance,
       }));
       setSnapshot(previous => previous.length === next.length && next.every((shopper, index) => {
         const old = previous[index];
         return old?.id === shopper.id && old.moving === shopper.moving &&
-          old.paying === shopper.paying && old.gender === shopper.gender && old.appearance === shopper.appearance;
+          old.paying === shopper.paying && old.distant === shopper.distant && old.gender === shopper.gender && old.appearance === shopper.appearance;
       }) ? previous : next);
     }, SNAPSHOT_INTERVAL_MS);
     return () => window.clearInterval(timer);
@@ -399,6 +405,7 @@ function CrowdLayer({
           id={shopper.id}
           moving={shopper.moving}
           paying={shopper.paying}
+          distant={shopper.distant}
           gender={shopper.gender}
           appearance={shopper.appearance}
           sim={sim}

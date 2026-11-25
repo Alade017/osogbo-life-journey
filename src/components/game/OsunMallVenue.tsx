@@ -166,13 +166,13 @@ export function OsunMallVenue({
 
   const onInteract = (target: MallTarget) => {
     const shopper = target.kind === "shopper" ? getShopperById(sim.current.shoppers, target.id) : undefined;
-    if (target.kind === "shopper" && (!shopper || !canChatWithShopper(sim.current.player.pos, shopper.walker))) {
+    if (target.kind === "shopper" && (!shopper || !canChatWithShopper(sim.current.player.pos, shopper.walker, shopper.awaitingCheckout === true && shopper.walker.done))) {
       setMessage("Move closer to the shopper to talk.");
       return;
     }
     setMessage(null);
     clicks.current += 1;
-    const line = shopper ? shopperReaction(shopper.walker, clicks.current) : reactionFor(target, clicks.current);
+    const line = shopper ? shopperReaction(shopper.walker, clicks.current, shopper.awaitingCheckout === true && shopper.walker.done) : reactionFor(target, clicks.current);
     setLog((previous) => [line, ...previous].slice(0, LOG_LENGTH));
     say(bubbleTargetFor(target, sim.current.player.pos), line);
   };
