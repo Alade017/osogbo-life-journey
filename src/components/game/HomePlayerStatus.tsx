@@ -1,9 +1,9 @@
-import { Component, Suspense, lazy, useMemo, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
+import { Component, Suspense, lazy, useMemo, useState, type ReactNode } from "react";
 import { UserRound, Zap } from "lucide-react";
 import { normalizeAvatarAppearance, type Appearance } from "@/game/avatar-appearance";
 import type { PlayerState } from "@/lib/player-state";
 import { useGameTime } from "./GameTimeProvider";
+import { PlayerLifeHub } from "./PlayerLifeHub";
 
 const CharacterPreview = lazy(() =>
   import("@/components/3d/CharacterPreview").then((module) => ({
@@ -26,6 +26,7 @@ class PortraitBoundary extends Component<{ children: ReactNode }, { failed: bool
 /** Uses the same character and worn equipment as the profile, with live simulation energy. */
 export function HomePlayerStatus({ player }: { player: PlayerState }) {
   const { simulation, ready } = useGameTime();
+  const [hubOpen, setHubOpen] = useState(false);
   const energy = Math.max(0, Math.min(100, Math.round(simulation.needs.energy)));
   const gender = player.gender ?? "nonbinary";
   const appearance = useMemo(() => {
@@ -38,10 +39,14 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
   }, [player.avatar, gender]);
 
   return (
-    <Link
-      to="/profile"
+    <>
+    <button
+      type="button"
       className="home-player-status"
-      aria-label={`${player.name}, level ${player.level}. ${ready ? `Energy ${energy}%` : "Connecting needs"}. Open profile`}
+      onClick={() => setHubOpen(true)}
+      aria-haspopup="dialog"
+      aria-expanded={hubOpen}
+      aria-label={`${player.name}, level ${player.level}. ${ready ? `Energy ${energy}%` : "Connecting needs"}. Open player hub`}
     >
       <div className="home-player-portrait">
         <PortraitBoundary key={player.id}>
@@ -74,6 +79,8 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
           </span>
         </span>
       </span>
-    </Link>
+    </button>
+    <PlayerLifeHub player={player} open={hubOpen} onClose={() => setHubOpen(false)} />
+    </>
   );
 }
