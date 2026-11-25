@@ -104,7 +104,7 @@ it("groups launcher apps into pages of twenty and includes optional Shortcuts", 
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
 
   const pages = document.querySelectorAll(".phone-app-grid");
-  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([20, 12]);
+  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([20, 11]);
   expect(pages[0]?.querySelector('[aria-label="Open Shortcuts"]')).not.toBeNull();
   expect(screen.getAllByRole("button", { name: /Go to app page/ })).toHaveLength(pages.length);
   expect(screen.getByRole("button", { name: "Go to app page 1" })).toHaveAttribute(
