@@ -938,3 +938,376 @@ body:has(.phone-ui-refresh) :is(
     border-radius: 1.25rem;
   }
 }
+
+
+/* App-level One UI pass: apply the same visual hierarchy to every phone app,
+   including screens that do not use the Settings-style component classes. */
+.phone-ui-refresh .phone-app-body {
+  min-width: 0;
+  padding: 0;
+  color: var(--foreground);
+  background: var(--brand-porcelain, var(--background));
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent) transparent;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-app,
+  .phone-sub-app,
+  .phone-party,
+  .support-app,
+  .phone-camera-app,
+  .property-exchange-app,
+  .phone-service-screen,
+  .phone-coming-soon-screen
+) {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  padding: 14px;
+  color: var(--foreground);
+  background: var(--brand-porcelain, var(--background));
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-app,
+  .phone-sub-app,
+  .phone-party,
+  .support-app,
+  .phone-camera-app,
+  .property-exchange-app,
+  .phone-service-screen,
+  .phone-coming-soon-screen
+) :where(h1, h2, h3, h4) {
+  color: var(--foreground);
+  letter-spacing: -0.025em;
+  text-wrap: pretty;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-card,
+  .phone-service-card,
+  .city-services-card,
+  .phone-map-card,
+  .phone-party-hero,
+  .support-panel,
+  .support-feedback-card,
+  .support-faq,
+  .food-card,
+  .phone-record-row,
+  .property-exchange-section,
+  .market-app-stall,
+  .phone-card
+) {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: 1.15rem;
+  background: var(--card);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-card,
+  .phone-service-card,
+  .city-services-card,
+  .phone-map-card,
+  .support-panel,
+  .support-feedback-card,
+  .support-faq,
+  .food-card,
+  .phone-record-row,
+  .property-exchange-section,
+  .market-app-stall,
+  .phone-card
+) {
+  padding: 12px;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-app > header,
+  .phone-sub-header,
+  .support-header,
+  .phone-camera-heading,
+  .property-exchange-hero,
+  .city-services-hero,
+  .food-hero,
+  .calendar-hero,
+  .okada-hero
+) {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 1.25rem;
+  background: var(--card);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs,
+  .phone-map-filters,
+  .city-services-filters,
+  .phone-camera-modes
+) {
+  display: flex;
+  min-width: 0;
+  gap: 5px;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 52%, var(--card));
+  scrollbar-width: none;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs,
+  .phone-map-filters,
+  .city-services-filters,
+  .phone-camera-modes
+) > button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs,
+  .phone-map-filters,
+  .city-services-filters,
+  .phone-camera-modes
+) > button[aria-selected="true"],
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs,
+  .phone-map-filters,
+  .city-services-filters,
+  .phone-camera-modes
+) > button[aria-pressed="true"],
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs
+) > button.is-active {
+  color: var(--primary);
+  background: var(--card);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .support-field,
+  .phone-service-field,
+  .food-kitchen-field
+) {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea
+) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: 42px;
+  padding: 9px 12px;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  color: var(--foreground);
+  background: var(--card);
+  font: inherit;
+}
+
+.phone-ui-refresh .phone-app-body textarea {
+  min-height: 96px;
+  resize: vertical;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-btn-primary,
+  .phone-service-action,
+  .food-checkout,
+  .food-add-button,
+  .support-submit,
+  .phone-map-open
+) {
+  min-height: 44px;
+  border-radius: 999px;
+  font-weight: 750;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="tab"],
+  [role="button"]
+):focus-visible {
+  outline: 2px solid var(--ring, var(--primary));
+  outline-offset: 3px;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-list,
+  .phone-record-list,
+  .support-faq-list,
+  .support-feedback-list,
+  .city-services-list
+) {
+  min-width: 0;
+  gap: 8px;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-card,
+  .city-services-card,
+  .phone-service-card,
+  .property-exchange-section,
+  .support-feedback-card
+) {
+  overflow-wrap: anywhere;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-card p,
+  .city-services-card p,
+  .phone-service-card p,
+  .property-exchange-section p,
+  .support-panel p
+) {
+  line-height: 1.5;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-preview-wrap,
+  .phone-camera-scene
+) {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, var(--foreground));
+  border-radius: 1.35rem;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-controls,
+  .phone-camera-footer
+) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-side-control,
+  .phone-camera-shutter,
+  .phone-camera-gallery-thumb
+) {
+  flex: 0 0 auto;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-map-search,
+  .city-services-search,
+  .support-search
+) {
+  min-width: 0;
+  width: 100%;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .market-app-hero,
+  .property-exchange-hero,
+  .city-services-hero,
+  .phone-party-hero,
+  .support-header
+) {
+  padding: 14px;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-sub-header,
+  .phone-app-toolbar
+) {
+  flex: 0 0 auto;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-empty-state,
+  .phone-service-state,
+  .city-services-state,
+  .phone-map-state,
+  .support-empty
+) {
+  overflow-wrap: anywhere;
+  border-radius: 1rem;
+  line-height: 1.5;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .grid,
+  .flex,
+  ul,
+  ol,
+  form,
+  section,
+  article
+) {
+  min-width: 0;
+}
+
+.phone-ui-refresh .phone-app-body :where(img, video, canvas, svg) {
+  max-width: 100%;
+}
+
+@media (max-width: 380px) {
+  .phone-ui-refresh .phone-app-body :where(
+    .phone-local-app,
+    .phone-sub-app,
+    .phone-party,
+    .support-app,
+    .phone-camera-app,
+    .property-exchange-app,
+    .phone-service-screen,
+    .phone-coming-soon-screen
+  ) {
+    padding: 10px;
+  }
+
+  .phone-ui-refresh .phone-app-body :where(
+    .phone-local-list,
+    .city-services-list,
+    .phone-record-list
+  ) {
+    gap: 7px;
+  }
+
+  .phone-ui-refresh .phone-app-body :where(
+    .phone-camera-controls,
+    .phone-camera-footer
+  ) {
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-ui-refresh .phone-app-body :where(button, a) {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms !important;
+  }
+}
