@@ -1607,9 +1607,9 @@
   overflow-wrap: anywhere;
 }
 .phone-ui-refresh .phone-app-body .phone-group-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 44px;
+  display: flex;
   align-items: stretch;
+  flex-wrap: wrap;
   width: 100%;
   min-width: 0;
   gap: 0.45rem;
@@ -1619,7 +1619,8 @@
   max-width: 100%;
 }
 .phone-ui-refresh .phone-app-body .phone-group-card {
-  width: 100%;
+  flex: 1 1 calc(100% - 3.25rem);
+  width: auto;
   min-width: 0;
 }
 .phone-ui-refresh .phone-app-body .phone-group-tool {
