@@ -4362,17 +4362,17 @@
 .phone-screen-home .phone-app-grid {
   box-sizing: border-box;
   min-height: 100%;
-  grid-template-rows: repeat(4, minmax(78px, auto));
+  grid-template-rows: repeat(5, minmax(62px, auto));
   align-content: space-evenly;
   align-items: center;
-  gap: clamp(4px, 1.4vh, 12px) clamp(5px, 1.8vw, 10px);
-  padding: clamp(10px, 2.2vh, 18px) clamp(5px, 2vw, 10px);
+  gap: clamp(2px, 0.55vh, 6px) clamp(4px, 1.2vw, 8px);
+  padding: clamp(6px, 1.2vh, 10px) clamp(5px, 1.6vw, 9px);
   background: transparent !important;
 }
 
 .phone-screen-home .phone-app {
   display: flex;
-  min-height: 78px;
+  min-height: 62px;
   flex-direction: column;
   align-items: center;
   justify-content: center;
@@ -4411,8 +4411,8 @@
 }
 
 .phone-screen-home .phone-page-dots {
-  min-height: 36px;
-  padding-bottom: 2px;
+  min-height: 28px;
+  padding-bottom: 1px;
 }
 
 .phone-screen-home .phone-page-dot::before {
@@ -4427,8 +4427,8 @@
 
 @media (max-width: 360px) {
   .phone-screen-home .phone-app-grid {
-    gap: 3px 3px;
-    padding-inline: 3px;
+    gap: 2px 3px;
+    padding: 4px 3px;
   }
 
   .phone-screen-home .phone-app {
@@ -4445,5 +4445,51 @@
 @media (prefers-reduced-motion: reduce) {
   .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
     transition: none;
+  }
+}
+
+
+/* Launcher density and pagination refinements for compact handset viewports. */
+.phone-screen-home .phone-app-pages {
+  scroll-behavior: smooth;
+  touch-action: pan-y pinch-zoom;
+  overscroll-behavior-x: contain;
+}
+
+.phone-screen-home .phone-page-dots {
+  gap: 0;
+  min-height: 26px;
+}
+
+.phone-screen-home .phone-page-dot {
+  width: 24px;
+  height: 26px;
+}
+
+.phone-screen-home .phone-page-dot::before {
+  width: 6px;
+  height: 6px;
+}
+
+.phone-screen-home .phone-page-dot[aria-current="page"]::before {
+  width: 18px;
+  height: 6px;
+}
+
+@media (max-height: 700px) {
+  .phone-screen-home .phone-app-grid {
+    grid-template-rows: repeat(5, minmax(54px, auto));
+    gap: 2px 4px;
+    padding-block: 4px;
+  }
+
+  .phone-screen-home .phone-app {
+    min-height: 54px;
+    gap: 3px;
+  }
+
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    width: clamp(40px, 11vw, 48px);
+    height: clamp(40px, 11vw, 48px);
   }
 }
