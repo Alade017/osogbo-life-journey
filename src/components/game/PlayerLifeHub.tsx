@@ -89,8 +89,8 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
     <div className="player-hub-backdrop" onMouseDown={(event) => {
       if (event.target === event.currentTarget) onClose();
     }}>
-      <section className="player-hub-sheet" role="dialog" aria-modal="true" aria-label="Player life hub">
-        <div className="player-hub-grabber" aria-hidden="true"><span /></div>
+      <section className={`player-hub-sheet${expanded ? " is-expanded" : ""}`} role="dialog" aria-modal="true" aria-label="Player life hub" style={dragOffset ? { transform: `translateY(${dragOffset}px)`, transition: "none" } : undefined}>
+        <button className="player-hub-grabber" type="button" aria-label="Expand player hub" onClick={() => setExpanded(true)} onPointerDown={(event) => { dragRef.current = { pointerId: event.pointerId, startY: event.clientY, offset: 0 }; event.currentTarget.setPointerCapture(event.pointerId); }} onPointerMove={(event) => { const drag = dragRef.current; if (!drag || drag.pointerId !== event.pointerId) return; drag.offset = event.clientY - drag.startY; setDragOffset(Math.max(-120, Math.min(220, drag.offset))); }} onPointerUp={(event) => { const drag = dragRef.current; if (!drag || drag.pointerId !== event.pointerId) return; if (drag.offset > 105) onClose(); else if (drag.offset < -45) setExpanded(true); else if (expanded && drag.offset > 35) setExpanded(false); dragRef.current = null; setDragOffset(0); }} onPointerCancel={() => { dragRef.current = null; setDragOffset(0); }}><span /></button>
         <header className="player-hub-header">
           <div className="player-hub-identity">
             <div className="player-hub-avatar">
