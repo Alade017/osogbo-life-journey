@@ -1,5 +1,6 @@
 import { ShowroomAsset } from "./ShowroomAsset";
-import { WorldMaterial } from "./WorldScene";
+import { useMemo } from "react";
+import { WorldMaterial, WorldInstances, type WorldInstance } from "./WorldScene";
 import type { WorldTone } from "./world-theme";
 import { type ShowroomLayout } from "@/game/showroom-navigation";
 import type { WalkPoint } from "@/game/grid-walk-path";
@@ -76,6 +77,10 @@ export function DealershipInterior({ layout, models, onWalk, onSelect, onExit, s
   const finish = finishes[style];
   const front = layout.depth / 2;
   const halfWidth = layout.width / 2;
+  const platforms = useMemo(() => layout.bays.map(bay => ({
+    position: [bay.x, 0.08, bay.z],
+    scale: [layout.displayWidth, 0.16, layout.displayDepth],
+  } satisfies WorldInstance)), [layout]);
   return <group name="dealership-interior">
     <group onClick={(event) => { event.stopPropagation(); if (event.delta <= 5) onWalk([event.point.x, event.point.z]); }}>
       <Block at={[0, -0.1, 0]} size={[layout.width, 0.2, layout.depth]} tone="tileLight" color={finish.floor} />
@@ -98,10 +103,16 @@ export function DealershipInterior({ layout, models, onWalk, onSelect, onExit, s
       <Block at={[x, 2.1, -front + 0.13]} size={[0.09, 3.6, 0.08]} tone="metal" color={finish.trim} />
       <mesh position={[x + 0.35, 2.9, -front + 0.16]}><boxGeometry args={[0.5, 0.035, 0.06]} /><meshBasicMaterial color="#fff0cf" /></mesh>
     </group>)}
+    <group onClick={(event) => {
+      event.stopPropagation();
+      const index = event.instanceId;
+      if (event.delta <= 5 && index !== undefined && models[index]) onSelect(index);
+    }}>
+      <WorldInstances items={platforms} tone="tileShade" color={finish.platform} />
+    </group>
     {layout.bays.map((bay, index) => {
       const model = models[index];
       return <group key={index} position={[bay.x, 0, bay.z]} onClick={(event) => { event.stopPropagation(); if (model && event.delta <= 5) onSelect(index); }}>
-        <Block at={[0, 0.08, 0]} size={[layout.displayWidth, 0.16, layout.displayDepth]} tone="tileShade" color={finish.platform} />
         {(style === "exotic" || activeBay === index) && [-1, 1].map((side) => <group key={side}>
           <mesh position={[side * (layout.displayWidth / 2 - 0.045), 0.169, 0]}><boxGeometry args={[0.045, 0.012, layout.displayDepth - 0.08]} /><meshBasicMaterial color={finish.accent} /></mesh>
           <mesh position={[0, 0.169, side * (layout.displayDepth / 2 - 0.045)]}><boxGeometry args={[layout.displayWidth - 0.08, 0.012, 0.045]} /><meshBasicMaterial color={finish.accent} /></mesh>
