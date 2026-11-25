@@ -94,7 +94,17 @@
 }
 
 .phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
-  inset: auto auto calc((100dvh - var(--phone-frame-height)) / 2) 50%;
+  inset: auto auto calc(
+    var(--game-keyboard-inset, 0px) +
+    env(safe-area-inset-bottom) +
+    (
+      100dvh -
+      var(--game-keyboard-inset, 0px) -
+      env(safe-area-inset-top) -
+      env(safe-area-inset-bottom) -
+      var(--phone-frame-height)
+    ) / 2
+  ) 50%;
   transform: translateX(-50%);
 }
 
@@ -659,12 +669,12 @@
 @media (max-width: 640px) {
   .phone-dialog-shell.phone-dialog-shell.phone-dialog-shell-solo {
     position: fixed !important;
-    inset: 0 !important;
+    inset: env(safe-area-inset-top) 0 calc(var(--game-keyboard-inset, 0px) + env(safe-area-inset-bottom)) 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     width: 100vw !important;
-    height: 100dvh !important;
+    height: auto !important;
     max-width: none !important;
     max-height: none !important;
     padding: 0 !important;
