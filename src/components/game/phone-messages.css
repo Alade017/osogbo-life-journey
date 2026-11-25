@@ -1559,3 +1559,79 @@
   min-width: 0;
   box-sizing: border-box;
 }
+
+
+/* Keep inbox actions and group-management controls inside narrow phone widths. */
+.phone-ui-refresh .phone-app-body .phone-inbox-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  width: 100%;
+  min-width: 0;
+  gap: 0.55rem;
+}
+.phone-ui-refresh .phone-app-body .phone-inbox-controls > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.phone-ui-refresh .phone-app-body .phone-new-message-button {
+  flex: 0 1 auto;
+  min-width: 44px;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.phone-ui-refresh .phone-app-body .phone-group-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  width: 100%;
+  min-width: 0;
+}
+.phone-ui-refresh .phone-app-body .phone-group-heading > :first-child {
+  flex: 1 1 7rem;
+  min-width: 0;
+}
+.phone-ui-refresh .phone-app-body .phone-group-heading > :last-child {
+  flex: 0 1 auto;
+  min-width: 0;
+  max-width: 100%;
+}
+.phone-ui-refresh .phone-app-body .phone-group-heading button {
+  max-width: 100%;
+  min-height: 42px;
+  padding-inline: clamp(0.65rem, 3vw, 0.9rem);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+.phone-ui-refresh .phone-app-body .phone-group-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  gap: 0.45rem;
+}
+.phone-ui-refresh .phone-app-body .phone-group-row > * {
+  min-width: 0;
+  max-width: 100%;
+}
+.phone-ui-refresh .phone-app-body .phone-group-card {
+  width: 100%;
+  min-width: 0;
+}
+.phone-ui-refresh .phone-app-body .phone-group-tool {
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+}
+@media (max-width: 380px) {
+  .phone-ui-refresh .phone-app-body .phone-group-heading {
+    align-items: flex-start;
+  }
+  .phone-ui-refresh .phone-app-body .phone-group-heading > :last-child {
+    margin-inline-start: auto;
+  }
+}
