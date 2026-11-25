@@ -38,6 +38,8 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const navigation = useMemo(() => showroomNavigation(layout), [layout]);
   const walker = useHouseMovement(slug, toRoom(layout.exteriorSpawn));
   const [inside, setInside] = useState(false);
+  const crossing = useRef(false);
+  const [transitioning, setTransitioning] = useState(false);
   const [message, setMessage] = useState("Walk to the entrance to enter.");
   const { assets, station, setStation, inspection, setInspection, assetReady, assetError, assetUnmounted } = useProductInspection();
   const product = station === null ? undefined : models[station];
@@ -51,6 +53,8 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const onError = useCallback(() => {
     request.current++;
     cancel();
+    crossing.current = false;
+    setTransitioning(false);
     setSceneFailed(true);
     setStation(null);
     setInspection(false);
@@ -77,23 +81,47 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
     const [x, , z] = walker.positionRef.current;
     return [x, z];
   }
-  function enter() {
-    if (inside) return;
-    walk(showroomExteriorRoute(current(), layout.exteriorDoor, layout), () => {
-      walker.place(toRoom(layout.entrance));
-      setInside(true);
-      setMessage("Tap the floor to walk or approach a vehicle.");
-    });
+  async function crossDoor(entering: boolean) {
+    if (crossing.current || !character || sceneFailed || entering === inside) return;
+    const ticket = ++request.current;
+    crossing.current = true;
+    setTransitioning(true);
+    cancel();
+    setStation(null);
+    setInspection(false);
+    setMessage(entering ? "Entering showroom…" : "Leaving showroom…");
+    let crossed = false;
+    try {
+      const path = entering
+        ? showroomExteriorRoute(current(), layout.exteriorDoor, layout)
+        : navigation.route(current(), layout.entrance);
+      if (!path || !await walker.walk(path.map(toRoom)) || ticket !== request.current) return;
+      if (!await walker.walk([toRoom(layout.threshold)]) || ticket !== request.current) return;
+      crossed = true;
+      setInside(entering);
+      const destination = entering ? layout.entrance : layout.exteriorDoor;
+      if (!await walker.walk([toRoom(destination)]) || ticket !== request.current) {
+        if (ticket === request.current) walker.place(toRoom(destination));
+        return;
+      }
+      setMessage(entering ? "Tap the floor to walk or approach a vehicle." : "You are outside the dealership.");
+    } finally {
+      if (ticket === request.current) {
+        // A cancelled crossing must not strand the avatar on the non-walkable threshold.
+        const position = current();
+        const settledInside = crossed ? entering : inside;
+        const valid = settledInside ? navigation.canWalk(position) : !!showroomExteriorRoute(position, layout.exteriorDoor, layout);
+        if (!valid) walker.place(toRoom(settledInside ? layout.entrance : layout.exteriorDoor));
+        crossing.current = false;
+        setTransitioning(false);
+        setMessage(previous => previous === "Entering showroom…" || previous === "Leaving showroom…" ? "Walk stopped." : previous);
+      }
+    }
   }
-  function exit() {
-    if (!inside) return;
-    walk(navigation.route(current(), layout.entrance), () => {
-      walker.place(toRoom(layout.exteriorDoor));
-      setInside(false);
-      setMessage("You are outside the dealership.");
-    });
-  }
+  function enter() { void crossDoor(true); }
+  function exit() { void crossDoor(false); }
   function go(point: WalkPoint) {
+    if (crossing.current) return;
     if (!inside && Math.abs(point[0]) <= layout.entranceWidth / 2 && point[1] <= layout.exteriorDoor[1] + 0.35) {
       enter();
     } else if (inside && Math.abs(point[0]) <= layout.entranceWidth / 2 && point[1] >= layout.entrance[1]) {
@@ -104,7 +132,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   }
   function approach(index: number) {
     const model = models[index];
-    if (!inside || !model) return;
+    if (crossing.current || !inside || !model) return;
     walk(navigation.approach(current(), index), () => {
       setStation(index);
       setMessage("Vehicle display reached.");
@@ -119,7 +147,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
           <WorldCanvas frameloop="demand" dpr={[1, quality.maxDpr]}
             gl={{ antialias: false, powerPreference: "low-power" }}
             onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
-            <WorldCamera width={12} depth={12} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} target={inspecting && station !== null ? [layout.bays[station]!.x, 0.9, layout.bays[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspecting ? 2.8 : 1.5} />
+            <WorldCamera width={inspecting ? layout.displayWidth + 1 : 12} depth={inspecting ? layout.displayDepth + 1 : 12} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} target={inspecting && station !== null ? [layout.bays[station]!.x, 0.9, layout.bays[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspecting ? 1.65 : 1.5} />
             <WorldLighting size={Math.max(layout.width, layout.depth) / 2 + 8} contactShadows={false} />
             {inside ? <DealershipInterior loadRadius={loadRadius} layout={layout} viewer={[walker.position[0], walker.position[2]]} style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} />
               : <DealershipExterior layout={layout} style={style} onEnter={enter} onWalk={go} />}
@@ -132,7 +160,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
       </div>
       <div data-venue-controls>
         <p role="status">{message}</p>
-        <button type="button" disabled={!character || sceneFailed} onClick={inside ? exit : enter}
+        <button type="button" disabled={!character || sceneFailed || transitioning} onClick={inside ? exit : enter}
           className="rounded-full border border-edge px-3 py-1.5 text-sm">{inside ? "Walk to exit" : "Walk to entrance"}</button>
         {inside && station !== null && !walker.walking && !sceneFailed && (
           <div className="flex flex-wrap items-center gap-2" aria-label="Vehicle interactions">
