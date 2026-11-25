@@ -39,7 +39,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const walker = useHouseMovement(slug, toRoom(layout.exteriorSpawn));
   const [inside, setInside] = useState(false);
   const [message, setMessage] = useState("Walk to the entrance to enter.");
-  const { assets, station, setStation, inspection, setInspection, assetReady, assetError } = useProductInspection();
+  const { assets, station, setStation, inspection, setInspection, assetReady, assetError, assetUnmounted } = useProductInspection();
   const product = station === null ? undefined : models[station];
   const canInspect = !!product && assets[product.id] === "ready";
   const inspecting = inspection && canInspect;
@@ -55,7 +55,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
     setStation(null);
     setInspection(false);
     setMessage("The 3D environment is unavailable.");
-  }, [cancel]);
+  }, [cancel, setStation, setInspection]);
 
   function walk(path: WalkPoint[] | null, after?: () => void) {
     const ticket = ++request.current;
@@ -120,8 +120,8 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
             gl={{ antialias: false, powerPreference: "low-power" }}
             onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
             <WorldCamera width={12} depth={12} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} target={inspecting && station !== null ? [layout.bays[station]!.x, 0.9, layout.bays[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspecting ? 2.8 : 1.5} />
-            <WorldLighting size={24} contactShadows={false} />
-            {inside ? <DealershipInterior loadRadius={loadRadius} layout={layout} viewer={[walker.position[0], walker.position[2]]} style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} />
+            <WorldLighting size={Math.max(layout.width, layout.depth) / 2 + 8} contactShadows={false} />
+            {inside ? <DealershipInterior loadRadius={loadRadius} layout={layout} viewer={[walker.position[0], walker.position[2]]} style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} />
               : <DealershipExterior layout={layout} style={style} onEnter={enter} onWalk={go} />}
             {character && <group position={walker.position}>
               <WorldCharacter position={[0, 0, 0]} facing={walker.facing} animation={walker.walking ? "walk" : "idle"}
