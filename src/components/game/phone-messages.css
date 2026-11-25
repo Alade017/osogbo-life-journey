@@ -1636,3 +1636,14 @@
     margin-inline-start: auto;
   }
 }
+
+.phone-ui-refresh .phone-app-body .phone-new-message-label {
+  min-width: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
+.phone-ui-refresh .phone-app-body .phone-new-message-button {
+  justify-content: center;
+  line-height: 1.2;
+}
