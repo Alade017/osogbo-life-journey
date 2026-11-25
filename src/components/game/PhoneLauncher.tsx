@@ -189,6 +189,7 @@ const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
 /** Apps restyled to the Settings design (cards, sections, rows). Others keep their current look. */
 const SETTINGS_STYLE_APPS = new Set([
   "Profile",
+  "Settings",
   "Support",
   "Town News",
   "Market",
