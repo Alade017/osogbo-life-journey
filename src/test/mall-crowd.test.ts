@@ -53,6 +53,12 @@ describe("mall shopper routes", () => {
 });
 
 describe("mall attendance policy", () => {
+  it("reduces arrivals during rain without changing the clear-weather baseline", () => {
+    const time = { hour: 12, weekday: 5 };
+    expect(mallCrowdTarget(time, "cloudy")).toBe(MALL_CROWD_TARGET);
+    expect(mallCrowdTarget(time, "rainy")).toBeLessThan(mallCrowdTarget(time, "sunny"));
+    expect(mallCrowdTarget(time, "heavy-rain")).toBeLessThan(mallCrowdTarget(time, "rainy"));
+  });
   it("has fewer shoppers at night and more on weekends during daytime", () => {
     expect(mallCrowdTarget({ hour: 2, weekday: 0 })).toBeLessThan(mallCrowdTarget({ hour: 12, weekday: 0 }));
     expect(mallCrowdTarget({ hour: 12, weekday: 5 })).toBe(MALL_CROWD_TARGET);

@@ -30,6 +30,7 @@ import {
 import { q } from "@/lib/game";
 import { useOptionalGameTime } from "./GameTimeProvider";
 import { gameTimeFromCharacter, INITIAL_GAME_TIME } from "@/lib/game-time";
+import { weatherForDay } from "@/lib/world-simulation";
 import { mallCrowdTarget, getShopperById } from "@/game/mall-crowd";
 import { joinMallRoom } from "@/lib/multiplayer-service";
 import { reportMallZone } from "@/lib/osun-mall-presence";
@@ -55,7 +56,7 @@ export function OsunMallVenue({
   const { data: character } = useQuery(q.character());
   const gameClock = useOptionalGameTime();
   const gameTime = gameClock?.simulation.gameTime ?? (character ? gameTimeFromCharacter(character) : INITIAL_GAME_TIME);
-  const crowdTarget = mallCrowdTarget(gameTime);
+  const crowdTarget = mallCrowdTarget(gameTime, weatherForDay(gameTime.day));
   const { data: equipment } = useQuery(q.equipment());
   const playerEquipment = (equipment ?? []).map((row) => ({ slot: row.slot }));
   const [status, setStatus] = useState<"joining" | "ready" | "offline">("joining");
