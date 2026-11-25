@@ -12,11 +12,6 @@ import {
   type MapEventChip,
 } from "@/components/map/MapCanvas";
 import type { NeighborhoodLandmarkSpec } from "@/data/neighborhoodLocations";
-import {
-  enqueueNeighborhoodNavigation,
-  resolvePlayerMapPosition,
-  useLivePlayerPose,
-} from "@/store/neighborhoodNavSync";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { useMapTravelController } from "@/components/map/use-map-travel-controller";
@@ -104,7 +99,6 @@ export function CityMapDashboard(
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
-  const livePlayerPose = useLivePlayerPose();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const mapHref = useLocation({ select: (location) => location.href });
@@ -354,11 +348,6 @@ export function CityMapDashboard(
       query ? "?" + query : window.location.pathname,
     );
   }, [availableLandmarks.data, onLandmark, setDestinationTab]);
-  const playerMapPosition = useMemo(
-    () => resolvePlayerMapPosition(character.data, livePlayerPose),
-    [character.data, livePlayerPose],
-  );
-
   const effectivePocketBalance = useMemo(() => {
     if (typeof wallet.data?.balance === "number") return wallet.data.balance;
     return 0;
@@ -399,15 +388,14 @@ export function CityMapDashboard(
           <div className="ncm-3d-companion">
             <div className="ncm-3d-companion-bar">
               <div>
-                <strong>Places &amp; districts</strong>{" "}
-                <span>Pick a place, then walk its streets</span>
+                <strong>Osogbo</strong> <span>Choose a destination</span>
               </div>
               <button
                 type="button"
                 className="ncm-3d-expand-btn"
                 onClick={() => void navigate({ to: "/neighborhood" })}
               >
-                Walk the streets
+                Current neighbourhood
               </button>
             </div>
             <MapCanvas
@@ -417,14 +405,8 @@ export function CityMapDashboard(
               playerLocation={
                 currentMapPlace
                   ? {
-                      x:
-                        currentLocation?.slug === "city-centre"
-                          ? currentMapPlace.grid.x + (playerMapPosition.mapCoords.x - 0.5) * 2.2
-                          : currentMapPlace.grid.x,
-                      y:
-                        currentLocation?.slug === "city-centre"
-                          ? currentMapPlace.grid.z + (playerMapPosition.mapCoords.y - 0.5) * 1.4
-                          : currentMapPlace.grid.z,
+                      x: currentMapPlace.grid.x,
+                      y: currentMapPlace.grid.z,
                       label: "You are here",
                     }
                   : null

@@ -207,9 +207,9 @@
   gap: 6px;
 }
 .town-camera-tools button {
-  min-height: 44px;
+  min-height: 36px;
   border: 1px solid #dedbd1;
-  border-radius: 10px;
+  border-radius: 999px;
   padding: 6px 12px;
   background: #faf7f0;
   color: #16225c;
@@ -337,4 +337,10 @@
     500 12px/1.5 system-ui,
     sans-serif;
   pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .town-camera-tools button {
+    min-height: 44px;
+  }
 }

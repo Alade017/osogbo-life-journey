@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { OrthographicCamera, Plane, Raycaster, Vector2, Vector3 } from "three";
-import { mapCameraFrame, mapCameraPanLimits } from "@/components/map/map-camera-geometry";
+import {
+  MAP_VIEW_ELEVATION,
+  mapCameraFrame,
+  mapCameraPanLimits,
+} from "@/components/map/map-camera-geometry";
 
 describe("map viewport coverage", () => {
   for (const [w, h] of [
@@ -25,7 +29,7 @@ describe("map viewport coverage", () => {
             const target = new Vector3(x, 0, z);
             camera.position
               .copy(target)
-              .addScaledVector(new Vector3(0, 1.35, 1).normalize(), 230.4);
+              .addScaledVector(new Vector3(0, MAP_VIEW_ELEVATION, 1).normalize(), 230.4);
             camera.lookAt(target);
             camera.updateProjectionMatrix();
             camera.updateMatrixWorld(true);
