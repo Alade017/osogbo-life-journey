@@ -61,7 +61,7 @@ export function DealershipExterior({ layout, onEnter, onWalk, style = "standard"
   </group>;
 }
 
-export function DealershipInterior({ layout, models, onWalk, onSelect, onExit, style = "standard", activeBay, onAssetReady, onAssetError, viewer, loadRadius }: {
+export function DealershipInterior({ layout, models, onWalk, onSelect, onExit, style = "standard", activeBay, onAssetReady, onAssetError, onAssetUnmounted, viewer, loadRadius }: {
   loadRadius: number;
   layout: ShowroomLayout;
   viewer: WalkPoint;
@@ -73,6 +73,7 @@ export function DealershipInterior({ layout, models, onWalk, onSelect, onExit, s
   activeBay?: number | null;
   onAssetReady: (id: string) => void;
   onAssetError: (id: string) => void;
+  onAssetUnmounted: (id: string) => void;
 }) {
   const finish = finishes[style];
   const front = layout.depth / 2;
@@ -118,7 +119,7 @@ export function DealershipInterior({ layout, models, onWalk, onSelect, onExit, s
           <mesh position={[0, 0.169, side * (layout.displayDepth / 2 - 0.045)]}><boxGeometry args={[layout.displayWidth - 0.08, 0.012, 0.045]} /><meshBasicMaterial color={finish.accent} /></mesh>
         </group>)}
         {model && <group position={[0, 0.16, 0]}>
-          <ShowroomAsset product={model} viewer={viewer} position={[bay.x, bay.z]} radius={loadRadius} pinned={activeBay === index} limits={[layout.displayWidth - 0.2, 3.5, layout.displayDepth - 0.2]} onReady={onAssetReady} onError={onAssetError} />
+          <ShowroomAsset product={model} viewer={viewer} position={[bay.x, bay.z]} radius={loadRadius} pinned={activeBay === index} limits={[layout.displayWidth - 0.2, 3.5, layout.displayDepth - 0.2]} onReady={onAssetReady} onError={onAssetError} onUnmount={onAssetUnmounted} />
         </group>}
       </group>;
     })}
