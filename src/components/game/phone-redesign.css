@@ -1681,3 +1681,119 @@ body:has(.phone-ui-refresh) :is(
     font-size: 0.7rem;
   }
 }
+
+
+/* Support app: prevent the header and segmented navigation from shrinking into
+   overlapping slivers when the FAQ list grows inside the scrollable phone body. */
+.phone-ui-refresh .phone-app-body .support-app {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  gap: clamp(0.65rem, 2.8vw, 0.9rem);
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-header,
+.phone-ui-refresh .phone-app-body .support-app > .support-tabs,
+.phone-ui-refresh .phone-app-body .support-app > .support-panel,
+.phone-ui-refresh .phone-app-body .support-app > .support-form,
+.phone-ui-refresh .phone-app-body .support-app > .support-feedback-list,
+.phone-ui-refresh .phone-app-body .support-app > .support-back {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  transform: none;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-header {
+  min-height: 5rem;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  min-height: 3.25rem;
+  height: auto;
+  padding: 4px;
+  overflow: visible;
+  border-radius: 14px;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-tabs > .support-tab {
+  display: flex;
+  min-width: 0;
+  min-height: 2.75rem;
+  height: auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.25rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-panel,
+.phone-ui-refresh .phone-app-body .support-app > .support-form {
+  display: block;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-app .support-search,
+.phone-ui-refresh .phone-app-body .support-app .support-faq-list,
+.phone-ui-refresh .phone-app-body .support-app .support-faq {
+  position: relative;
+  flex: none;
+  min-width: 0;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-app .support-faq button {
+  min-height: 3.5rem;
+  align-items: center;
+}
+.phone-ui-refresh .phone-app-body .support-app .support-back {
+  align-self: center;
+  width: auto;
+  min-height: 2.75rem;
+}
+
+/* Map filters: replace the clipped oval carousel with a readable, wrapping grid. */
+.phone-ui-refresh .phone-app-body .map-app .phone-map-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.45rem;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.phone-ui-refresh .phone-app-body .map-app .phone-map-filters > button {
+  display: flex;
+  min-width: 0;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+  text-align: center;
+}
+@media (max-width: 380px) {
+  .phone-ui-refresh .phone-app-body .map-app .phone-map-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
