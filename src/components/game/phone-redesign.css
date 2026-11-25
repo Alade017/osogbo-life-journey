@@ -881,10 +881,10 @@
 /* Radix portals render dialogs and menus beside the phone root, not inside it.
    Scope their visual treatment to the period when the in-game handset is open. */
 body:has(.phone-ui-refresh) :is(
-  [role="dialog"]:not(.phone-dialog),
+  [role="dialog"]:not(.phone-dialog):not(.phone-dialog-shell),
   [role="alertdialog"],
-  [data-radix-dialog-content],
-  [data-radix-alert-dialog-content]
+  [data-radix-dialog-content]:not(.phone-dialog-shell),
+  [data-radix-alert-dialog-content]:not(.phone-dialog-shell)
 ) {
   box-sizing: border-box;
   max-width: min(calc(100vw - 28px), 27rem);
