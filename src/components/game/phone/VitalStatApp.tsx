@@ -23,6 +23,13 @@ export function VitalStatApp() {
     return { name, value, status: statusForNeed(name, value) };
   }).sort((a, b) => RANK[a.status] - RANK[b.status] || a.value - b.value);
   const lowCount = needs.filter((need) => need.status !== "healthy").length;
+  // Mood is read from the Fun and Social needs together, so it needs no new game data.
+  const moodValue = Math.round(
+    (Math.max(0, Math.min(100, simulation.needs.fun)) +
+      Math.max(0, Math.min(100, simulation.needs.social))) /
+      2,
+  );
+  const mood = { value: moodValue, status: statusForNeed("fun", moodValue) };
 
   return (
     <section className="vitalstat-app" aria-label="VitalStat">
@@ -42,6 +49,27 @@ export function VitalStatApp() {
         </div>
       </header>
       <ul className="vitalstat-list">
+        <li key="mood" className={`vitalstat-row vitalstat-${mood.status}`}>
+          <div className="vitalstat-row-head">
+            <span>Mood</span>
+            <strong>{mood.value}%</strong>
+          </div>
+          <div
+            className="vitalstat-bar"
+            role="meter"
+            aria-label="Mood"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={mood.value}
+          >
+            <span style={{ width: `${mood.value}%` }} />
+          </div>
+          {mood.status !== "healthy" ? (
+            <p className="vitalstat-advice">
+              Spend time with friends or find something fun to lift your mood.
+            </p>
+          ) : null}
+        </li>
         {needs.map((need) => (
           <li key={need.name} className={`vitalstat-row vitalstat-${need.status}`}>
             <div className="vitalstat-row-head">
