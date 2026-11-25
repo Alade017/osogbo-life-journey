@@ -1508,3 +1508,181 @@ body:has(.phone-ui-refresh) :is(
     --phone-card-padding: clamp(0.8rem, 2vw, 1.1rem);
   }
 }
+
+
+/* Mobile preview corrections: app content owns its scroll, never a clipped inner card. */
+.phone-ui-refresh .phone-app-body {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+.phone-ui-refresh .phone-app-body > :where(.support-app, .property-exchange-app, .city-services-app) {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Property Exchange: restore readable contrast after the shared header-surface reset. */
+.phone-ui-refresh .phone-app-body .property-exchange-hero {
+  color: #17243a;
+  background: linear-gradient(145deg, #ffffff 0%, #f2f6fc 100%);
+  border: 1px solid #d7e1ef;
+  box-shadow: 0 3px 14px rgb(18 43 78 / 8%);
+}
+.phone-ui-refresh .phone-app-body .property-exchange-kicker {
+  color: #174da6;
+  letter-spacing: 0.09em;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-title-row h2 {
+  color: #111c2d;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-title-row p,
+.phone-ui-refresh .phone-app-body .property-exchange-promise {
+  color: #526174;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-promise {
+  border-top-color: #d8e1ed;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-mark {
+  color: #174da6;
+  border-color: #d5e1f2;
+  background: #e8effa;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-section,
+.phone-ui-refresh .phone-app-body .property-exchange-section > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-section :where(input, select, textarea, button) {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-section :where(ul, li, form) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Support: tabs stay inside the handset and the full FAQ list scrolls with the app. */
+.phone-ui-refresh .phone-app-body .support-app {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 100%;
+  height: auto;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 14px;
+}
+.phone-ui-refresh .phone-app-body .support-tabs > button {
+  min-width: 0;
+  padding-inline: 4px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+.phone-ui-refresh .phone-app-body .support-panel {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-height: none;
+  height: auto;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-faq-list {
+  max-height: none;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-faq button {
+  min-width: 0;
+}
+.phone-ui-refresh .phone-app-body .support-faq button > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.phone-ui-refresh .phone-app-body .support-back {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-block: 0.25rem 0.75rem;
+}
+
+/* City Services: use a compact category grid, not a horizontally clipped pill cloud. */
+.phone-ui-refresh .phone-app-body .city-services-app {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 100%;
+  height: auto;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .city-services-search {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0.8rem;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-app-body .city-services-search input {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0;
+  border: 0;
+  box-shadow: none;
+}
+.phone-ui-refresh .phone-app-body .city-services-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.45rem;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.phone-ui-refresh .phone-app-body .city-services-filters > button {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0.45rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+.phone-ui-refresh .phone-app-body .city-services-card-copy {
+  flex: 1 1 0;
+}
+
+/* The launcher trigger must not remain visible beneath its own open dialog. */
+.gbb.is-open .gbb-phone {
+  display: none !important;
+}
+
+@media (max-width: 380px) {
+  .phone-ui-refresh .phone-app-body .city-services-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .phone-ui-refresh .phone-app-body .support-tabs > button {
+    font-size: 0.7rem;
+  }
+}
