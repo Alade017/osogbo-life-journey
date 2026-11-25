@@ -1334,3 +1334,165 @@ body:has(.phone-ui-refresh) :is(
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Final responsive sizing pass: scale app controls and visual components with the
+   handset viewport, while retaining rem-based minimums for touch accessibility. */
+.phone-ui-refresh,
+.phone-dialog {
+  --phone-inline-gutter: clamp(0.65rem, 3.2vw, 1.1rem);
+  --phone-card-padding: clamp(0.7rem, 2.8vw, 1rem);
+  --phone-icon-size: clamp(2.25rem, 10vw, 3rem);
+  --phone-small-icon-size: clamp(1.1rem, 5vw, 1.5rem);
+  --phone-row-gap: clamp(0.45rem, 1.8vw, 0.75rem);
+  --phone-app-title: clamp(1.1rem, 4.8vw, 1.55rem);
+  --phone-app-copy: clamp(0.78rem, 2.6vw, 0.92rem);
+}
+
+.phone-ui-refresh .phone-app-body,
+.phone-dialog .phone-app-body {
+  font-size: var(--phone-app-copy);
+  line-height: 1.45;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-app,
+  .property-exchange-app,
+  .city-services-app,
+  .market-app,
+  .leaderboard-app,
+  .phone-messenger,
+  .phone-local-app,
+  .phone-sub-app,
+  .support-app
+) {
+  gap: var(--phone-row-gap);
+  padding: var(--phone-inline-gutter);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-heading-icon,
+  .city-services-icon,
+  .market-app-hero-icon,
+  .property-exchange-mark,
+  .phone-local-icon,
+  .phone-service-icon
+) {
+  width: var(--phone-icon-size);
+  height: var(--phone-icon-size);
+  flex-basis: var(--phone-icon-size);
+  border-radius: clamp(0.75rem, 3vw, 1rem);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-heading-icon svg,
+  .city-services-icon svg,
+  .property-exchange-mark svg,
+  .market-app-hero-icon svg
+) {
+  width: var(--phone-small-icon-size);
+  height: var(--phone-small-icon-size);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-heading strong,
+  .city-services-hero strong,
+  .property-exchange-title-row h2,
+  .market-app-hero h2,
+  .leaderboard-app > header strong
+) {
+  font-size: var(--phone-app-title);
+  line-height: 1.15;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-viewfinder,
+  .phone-camera-scene
+) {
+  min-height: clamp(10rem, 34dvh, 18rem);
+}
+
+.phone-ui-refresh .phone-app-body .phone-camera-viewfinder {
+  border-width: clamp(0.12rem, 0.5vw, 0.25rem);
+  border-radius: clamp(1rem, 4vw, 1.4rem);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-viewfinder-top,
+  .phone-camera-viewfinder-bottom
+) {
+  min-height: clamp(1.8rem, 5.5dvh, 2.2rem);
+  padding-inline: var(--phone-card-padding);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .city-services-search input,
+  .market-app-tabs button,
+  .phone-message-switch button
+) {
+  min-height: var(--phone-control-size);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .city-services-card,
+  .property-exchange-section,
+  .market-app-stall,
+  .phone-group-card,
+  .leaderboard-ranks > li
+) {
+  padding: var(--phone-card-padding);
+  border-radius: clamp(0.8rem, 3vw, 1.15rem);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-chat-panel,
+  .phone-message-switch,
+  .market-app-section,
+  .phone-app-body .leaderboard-app
+) {
+  padding-inline: var(--phone-inline-gutter);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-controls,
+  .phone-camera-footer,
+  .city-services-filters,
+  .market-app-tabs,
+  .phone-message-switch
+) {
+  gap: var(--phone-row-gap);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-side-control,
+  .phone-camera-shutter,
+  .phone-camera-gallery-thumb
+) {
+  min-width: var(--phone-control-size);
+  min-height: var(--phone-control-size);
+}
+
+@media (max-width: 380px) {
+  .phone-ui-refresh,
+  .phone-dialog {
+    --phone-inline-gutter: clamp(0.55rem, 2.8vw, 0.8rem);
+    --phone-card-padding: clamp(0.55rem, 2.5vw, 0.75rem);
+    --phone-icon-size: clamp(2rem, 9vw, 2.5rem);
+    --phone-app-title: clamp(1rem, 4.5vw, 1.25rem);
+  }
+
+  .phone-ui-refresh .phone-app-body :where(
+    .phone-camera-viewfinder,
+    .phone-camera-scene
+  ) {
+    min-height: clamp(9rem, 30dvh, 13rem);
+  }
+}
+
+@media (min-width: 641px) {
+  .phone-ui-refresh,
+  .phone-dialog {
+    --phone-inline-gutter: clamp(0.85rem, 2.5vw, 1.25rem);
+    --phone-card-padding: clamp(0.8rem, 2vw, 1.1rem);
+  }
+}
