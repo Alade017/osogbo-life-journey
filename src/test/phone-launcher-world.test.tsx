@@ -26,6 +26,15 @@ vi.mock("@/hooks/use-mission-claim", () => ({ useMissionClaim: () => ({ mutate: 
 vi.mock("@/components/game/CareerLifeApp", () => ({
   CareerLifeApp: () => <div>Career HUD content</div>,
 }));
+vi.mock("@/components/game/phone/CameraApp", () => ({
+  default: () => <div>Camera app content</div>,
+}));
+vi.mock("@/components/game/phone/CityServicesApp", () => ({
+  default: () => <div>City Services content</div>,
+}));
+vi.mock("@/components/game/phone/PropertyExchangeApp", () => ({
+  default: () => <div>Property Exchange content</div>,
+}));
 vi.mock("@/components/game/phone/PhoneMapApp", () => ({
   PhoneMapApp: () => <div>Map HUD content <a href="/map">Open full city map</a></div>,
 }));
@@ -91,7 +100,7 @@ it("groups launcher apps into pages of sixteen and includes optional Shortcuts",
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
 
   const pages = document.querySelectorAll(".phone-app-grid");
-  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([16, 11]);
+  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([16, 12]);
   expect(pages[0]?.querySelector('[aria-label="Open Shortcuts"]')).not.toBeNull();
   expect(screen.getAllByRole("button", { name: /Go to app page/ })).toHaveLength(pages.length);
   expect(screen.getByRole("button", { name: "Go to app page 1" })).toHaveAttribute(
@@ -167,4 +176,26 @@ it("publishes phone app and Back-to-apps changes to the URL owner", async () => 
   expect(selected).toHaveBeenLastCalledWith({ app: "Career Life" });
   fireEvent.click(screen.getByRole("button", { name: "Back to apps" }));
   expect(selected).toHaveBeenLastCalledWith({ app: null });
+});
+
+
+it("opens the replacement City Services and Property Exchange apps from the launcher", async () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open City Services" }));
+  expect(await screen.findByText("City Services content")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Back to apps" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open Property Exchange" }));
+  expect(await screen.findByText("Property Exchange content")).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Open Activities" })).toBeNull();
+});
+
+
+it("opens the Camera app from the launcher and from the global shortcut event", async () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open Camera" }));
+  expect(await screen.findByText("Camera app content")).toBeVisible();
+  fireEvent(window, new CustomEvent("osogbo-open-phone-app", { detail: { app: "Camera" } }));
+  expect(await screen.findByText("Camera app content")).toBeVisible();
 });

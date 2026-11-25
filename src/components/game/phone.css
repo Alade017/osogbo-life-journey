@@ -24,10 +24,18 @@
 
   z-index: var(--game-dialog-layer) !important;
 }.phone-app-view {
+  display: flex;
+  min-width: 0;
   min-height: 0;
-  flex: 1;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
   color: #0a0a0a;
   background: var(--brand-porcelain, var(--background));
+}
+
+.phone-app-view > .phone-app-toolbar {
+  flex: 0 0 auto;
 }
 
 .phone-app-view .phone-app-toolbar {
@@ -39,11 +47,11 @@
 .phone-status-page,
 .phone-theme-page {
   display: flex;
-  min-height: 0;
-  flex: 1;
+  min-height: 100%;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 0.8rem;
-  overflow-y: auto;
+  overflow: visible;
   padding: 0.9rem;
   color: #0a0a0a;
   background: var(--brand-porcelain, var(--background));
@@ -339,7 +347,6 @@
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  touch-action: pan-y;
 }
 
 .phone-app-pages::-webkit-scrollbar {
@@ -560,18 +567,23 @@
 
 .phone-app-body {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   width: 100%;
-  flex: 1;
+  min-width: 0;
   min-height: 0;
-  overflow-y: auto;
   overflow-x: hidden;
-  background: var(--brand-porcelain, var(--background));
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  background: var(--brand-porcelain, var(--background));
 }
 
 .phone-app-body > * {
+  flex: 0 0 auto;
   min-width: 0;
+  min-height: 100%;
+  width: 100%;
 }
 
 .phone-route-app {
@@ -1227,11 +1239,11 @@
 /* Local-only community apps: all interaction stays in component state. */
 .phone-local-app {
   display: grid;
-  min-height: 0;
-  flex: 1;
+  min-height: 100%;
+  flex: 0 0 auto;
   align-content: start;
   gap: 0.75rem;
-  overflow-y: auto;
+  overflow: visible;
   padding: 0.9rem;
   color: var(--foreground);
   background: var(--background);
@@ -1488,11 +1500,10 @@
 }
 
 .phone-sub-content {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  flex: 0 0 auto;
+  min-height: auto;
+  min-width: 0;
+  overflow: visible;
 }
 
 .phone-segmented-tabs {
@@ -4299,4 +4310,14 @@
 }
 .phone-app-body .phone-job-location-state {
   color: var(--muted-foreground);
+}
+
+
+/* One vertical scroll owner per phone app: the screen body. */
+.phone-app-body,
+.phone-app-body :where(.phone-local-app, .phone-sub-content) {
+  scrollbar-gutter: stable;
+}
+.phone-app-body :where(img, video, canvas, input, select, textarea) {
+  max-width: 100%;
 }
