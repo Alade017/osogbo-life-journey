@@ -28,3 +28,20 @@ export function electronicsNavigation(displays: readonly RetailDisplay[]) {
   };
   return { route, approach, canWalk };
 }
+
+export const RETAIL_EXTERIOR = {
+  depth: 3,
+  threshold: [0, RETAIL_ROOM.depth / 2] as WalkPoint,
+  door: [0, RETAIL_ROOM.depth / 2 + 0.5] as WalkPoint,
+  spawn: [0, RETAIL_ROOM.depth / 2 + 2.5] as WalkPoint,
+} as const;
+
+export function electronicsExteriorCanWalk([x, z]: WalkPoint) {
+  return Number.isFinite(x) && Number.isFinite(z) &&
+    Math.abs(x) <= RETAIL_ROOM.width / 2 - RETAIL_ROOM.clearance &&
+    z >= RETAIL_EXTERIOR.door[1] && z <= RETAIL_EXTERIOR.spawn[1];
+}
+
+export function electronicsExteriorRoute(from: WalkPoint, to: WalkPoint) {
+  return findGridWalkPath(from, to, electronicsExteriorCanWalk);
+}
