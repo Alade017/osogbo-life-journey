@@ -8,7 +8,7 @@ import type { Appearance } from "@/game/avatar-appearance";
 import { useHouseMovement } from "@/hooks/use-house-movement";
 import { useRenderQuality } from "@/hooks/use-render-quality";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
-import { SHOWROOM_LOAD_RADIUS } from "@/components/3d/ShowroomAsset";
+import { SHOWROOM_LOAD_RADIUS, clearFailedShowroomAsset } from "@/components/3d/ShowroomAsset";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
@@ -41,7 +41,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
   const crossing = useRef(false);
   const [transitioning, setTransitioning] = useState(false);
   const [message, setMessage] = useState("Walk to the entrance to enter.");
-  const { assets, station, setStation, inspection, setInspection, assetReady, assetError, assetUnmounted } = useProductInspection();
+  const { attempts, retryAsset, assets, station, setStation, inspection, setInspection, assetReady, assetError, assetUnmounted } = useProductInspection();
   const product = station === null ? undefined : models[station];
   const canInspect = !!product && assets[product.id] === "ready";
   const inspecting = inspection && canInspect;
@@ -149,7 +149,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
             onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
             <WorldCamera width={inspecting ? layout.displayWidth + 1 : 12} depth={inspecting ? layout.displayDepth + 1 : 12} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} target={inspecting && station !== null ? [layout.bays[station]!.x, 0.9, layout.bays[station]!.z] : [walker.position[0], 1.2, walker.position[2]]} zoom={inspecting ? 1.65 : 1.5} />
             <WorldLighting size={Math.max(layout.width, layout.depth) / 2 + 8} contactShadows={false} />
-            {inside ? <DealershipInterior loadRadius={loadRadius} layout={layout} viewer={[walker.position[0], walker.position[2]]} style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} />
+            {inside ? <DealershipInterior loadRadius={loadRadius} layout={layout} viewer={[walker.position[0], walker.position[2]]} style={style} activeBay={station} models={models} onWalk={go} onSelect={approach} onExit={exit} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} attempts={attempts} />
               : <DealershipExterior layout={layout} style={style} onEnter={enter} onWalk={go} />}
             {character && <group position={walker.position}>
               <WorldCharacter position={[0, 0, 0]} facing={walker.facing} animation={walker.walking ? "walk" : "idle"}
@@ -168,7 +168,7 @@ export default function DealershipVenue({ slug }: { slug: DealershipId }) {
             {canInspect ? <button type="button" aria-pressed={inspecting} onClick={() => setInspection((value) => !value)}
               className="rounded-full border border-edge px-3 py-1.5 text-sm">
               {inspecting ? "Return to character" : "Inspect vehicle"}
-            </button> : <span role="status" className="text-xs">{product && assets[product.id] === "failed" ? "Vehicle model unavailable." : "Loading vehicle model…"}</span>}
+            </button> : <div className="flex items-center gap-2"><span role="status" className="text-xs">{product && assets[product.id] === "failed" ? "Model unavailable." : "Loading model…"}</span>{product && assets[product.id] === "failed" && <button type="button" className="rounded-full border border-edge px-3 py-1.5 text-sm" onClick={() => { clearFailedShowroomAsset(product.url); retryAsset(product.id); }}>Retry model</button>}</div>}
           </div>
         )}
       </div>

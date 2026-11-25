@@ -8,7 +8,7 @@ import type { Appearance } from "@/game/avatar-appearance";
 import { useHouseMovement } from "@/hooks/use-house-movement";
 import { useRenderQuality } from "@/hooks/use-render-quality";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
-import { SHOWROOM_LOAD_RADIUS } from "@/components/3d/ShowroomAsset";
+import { SHOWROOM_LOAD_RADIUS, clearFailedShowroomAsset } from "@/components/3d/ShowroomAsset";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
@@ -34,7 +34,7 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
   const navigation = useMemo(() => electronicsNavigation(displays), [displays]);
   const [inside, setInside] = useState(slug === "harvest-tech-hub");
   const walker = useHouseMovement(slug, toRoom(slug === "harvest-tech-hub" ? RETAIL_ROOM.spawn : RETAIL_EXTERIOR.spawn));
-  const { assets, station, setStation, inspection, setInspection, assetReady, assetError, assetUnmounted } = useProductInspection();
+  const { attempts, retryAsset, assets, station, setStation, inspection, setInspection, assetReady, assetError, assetUnmounted } = useProductInspection();
   const [failed, setFailed] = useState(false);
   const [message, setMessage] = useState(slug === "harvest-tech-hub" ? "Tap the floor to walk or approach a product." : "Walk to the store entrance.");
   const request = useRef(0);
@@ -126,7 +126,7 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
           {inside ? <ElectronicsEnvironment viewer={[walker.position[0], walker.position[2]]} loadRadius={loadRadius} displays={displays} products={products} selected={station} computerStore={slug==="harvest-tech-hub"} onWalk={point => {
             if (Math.abs(point[0]) <= RETAIL_ROOM.entranceWidth/2 && point[1] >= RETAIL_ROOM.doorway[1]) exit();
             else walk(navigation.route(current(),point));
-          }} onExit={exit} onSelect={select} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} /> : <ElectronicsExterior onEnter={() => void crossDoor(true)} onWalk={point => walk(electronicsExteriorRoute(current(), point))} />}
+          }} onExit={exit} onSelect={select} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} attempts={attempts} /> : <ElectronicsExterior onEnter={() => void crossDoor(true)} onWalk={point => walk(electronicsExteriorRoute(current(), point))} />}
           {character && <group position={walker.position}><WorldCharacter position={[0,0,0]} facing={walker.facing} animation={walker.walking?"walk":"idle"} name={character.name} gender={character.gender} appearance={appearance} equipment={outfit}/></group>}
         </WorldCanvas>
       </VenueSceneBoundary>
@@ -136,7 +136,7 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
       <button type="button" disabled={leaving || ((!character || failed) && !(failed && onExit))} onClick={inside ? exit : () => void crossDoor(true)} className="rounded-full border border-edge px-3 py-1.5 text-sm">{onExit ? (failed ? "Return to workplace" : "Walk back to workplace") : inside ? "Walk to exit" : "Walk to entrance"}</button>
       {product && !walker.walking && !failed && <div className="flex flex-wrap items-center gap-2">
         <span className="capitalize text-sm font-medium">{product.label}</span>
-        {canInspect ? <button type="button" aria-pressed={inspecting} onClick={()=>setInspection(v=>!v)} className="rounded-full border border-edge px-3 py-1.5 text-sm">{inspecting?"Return to character":"Inspect product"}</button> : <span role="status" className="text-xs">{assets[product.id]==="failed"?"Product model unavailable.":"Loading product model…"}</span>}
+        {canInspect ? <button type="button" aria-pressed={inspecting} onClick={()=>setInspection(v=>!v)} className="rounded-full border border-edge px-3 py-1.5 text-sm">{inspecting?"Return to character":"Inspect product"}</button> : <div className="flex items-center gap-2"><span role="status" className="text-xs">{product && assets[product.id] === "failed" ? "Model unavailable." : "Loading model…"}</span>{product && assets[product.id] === "failed" && <button type="button" className="rounded-full border border-edge px-3 py-1.5 text-sm" onClick={() => { clearFailedShowroomAsset(product.url); retryAsset(product.id); }}>Retry model</button>}</div>}
       </div>}
     </div>
   </section>;

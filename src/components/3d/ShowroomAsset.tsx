@@ -29,7 +29,12 @@ function Model({ product, limits, onReady, onUnmount }: { product: Product; limi
   return <group dispose={null} scale={transform.scale}><group position={transform.offset}><Clone object={scene} /></group></group>;
 }
 
-export function ShowroomAsset({ product, viewer, position, radius, pinned, limits, onReady, onError, onUnmount }: {
+// Only clear a failed request on explicit retry; successful shared resources remain cached.
+export function clearFailedShowroomAsset(url: string) {
+  useGLTF.clear(url);
+}
+
+export function ShowroomAsset({ product, viewer, position, radius, pinned, limits, onReady, onError, onUnmount, attempt = 0 }: {
   product: Product;
   viewer: WalkPoint;
   position: WalkPoint;
@@ -37,6 +42,7 @@ export function ShowroomAsset({ product, viewer, position, radius, pinned, limit
   pinned: boolean;
   limits: Limits;
   onReady: (id: string) => void;
+  attempt?: number;
   onError: (id: string) => void;
   onUnmount: (id: string) => void;
 }) {
@@ -46,7 +52,7 @@ export function ShowroomAsset({ product, viewer, position, radius, pinned, limit
   useEffect(() => { setResident(shouldMount); }, [shouldMount]);
   // The exit radius is larger than the entry radius to avoid threshold churn.
   // Keep the error boundary mounted so failed assets do not retry on every approach.
-  return <VenueSceneBoundary resetKey={product.url} onError={() => onError(product.id)}>
+  return <VenueSceneBoundary resetKey={`${product.url}:${attempt}`} onError={() => onError(product.id)}>
     { shouldMount && <Suspense fallback={null}><Model product={product} limits={limits} onReady={onReady} onUnmount={onUnmount} /></Suspense> }
   </VenueSceneBoundary>;
 }
