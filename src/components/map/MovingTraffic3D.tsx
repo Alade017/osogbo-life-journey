@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FC } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import type { Group } from "three";
+import { TownTrafficOccupancy, TRAFFIC_FOOTPRINTS } from "@/game/town-traffic-occupancy";
 import { TRAFFIC_MOTION, trafficFrameSeconds, trafficSpeed, trafficBrakingSpeed, trafficHeading } from "@/game/town-traffic-motion";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { WorldMaterial } from "@/components/3d/WorldScene";
@@ -47,6 +48,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({
   onSelectTransit,
 }) => {
   const [activeSpeech, setActiveSpeech] = useState<{ id: string; text: string } | null>(null);
+  const occupancy = useMemo(() => new TownTrafficOccupancy(), []);
   const speechTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(
@@ -107,6 +109,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({
         <TrafficVehicle
           key={v.id}
           config={v}
+          occupancy={occupancy}
           crossingScheduler={crossingScheduler}
           onInteract={(text) => showSpeech(v.id, text, 3200)}
           onSelectTransit={onSelectTransit}
@@ -120,6 +123,7 @@ export const MovingTraffic3D: FC<MovingTraffic3DProps> = ({
 
 function TrafficVehicle({
   config,
+  occupancy,
   crossingScheduler,
   onInteract,
   onSelectTransit,
@@ -127,6 +131,7 @@ function TrafficVehicle({
   speechText,
 }: {
   config: VehicleConfig;
+  occupancy: TownTrafficOccupancy;
   crossingScheduler: TownRoadCrossingPriorityScheduler;
   onInteract: (text: string) => void;
   onSelectTransit: () => void;
@@ -151,8 +156,17 @@ function TrafficVehicle({
     heading.current = null;
     activeJunction.current = null;
     activeJunctionIndex.current = null;
-    return () => crossingScheduler.cancelActor(config.id);
-  }, [config.path, config.startDistance, config.id, crossingScheduler]);
+    const a = config.path[start.segment]!;
+    const b = config.path[(start.segment + 1) % config.path.length]!;
+    occupancy.set(config.id, {
+      position: [a[0] + (b[0] - a[0]) * start.progress, a[1] + (b[1] - a[1]) * start.progress],
+      radius: TRAFFIC_FOOTPRINTS[config.type],
+    });
+    return () => {
+      crossingScheduler.cancelActor(config.id);
+      occupancy.remove(config.id);
+    };
+  }, [config.path, config.startDistance, config.id, config.type, crossingScheduler, occupancy]);
 
   useFrame(({ clock }, delta) => {
     crossingScheduler.advanceTime(clock.elapsedTime);
@@ -215,6 +229,16 @@ function TrafficVehicle({
         activeJunctionIndex.current = nextJunctionIndex;
       }
     }
+    const from = [
+      segmentStart[0] + (segmentEnd[0] - segmentStart[0]) * progress.current,
+      segmentStart[1] + (segmentEnd[1] - segmentStart[1]) * progress.current,
+    ] as const;
+    const radius = TRAFFIC_FOOTPRINTS[config.type];
+    const clearDistance = occupancy.clearance(config.id, from, segmentEnd, radius);
+    if (clearDistance < remainingToJunction) {
+      targetSpeed = Math.min(targetSpeed, trafficBrakingSpeed(clearDistance));
+      travelLimit = Math.min(travelLimit, clearDistance);
+    }
     velocity.current = trafficSpeed(velocity.current, targetSpeed, dt);
     const requestedDistance = velocity.current * dt;
     let distanceToTravel = Math.min(requestedDistance, travelLimit);
@@ -257,6 +281,7 @@ function TrafficVehicle({
     const posZ = curP1[1] + curDz * progress.current;
     const angle = Math.atan2(curDx, curDz);
 
+    occupancy.set(config.id, { position: [posX, posZ], radius });
     groupRef.current.position.set(posX, 0.05, posZ);
     heading.current = heading.current === null ? angle : trafficHeading(heading.current, angle, dt);
     groupRef.current.rotation.y = heading.current;
