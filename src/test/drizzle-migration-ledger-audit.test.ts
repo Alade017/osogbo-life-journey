@@ -4,6 +4,7 @@ import { auditDrizzleLedger } from "../../scripts/drizzle-migration-ledger-audit
 
 const hashA = "a".repeat(64);
 const hashB = "b".repeat(64);
+const hashC = "c".repeat(64);
 const migration = (overrides = {}) => ({
   tag: "0091_mini_game_hardening",
   when: 1794463201000,
@@ -85,5 +86,60 @@ describe("Drizzle migration ledger audit", () => {
     );
     expect(result.issues).toContain("Duplicate Drizzle journal timestamp: 1794463201000");
     expect(result.issues).toContain(`Duplicate Drizzle journal checksum: ${hashA}`);
+  });
+
+  it("accepts the raw file checksum when it matches the exact production timestamp", () => {
+    const result = auditDrizzleLedger(
+      [migration({ acceptedHashes: [hashA, hashB] })],
+      [row({ hash: hashB })],
+    );
+    expect(result.applied).toBe(1);
+    expect(result.pending).toEqual([]);
+    expect(result.mismatches).toEqual([]);
+    expect(result.unknown).toEqual([]);
+  });
+
+  it("accepts a unique raw checksum when the production timestamp differs", () => {
+    const result = auditDrizzleLedger(
+      [migration({ acceptedHashes: [hashA, hashB] })],
+      [row({ created_at: 1794463200001, hash: hashB })],
+    );
+    expect(result.applied).toBe(1);
+    expect(result.pending).toEqual([]);
+    expect(result.unknown).toEqual([]);
+    expect(result.timestampWarnings).toHaveLength(1);
+    expect(result.timestampWarnings[0]?.hash).toBe(hashB);
+  });
+
+  it("reports a genuine mismatch when neither accepted checksum matches", () => {
+    const result = auditDrizzleLedger(
+      [migration({ acceptedHashes: [hashA, hashB] })],
+      [row({ hash: hashC })],
+    );
+    expect(result.applied).toBe(0);
+    expect(result.pending).toEqual([]);
+    expect(result.mismatches).toEqual([
+      {
+        tag: "0091_mini_game_hardening",
+        expectedHash: hashA,
+        acceptedHashes: [hashA, hashB],
+        actualHash: hashC,
+        createdAt: 1794463201000,
+      },
+    ]);
+  });
+
+  it("fails closed when raw and normalized aliases match different production rows", () => {
+    const result = auditDrizzleLedger(
+      [migration({ acceptedHashes: [hashA, hashB] })],
+      [
+        row({ created_at: 1794463200001, hash: hashA }),
+        row({ created_at: 1794463200002, hash: hashB }),
+      ],
+    );
+    expect(result.applied).toBe(0);
+    expect(result.pending).toEqual([]);
+    expect(result.timestampWarnings).toEqual([]);
+    expect(result.unknown).toHaveLength(2);
   });
 });
