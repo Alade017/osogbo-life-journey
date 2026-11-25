@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
+import { useThree } from "@react-three/fiber";
+import type { OrthographicCamera } from "three";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { formatNaira, q } from "@/lib/game";
@@ -24,9 +26,25 @@ export const Route = createFileRoute("/_authenticated/_game/property")({
   component: PropertyPage,
 });
 
+function PropertyHouseCamera({ width, height }: { width: number; height: number }) {
+  const { camera, size, invalidate } = useThree();
+  useEffect(() => {
+    const viewCamera = camera as OrthographicCamera;
+    const verticalFit = size.height / Math.max(1, height * 1.65);
+    const horizontalFit = size.width / Math.max(1, (width + 4.6) * 1.8);
+    viewCamera.zoom = Math.max(1, Math.min(verticalFit, horizontalFit));
+    viewCamera.position.set(7, Math.max(5.5, height * 1.15), 8);
+    viewCamera.lookAt(0, height * 0.48, 0);
+    viewCamera.updateProjectionMatrix();
+    invalidate();
+  }, [camera, height, width, size.height, size.width, invalidate]);
+  return null;
+}
+
 export function PropertyPage() {
   const client = useQueryClient();
   const [offline, setOffline] = useState(false);
+  const [selectedPreviewId, setSelectedPreviewId] = useState<string | null>(null);
   const characterQuery = useQuery(q.character());
   const character = characterQuery.data;
   const houses = useQuery({
@@ -154,6 +172,12 @@ export function PropertyPage() {
   const homeRows = (houses.data ?? []).filter(
     (row) => row.tenure === "owned" && row.game_properties?.house_type_id,
   );
+  const selectedPreview =
+    homeRows.find((row) => row.id === selectedPreviewId) ?? homeRows[0] ?? null;
+  const selectedIsDuplex = selectedPreview?.game_properties?.house_type_id === "duplex";
+  const previewWidth = selectedIsDuplex ? 5.5 : 4.8;
+  const previewDepth = selectedIsDuplex ? 4.6 : 4.2;
+  const previewHeight = selectedIsDuplex ? 4.8 : 3.1;
   const companyRows = business.data?.myCompanies ?? [];
   const shareRows = business.data?.myCompanyInvestments ?? [];
   const empty =
@@ -367,47 +391,66 @@ export function PropertyPage() {
           {homeRows.length > 0 && (
             <section className="property-market-district">
               <h2>Houses</h2>
+              {selectedPreview && (
+                <article className="property-market-card map-sheet">
+                  <div
+                    className="property-market-exterior"
+                    role="img"
+                    aria-label={`3D exterior view of ${selectedPreview.game_properties?.name ?? "your house"}`}
+                  >
+                    <WorldCanvas
+                      persistent={false}
+                      orthographic
+                      camera={{ position: [7, 5.5, 8], zoom: 1, near: 0.1, far: 100 }}
+                      dpr={[1, 1.25]}
+                      gl={{ alpha: true, antialias: true }}
+                      shadows
+                      frameloop="demand"
+                      style={{ width: "100%", height: "100%" }}
+                    >
+                      <PropertyHouseCamera width={previewWidth} height={previewHeight} />
+                      <WorldLighting size={12} refined contactShadows={false} />
+                      <group position={[0, -0.35, 0]}>
+                        <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+                          <planeGeometry args={[14, 14]} />
+                          <meshStandardMaterial color="#b9a27a" roughness={1} />
+                        </mesh>
+                        <WorldHouse
+                          position={[0, 0, 0]}
+                          width={previewWidth}
+                          depth={previewDepth}
+                          height={previewHeight}
+                          detailed
+                          variant="residential"
+                        />
+                      </group>
+                    </WorldCanvas>
+                  </div>
+                  <div className="property-market-card-body">
+                    <h3>{selectedPreview.game_properties?.name}</h3>
+                    <p>
+                      {selectedPreview.game_properties?.metadata?.district ?? "Residential District"} · Owned
+                    </p>
+                  </div>
+                </article>
+              )}
               <div className="property-market-grid">
                 {homeRows.map((row) => (
                   <article className="property-market-card map-sheet" key={row.id}>
-                    <div
-                      className="property-market-exterior"
-                      role="img"
-                      aria-label={`3D exterior view of ${row.game_properties?.name ?? "your house"}`}
-                    >
-                      <WorldCanvas
-                        persistent={false}
-                        orthographic
-                        camera={{ position: [7, 5.5, 8], zoom: 42, near: 0.1, far: 100 }}
-                        dpr={[1, 1.5]}
-                        gl={{ alpha: true, antialias: true }}
-                        shadows
-                        frameloop="demand"
-                        style={{ width: "100%", height: "100%" }}
-                      >
-                        <WorldLighting size={12} refined contactShadows={false} />
-                        <group position={[0, -0.35, 0]}>
-                          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
-                            <planeGeometry args={[14, 14]} />
-                            <meshStandardMaterial color="#b9a27a" roughness={1} />
-                          </mesh>
-                          <WorldHouse
-                            position={[0, 0, 0]}
-                            width={row.game_properties?.house_type_id === "duplex" ? 5.5 : 4.8}
-                            depth={row.game_properties?.house_type_id === "duplex" ? 4.6 : 4.2}
-                            height={row.game_properties?.house_type_id === "duplex" ? 4.8 : 3.1}
-                            detailed
-                            variant="residential"
-                          />
-                        </group>
-                      </WorldCanvas>
-                    </div>
                     <div className="property-market-card-body">
                       <h3>{row.game_properties?.name}</h3>
                       <p>
                         {row.game_properties?.metadata?.district ?? "Residential District"} · Owned
                       </p>
                       <div className="property-market-actions">
+                        <button
+                          type="button"
+                          className="map-primary-button"
+                          aria-pressed={selectedPreview?.id === row.id}
+                          onClick={() => setSelectedPreviewId(row.id)}
+                        >
+                          {selectedPreview?.id === row.id ? "Previewing exterior" : "Preview exterior"}
+                        </button>
                         {row.is_home ? (
                           <HomeLink className="map-primary-button">Open Home</HomeLink>
                         ) : (
