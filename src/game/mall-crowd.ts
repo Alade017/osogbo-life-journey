@@ -98,9 +98,11 @@ export function advanceCrowd(
   nextSeed: number,
   target = MALL_CROWD_TARGET,
 ): { shoppers: MallShopper[]; nextSeed: number } {
+  // A suspended browser or malformed frame delta must not move actors backwards or teleport them.
+  const elapsed = Number.isFinite(dt) ? Math.min(0.5, Math.max(0, dt)) : 0;
   const moved = shoppers.map((shopper) => ({
     ...shopper,
-    walker: stepWalker(shopper.walker, dt),
+    walker: stepWalker(shopper.walker, elapsed),
   }));
   const remaining = moved.filter((shopper) => !shopper.walker.done);
   let seed = nextSeed;
