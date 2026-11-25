@@ -39,7 +39,7 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
   const request = useRef(0);
   const { cancel } = walker;
   useEffect(() => () => { request.current++; cancel(); }, [cancel]);
-  const onError = useCallback(() => { request.current++; cancel(); setFailed(true); setStation(null); setInspection(false); setMessage("The 3D environment is unavailable."); }, [cancel]);
+  const onError = useCallback(() => { request.current++; cancel(); setFailed(true); setStation(null); setInspection(false); setMessage("The 3D environment is unavailable."); }, [cancel, setStation, setInspection]);
   function current(): WalkPoint { const [x,,z] = walker.positionRef.current; return [x,z]; }
   function walk(path: WalkPoint[] | null, after?: () => void) {
     const ticket = ++request.current;
@@ -53,6 +53,7 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
     });
   }
   function exit() {
+    if (failed && onExit) { onExit(); return; }
     walk(navigation.route(current(),RETAIL_ROOM.doorway), () => {
       if(onExit) onExit(); else setMessage("You are at the store entrance.");
     });
@@ -64,13 +65,14 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
   const product = station === null ? undefined : products[station];
   const display = station === null ? undefined : displays[station];
   const canInspect = !!product && assets[product.id] === "ready";
+  const inspecting = inspection && canInspect;
   const name = slug === "harvest-tech-hub" ? "Harvest Tech Store" : "Electronics World";
   return <section className="destination-venue-root" aria-label={name}>
     <header><h2>{name}</h2></header>
     <div data-venue-viewport>
       <VenueSceneBoundary onError={onError} fallback={<p role="alert">The 3D environment could not load.</p>}>
         <WorldCanvas frameloop="demand" dpr={[1,quality.maxDpr]} gl={{antialias:false,powerPreference:"low-power"}} onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
-          <WorldCamera width={10} depth={10} stage horizontalOrbit={inspection} verticalOrbit={inspection} maxZoom={3} zoom={inspection ? 2.8 : 1.3} target={inspection && display ? [display.x,1.3,display.z] : [walker.position[0],1.2,walker.position[2]]} />
+          <WorldCamera width={10} depth={10} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} zoom={inspecting ? 2.8 : 1.3} target={inspecting && display ? [display.x,1.3,display.z] : [walker.position[0],1.2,walker.position[2]]} />
           <WorldLighting size={18} contactShadows={false} />
           <ElectronicsEnvironment viewer={[walker.position[0], walker.position[2]]} loadRadius={loadRadius} displays={displays} products={products} selected={station} computerStore={slug==="harvest-tech-hub"} onWalk={point => {
             if (Math.abs(point[0]) <= RETAIL_ROOM.entranceWidth/2 && point[1] >= RETAIL_ROOM.doorway[1]) exit();
@@ -82,10 +84,10 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
     </div>
     <div data-venue-controls>
       <p role="status">{message}</p>
-      <button type="button" disabled={!character||failed} onClick={exit} className="rounded-full border border-edge px-3 py-1.5 text-sm">{onExit?"Walk back to workplace":"Walk to entrance"}</button>
+      <button type="button" disabled={(!character || failed) && !(failed && onExit)} onClick={exit} className="rounded-full border border-edge px-3 py-1.5 text-sm">{onExit ? (failed ? "Return to workplace" : "Walk back to workplace") : "Walk to entrance"}</button>
       {product && !walker.walking && !failed && <div className="flex flex-wrap items-center gap-2">
         <span className="capitalize text-sm font-medium">{product.label}</span>
-        {canInspect ? <button type="button" aria-pressed={inspection} onClick={()=>setInspection(v=>!v)} className="rounded-full border border-edge px-3 py-1.5 text-sm">{inspection?"Return to character":"Inspect product"}</button> : <span role="status" className="text-xs">{assets[product.id]==="failed"?"Product model unavailable.":"Loading product model…"}</span>}
+        {canInspect ? <button type="button" aria-pressed={inspecting} onClick={()=>setInspection(v=>!v)} className="rounded-full border border-edge px-3 py-1.5 text-sm">{inspecting?"Return to character":"Inspect product"}</button> : <span role="status" className="text-xs">{assets[product.id]==="failed"?"Product model unavailable.":"Loading product model…"}</span>}
       </div>}
     </div>
   </section>;
