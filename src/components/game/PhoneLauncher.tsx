@@ -509,7 +509,7 @@ export function PhoneLauncher({
     if (appName === "City Services") return <CityServicesApp />;
     if (appName === "Camera") return <CameraApp />;
     if (appName === "VitalStat") return <VitalStatApp />;
-    if (appName === "Gig Work") return <GigWorkApp onOpenApp={(app) => openApp(app)} />;
+    if (appName === "Gig Work") return <GigWorkApp />;
     if (appName === "Nesta") return <NestaApp onOpenApp={(app) => openApp(app)} />;
     if (appName === "Property Exchange") return <PropertyExchangeApp />;
 

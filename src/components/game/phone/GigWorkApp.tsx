@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BriefcaseBusiness } from "lucide-react";
 import { toast } from "sonner";
 import { formatNaira, q } from "@/lib/game";
+import { openPlayerMessages } from "@/lib/phone-messages";
 import {
   getGigBoard,
   gigBoardQueryKey,
@@ -31,7 +32,7 @@ const ERROR_TEXT: Record<string, string> = {
 };
 
 /** Gig Work: post a paid job, pick an applicant, confirm the work is done, or apply to someone else's job. */
-export function GigWorkApp({ onOpenApp }: { onOpenApp: (app: string) => void }) {
+export function GigWorkApp() {
   const client = useQueryClient();
   const [tab, setTab] = useState<Tab>("browse");
   const characterId = useQuery(q.character()).data?.id ?? "";
@@ -144,20 +145,29 @@ export function GigWorkApp({ onOpenApp }: { onOpenApp: (app: string) => void }) 
                         {applicant.name}
                         {applicant.offer ? ` · offers ${formatNaira(applicant.offer)}` : ""}
                       </span>
-                      <button
-                        type="button"
-                        className="nesta-button"
-                        disabled={act.isPending}
-                        onClick={() =>
-                          act.mutate({
-                            action: "accept",
-                            gigId: gig.id,
-                            applicantId: applicant.characterId,
-                          })
-                        }
-                      >
-                        Pick
-                      </button>
+                      <span className="gig-applicant-actions">
+                        <button
+                          type="button"
+                          className="nesta-link"
+                          onClick={() => openPlayerMessages(applicant.characterId)}
+                        >
+                          Message
+                        </button>
+                        <button
+                          type="button"
+                          className="nesta-button"
+                          disabled={act.isPending}
+                          onClick={() =>
+                            act.mutate({
+                              action: "accept",
+                              gigId: gig.id,
+                              applicantId: applicant.characterId,
+                            })
+                          }
+                        >
+                          Pick
+                        </button>
+                      </span>
                     </div>
                   ))}
                   <button
@@ -176,13 +186,15 @@ export function GigWorkApp({ onOpenApp }: { onOpenApp: (app: string) => void }) 
                     Working with {gig.workerName ?? "your worker"}. Pays {formatNaira(gig.pay)} when
                     you confirm.
                   </p>
-                  <button
-                    type="button"
-                    className="nesta-link"
-                    onClick={() => onOpenApp("Messages")}
-                  >
-                    Message worker
-                  </button>
+                  {gig.workerId ? (
+                    <button
+                      type="button"
+                      className="nesta-link"
+                      onClick={() => openPlayerMessages(gig.workerId!)}
+                    >
+                      Message {gig.workerName ?? "worker"}
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     className="nesta-button"
@@ -219,7 +231,11 @@ export function GigWorkApp({ onOpenApp }: { onOpenApp: (app: string) => void }) 
                 From {job.posterName} · {formatNaira(job.pay)} · {job.status}
               </p>
               {job.status === "accepted" ? (
-                <button type="button" className="nesta-link" onClick={() => onOpenApp("Messages")}>
+                <button
+                  type="button"
+                  className="nesta-link"
+                  onClick={() => openPlayerMessages(job.posterId)}
+                >
                   Message {job.posterName}
                 </button>
               ) : null}

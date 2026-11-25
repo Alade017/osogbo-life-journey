@@ -1,6 +1,7 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { GigWorkApp } from "@/components/game/phone/GigWorkApp";
+import { OPEN_MESSAGES_EVENT } from "@/lib/phone-messages";
 
 const { board, act } = vi.hoisted(() => ({
   board: {
@@ -45,7 +46,7 @@ describe("Gig Work", () => {
   });
 
   it("shows an empty browse list with a post form", () => {
-    render(<GigWorkApp onOpenApp={vi.fn()} />);
+    render(<GigWorkApp />);
     expect(screen.getByText(/No open jobs right now/)).toBeTruthy();
     expect(screen.getByRole("button", { name: "Post job" })).toBeTruthy();
   });
@@ -62,7 +63,7 @@ describe("Gig Work", () => {
         applied: false,
       },
     ];
-    render(<GigWorkApp onOpenApp={vi.fn()} />);
+    render(<GigWorkApp />);
     expect(screen.getByText(/Posted by Ade/)).toBeTruthy();
     fireEvent.click(screen.getByRole("button", { name: "Apply" }));
     expect(act).toHaveBeenCalledWith({
@@ -88,7 +89,7 @@ describe("Gig Work", () => {
         ],
       },
     ];
-    render(<GigWorkApp onOpenApp={vi.fn()} />);
+    render(<GigWorkApp />);
     fireEvent.click(screen.getByRole("button", { name: "My posts" }));
     fireEvent.click(screen.getByRole("button", { name: "Pick" }));
     expect(act).toHaveBeenCalledWith({
@@ -96,5 +97,31 @@ describe("Gig Work", () => {
       gigId: "22222222-2222-4222-8222-222222222222",
       applicantId: "33333333-3333-4333-8333-333333333333",
     });
+  });
+
+  it("opens a direct conversation with an applicant through the shared messages seam", () => {
+    board.mine = [
+      {
+        id: "22222222-2222-4222-8222-222222222222",
+        title: "Paint gate",
+        description: "Paint the gate blue",
+        pay: 300000,
+        status: "open",
+        expiresAt: "2026-11-26T10:00:00Z",
+        workerId: null,
+        workerName: null,
+        applicants: [
+          { characterId: "33333333-3333-4333-8333-333333333333", name: "Bola", offer: null },
+        ],
+      },
+    ];
+    const seen: unknown[] = [];
+    const listener = (event: Event) => seen.push((event as CustomEvent).detail);
+    window.addEventListener(OPEN_MESSAGES_EVENT, listener);
+    render(<GigWorkApp />);
+    fireEvent.click(screen.getByRole("button", { name: "My posts" }));
+    fireEvent.click(screen.getByRole("button", { name: "Message" }));
+    window.removeEventListener(OPEN_MESSAGES_EVENT, listener);
+    expect(seen).toEqual([{ playerId: "33333333-3333-4333-8333-333333333333" }]);
   });
 });
