@@ -39,8 +39,8 @@
 
 .phone-dialog-shell {
   --phone-frame-height: min(
-    820px,
-    calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 36px)
+    760px,
+    calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 112px)
   );
   --phone-frame-bottom: calc(var(--game-dock-space) + var(--game-keyboard-inset, 0px) + 8px);
 }
@@ -48,6 +48,7 @@
 .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
   overflow: visible;
   height: var(--phone-frame-height) !important;
+  max-height: var(--phone-frame-height) !important;
   border-color: color-mix(in srgb, #aeb7c2 78%, var(--brand-ink)) !important;
   background: linear-gradient(
     100deg,
@@ -89,7 +90,10 @@
 }
 
 .phone-dialog-shell-solo {
-  --phone-frame-height: min(820px, calc(100dvh - 36px));
+  --phone-frame-height: min(
+    760px,
+    calc(100dvh - var(--phone-keyboard-inset, var(--game-keyboard-inset, 0px)) - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+  );
 }
 
 .phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
@@ -190,13 +194,17 @@
 
 @media (max-width: 640px) {
   .phone-dialog-shell {
-    --phone-frame-height: calc(
-      100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 64px
+    --phone-frame-height: min(
+      720px,
+      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
     );
   }
 
   .phone-dialog-shell-solo {
-    --phone-frame-height: calc(100dvh - 40px);
+    --phone-frame-height: min(
+      720px,
+      calc(100dvh - var(--game-keyboard-inset, 0px) - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+    );
   }
 
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
@@ -213,7 +221,9 @@
   }
 
   .phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
-    bottom: 8px;
+    top: auto;
+    bottom: calc((100dvh - var(--phone-frame-height)) / 2);
+    transform: translateX(-50%);
   }
 
   .phone-dialog-shell > .phone-cancel-button,
