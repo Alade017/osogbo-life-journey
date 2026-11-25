@@ -710,7 +710,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
       ]);
       setActivityError("");
-      toast.success(command === "enter_player_home" ? "You're home." : "You went outside.");
+      if (command === "leave_player_home") toast.success("You went outside.");
     },
     onError: (error: Error, command) => {
       if (command === "enter_player_home") endTransition();
@@ -797,7 +797,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const doorSequenceLock = useRef(false);
   const [doorFacing, setDoorFacing] = useState("north");
   const outside = useOutsideTransition();
-  const enteringRan = useRef(false);
+  const [sceneAvailable, setSceneAvailable] = useState<boolean | null>(null);
   /** Walk to the door, open it, confirm the move with the server, then go to the neighbourhood. */
   const goOutside = async () => {
     if (
@@ -850,78 +850,73 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   };
   /** Arriving from the neighbourhood: the door opens and the character walks in. */
   useEffect(() => {
-    if (outside.kind !== "entering" || !isInsideHome || !serverState?.house || enteringRan.current)
+    if (
+      outside.kind !== "entering" ||
+      !isInsideHome ||
+      !serverState?.house ||
+      sceneAvailable === null
+    )
       return;
-    enteringRan.current = true;
+    const threshold = houseDoorThreshold(serverState.house.house_type_id, roomWidth, roomDepth);
+    if (!sceneAvailable) {
+      movement.place(threshold);
+      endTransition();
+      return;
+    }
+    let active = true;
+    const exterior: RoomPoint = [threshold[0], threshold[1], -roomDepth / 2 - 1.55];
+    const handle: RoomPoint = [threshold[0], threshold[1], -roomDepth / 2 - 0.55];
     doorSequenceLock.current = true;
     setDoorSequence(true);
-    const [doorX, doorY, doorZ] = houseDoorThreshold(
-      serverState.house.house_type_id,
-      roomWidth,
-      roomDepth,
-    );
-    const start: RoomPoint = [0, 0.06, roomDepth * 0.18];
     setActiveFloor(0);
     setPinnedRoom(null);
     setDoorFacing("south");
-    setDoorInteracting(true);
-    completeTransitionStep("Opening the door");
-    const exterior: RoomPoint = [doorX, doorY, -roomDepth / 2 - 0.45];
     movement.place(exterior);
-    setDoorOpen(true);
+    const walkLeg = (path: RoomPoint[]) =>
+      runHomeEntryWalk({
+        path,
+        walk: movement.walk,
+        cancel: movement.cancel,
+        place: (point) => {
+          if (active) movement.place(point);
+        },
+        fallback: threshold,
+      });
     void (async () => {
       try {
-        await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+        if (!(await walkLeg([exterior, handle])) || !active) return;
+        setDoorInteracting(true);
+        completeTransitionStep("Opening the door");
+        setDoorOpen(true);
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+          await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+        if (!active) return;
         setDoorInteracting(false);
         completeTransitionStep("Walking in");
-        const path = findRoomPath(
-          [doorX, doorY, doorZ],
-          start,
-          roomWidth,
-          roomDepth,
-          roomObstacles(
-            serverState.house!.house_type_id,
-            roomWidth,
-            roomDepth,
-            placements.filter((item) => (item.floor ?? 0) === 0),
-            slots,
-            0,
-          ),
-        );
-        if (path) {
-          const arrived = await runHomeEntryWalk({
-            path: [exterior, [doorX, doorY, doorZ], ...path],
-            walk: movement.walk,
-            cancel: movement.cancel,
-            place: movement.place,
-            fallback: [doorX, doorY, doorZ],
-          });
-          if (!arrived)
-            toast.error(
-              "The walk into your home was interrupted. You are back at the entrance; try again.",
-            );
-        } else {
-          movement.place([doorX, doorY, doorZ]);
-          toast.error("The entrance is blocked. Rearrange your furniture to clear the way.");
-        }
-      } catch (error) {
-        movement.cancel();
-        movement.place([doorX, doorY, doorZ]);
-        toast.error(
-          error instanceof Error ? error.message : "The home entrance could not be completed.",
-        );
+        await walkLeg([handle, threshold]);
+      } catch {
+        if (active) movement.place(threshold);
       } finally {
-        setDoorOpen(false);
-        setDoorInteracting(false);
-        setDoorSequence(false);
-        doorSequenceLock.current = false;
-        endTransition();
-        enteringRan.current = false;
+        if (active) {
+          setDoorOpen(false);
+          setDoorInteracting(false);
+          setDoorSequence(false);
+          doorSequenceLock.current = false;
+          endTransition();
+        }
       }
     })();
-    // The room is ready once its house data is loaded; the sequence runs once per arrival.
+    return () => {
+      active = false;
+      movement.cancel();
+      doorSequenceLock.current = false;
+      setDoorSequence(false);
+      setDoorInteracting(false);
+      setDoorOpen(false);
+    };
+    // Movement callbacks are stable; position updates must not restart the approach.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [outside.kind, serverState?.house?.id, isInsideHome]);
+  }, [outside.kind, serverState?.house?.id, isInsideHome, sceneAvailable, roomWidth, roomDepth]);
   /** A trip started from inside: finish the walk and door sequence before requesting server travel. */
   const leaveForTrip = async (departure: HomeDeparture) => {
     if (
@@ -1820,7 +1815,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                     ? activeSleep
                       ? "Wake up first"
                       : "Go outside"
-                    : "Travel home"}
+                    : "Enter home"}
               </span>
             </button>
           )}
@@ -1972,6 +1967,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         aria-label={`${house.house_type.label} room`}
       >
         <HouseRoomRenderer
+          onSceneAvailability={setSceneAvailable}
           roomView={roomView}
           guideZone={guide?.zoneBounds ?? null}
           inputBlocked={
@@ -1985,13 +1981,13 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           lightOn={lightOn}
           wallsClosed={editing ? wallsSetting : false}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
-          showCharacter={isInsideHome}
+          showCharacter={isInsideHome && (outside.kind !== "entering" || doorSequence)}
           characterName={character?.name ?? "Your character"}
           appearance={appearance}
           gender={character?.gender ?? "nonbinary"}
           equipment={avatarEquipment}
-          actorSpawnKey={outside.kind === "entering" && doorOpen ? "arrival" : "resident"}
-          actorPosition={performingPosition}
+          actorSpawnKey={outside.kind === "entering" ? "arrival" : "resident"}
+          actorPosition={doorSequence ? movement.position : performingPosition}
           actorFacing={
             doorInteracting ? doorFacing : currentActivity ? taskFacing : movement.facing
           }

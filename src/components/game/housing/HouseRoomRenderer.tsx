@@ -1,4 +1,4 @@
-import { Component, Suspense, lazy, type ReactNode } from "react";
+import { Component, Suspense, lazy, useEffect, type ReactNode } from "react";
 import type { HouseRoomRendererProps } from "./house-room-contract";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
@@ -24,6 +24,8 @@ class RendererBoundary extends Component<
 }
 
 function RoomControls(props: HouseRoomRendererProps & { inputBlocked: boolean }) {
+  const notify = props.onSceneAvailability;
+  useEffect(() => notify?.(false), [notify]);
   return (
     <div
       className="house-3d-scene house-renderer-unavailable"
