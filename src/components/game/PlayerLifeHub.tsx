@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  BriefcaseBusiness, CheckCircle2, Heart, Sparkles, Target, UserRound, Users, X, Zap,
+  BriefcaseBusiness, CheckCircle2, Heart, Settings2, Sparkles, Target, UserRound, Users, X, Zap,
 } from "lucide-react";
 import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import { useGameTime } from "@/components/game/GameTimeProvider";
@@ -9,10 +9,11 @@ import { useMissions } from "@/hooks/use-missions";
 import { q } from "@/lib/game";
 import { normalizeAvatarAppearance, type Appearance } from "@/game/avatar-appearance";
 import type { PlayerState } from "@/lib/player-state";
+import { SettingsPage } from "@/routes/_authenticated/_game/settings";
 import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
 import "@/components/game/player-life-hub.css";
 
-type HubTab = "profile" | "needs" | "goals" | "skills" | "people" | "career";
+type HubTab = "profile" | "needs" | "goals" | "skills" | "people" | "career" | "settings";
 const TABS: Array<{ id: HubTab; label: string; icon: typeof UserRound }> = [
   { id: "profile", label: "Profile", icon: UserRound },
   { id: "needs", label: "Needs", icon: Zap },
@@ -20,6 +21,7 @@ const TABS: Array<{ id: HubTab; label: string; icon: typeof UserRound }> = [
   { id: "skills", label: "Skills", icon: Sparkles },
   { id: "people", label: "People", icon: Users },
   { id: "career", label: "Career", icon: BriefcaseBusiness },
+  { id: "settings", label: "Settings", icon: Settings2 },
 ];
 const NEED_ICONS: Record<(typeof NEED_NAMES)[number], string> = {
   hunger: "🍲", energy: "⚡", hygiene: "🫧", bladder: "🚻", fun: "🎮", social: "💬",
@@ -159,6 +161,8 @@ export function PlayerLifeHub({ player, open, onClose }: {
               <Heart size={18} /><div><strong>{readable(relation["npc_name"] ?? relation["name"], "Neighbour")}</strong><p>Friendship {numberValue(relation["friendship"])} · Trust {numberValue(relation["trust"])}</p></div>
             </article>) : <p className="player-hub-empty">You have not built any recorded relationships yet. Meet people around Osogbo to get started.</p>}
           </div>}
+
+          {tab === "settings" && <div className="player-hub-settings"><SettingsPage /></div>}
 
           {tab === "career" && <div className="player-hub-list">
             <div className="player-hub-section-intro"><h3>Career & work</h3><p>Your current occupation and saved employment records.</p></div>
