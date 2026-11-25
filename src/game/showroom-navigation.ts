@@ -25,7 +25,7 @@ export function createShowroomLayout(count: number) {
   const rows = Math.max(2, Math.ceil(count / 2));
   const depth = rows * 8 + 6;
   const front = depth / 2;
-  return { ...SHOWROOM_LAYOUT, depth, entrance: [0, front - 1.5] as WalkPoint, exteriorSpawn: [0, front + 3] as WalkPoint, exteriorDoor: [0, front + 0.5] as WalkPoint,
+  return { ...SHOWROOM_LAYOUT, depth, entrance: [0, front - 1.5] as WalkPoint, threshold: [0, front] as WalkPoint, exteriorSpawn: [0, front + 3] as WalkPoint, exteriorDoor: [0, front + 0.5] as WalkPoint,
     bays: Array.from({ length: count }, (_, index) => ({ x: index % 2 === 0 ? -4 : 4, z: front - 5 - Math.floor(index / 2) * 8 })),
     reception: { ...SHOWROOM_RECEPTION, z: -front + 1.5 },
   };
