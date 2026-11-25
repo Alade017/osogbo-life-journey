@@ -2,11 +2,13 @@ import { Suspense, useEffect, useMemo, useState } from "react";
 import { Clone, useGLTF } from "@react-three/drei";
 import { Box3, Vector3 } from "three";
 import { VenueSceneBoundary } from "@/components/game/VenueSceneBoundary";
+import { createShowroomOwnership } from "./showroom-ownership";
 import type { WalkPoint } from "@/game/grid-walk-path";
 
 type Product = { id: string; url: string };
 type Limits = readonly [number, number, number];
 const LOAD_MARGIN = 2;
+const ownership = createShowroomOwnership();
 export const SHOWROOM_LOAD_RADIUS = { standard: 14, performance: 9 } as const;
 
 function Model({ product, limits, onReady, onUnmount }: { product: Product; limits: Limits; onReady: (id: string) => void; onUnmount: (id: string) => void }) {
@@ -24,14 +26,18 @@ function Model({ product, limits, onReady, onUnmount }: { product: Product; limi
       offset: [-center.x, -box.min.y, -center.z] as [number, number, number],
     };
   }, [scene, width, height, depth]);
-  useEffect(() => { onReady(product.id); return () => onUnmount(product.id); }, [product.id, onReady, onUnmount]);
+  useEffect(() => {
+    const release = ownership.retain(product.url);
+    onReady(product.id);
+    return () => { release(); onUnmount(product.id); };
+  }, [product.id, product.url, onReady, onUnmount]);
   // GLTF cache owns the shared resources. Unmounting a clone must not dispose them.
   return <group dispose={null} scale={transform.scale}><group position={transform.offset}><Clone object={scene} /></group></group>;
 }
 
 // Only clear a failed request on explicit retry; successful shared resources remain cached.
 export function clearFailedShowroomAsset(url: string) {
-  useGLTF.clear(url);
+  if (ownership.canClear(url)) useGLTF.clear(url);
 }
 
 export function ShowroomAsset({ product, viewer, position, radius, pinned, limits, onReady, onError, onUnmount, attempt = 0 }: {
