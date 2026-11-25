@@ -549,7 +549,6 @@
 /* Home alone reserves desktop room beside the portrait and scene tools. */
 .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) {
   bottom: var(--home-bottom);
-  width: min(720px, calc(100vw - 600px));
 }
 
 .game-shell.city-game.navigation-redesign.home-hud aside.game-needs-rail[aria-label] {
@@ -911,9 +910,6 @@
 }
 
 @media (max-width: 1199px) {
-  .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) {
-    width: min(700px, calc(100% - 2 * var(--home-gutter)));
-  }
   .game-shell.city-game.navigation-redesign.home-hud .home-player-status {
     bottom: calc(var(--home-bottom) + var(--home-dock-height) + 14px);
     width: 220px;
@@ -1409,9 +1405,6 @@
     }
     & .home-player-energy-meter {
       max-width: 75px;
-    }
-    & > .gbb:not(.is-open) {
-      width: min(490px, calc(100vw - 450px));
     }
   }
 }

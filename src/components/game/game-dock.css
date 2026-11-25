@@ -31,6 +31,11 @@
 }
 
 .city-game.navigation-redesign {
+  --game-navigation-height: 50px;
+  --game-dock-space: calc(
+    var(--game-navigation-height) + max(var(--game-navigation-gap), env(safe-area-inset-bottom)) +
+      var(--game-navigation-gap)
+  );
   padding-bottom: var(--game-dock-space);
   scroll-padding-bottom: var(--game-dock-space);
 }

@@ -127,51 +127,49 @@
   bottom: calc(
     max(var(--game-navigation-gap), env(safe-area-inset-bottom)) + var(--game-keyboard-inset, 0px)
   );
-  gap: 8px;
-  width: min(
-    720px,
-    calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)))
-  );
-  height: var(--game-navigation-height);
-  padding: 8px;
-  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
-  border-radius: 32px;
-  background: color-mix(in srgb, var(--primary) 28%, transparent);
-  box-shadow: 0 12px 32px color-mix(in srgb, var(--foreground) 16%, transparent);
-  backdrop-filter: blur(16px);
+  width: max-content;
+  height: 50px;
+  gap: 1px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--popover);
+  box-shadow: var(--elevation-card);
 }
 .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) {
-  display: flex;
-  flex: 1 1 0;
-  flex-direction: row;
-  gap: 8px;
-  width: auto;
-  min-width: 0;
-  height: 100%;
-  min-height: 44px;
-  padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
-  border-radius: 24px;
-  background: color-mix(in srgb, var(--card) 94%, transparent);
-  color: var(--foreground);
-  font-size: 12px;
-  font-weight: 750;
-}
-.game-shell.city-game.navigation-redesign > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) svg {
   flex: none;
-  width: 26px;
-  height: 26px;
+  flex-direction: row;
+  width: 44px;
+  height: 44px;
+  min-width: 44px;
+  gap: 5px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  box-shadow: none;
 }
-.game-shell.city-game.navigation-redesign > .gbb:not(.is-open) .gbb-active {
-  background: color-mix(in srgb, var(--primary) 12%, var(--card));
-  color: var(--primary);
-}
+.game-shell.city-game.navigation-redesign > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) svg,
 .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) .gbb-phone .phone-launcher-icon {
-  width: 26px;
-  height: 26px;
+  flex: none;
+  width: 18px;
+  height: 18px;
 }
-.game-shell.city-game.navigation-redesign > .gbb:not(.is-open) .phone-compact-label {
-  font-size: inherit;
+.game-shell.city-game.navigation-redesign > .gbb:not(.is-open) .gbb-link.gbb-active {
+  width: auto;
+  padding: 0 11px;
+  background: color-mix(in srgb, var(--primary) 12%, var(--popover));
+  color: var(--primary);
+  font-size: 12px;
+}
+.game-shell.city-game.navigation-redesign > .gbb:not(.is-open) .gbb-link:not(.gbb-active) span,
+.game-shell.city-game.navigation-redesign > .gbb:not(.is-open) .gbb-phone .phone-compact-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
 }
 .game-shell.city-game.navigation-redesign:not(.home-hud) {
   padding-bottom: var(--game-dock-space) !important;
@@ -179,42 +177,6 @@
 .game-shell.city-game.navigation-redesign:not(.home-hud) aside.game-needs-rail[aria-label] {
   bottom: calc(var(--game-dock-space) + var(--game-keyboard-inset, 0px) + 8px);
 }
-@media (max-width: 1199px) {
-  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) {
-    width: min(
-      700px,
-      calc(100% - max(12px, env(safe-area-inset-left)) - max(12px, env(safe-area-inset-right)))
-    );
-  }
-}
-@media (max-width: 767px) {
-  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) {
-    gap: 4px;
-    padding: 5px;
-    border-radius: 24px;
-  }
-  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) {
-    flex-direction: column;
-    gap: 4px;
-    padding: 4px 2px;
-    border-radius: 18px;
-    font-size: 10px;
-  }
-  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) .gbb-link span,
-  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) .gbb-phone .phone-compact-label {
-    position: static;
-    width: auto;
-    height: auto;
-    overflow: visible;
-    clip: auto;
-    opacity: 1;
-  }
-  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) svg {
-    width: 22px;
-    height: 22px;
-  }
-}
-
 /* Needs stays separate from navigation, with enough clearance above the pills. */
 .game-needs-rail.game-needs-rail.game-needs-rail {
   right: auto;
@@ -377,23 +339,4 @@
 /* Avoid overpowering a modal or the player's HUD idle state. */
 .game-shell.hud-idle .gbb:not(.is-open) .gbb-link[data-core-action="true"]:not(:focus-visible) {
   box-shadow: none;
-}
-
-@media (min-width: 960px) {
-  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) {
-    width: min(490px, 94vw);
-    height: 54px;
-    padding: 4px;
-    gap: 3px;
-    border-radius: 999px;
-  }
-  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) {
-    border-radius: 999px;
-    gap: 5px;
-    padding: 4px 8px;
-  }
-  .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) :is(.gbb-link, .gbb-phone) svg {
-    width: 19px;
-    height: 19px;
-  }
 }
