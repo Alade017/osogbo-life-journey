@@ -393,9 +393,9 @@ export function PropertyPage() {
                           </mesh>
                           <WorldHouse
                             position={[0, 0, 0]}
-                            width={4.8}
-                            depth={4.2}
-                            height={3.1}
+                            width={row.game_properties?.house_type_id === "duplex" ? 5.5 : 4.8}
+                            depth={row.game_properties?.house_type_id === "duplex" ? 4.6 : 4.2}
+                            height={row.game_properties?.house_type_id === "duplex" ? 4.8 : 3.1}
                             detailed
                             variant="residential"
                           />
