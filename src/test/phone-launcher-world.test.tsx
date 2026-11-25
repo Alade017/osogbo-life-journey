@@ -142,6 +142,14 @@ it("moves one launcher page per swipe and closes from the external Cancel button
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
 
+
+it("uses the dedicated native scroll layout when Settings opens inside the phone", () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open Settings" }));
+  expect(document.querySelector(".phone-app-body--sx")).toBeInTheDocument();
+});
+
 it("restores a Career HUD request without leaving the underlying world", async () => {
   state.href = "/house?hud=jobs";
   render(<PhoneLauncher open requestedNavigation={{ app: "Career Life" }} />);
