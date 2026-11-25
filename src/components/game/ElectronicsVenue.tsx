@@ -33,7 +33,7 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
   const displays = useMemo(() => electronicsDisplays(products.length), [products]);
   const navigation = useMemo(() => electronicsNavigation(displays), [displays]);
   const walker = useHouseMovement(slug, toRoom(RETAIL_ROOM.spawn));
-  const { assets, station, setStation, inspection, setInspection, assetReady, assetError } = useProductInspection();
+  const { assets, station, setStation, inspection, setInspection, assetReady, assetError, assetUnmounted } = useProductInspection();
   const [failed, setFailed] = useState(false);
   const [message, setMessage] = useState("Tap the floor to walk or approach a product.");
   const request = useRef(0);
@@ -77,7 +77,7 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
           <ElectronicsEnvironment viewer={[walker.position[0], walker.position[2]]} loadRadius={loadRadius} displays={displays} products={products} selected={station} computerStore={slug==="harvest-tech-hub"} onWalk={point => {
             if (Math.abs(point[0]) <= RETAIL_ROOM.entranceWidth/2 && point[1] >= RETAIL_ROOM.doorway[1]) exit();
             else walk(navigation.route(current(),point));
-          }} onExit={exit} onSelect={select} onAssetReady={assetReady} onAssetError={assetError} />
+          }} onExit={exit} onSelect={select} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} />
           {character && <group position={walker.position}><WorldCharacter position={[0,0,0]} facing={walker.facing} animation={walker.walking?"walk":"idle"} name={character.name} gender={character.gender} appearance={appearance} equipment={outfit}/></group>}
         </WorldCanvas>
       </VenueSceneBoundary>
