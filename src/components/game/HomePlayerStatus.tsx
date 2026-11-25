@@ -1,4 +1,4 @@
-import { Component, Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from "react";
+import { Component, Suspense, lazy, useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { UserRound, Zap } from "lucide-react";
 import { normalizeAvatarAppearance, type Appearance } from "@/game/avatar-appearance";
 import type { PlayerState } from "@/lib/player-state";
@@ -28,6 +28,7 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
   const { simulation, ready } = useGameTime();
   const [hubOpen, setHubOpen] = useState(false);
   const [hubInitialTab, setHubInitialTab] = useState<"profile" | "settings">("profile");
+  const closeHub = useCallback(() => setHubOpen(false), []);
 
   useEffect(() => {
     const openHub = (event: Event) => {
@@ -91,7 +92,7 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
         </span>
       </span>
     </button>
-    {hubOpen && <PlayerLifeHub player={player} open={hubOpen} initialTab={hubInitialTab} onClose={() => setHubOpen(false)} />}
+    {hubOpen && <PlayerLifeHub player={player} open={hubOpen} initialTab={hubInitialTab} onClose={closeHub} />}
     </>
   );
 }
