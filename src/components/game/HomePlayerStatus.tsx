@@ -1,4 +1,4 @@
-import { Component, Suspense, lazy, useMemo, useState, type ReactNode } from "react";
+import { Component, Suspense, lazy, useEffect, useMemo, useState, type ReactNode } from "react";
 import { UserRound, Zap } from "lucide-react";
 import { normalizeAvatarAppearance, type Appearance } from "@/game/avatar-appearance";
 import type { PlayerState } from "@/lib/player-state";
@@ -27,6 +27,17 @@ class PortraitBoundary extends Component<{ children: ReactNode }, { failed: bool
 export function HomePlayerStatus({ player }: { player: PlayerState }) {
   const { simulation, ready } = useGameTime();
   const [hubOpen, setHubOpen] = useState(false);
+  const [hubInitialTab, setHubInitialTab] = useState<"profile" | "settings">("profile");
+
+  useEffect(() => {
+    const openHub = (event: Event) => {
+      const detail = (event as CustomEvent<{ tab?: "profile" | "settings" }>).detail;
+      setHubInitialTab(detail?.tab === "settings" ? "settings" : "profile");
+      setHubOpen(true);
+    };
+    window.addEventListener("osogbo-open-player-hub", openHub);
+    return () => window.removeEventListener("osogbo-open-player-hub", openHub);
+  }, []);
   const energy = Math.max(0, Math.min(100, Math.round(simulation.needs.energy)));
   const gender = player.gender ?? "nonbinary";
   const appearance = useMemo(() => {
@@ -43,7 +54,7 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
     <button
       type="button"
       className="home-player-status"
-      onClick={() => setHubOpen(true)}
+      onClick={() => { setHubInitialTab("profile"); setHubOpen(true); }}
       aria-haspopup="dialog"
       aria-expanded={hubOpen}
       aria-label={`${player.name}, level ${player.level}. ${ready ? `Energy ${energy}%` : "Connecting needs"}. Open player hub`}
@@ -80,7 +91,7 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
         </span>
       </span>
     </button>
-    <PlayerLifeHub player={player} open={hubOpen} onClose={() => setHubOpen(false)} />
+    <PlayerLifeHub player={player} open={hubOpen} initialTab={hubInitialTab} onClose={() => setHubOpen(false)} />
     </>
   );
 }
