@@ -36,7 +36,11 @@ vi.mock("@/components/game/phone/PropertyExchangeApp", () => ({
   default: () => <div>Property Exchange content</div>,
 }));
 vi.mock("@/components/game/phone/PhoneMapApp", () => ({
-  PhoneMapApp: () => <div>Map HUD content <a href="/map">Open full city map</a></div>,
+  PhoneMapApp: () => (
+    <div>
+      Map HUD content <a href="/map">Open full city map</a>
+    </div>
+  ),
 }));
 beforeEach(() => {
   state.href = "/jobs";
@@ -100,7 +104,7 @@ it("groups launcher apps into pages of sixteen and includes optional Shortcuts",
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
 
   const pages = document.querySelectorAll(".phone-app-grid");
-  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([16, 12]);
+  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([16, 13]); // Camera was added to the launcher in 1bc845c7;
   expect(pages[0]?.querySelector('[aria-label="Open Shortcuts"]')).not.toBeNull();
   expect(screen.getAllByRole("button", { name: /Go to app page/ })).toHaveLength(pages.length);
   expect(screen.getByRole("button", { name: "Go to app page 1" })).toHaveAttribute(
@@ -178,7 +182,6 @@ it("publishes phone app and Back-to-apps changes to the URL owner", async () => 
   expect(selected).toHaveBeenLastCalledWith({ app: null });
 });
 
-
 it("opens the replacement City Services and Property Exchange apps from the launcher", async () => {
   render(<PhoneLauncher />);
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
@@ -189,7 +192,6 @@ it("opens the replacement City Services and Property Exchange apps from the laun
   expect(await screen.findByText("Property Exchange content")).toBeVisible();
   expect(screen.queryByRole("button", { name: "Open Activities" })).toBeNull();
 });
-
 
 it("opens the Camera app from the launcher and from the global shortcut event", async () => {
   render(<PhoneLauncher />);
