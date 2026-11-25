@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   isPaying,
   MALL_CROWD_TARGET,
+  mallCrowdTarget,
   MALL_SHOPPER_SPACING,
   advanceCrowd,
   buildShopperRoute,
@@ -43,6 +44,20 @@ describe("mall shopper routes", () => {
       Array.from({ length: 20 }, (_, seed) => createShopper(seed)?.appearance.outfit),
     );
     expect(tops.size).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe("mall attendance policy", () => {
+  it("has fewer shoppers at night and more on weekends during daytime", () => {
+    expect(mallCrowdTarget({ hour: 2, weekday: 0 })).toBeLessThan(mallCrowdTarget({ hour: 12, weekday: 0 }));
+    expect(mallCrowdTarget({ hour: 12, weekday: 5 })).toBe(MALL_CROWD_TARGET);
+    expect(mallCrowdTarget({ hour: 12, weekday: 0 })).toBeLessThan(MALL_CROWD_TARGET);
+  });
+  it("lets existing shoppers finish their visit when the target falls", () => {
+    const initial = advanceCrowd([], 0, 0);
+    const next = advanceCrowd(initial.shoppers, 0, initial.nextSeed, 0);
+    expect(next.shoppers.map(shopper => shopper.id)).toEqual(initial.shoppers.map(shopper => shopper.id));
+    expect(next.nextSeed).toBe(initial.nextSeed);
   });
 });
 

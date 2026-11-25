@@ -345,8 +345,10 @@ function PlacedPropsLayer({ placed }: { placed: readonly PlacedProp[] }) {
 function CrowdLayer({
   sim,
   onInteract,
+  crowdTarget,
 }: {
   sim: { current: MallSim };
+  crowdTarget: number;
   onInteract: (target: MallTarget) => void;
 }) {
   const [snapshot, setSnapshot] = useState<
@@ -364,7 +366,7 @@ function CrowdLayer({
       state.shoppers,
       Math.min(delta, 0.1),
       state.nextSeed,
-      MALL_CROWD_TARGET,
+      crowdTarget,
     );
     state.shoppers = next.shoppers;
     state.nextSeed = next.nextSeed;
@@ -518,6 +520,7 @@ function OsunMallContents({
   onInteract,
   cameraRef,
   accent,
+  crowdTarget = MALL_CROWD_TARGET,
 }: {
   sim: { current: MallSim };
   people: MallPerson[];
@@ -531,6 +534,7 @@ function OsunMallContents({
   onInteract: (target: MallTarget) => void;
   cameraRef: { current: Camera | null };
   accent: string;
+  crowdTarget?: number;
 }) {
   return (
     <>
@@ -540,7 +544,7 @@ function OsunMallContents({
       <MallInterior onWalk={onWalk} onInteract={onInteract} accent={accent} />
       <MallStaffLayer sim={sim} onInteract={onInteract} />
       <PlacedPropsLayer placed={placed} />
-      <CrowdLayer sim={sim} onInteract={onInteract} />
+      <CrowdLayer sim={sim} onInteract={onInteract} crowdTarget={crowdTarget} />
       {people.map((person) => (
         <RemoteFigure key={person.sessionId} person={person} />
       ))}

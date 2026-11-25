@@ -1,3 +1,4 @@
+import { getDayPeriod, type GameTime } from "../lib/game-time.ts";
 import type { Appearance } from "./avatar-appearance.ts";
 import type { WalkPoint } from "./grid-walk-path.ts";
 import { shopperLook, type MallGender } from "./mall-appearance.ts";
@@ -12,6 +13,15 @@ import {
 
 /** Shoppers on the floor at once, on top of any real players who are in the mall. */
 export const MALL_CROWD_TARGET = 20;
+/** Ambient attendance policy, not authoritative opening hours or named NPC schedules. */
+export function mallCrowdTarget(time: Pick<GameTime, "hour" | "weekday">): number {
+  const period = getDayPeriod(time.hour);
+  const weekend = time.weekday === 5 || time.weekday === 6;
+  const fraction = period === "night" ? 0.15 : period === "dawn" ? 0.3
+    : period === "evening" ? 0.9 : weekend ? 1 : 0.7;
+  return Math.round(MALL_CROWD_TARGET * fraction);
+}
+
 /** Seconds a shopper spends looking at a shelf before going to a till. */
 export const MALL_BROWSE_SECONDS = 4;
 /** Seconds a shopper spends at the till paying before leaving. */
