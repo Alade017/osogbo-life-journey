@@ -12,8 +12,8 @@ import { SHOWROOM_LOAD_RADIUS } from "@/components/3d/ShowroomAsset";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
-import { ElectronicsEnvironment } from "@/components/3d/ElectronicsEnvironment";
-import { electronicsDisplays, electronicsNavigation, RETAIL_ROOM, type ElectronicsStoreId } from "@/game/electronics-navigation";
+import { ElectronicsEnvironment, ElectronicsExterior } from "@/components/3d/ElectronicsEnvironment";
+import { electronicsDisplays, electronicsNavigation, electronicsExteriorRoute, electronicsExteriorCanWalk, RETAIL_EXTERIOR, RETAIL_ROOM, type ElectronicsStoreId } from "@/game/electronics-navigation";
 import { getShowroomModels } from "@/data/showroom-models";
 import type { WalkPoint } from "@/game/grid-walk-path";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
@@ -32,10 +32,11 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
   const products = useMemo(() => getShowroomModels(slug), [slug]);
   const displays = useMemo(() => electronicsDisplays(products.length), [products]);
   const navigation = useMemo(() => electronicsNavigation(displays), [displays]);
-  const walker = useHouseMovement(slug, toRoom(RETAIL_ROOM.spawn));
+  const [inside, setInside] = useState(slug === "harvest-tech-hub");
+  const walker = useHouseMovement(slug, toRoom(slug === "harvest-tech-hub" ? RETAIL_ROOM.spawn : RETAIL_EXTERIOR.spawn));
   const { assets, station, setStation, inspection, setInspection, assetReady, assetError, assetUnmounted } = useProductInspection();
   const [failed, setFailed] = useState(false);
-  const [message, setMessage] = useState("Tap the floor to walk or approach a product.");
+  const [message, setMessage] = useState(slug === "harvest-tech-hub" ? "Tap the floor to walk or approach a product." : "Walk to the store entrance.");
   const request = useRef(0);
   const exiting = useRef(false);
   const [leaving, setLeaving] = useState(false);
@@ -55,8 +56,38 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
       if (arrived) after?.();
     });
   }
+  async function crossDoor(entering: boolean) {
+    if (exiting.current || failed || !character || entering === inside) return;
+    const ticket = ++request.current;
+    exiting.current = true;
+    setLeaving(true);
+    cancel();
+    setStation(null);
+    setInspection(false);
+    setMessage(entering ? "Entering store…" : "Leaving store…");
+    let settledInside = inside;
+    try {
+      const path = entering ? electronicsExteriorRoute(current(), RETAIL_EXTERIOR.door) : navigation.route(current(), RETAIL_ROOM.doorway);
+      if (!path || !(await walker.walk(path.map(toRoom))) || ticket !== request.current) return;
+      if (!(await walker.walk([toRoom(RETAIL_EXTERIOR.threshold)])) || ticket !== request.current) return;
+      settledInside = entering;
+      setInside(entering);
+      if (!(await walker.walk([toRoom(entering ? RETAIL_ROOM.spawn : RETAIL_EXTERIOR.door)])) || ticket !== request.current) return;
+      setMessage(entering ? "Tap the floor to walk or approach a product." : "You are outside the store.");
+    } finally {
+      if (ticket === request.current) {
+        if (!(settledInside ? navigation.canWalk(current()) : electronicsExteriorCanWalk(current()))) {
+          walker.place(toRoom(settledInside ? RETAIL_ROOM.spawn : RETAIL_EXTERIOR.door));
+        }
+        exiting.current = false;
+        setLeaving(false);
+        setMessage(previous => previous === "Entering store…" || previous === "Leaving store…" ? "Walk stopped." : previous);
+      }
+    }
+  }
   function exit() {
     if (failed && onExit) { onExit(); return; }
+    if (slug === "post-office-cafe") { void crossDoor(false); return; }
     if (exiting.current || failed || !character) return;
     const path = navigation.route(current(), RETAIL_ROOM.doorway);
     if (!path) { setMessage("Choose a clear walking route."); return; }
@@ -92,17 +123,17 @@ export default function ElectronicsVenue({ slug, onExit }: { slug: ElectronicsSt
         <WorldCanvas frameloop="demand" dpr={[1,quality.maxDpr]} gl={{antialias:false,powerPreference:"low-power"}} onSceneError={onError} fallback={<p>WebGL is unavailable.</p>}>
           <WorldCamera width={inspecting && display ? Math.max(display.depth, 1.25) + 0.8 : 10} depth={inspecting && display ? Math.max(display.depth, 1.25) + 0.8 : 10} stage horizontalOrbit={inspecting} verticalOrbit={inspecting} maxZoom={3} zoom={inspecting ? 1.6 : 1.3} target={inspecting && display ? [display.x,1.3,display.z] : [walker.position[0],1.2,walker.position[2]]} />
           <WorldLighting size={18} contactShadows={false} />
-          <ElectronicsEnvironment viewer={[walker.position[0], walker.position[2]]} loadRadius={loadRadius} displays={displays} products={products} selected={station} computerStore={slug==="harvest-tech-hub"} onWalk={point => {
+          {inside ? <ElectronicsEnvironment viewer={[walker.position[0], walker.position[2]]} loadRadius={loadRadius} displays={displays} products={products} selected={station} computerStore={slug==="harvest-tech-hub"} onWalk={point => {
             if (Math.abs(point[0]) <= RETAIL_ROOM.entranceWidth/2 && point[1] >= RETAIL_ROOM.doorway[1]) exit();
             else walk(navigation.route(current(),point));
-          }} onExit={exit} onSelect={select} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} />
+          }} onExit={exit} onSelect={select} onAssetReady={assetReady} onAssetError={assetError} onAssetUnmounted={assetUnmounted} /> : <ElectronicsExterior onEnter={() => void crossDoor(true)} onWalk={point => walk(electronicsExteriorRoute(current(), point))} />}
           {character && <group position={walker.position}><WorldCharacter position={[0,0,0]} facing={walker.facing} animation={walker.walking?"walk":"idle"} name={character.name} gender={character.gender} appearance={appearance} equipment={outfit}/></group>}
         </WorldCanvas>
       </VenueSceneBoundary>
     </div>
     <div data-venue-controls>
       <p role="status">{message}</p>
-      <button type="button" disabled={leaving || ((!character || failed) && !(failed && onExit))} onClick={exit} className="rounded-full border border-edge px-3 py-1.5 text-sm">{onExit ? (failed ? "Return to workplace" : "Walk back to workplace") : "Walk to entrance"}</button>
+      <button type="button" disabled={leaving || ((!character || failed) && !(failed && onExit))} onClick={inside ? exit : () => void crossDoor(true)} className="rounded-full border border-edge px-3 py-1.5 text-sm">{onExit ? (failed ? "Return to workplace" : "Walk back to workplace") : inside ? "Walk to exit" : "Walk to entrance"}</button>
       {product && !walker.walking && !failed && <div className="flex flex-wrap items-center gap-2">
         <span className="capitalize text-sm font-medium">{product.label}</span>
         {canInspect ? <button type="button" aria-pressed={inspecting} onClick={()=>setInspection(v=>!v)} className="rounded-full border border-edge px-3 py-1.5 text-sm">{inspecting?"Return to character":"Inspect product"}</button> : <span role="status" className="text-xs">{assets[product.id]==="failed"?"Product model unavailable.":"Loading product model…"}</span>}
