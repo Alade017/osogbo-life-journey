@@ -14,6 +14,8 @@ import { payHomeRent } from "@/lib/home-rent-service";
 import { stallIncomeKey } from "@/lib/stall-income-service";
 import { pageMeta } from "@/lib/seo";
 import { HomeLink } from "@/components/game/HomeLink";
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
+import { WorldHouse, WorldLighting } from "@/components/3d/WorldScene";
 import "@/components/map/map-ui.css";
 import "@/components/game/housing/property-market.css";
 
@@ -368,13 +370,36 @@ export function PropertyPage() {
               <div className="property-market-grid">
                 {homeRows.map((row) => (
                   <article className="property-market-card map-sheet" key={row.id}>
-                    {row.game_properties?.image_url && (
-                      <img
-                        src={row.game_properties.image_url}
-                        alt={row.game_properties.name}
-                        loading="lazy"
-                      />
-                    )}
+                    <div
+                      className="property-market-exterior"
+                      role="img"
+                      aria-label={`3D exterior view of ${row.game_properties?.name ?? "your house"}`}
+                    >
+                      <WorldCanvas
+                        orthographic
+                        camera={{ position: [7, 5.5, 8], zoom: 42, near: 0.1, far: 100 }}
+                        dpr={[1, 1.5]}
+                        gl={{ alpha: true, antialias: true }}
+                        shadows
+                        style={{ width: "100%", height: "100%" }}
+                      >
+                        <WorldLighting size={12} refined contactShadows />
+                        <group position={[0, -0.35, 0]}>
+                          <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.02, 0]} receiveShadow>
+                            <planeGeometry args={[14, 14]} />
+                            <meshStandardMaterial color="#b9a27a" roughness={1} />
+                          </mesh>
+                          <WorldHouse
+                            position={[0, 0, 0]}
+                            width={4.8}
+                            depth={4.2}
+                            height={3.1}
+                            detailed
+                            variant="residential"
+                          />
+                        </group>
+                      </WorldCanvas>
+                    </div>
                     <div className="property-market-card-body">
                       <h3>{row.game_properties?.name}</h3>
                       <p>
