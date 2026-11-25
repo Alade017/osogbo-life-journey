@@ -4,6 +4,8 @@ import {
   MALL_CROWD_TARGET,
   mallCrowdTarget,
   reservedShopperStops,
+  assignWaitingCheckouts,
+  MALL_BROWSE_SECONDS,
   MALL_PAY_SECONDS,
   payingCashierId,
   MALL_SHOPPER_SPACING,
@@ -14,7 +16,7 @@ import {
   getShopperById,
 } from "@/game/mall-crowd";
 import { stepWalker } from "@/game/mall-movement";
-import { MALL_ENTRANCE, canWalkInMall } from "@/game/osun-mall-layout";
+import { MALL_ENTRANCE, MALL_TILL_QUEUE, canWalkInMall } from "@/game/osun-mall-layout";
 
 describe("mall shopper routes", () => {
   it("builds a walkable route for every seed, with stops at browse and pay", () => {
@@ -89,6 +91,18 @@ describe("mall crowd", () => {
 });
 
 describe("mall stop reservations", () => {
+  it("does not reserve checkout before browsing and waits when checkout is full", () => {
+    const shopper = advanceCrowd([], 0, 0).shoppers[0]!;
+    expect(reservedShopperStops([shopper], MALL_PAY_SECONDS)).toEqual([]);
+    const pos = shopper.walker.points.at(-1)!;
+    const waiting = { ...shopper, walker: { ...shopper.walker, pos, next: shopper.walker.points.length, done: true, dwellLeft: 0 } };
+    expect(reservedShopperStops([waiting], MALL_BROWSE_SECONDS)).toEqual([pos]);
+    expect(assignWaitingCheckouts([waiting], MALL_TILL_QUEUE)[0]).toBe(waiting);
+    const assigned = assignWaitingCheckouts([waiting])[0]!;
+    expect(assigned.awaitingCheckout).toBe(false);
+    expect(assigned.walker.done).toBe(false);
+    expect(reservedShopperStops([assigned], MALL_PAY_SECONDS)).toHaveLength(1);
+  });
   it("reserves a checkout until its payment dwell has finished", () => {
     const shopper = createShopper(0)!;
     const index = [...shopper.walker.dwellAt].find(([, seconds]) => seconds === MALL_PAY_SECONDS)![0];

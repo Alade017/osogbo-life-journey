@@ -37,6 +37,8 @@ export type MallShopper = {
   walker: MallWalker;
   /** Most recent nonzero travel heading, retained through idle and browsing. */
   heading?: number;
+  /** Runtime shoppers reserve checkout only after browsing. */
+  awaitingCheckout?: boolean;
 };
 
 const shopperIndexes = new WeakMap<readonly MallShopper[], Map<string, MallShopper>>();
@@ -170,7 +172,11 @@ function advanceShopper(shopper: MallShopper, occupied: readonly WalkPoint[], el
 /** Reserve upcoming or active stops, releasing them after the dwell ends. */
 export function reservedShopperStops(shoppers: readonly MallShopper[], dwellSeconds: number): WalkPoint[] {
   const stops: WalkPoint[] = [];
-  for (const { walker } of shoppers) {
+  for (const { walker, awaitingCheckout } of shoppers) {
+    if (awaitingCheckout && walker.done && dwellSeconds === MALL_BROWSE_SECONDS) {
+      stops.push(walker.pos);
+      continue;
+    }
     if (walker.done) continue;
     for (const [index, seconds] of walker.dwellAt) {
       if (seconds !== dwellSeconds || (index < walker.next && !(index === walker.next - 1 && walker.dwellLeft > 0))) continue;
@@ -203,6 +209,40 @@ export function payingCashierId(walker: MallWalker): string | null {
   return nearest;
 }
 
+/** Admit with only the browse leg reserved. Checkout is assigned later. */
+function createBrowsingShopper(seed: number, browseIndex: number): MallShopper | null {
+  const browse = MALL_BROWSE_SPOTS[browseIndex];
+  if (!browse) return null;
+  const points = findMallPath(MALL_ENTRANCE, browse);
+  if (!points?.length) return null;
+  const look = shopperLook(seed);
+  return {
+    id: `shopper-${seed}`, gender: look.gender, appearance: look.appearance,
+    walker: createWalker(MALL_ENTRANCE, points, { dwellAt: new Map([[points.length - 1, MALL_BROWSE_SECONDS]]) }),
+    awaitingCheckout: true,
+  };
+}
+
+/** Assign available checkout destinations in crowd arrival order.
+ * Waiting shoppers retain their browse position until a checkout becomes available. */
+export function assignWaitingCheckouts(shoppers: readonly MallShopper[], visitors: readonly WalkPoint[] = []): MallShopper[] {
+  const reserved = reservedShopperStops(shoppers, MALL_PAY_SECONDS);
+  return shoppers.map(shopper => {
+    if (!shopper.awaitingCheckout || !shopper.walker.done) return shopper;
+    const index = availableStop(MALL_TILL_QUEUE, [...reserved, ...visitors,
+      ...shoppers.filter(other => other.id !== shopper.id).map(other => other.walker.pos)], 0);
+    if (index === null) return shopper;
+    const checkout = MALL_TILL_QUEUE[index];
+    if (!checkout) return shopper;
+    const approach = findMallPath(shopper.walker.pos, checkout);
+    const exit = findMallPath(checkout, MALL_ENTRANCE);
+    if (!approach?.length || !exit?.length) return shopper;
+    reserved.push(checkout);
+    return { ...shopper, awaitingCheckout: false, walker: createWalker(shopper.walker.pos,
+      [...approach, ...exit], { speed: shopper.walker.speed, dwellAt: new Map([[approach.length - 1, MALL_PAY_SECONDS]]) }) };
+  });
+}
+
 /** Advance the crowd and admit newcomers only when the entrance has space. */
 export function advanceCrowd(
   shoppers: readonly MallShopper[],
@@ -216,7 +256,7 @@ export function advanceCrowd(
   // Reserve each accepted position immediately; later actors see earlier movement.
   const positions = shoppers.map(shopper => shopper.walker.pos);
   const moved = shoppers.map((shopper, index) => {
-    const occupied = [...visitors, ...positions.filter((_, other) => other !== index && !shoppers[other]?.walker.done)];
+    const occupied = [...visitors, ...positions.filter((_, other) => other !== index && (!shoppers[other]?.walker.done || shoppers[other]?.awaitingCheckout === true))];
     const walker = advanceShopper(shopper, occupied, elapsed);
     positions[index] = walker.pos;
     const dx = walker.pos[0] - shopper.walker.pos[0];
@@ -224,14 +264,13 @@ export function advanceCrowd(
     const heading = Math.hypot(dx, dz) > 1e-6 ? Math.atan2(dx, dz) : shopper.heading ?? 0;
     return { ...shopper, walker, heading };
   });
-  const remaining = moved.filter((shopper) => !shopper.walker.done);
+  const remaining = assignWaitingCheckouts(moved.filter((shopper) => !shopper.walker.done || shopper.awaitingCheckout), visitors);
   let seed = nextSeed;
   if (remaining.length < target && remaining.every(shopper => distance(shopper.walker.pos, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING) &&
       visitors.every(point => distance(point, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING)) {
     const browse = availableStop(MALL_BROWSE_SPOTS, reservedShopperStops(remaining, MALL_BROWSE_SECONDS), seed);
-    const checkout = availableStop(MALL_TILL_QUEUE, reservedShopperStops(remaining, MALL_PAY_SECONDS), seed * 3 + 1);
-    if (browse !== null && checkout !== null) {
-      const fresh = createShopper(seed, browse, checkout);
+    if (browse !== null) {
+      const fresh = createBrowsingShopper(seed, browse);
       seed += 1;
       if (fresh) remaining.push(fresh);
     }
