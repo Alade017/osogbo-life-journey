@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState, type FC } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import type { Group } from "three";
+import { TRAFFIC_MOTION, trafficFrameSeconds, trafficSpeed, trafficBrakingSpeed, trafficHeading } from "@/game/town-traffic-motion";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
 import { WorldMaterial } from "@/components/3d/WorldScene";
 import {
@@ -135,6 +136,8 @@ function TrafficVehicle({
   const groupRef = useRef<Group>(null);
   const currentSegment = useRef(0);
   const progress = useRef(0);
+  const velocity = useRef(0);
+  const heading = useRef<number | null>(null);
   const activeJunction = useRef<string | null>(null);
   const activeJunctionIndex = useRef<number | null>(null);
   const [isHovered, setIsHovered] = useState(false);
@@ -144,7 +147,12 @@ function TrafficVehicle({
     const start = locateTrafficLoopDistance(config.path, config.startDistance);
     currentSegment.current = start.segment;
     progress.current = start.progress;
-  }, [config.path, config.startDistance]);
+    velocity.current = 0;
+    heading.current = null;
+    activeJunction.current = null;
+    activeJunctionIndex.current = null;
+    return () => crossingScheduler.cancelActor(config.id);
+  }, [config.path, config.startDistance, config.id, crossingScheduler]);
 
   useFrame(({ clock }, delta) => {
     crossingScheduler.advanceTime(clock.elapsedTime);
@@ -153,11 +161,10 @@ function TrafficVehicle({
     const { path, speed } = config;
     if (path.length < 2 || !Number.isFinite(routeLength) || routeLength < 0.001) return;
 
-    // Advance in world-space distance so crossing a corner never discards
-    // leftover frame time. Modulo the cached loop length also bounds catch-up
-    // work after a background-tab pause.
-    if (!Number.isFinite(delta) || delta <= 0) return;
-    let distanceToTravel = (speed * delta * 8) % routeLength;
+    // Do not catch up a suspended tab by jumping across junctions.
+    const dt = trafficFrameSeconds(delta);
+    if (dt === 0) return;
+    const cruise = speed * 8;
     const nextJunctionIndex = (currentSegment.current + 1) % path.length;
     const nextJunction = config.junctionIds[nextJunctionIndex] ?? null;
     const segmentStart = path[currentSegment.current]!;
@@ -180,26 +187,39 @@ function TrafficVehicle({
         activeSegmentEnd[0] - activeSegmentStart[0],
         activeSegmentEnd[1] - activeSegmentStart[1],
       );
-      if (progress.current * activeSegmentLength >= clearanceDistance) {
+      const outgoingClearance = Math.min(1.35, activeSegmentLength * 0.3);
+      if (progress.current * activeSegmentLength >= outgoingClearance) {
         crossingScheduler.release(activeJunction.current, config.id);
         activeJunction.current = null;
         activeJunctionIndex.current = null;
       }
     }
-    if (nextJunction && remainingToJunction <= clearanceDistance + distanceToTravel) {
-      if (!crossingScheduler.request(nextJunction, config.id, "vehicle")) {
-        distanceToTravel = Math.min(
-          distanceToTravel,
-          Math.max(0, remainingToJunction - clearanceDistance),
-        );
-        if (distanceToTravel <= 0) return;
+    const nextEnd = path[(nextJunctionIndex + 1) % path.length]!;
+    const incoming = Math.atan2(segmentEnd[0] - segmentStart[0], segmentEnd[1] - segmentStart[1]);
+    const outgoing = Math.atan2(nextEnd[0] - segmentEnd[0], nextEnd[1] - segmentEnd[1]);
+    const turn = Math.abs(Math.atan2(Math.sin(outgoing - incoming), Math.cos(outgoing - incoming)));
+    const cornerSpeed = cruise * (1 - 0.55 * Math.min(1, turn / (Math.PI / 2)));
+    let targetSpeed = Math.min(cruise, Math.sqrt(cornerSpeed ** 2 + 2 * TRAFFIC_MOTION.braking * Math.max(0, remainingToJunction)));
+    let travelLimit = remainingToJunction;
+    const stopDistance = Math.max(0, remainingToJunction - clearanceDistance);
+    const requestDistance = cruise ** 2 / (2 * TRAFFIC_MOTION.braking) + cruise * dt;
+    if (nextJunction && stopDistance <= requestDistance) {
+      // Keep at most one reservation per actor, even on short segments.
+      const granted = (!activeJunction.current || activeJunction.current === nextJunction) &&
+        crossingScheduler.request(nextJunction, config.id, "vehicle");
+      if (!granted) {
+        targetSpeed = Math.min(targetSpeed, trafficBrakingSpeed(stopDistance));
+        travelLimit = stopDistance;
       } else {
         activeJunction.current = nextJunction;
         activeJunctionIndex.current = nextJunctionIndex;
-        // Do not let a long animation frame skip over a second junction before
-        // its reservation can be requested on the next frame.
-        distanceToTravel = Math.min(distanceToTravel, remainingToJunction + clearanceDistance);
       }
+    }
+    velocity.current = trafficSpeed(velocity.current, targetSpeed, dt);
+    const requestedDistance = velocity.current * dt;
+    let distanceToTravel = Math.min(requestedDistance, travelLimit);
+    if (distanceToTravel < requestedDistance && travelLimit < remainingToJunction) {
+      velocity.current = distanceToTravel / dt;
     }
 
     let safetyIterations = 0;
@@ -238,7 +258,8 @@ function TrafficVehicle({
     const angle = Math.atan2(curDx, curDz);
 
     groupRef.current.position.set(posX, 0.05, posZ);
-    groupRef.current.rotation.y = angle;
+    heading.current = heading.current === null ? angle : trafficHeading(heading.current, angle, dt);
+    groupRef.current.rotation.y = heading.current;
   });
 
   useEffect(
