@@ -35,4 +35,23 @@ for z,row in enumerate(rows):
             draw.rectangle((round(x*size/width), round(z*size/height),
                             round((x+1)*size/width)-1, round((z+1)*size/height)-1),
                            fill="#71acb5")
+parcels = json.loads((root / "src/data/osogbo-atlas-parcels.json").read_text())
+def px(x, z):
+    return (round((x+.5)*size/width), round((z+.5)*size/height))
+
+for e in parcels["estates"]:
+    x,z = e["x"],e["z"]
+    draw.rounded_rectangle([px(x-.48,z-.48), px(x+e["columns"]-.52,z+e["rows"]-.52)],
+                           radius=7, fill="#8da76d", outline="#667e54", width=3)
+    for r in range(e["rows"]):
+        for c in range(e["columns"]):
+            draw.rectangle([px(x+c-.37,z+r-.38),px(x+c+.37,z+r+.38)],fill="#c3c297")
+river = parcels["river"]
+def ribbon(lo, hi, colour):
+    draw.polygon([px(x,z+lo) for x,z in river]+[px(x,z+hi) for x,z in reversed(river)], fill=colour)
+half = parcels["riverHalfWidth"]
+ribbon(-half-0.44,half+0.46,"#77995d")
+ribbon(-half-0.14,half+0.14,"#d6c897")
+ribbon(-half,half,"#3f9db2")
+ribbon(-half+0.22,half-0.25,"#318ba7")
 image.save(root / "public/maps/osogbo_topdown.png", optimize=True)

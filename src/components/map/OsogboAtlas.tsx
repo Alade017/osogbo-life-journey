@@ -1,3 +1,4 @@
+import { hasSignatureLandmark } from "./atlas-parcels";
 import { useMemo } from "react";
 import { useLoader } from "@react-three/fiber";
 import { SRGBColorSpace, TextureLoader } from "three";
@@ -38,7 +39,7 @@ export function AtlasPlaceModels({
     const platforms: WorldInstance[] = [],
       crosses: WorldInstance[] = [];
     for (const place of places) {
-      if (built.has(place.id)) continue;
+      if (built.has(place.id) || hasSignatureLandmark(place.id)) continue;
       const [x, , z] = point(place.grid.x, place.grid.z);
       const box = (
         dx: number,

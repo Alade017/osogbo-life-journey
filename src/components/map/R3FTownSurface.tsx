@@ -1,3 +1,5 @@
+import { estateHomes, inEstate, riverOffset, hasSignatureLandmark } from "./atlas-parcels";
+import { SignatureLandmark } from "./SignatureLandmark";
 import { MapPointerGesture } from "./map-pointer-gesture";
 import { MapMarkerLayout } from "./MapMarkerLayout";
 import { DistrictZones } from "./DistrictZones";
@@ -295,14 +297,19 @@ export function R3FTownSurface(props: Props) {
 
     town.grid.rows.forEach((row, z) => {
       Array.from(row).forEach((tile, x) => {
-        if (tile !== "g") return;
+        if (
+          tile !== "g" ||
+          inEstate(x + 0.5, z + 0.5) ||
+          Math.abs(riverOffset(x + 0.5, z + 0.5)) < 1.1
+        )
+          return;
         if (occupied.has(`${x},${z}`)) return;
 
         // Deterministic variation without random changes on every render.
         const seed = (x * 17 + z * 31) % 100;
 
         // Avoid overly dense vegetation.
-        if (seed > 38) return;
+        if (seed > (Math.abs(riverOffset(x + 0.5, z + 0.5)) < 2.1 ? 88 : 22)) return;
 
         result.push({
           position: [point(x + 0.5, z + 0.5)[0], point(x + 0.5, z + 0.5)[2]],
@@ -315,8 +322,8 @@ export function R3FTownSurface(props: Props) {
     return result;
   }, []);
   const residentialHomes = useMemo(
-    () =>
-      townResidentialLayout({
+    () => [
+      ...townResidentialLayout({
         rows: town.grid.rows,
         buildings: town.grid.buildings,
         landmarks: town.landmarks,
@@ -331,7 +338,19 @@ export function R3FTownSurface(props: Props) {
             (property) => [property.position[0], property.position[2]] as [number, number],
           ),
         ],
-      }),
+      }).filter((h) => !inEstate(h.x, h.z) && Math.abs(riverOffset(h.x, h.z)) > 1.35),
+      ...estateHomes().filter(
+        (h) =>
+          !town.landmarks.some((l) => Math.hypot(h.x - l.grid.x, h.z - l.grid.z) < 1.15) &&
+          !town.grid.buildings.some(
+            (b) => Math.abs(h.x - b.x - 0.5) < 1.35 && Math.abs(h.z - b.z - 0.5) < 1.35,
+          ) &&
+          !(props.properties ?? []).some((p) => {
+            const [x, , z] = point(h.x, h.z);
+            return Math.hypot(x - p.position[0], z - p.position[2]) < cell * 1.15;
+          }),
+      ),
+    ],
     [trees, busStops, roadSigns, props.properties],
   );
   const select = (event: ThreeEvent<MouseEvent> | undefined, action: () => void) => {
@@ -437,21 +456,30 @@ export function R3FTownSurface(props: Props) {
             <WorldInstances
               tone="wall"
               castShadow={false}
-              items={town.grid.plotCells.map(([x, z]) => ({
-                position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
-                scale: [cell, 0.03, cell],
-              }))}
+              items={town.grid.plotCells
+                .filter(([x, z]) => Math.abs(riverOffset(x!, z!)) > 1.35 && !inEstate(x!, z!))
+                .map(([x, z]) => ({
+                  position: [point(x!, z!)[0], 0.015, point(x!, z!)[2]],
+                  scale: [cell, 0.03, cell],
+                }))}
             />
             <WorldTrees positions={trees} />
             <HouseBlocks3D homes={residentialHomes} point={point} cell={cell} />
-            {town.grid.buildings.map((building) => (
-              <TownBuilding3D
-                key={`building-${building.x}-${building.z}`}
-                building={building}
-                position={point(building.x + 0.5, building.z + 0.5)}
-                cell={cell}
-              />
-            ))}
+            {town.grid.buildings
+              .filter((b) => !hasSignatureLandmark(b.placeId))
+              .map((building) => (
+                <TownBuilding3D
+                  key={`building-${building.x}-${building.z}`}
+                  building={building}
+                  position={point(building.x + 0.5, building.z + 0.5)}
+                  cell={cell}
+                />
+              ))}
+            {town.landmarks
+              .filter((p) => hasSignatureLandmark(p.id))
+              .map((p) => (
+                <SignatureLandmark key={p.id} id={p.id} position={placeAnchor(p)} cell={cell} />
+              ))}
             <LockedPlaces3D
               places={props.lockedPlaces ?? []}
               cellSize={cell}
