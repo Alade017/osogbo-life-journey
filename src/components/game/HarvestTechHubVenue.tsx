@@ -1,4 +1,4 @@
-import { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/game";
@@ -49,8 +49,19 @@ function HarvestWorkplace({ venue, onEnterStore }: { venue: LocationVenueDesign;
   const [message, setMessage] = useState("Tap the floor to walk or choose a station.");
   const [failed, setFailed] = useState(false);
   const request = useRef(0);
-  const onError = useCallback(() => setFailed(true), []);
+  const entering = useRef(false);
+  const [enteringStore, setEnteringStore] = useState(false);
+  const { cancel } = walker;
+  useEffect(() => () => { request.current++; cancel(); }, [cancel]);
+  const onError = useCallback(() => {
+    request.current++;
+    cancel();
+    entering.current = false;
+    setEnteringStore(false);
+    setFailed(true);
+  }, [cancel]);
   function go(target: WalkPoint | VenueFixture) {
+    if (entering.current) return;
     const ticket = ++request.current;
     walker.cancel();
     const [x, , z] = walker.positionRef.current;
@@ -71,7 +82,7 @@ function HarvestWorkplace({ venue, onEnterStore }: { venue: LocationVenueDesign;
     });
   }
   function enterStore() {
-    if (!character || failed) return;
+    if (!character || failed || entering.current) return;
     const ticket = ++request.current;
     walker.cancel();
     setStation(null);
@@ -79,9 +90,13 @@ function HarvestWorkplace({ venue, onEnterStore }: { venue: LocationVenueDesign;
     const [x, , z] = walker.positionRef.current;
     const path = navigation.route([x, z], workplaceSpawn);
     if (!path) { setMessage("That path is blocked. Choose a clear spot."); return; }
+    entering.current = true;
+    setEnteringStore(true);
     setMessage("Walking to the computer store entrance…");
     void walker.walk(path.map(([px, pz]) => [px, 0.06, pz])).then((arrived) => {
       if (ticket !== request.current) return;
+      entering.current = false;
+      setEnteringStore(false);
       if (arrived) onEnterStore();
       else setMessage("Walk stopped.");
     });
@@ -150,7 +165,7 @@ function HarvestWorkplace({ venue, onEnterStore }: { venue: LocationVenueDesign;
           <p role="alert">The 3D view is unavailable. Station controls are available here.</p>
         )}
         <p role="status">{message}</p>
-        <button type="button" disabled={!character || failed} onClick={enterStore} className="rounded-full border border-edge px-3 py-1.5 text-sm">Walk to computer store</button>
+        <button type="button" disabled={!character || failed || enteringStore} onClick={enterStore} className="rounded-full border border-edge px-3 py-1.5 text-sm">Walk to computer store</button>
         {job && (
           <Link to="/jobs" className={linkStyle}>
             Jobs &amp; shifts
@@ -170,6 +185,7 @@ function HarvestWorkplace({ venue, onEnterStore }: { venue: LocationVenueDesign;
                 className="rounded-lg border border-edge px-3"
                 key={f.id}
                 type="button"
+                disabled={enteringStore}
                 onClick={() => go(f)}
               >
                 {f.label}
