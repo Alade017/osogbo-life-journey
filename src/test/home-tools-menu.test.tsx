@@ -16,7 +16,7 @@ it("opens Settings in the existing player hub without navigating away", () => {
     </HomeToolsMenu>,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "Settings" }));
+  fireEvent.click(screen.getByRole("button", { name: /Settings/ }));
 
   const event = dispatch.mock.calls
     .map(([value]) => value)
