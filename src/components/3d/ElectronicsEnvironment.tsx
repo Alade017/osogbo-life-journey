@@ -10,7 +10,7 @@ type Product = { id: string; url: string };
 function Block({ at, size, tone }: { at: Point; size: Point; tone: WorldTone }) {
   return <mesh position={at} receiveShadow castShadow><boxGeometry args={size} /><WorldMaterial tone={tone} /></mesh>;
 }
-export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, onExit, selected, computerStore, onAssetReady, onAssetError, viewer, loadRadius }: {
+export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, onExit, selected, computerStore, onAssetReady, onAssetError, onAssetUnmounted, viewer, loadRadius }: {
   viewer: WalkPoint;
   loadRadius: number;
   displays: readonly RetailDisplay[];
@@ -22,6 +22,7 @@ export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, o
   computerStore: boolean;
   onAssetReady: (id: string) => void;
   onAssetError: (id: string) => void;
+  onAssetUnmounted: (id: string) => void;
 }) {
   const front = room.depth / 2;
   const legs = useMemo(() => displays.flatMap(display => [-1, 1].flatMap(x => [-1, 1].map(z => ({
@@ -54,7 +55,7 @@ export function ElectronicsEnvironment({ displays, products, onWalk, onSelect, o
       return <group key={product.id} position={[display.x,0,display.z]} onClick={(e) => { e.stopPropagation(); if(e.delta<=5) onSelect(index); }}>
         <Block at={[0,0.83,0]} size={[display.width,0.12,display.depth]} tone={computerStore ? "timber" : "slate"} />
         <group position={[0,0.89,0]} rotation={[0,display.x<0?Math.PI/2:-Math.PI/2,0]}>
-          <ShowroomAsset product={product} viewer={viewer} position={[display.x, display.z]} radius={loadRadius} pinned={selected === index} limits={[Math.min(1.35, display.depth - 0.1), 1.25, 0.85]} onReady={onAssetReady} onError={onAssetError} />
+          <ShowroomAsset product={product} viewer={viewer} position={[display.x, display.z]} radius={loadRadius} pinned={selected === index} limits={[Math.min(1.35, display.depth - 0.1), 1.25, 0.85]} onReady={onAssetReady} onError={onAssetError} onUnmount={onAssetUnmounted} />
         </group>
         {selected===index && <mesh position={[0,0.898,display.depth/2-0.025]}><boxGeometry args={[display.width,0.012,0.04]} /><meshBasicMaterial color="#c47c45" /></mesh>}
       </group>;
