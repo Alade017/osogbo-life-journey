@@ -49,6 +49,23 @@ it.each([
   expect(closePhone).toHaveBeenCalledOnce();
 });
 
+it("navigates Career to its full page instead of opening the Career Life phone app", () => {
+  const closePhone = vi.fn();
+  const openHud = vi.fn();
+  render(
+    <GameMobileNav
+      onNavigate={closePhone}
+      onInventoryOpen={vi.fn()}
+      onHudOpen={openHud}
+    />,
+  );
+
+  fireEvent.click(screen.getByRole("link", { name: "Career Life" }));
+
+  expect(closePhone).toHaveBeenCalledOnce();
+  expect(openHud).not.toHaveBeenCalled();
+});
+
 it("keeps the phone launcher in the same navigation landmark", () => {
   render(
     <GameMobileNav onNavigate={vi.fn()} onInventoryOpen={vi.fn()}>
