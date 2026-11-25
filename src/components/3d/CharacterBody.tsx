@@ -29,6 +29,8 @@ export type MotionName = PoseMotion;
 
 const TASK_MOTIONS: Record<string, PoseMotion> = {
   sit: "Sit",
+  motorcycleDriver: "MotorcycleDriver",
+  motorcyclePassenger: "MotorcyclePassenger",
   wash: "Wash",
   cook: "Cook",
   collect: "Collect",

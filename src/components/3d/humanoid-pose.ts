@@ -36,6 +36,8 @@ export type PoseMotion =
   | "Talk"
   | "Interact"
   | "Sit"
+  | "MotorcycleDriver"
+  | "MotorcyclePassenger"
   | "Wash"
   | "Cook"
   | "Collect"
@@ -154,6 +156,26 @@ export function poseFor(
           [BONE.rForearm]: [-0.2, 0, 0],
         },
       };
+    case "MotorcycleDriver":
+    case "MotorcyclePassenger": {
+      const driver = motion === "MotorcycleDriver";
+      return {
+        bones: {
+          [BONE.spine]: [driver ? 0.18 : 0.06, 0, 0],
+          [BONE.head]: [driver ? -0.12 : -0.04, 0, 0],
+          [BONE.lThigh]: [-0.85, 0, 0.28],
+          [BONE.rThigh]: [-0.85, 0, -0.28],
+          [BONE.lCalf]: [1.25, 0, 0],
+          [BONE.rCalf]: [1.25, 0, 0],
+          [BONE.lFoot]: [-0.4, 0, 0],
+          [BONE.rFoot]: [-0.4, 0, 0],
+          [BONE.lUpperArm]: [driver ? -0.9 : -0.3, 0, 0.18],
+          [BONE.rUpperArm]: [driver ? -0.9 : -0.3, 0, -0.18],
+          [BONE.lForearm]: [driver ? -0.55 : -0.45, 0, 0],
+          [BONE.rForearm]: [driver ? -0.55 : -0.45, 0, 0],
+        },
+      };
+    }
     case "Sit":
       return {
         bones: {

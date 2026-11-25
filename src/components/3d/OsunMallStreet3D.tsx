@@ -34,6 +34,7 @@ function isClick(event: ThreeEvent<MouseEvent>) {
 }
 
 /** The okada rider's look: an orange vest over dark trousers. */
+const OKADA_SEAT = { height: 0.65, thickness: 0.12, centerZ: -0.22, length: 0.65 } as const;
 const RIDER_APPEARANCE: Appearance = {
   clothed: true,
   skin: 2,
@@ -68,7 +69,7 @@ function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoin
       const dx = next.pos[0]-state.pos[0], dz = next.pos[1]-state.pos[1];
       if (Math.hypot(dx,dz)>0.00001) state.yaw = trafficHeading(state.yaw, Math.atan2(dx,dz), dt);
       state.pos = next.pos;
-      state.walker = next.done ? null : next;
+      state.walker = next.done ? null : {...next, speed: state.walker.speed};
       if (next.done) state.speed = 0;
     }
     if (group.current) {
@@ -84,8 +85,8 @@ function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoin
         <boxGeometry args={[0.28,0.28,0.85]} />
         <meshStandardMaterial color="#f5c400" roughness={0.6} />
       </mesh>
-      <mesh position={[0,0.65,-0.22]} castShadow>
-        <boxGeometry args={[0.3,0.12,0.65]} />
+      <mesh position={[0,OKADA_SEAT.height,OKADA_SEAT.centerZ]} castShadow>
+        <boxGeometry args={[0.3,OKADA_SEAT.thickness,OKADA_SEAT.length]} />
         <WorldMaterial tone="road" />
       </mesh>
       <mesh position={[0,0.88,0.43]}>
@@ -99,7 +100,7 @@ function OkadaRider({ onRider, target }: { onRider: () => void; target: WalkPoin
         </mesh>
       ))}
       <WorldCharacter name="Okada rider" gender="male" appearance={RIDER_APPEARANCE}
-        facing="south" taskPose="sit" position={[0,0.3,0]} />
+        facing="south" taskPose="motorcycleDriver" seatHeight={OKADA_SEAT.height + OKADA_SEAT.thickness / 2} position={[0,0,OKADA_SEAT.centerZ + OKADA_SEAT.length / 4]} />
     </group>
   );
 }

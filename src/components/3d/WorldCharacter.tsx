@@ -17,7 +17,7 @@ import {
 } from "./character-follow";
 import { WORN_ITEM_MODELS } from "./world-item-models";
 
-export type TaskPose = "sit" | "wash" | "cook" | "collect" | "stretch";
+export type TaskPose = "motorcycleDriver" | "motorcyclePassenger" | "sit" | "wash" | "cook" | "collect" | "stretch";
 
 const blend = (rate: number, delta: number) => 1 - Math.exp(-rate * delta);
 
@@ -44,6 +44,7 @@ export function WorldCharacter({
   lookAt = null,
   held = null,
   body,
+  seatHeight,
 }: {
   appearance?: Appearance;
   gender?: string;
@@ -60,6 +61,8 @@ export function WorldCharacter({
   held?: ReactNode;
   /** Forces a specific body, such as the bank staff body. Defaults from the saved gender. */
   body?: BodyVariant | undefined;
+  /** Vehicle seat surface in character-local world units. */
+  seatHeight?: number;
 }) {
   const safe = normalizeAvatarAppearance(appearance, gender);
   const outfit = resolveNormalizedWornOutfit(safe, equipment);
@@ -230,7 +233,7 @@ export function WorldCharacter({
     : undefined;
   return (
     <group ref={root} name={`character:${name}`} rotation={[0, initialYaw.current, 0]}>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} renderOrder={-1}>
+      {seatHeight === undefined && <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.012, 0]} renderOrder={-1}>
         <circleGeometry args={[h * CHARACTER_GROUND.shadowRadius, 20]} />
         <meshBasicMaterial
           color={CHARACTER_GROUND.shadowColor}
@@ -238,12 +241,14 @@ export function WorldCharacter({
           opacity={CHARACTER_GROUND.shadowOpacity}
           depthWrite={false}
         />
-      </mesh>
+      </mesh>}
       <group
         position={
           animation === "sleep"
             ? [0, 0.5, h * 0.5]
-            : taskPose === "sit"
+            : seatHeight !== undefined && (taskPose === "motorcycleDriver" || taskPose === "motorcyclePassenger")
+              ? [0, seatHeight - h * 0.5, 0]
+              : taskPose === "sit"
               ? [0, -h * 0.24, 0]
               : [0, 0, 0]
         }
