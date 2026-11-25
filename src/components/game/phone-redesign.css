@@ -92,7 +92,7 @@
 .phone-dialog-shell-solo {
   --phone-frame-height: min(
     760px,
-    calc(100dvh - var(--phone-keyboard-inset, var(--game-keyboard-inset, 0px)) - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
+    calc(100dvh - var(--game-keyboard-inset, 0px) - 112px - env(safe-area-inset-top) - env(safe-area-inset-bottom))
   );
 }
 
