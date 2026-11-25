@@ -13,7 +13,7 @@ import {
 import type { Appearance } from "@/game/avatar-appearance";
 import type { WalkPoint } from "@/game/grid-walk-path";
 import { createWalker, type MallWalker } from "@/game/mall-movement";
-import { MALL_PROPS, reactionFor, type MallPropId, type MallTarget } from "@/game/mall-reactions";
+import { MALL_PROPS, reactionFor, canChatWithShopper, shopperReaction, type MallPropId, type MallTarget } from "@/game/mall-reactions";
 import {
   addBubble,
   bubbleTargetFor,
@@ -30,7 +30,7 @@ import {
 import { q } from "@/lib/game";
 import { useOptionalGameTime } from "./GameTimeProvider";
 import { gameTimeFromCharacter, INITIAL_GAME_TIME } from "@/lib/game-time";
-import { mallCrowdTarget } from "@/game/mall-crowd";
+import { mallCrowdTarget, getShopperById } from "@/game/mall-crowd";
 import { joinMallRoom } from "@/lib/multiplayer-service";
 import { reportMallZone } from "@/lib/osun-mall-presence";
 
@@ -113,6 +113,9 @@ export function OsunMallVenue({
     };
   }, [locationId, outside]);
 
+  // Keep the simulation visitor list synchronized with received multiplayer presence.
+  useEffect(() => { sim.current.people = people; }, [people]);
+
   // The walking state drives the animation, so React sees it a few times a second, not every frame.
   useEffect(() => {
     const timer = window.setInterval(() => setPlayerMoving(sim.current.player.moving), 250);
@@ -162,8 +165,14 @@ export function OsunMallVenue({
   };
 
   const onInteract = (target: MallTarget) => {
+    const shopper = target.kind === "shopper" ? getShopperById(sim.current.shoppers, target.id) : undefined;
+    if (target.kind === "shopper" && (!shopper || !canChatWithShopper(sim.current.player.pos, shopper.walker))) {
+      setMessage("Move closer to the shopper to talk.");
+      return;
+    }
+    setMessage(null);
     clicks.current += 1;
-    const line = reactionFor(target, clicks.current);
+    const line = shopper ? shopperReaction(shopper.walker, clicks.current) : reactionFor(target, clicks.current);
     setLog((previous) => [line, ...previous].slice(0, LOG_LENGTH));
     say(bubbleTargetFor(target, sim.current.player.pos), line);
   };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Vector3, type Camera, type Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -21,7 +21,7 @@ import {
   type MallRect,
 } from "@/game/osun-mall-layout";
 import { staffLook, type MallGender } from "@/game/mall-appearance";
-import { MALL_PROPS, type MallPropId, type MallTarget } from "@/game/mall-reactions";
+import { MALL_PROPS, MALL_CHAT_RADIUS, type MallPropId, type MallTarget } from "@/game/mall-reactions";
 import type { AvatarEquipment } from "@/components/game/Avatar";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
@@ -206,7 +206,8 @@ function MallStaffLayer({
   const [paying, setPaying] = useState<ReadonlySet<string>>(() => new Set());
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setPaying(new Set(sim.current.shoppers.map(shopper => payingCashierId(shopper.walker)).filter((id): id is string => id !== null)));
+      const next = new Set(sim.current.shoppers.map(shopper => payingCashierId(shopper.walker)).filter((id): id is string => id !== null));
+      setPaying(previous => previous.size === next.size && [...next].every(id => previous.has(id)) ? previous : next);
     }, SNAPSHOT_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [sim]);
@@ -240,7 +241,7 @@ function MallStaffLayer({
 }
 
 /** One shopper. Position comes from the simulation every frame; only animation is React state. */
-function ShopperFigure({
+const ShopperFigure = memo(function ShopperFigure({
   id,
   moving,
   paying,
@@ -265,7 +266,7 @@ function ShopperFigure({
     node.visible = Boolean(shopper);
     if (!shopper) return;
     node.position.set(shopper.walker.pos[0], 0, shopper.walker.pos[1]);
-    const target = lookTargetFor(shopper, sim.current.player.pos);
+    const target = shopper.walker.moving ? null : lookTargetFor(shopper, sim.current.player.pos);
     const yaw = target && !shopper.walker.moving ? Math.atan2(target[0], target[2]) : shopper.heading ?? 0;
     const difference = Math.atan2(Math.sin(yaw - node.rotation.y), Math.cos(yaw - node.rotation.y));
     node.rotation.y += difference * (1 - Math.exp(-10 * Math.min(delta, 0.1)));
@@ -290,7 +291,7 @@ function ShopperFigure({
       />
     </group>
   );
-}
+});
 
 /** The card or note a shopper hands over at the till. */
 function PaymentNote() {
@@ -322,7 +323,7 @@ function lookTargetFor(
     if (nearest) return [nearest[0] - sx, 0, nearest[1] - sz];
   }
   const toPlayer = Math.hypot(player[0] - sx, player[1] - sz);
-  if (toPlayer < 2 && toPlayer > 0.01 && isSegmentWalkable(shopper.walker.pos, player)) return [player[0] - sx, 0, player[1] - sz];
+  if (toPlayer < MALL_CHAT_RADIUS && toPlayer > 0.01 && isSegmentWalkable(shopper.walker.pos, player)) return [player[0] - sx, 0, player[1] - sz];
   return null;
 }
 
@@ -375,15 +376,18 @@ function CrowdLayer({
   });
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setSnapshot(
-        sim.current.shoppers.map((shopper) => ({
-          id: shopper.id,
-          moving: shopper.walker.moving,
-          paying: isPaying(shopper.walker),
-          gender: shopper.gender,
-          appearance: shopper.appearance,
-        })),
-      );
+      const next = sim.current.shoppers.map((shopper) => ({
+        id: shopper.id,
+        moving: shopper.walker.moving,
+        paying: isPaying(shopper.walker),
+        gender: shopper.gender,
+        appearance: shopper.appearance,
+      }));
+      setSnapshot(previous => previous.length === next.length && next.every((shopper, index) => {
+        const old = previous[index];
+        return old?.id === shopper.id && old.moving === shopper.moving &&
+          old.paying === shopper.paying && old.gender === shopper.gender && old.appearance === shopper.appearance;
+      }) ? previous : next);
     }, SNAPSHOT_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [sim]);
