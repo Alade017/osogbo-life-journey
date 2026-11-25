@@ -1,7 +1,7 @@
 import type { Appearance } from "./avatar-appearance.ts";
 import type { WalkPoint } from "./grid-walk-path.ts";
 import { shopperLook, type MallGender } from "./mall-appearance.ts";
-import { createWalker, stepWalker, type MallWalker } from "./mall-movement.ts";
+import { createWalker, stepWalker, isSegmentWalkable, type MallWalker } from "./mall-movement.ts";
 import {
   MALL_BODY_RADIUS,
   MALL_BROWSE_SPOTS,
@@ -98,22 +98,58 @@ function distance(a: WalkPoint, b: WalkPoint) {
   return Math.hypot(a[0] - b[0], a[1] - b[1]);
 }
 
-/** Slow approaching shoppers without blocking shared narrow routes indefinitely.
- * Keep a minimum speed: full detour planning and queue reservations are separate concerns. */
-function advanceShopper(shopper: MallShopper, crowd: readonly MallShopper[], elapsed: number) {
-  const walker = shopper.walker;
-  const proposed = stepWalker(walker, elapsed);
-  if (walker.dwellLeft > 0 || walker.done || distance(walker.pos, proposed.pos) === 0) return proposed;
-  let factor = 1;
-  for (const other of crowd) {
-    if (other.id === shopper.id || other.walker.done) continue;
-    const before = distance(walker.pos, other.walker.pos);
-    const after = distance(proposed.pos, other.walker.pos);
-    if (after < before && after < MALL_SHOPPER_SPACING) {
-      factor = Math.min(factor, Math.max(0.35, after / MALL_SHOPPER_SPACING));
+/** A continuous segment check prevents a short movement from jumping across another actor. */
+function segmentDistance(from: WalkPoint, to: WalkPoint, point: WalkPoint) {
+  const dx = to[0] - from[0], dz = to[1] - from[1];
+  const lengthSquared = dx * dx + dz * dz;
+  const t = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1,
+    ((point[0] - from[0]) * dx + (point[1] - from[1]) * dz) / lengthSquared));
+  return distance([from[0] + t * dx, from[1] + t * dz], point);
+}
+
+/** Allow an already overlapping actor to separate, but never move it closer. */
+export function clearsShopperSegment(from: WalkPoint, to: WalkPoint, occupied: readonly WalkPoint[]) {
+  return occupied.every(point => {
+    const initial = distance(from, point);
+    return segmentDistance(from, to, point) + 1e-6 >= Math.min(initial, MALL_SHOPPER_SPACING);
+  });
+}
+
+/** Attempt a bounded sidestep without consuming a browse or payment waypoint.
+ * The next original waypoint remains the destination. */
+function sidestep(walker: MallWalker, elapsed: number, occupied: readonly WalkPoint[]): MallWalker | null {
+  const target = walker.points[walker.next];
+  if (!target || elapsed <= 0) return null;
+  const dx = target[0] - walker.pos[0], dz = target[1] - walker.pos[1];
+  const length = Math.hypot(dx, dz);
+  if (length < 1e-6) return null;
+  const step = Math.min(walker.speed * elapsed, MALL_SHOPPER_SPACING / 2);
+  for (const angle of [Math.PI / 3, -Math.PI / 3, Math.PI / 2, -Math.PI / 2]) {
+    const x = dx / length, z = dz / length;
+    const to: WalkPoint = [
+      walker.pos[0] + step * (x * Math.cos(angle) - z * Math.sin(angle)),
+      walker.pos[1] + step * (x * Math.sin(angle) + z * Math.cos(angle)),
+    ];
+    if (isSegmentWalkable(walker.pos, to) && isSegmentWalkable(to, target) &&
+        clearsShopperSegment(walker.pos, to, occupied)) {
+      return { ...walker, pos: to, moving: true };
     }
   }
-  return factor === 1 ? proposed : stepWalker(walker, elapsed * factor);
+  return null;
+}
+
+function advanceShopper(shopper: MallShopper, occupied: readonly WalkPoint[], elapsed: number) {
+  const walker = shopper.walker;
+  if (elapsed <= 0) return { ...walker, moving: false };
+  const proposed = stepWalker(walker, elapsed);
+  if (walker.dwellLeft > 0 || walker.done || distance(walker.pos, proposed.pos) === 0) return proposed;
+  if (clearsShopperSegment(walker.pos, proposed.pos, occupied) && isSegmentWalkable(walker.pos, proposed.pos)) return proposed;
+  // Try shorter advances before stepping sideways. Do not change the authored route or its dwell indices.
+  for (const fraction of [0.5, 0.25]) {
+    const shorter = stepWalker(walker, elapsed * fraction);
+    if (clearsShopperSegment(walker.pos, shorter.pos, occupied) && isSegmentWalkable(walker.pos, shorter.pos)) return shorter;
+  }
+  return sidestep(walker, elapsed, occupied) ?? { ...walker, moving: false };
 }
 
 /** Advance the crowd and admit newcomers only when the entrance has space. */
@@ -125,10 +161,14 @@ export function advanceCrowd(
 ): { shoppers: MallShopper[]; nextSeed: number } {
   // A suspended browser or malformed frame delta must not move actors backwards or teleport them.
   const elapsed = Number.isFinite(dt) ? Math.min(0.5, Math.max(0, dt)) : 0;
-  const moved = shoppers.map((shopper) => ({
-    ...shopper,
-    walker: advanceShopper(shopper, shoppers, elapsed),
-  }));
+  // Reserve each accepted position immediately; later actors see earlier movement.
+  const positions = shoppers.map(shopper => shopper.walker.pos);
+  const moved = shoppers.map((shopper, index) => {
+    const occupied = positions.filter((_, other) => other !== index && !shoppers[other]?.walker.done);
+    const walker = advanceShopper(shopper, occupied, elapsed);
+    positions[index] = walker.pos;
+    return { ...shopper, walker };
+  });
   const remaining = moved.filter((shopper) => !shopper.walker.done);
   let seed = nextSeed;
   if (remaining.length < target && remaining.every(shopper => distance(shopper.walker.pos, MALL_ENTRANCE) >= MALL_SHOPPER_SPACING)) {

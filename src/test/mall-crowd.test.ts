@@ -6,6 +6,7 @@ import {
   advanceCrowd,
   buildShopperRoute,
   createShopper,
+  clearsShopperSegment,
   getShopperById,
 } from "@/game/mall-crowd";
 import { stepWalker } from "@/game/mall-movement";
@@ -66,6 +67,19 @@ describe("mall crowd", () => {
     expect(next.nextSeed).toBe(initial.nextSeed);
     const shopper = next.shoppers[0]!;
     expect(Math.hypot(shopper.walker.pos[0] - MALL_ENTRANCE[0], shopper.walker.pos[1] - MALL_ENTRANCE[1])).toBeLessThan(MALL_SHOPPER_SPACING);
+  });
+});
+
+describe("mall pedestrian separation", () => {
+  it("rejects a crossing even when both endpoints are clear", () => {
+    expect(clearsShopperSegment([-1, 0], [1, 0], [[0, 0]])).toBe(false);
+  });
+  it("permits separation from a legacy overlap but rejects moving closer", () => {
+    expect(clearsShopperSegment([0.2, 0], [0.4, 0], [[0, 0]])).toBe(true);
+    expect(clearsShopperSegment([0.2, 0], [0.1, 0], [[0, 0]])).toBe(false);
+  });
+  it("keeps valid clearance during a parallel move", () => {
+    expect(clearsShopperSegment([0, 1], [1, 1], [[0, 0]])).toBe(true);
   });
 });
 
