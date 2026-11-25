@@ -71,6 +71,7 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (document.querySelector('[role="alertdialog"]')) return;
         event.preventDefault();
         onClose();
         return;
@@ -127,12 +128,12 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
       if (event.target === event.currentTarget) onClose();
     }}>
       <section ref={sheetRef} className={`player-hub-sheet${expanded ? " is-expanded" : ""}`} role="dialog" aria-modal="true" aria-label="Player life hub" style={dragOffset ? { transform: `translateY(${dragOffset}px)`, transition: "none" } : undefined}>
-        <button className="player-hub-grabber" type="button" aria-label="Expand player hub" onClick={() => {
+        <button className="player-hub-grabber" type="button" aria-label={expanded ? "Collapse player hub" : "Expand player hub"} aria-expanded={expanded} onClick={() => {
           if (dragRef.current?.moved) {
             dragRef.current = null;
             return;
           }
-          setExpanded(true);
+          setExpanded((value) => !value);
         }} onPointerDown={(event) => {
           dragRef.current = { pointerId: event.pointerId, startY: event.clientY, offset: 0, moved: false };
           event.currentTarget.setPointerCapture(event.pointerId);
