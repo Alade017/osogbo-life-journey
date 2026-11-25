@@ -36,7 +36,11 @@ vi.mock("@/components/game/phone/PropertyExchangeApp", () => ({
   default: () => <div>Property Exchange content</div>,
 }));
 vi.mock("@/components/game/phone/PhoneMapApp", () => ({
-  PhoneMapApp: () => <div>Map HUD content <a href="/map">Open full city map</a></div>,
+  PhoneMapApp: () => (
+    <div>
+      Map HUD content <a href="/map">Open full city map</a>
+    </div>
+  ),
 }));
 beforeEach(() => {
   state.href = "/jobs";
@@ -142,7 +146,6 @@ it("moves one launcher page per swipe and closes from the external Cancel button
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
 
-
 it("uses the dedicated native scroll layout when Settings opens inside the phone", () => {
   render(<PhoneLauncher />);
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
@@ -186,7 +189,6 @@ it("publishes phone app and Back-to-apps changes to the URL owner", async () => 
   expect(selected).toHaveBeenLastCalledWith({ app: null });
 });
 
-
 it("opens the replacement City Services and Property Exchange apps from the launcher", async () => {
   render(<PhoneLauncher />);
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
@@ -197,7 +199,6 @@ it("opens the replacement City Services and Property Exchange apps from the laun
   expect(await screen.findByText("Property Exchange content")).toBeVisible();
   expect(screen.queryByRole("button", { name: "Open Activities" })).toBeNull();
 });
-
 
 it("opens the Camera app from the launcher and from the global shortcut event", async () => {
   render(<PhoneLauncher />);
