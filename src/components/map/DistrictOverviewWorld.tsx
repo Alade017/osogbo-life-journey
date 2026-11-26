@@ -4,10 +4,10 @@ import { useThree } from "@react-three/fiber";
 import catalog from "@/data/osogbo-district-catalog.json";
 import layout from "@/data/osogbo-overview-layout.json";
 import { TownBrandBillboards3D } from "./TownBrandBillboards3D";
+import { OverviewLandmarkModel } from "./OverviewLandmarkModel";
 
 type Position = { x: number; z: number };
 type Footprint = { width: number; depth: number };
-type Entry = (typeof layout.places)[number];
 
 const world = ({ x, z }: Position): [number, number, number] => [
   x - layout.meta.width / 2, 0, z - layout.meta.depth / 2,
@@ -26,20 +26,6 @@ function Block({ width, depth, height, color }: Footprint & { height: number; co
       <boxGeometry args={[width, height, depth]} />
       <meshStandardMaterial color={color} />
     </mesh>
-  );
-}
-
-function Building({ entry, color }: { entry: Entry; color: string }) {
-  const { width, depth } = entry.footprint;
-  const height = Math.min(width, depth) * (entry.profile === "modern-mall" ? 0.65 : 0.48);
-  return (
-    <group>
-      <Block width={width} depth={depth} height={height} color={color} />
-      <mesh position={[0, height + 0.08, 0]}>
-        <boxGeometry args={[width * 1.04, 0.16, depth * 1.04]} />
-        <meshStandardMaterial color="#625b50" />
-      </mesh>
-    </group>
   );
 }
 
@@ -90,12 +76,12 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
           </mesh>
         );
       })}
-      {layout.places.filter(entry => entry.status === "existing-reference").map(entry => {
+      {layout.places.map(entry => {
         const district = catalog.districts.find(d => d.id === entry.districtId);
         return (
           <group key={entry.placeId} position={world(entry.position)} rotation={[0, entry.rotationY, 0]}
-            onClick={event => { event.stopPropagation(); if (event.delta < 6 && available.has(entry.placeId)) onSelectLandmark(entry.placeId); }}>
-            <Building entry={entry} color={palette[district?.identity ?? ""] ?? "#d4c7af"} />
+            onClick={event => { event.stopPropagation(); if (event.delta < 6 && entry.status === "existing-reference" && available.has(entry.placeId)) onSelectLandmark(entry.placeId); }}>
+            <OverviewLandmarkModel profile={entry.profile} {...entry.footprint} color={palette[district?.identity ?? ""] ?? "#d4c7af"} />
           </group>
         );
       })}
