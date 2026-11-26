@@ -1,5 +1,21 @@
 import { describe, expect, it } from "vitest";
-import { MALL_PROPS, reactionFor } from "@/game/mall-reactions";
+import { MALL_PROPS, reactionFor, canChatWithShopper, shopperReaction } from "@/game/mall-reactions";
+
+import { createWalker } from "@/game/mall-movement";
+
+describe("shopper conversations", () => {
+  it("requires a nearby active shopper and a walkable sightline", () => {
+    const walker = createWalker([0, 0], [[0, 1]]);
+    expect(canChatWithShopper([0, 1], walker)).toBe(true);
+    expect(canChatWithShopper([0, 4], walker)).toBe(false);
+    expect(canChatWithShopper([0, 1], { ...walker, done: true })).toBe(false);
+  });
+  it("responds to browsing and walking context", () => {
+    const walker = createWalker([0, 0], [[0, 1]]);
+    expect(shopperReaction({ ...walker, dwellLeft: 1 }, 0)).toMatch(/shelf/);
+    expect(shopperReaction({ ...walker, moving: true }, 0)).toMatch(/on my way/);
+  });
+});
 
 describe("mall reactions", () => {
   it("gives a reaction for every kind of thing a visitor can click", () => {

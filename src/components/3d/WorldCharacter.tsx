@@ -43,6 +43,7 @@ export function WorldCharacter({
   taskPose,
   lookAt = null,
   held = null,
+  poseUpdateInterval = 0,
   body,
 }: {
   appearance?: Appearance;
@@ -58,6 +59,7 @@ export function WorldCharacter({
   lookAt?: readonly [number, number, number] | null;
   /** Something carried in the right hand, such as a package. Follows the hand bone. */
   held?: ReactNode;
+  poseUpdateInterval?: number;
   /** Forces a specific body, such as the bank staff body. Defaults from the saved gender. */
   body?: BodyVariant | undefined;
 }) {
@@ -256,6 +258,7 @@ export function WorldCharacter({
             height={h}
             motion={motion}
             animated={!reduced}
+            poseUpdateInterval={poseUpdateInterval}
             walkCadence={cadence}
             held={held}
             backAccessory={AccessoryModel ? <AccessoryModel h={1} /> : null}

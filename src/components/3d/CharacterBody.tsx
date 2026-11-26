@@ -78,6 +78,7 @@ export function CharacterBody({
   height,
   motion,
   animated = true,
+  poseUpdateInterval = 0,
   walkCadence,
   held = null,
   backAccessory = null,
@@ -89,6 +90,8 @@ export function CharacterBody({
   height: number;
   motion: PoseMotion;
   animated?: boolean;
+  /** Minimum seconds between pose evaluations; zero preserves full-rate animation. */
+  poseUpdateInterval?: number;
   walkCadence?: { readonly current: number };
   held?: ReactNode;
   backAccessory?: ReactNode;
@@ -138,11 +141,13 @@ export function CharacterBody({
   }, [rig, upperSpine]);
   const phase = useRef({ motion, elapsed: 0 });
   const settledPose = useRef(false);
+  const pendingPoseTime = useRef(0);
 
   useEffect(() => {
     settledPose.current = false;
+    pendingPoseTime.current = 0;
     invalidate();
-  }, [rig, motion, animated, invalidate]);
+  }, [rig, motion, animated, poseUpdateInterval, invalidate]);
 
   useEffect(() => {
     return () => {
@@ -155,9 +160,16 @@ export function CharacterBody({
     };
   }, [rig]);
 
-  useFrame((_state, delta) => {
+  useFrame((_state, frameDelta) => {
     const looping = animated && LOOPING_MOTIONS.has(motion);
     if (settledPose.current && !looping) return;
+    pendingPoseTime.current += Math.max(0, frameDelta);
+    if (pendingPoseTime.current < poseUpdateInterval) {
+      invalidate();
+      return;
+    }
+    const delta = pendingPoseTime.current;
+    pendingPoseTime.current = 0;
 
     if (phase.current.motion !== motion) phase.current = { motion, elapsed: 0 };
     else if (animated && motion !== "Idle") {
