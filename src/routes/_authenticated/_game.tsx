@@ -10,7 +10,6 @@ import { gateLoadingCopy } from "@/lib/game-loading-copy";
 import { cn } from "@/lib/utils";
 import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { HomePlayerStatus } from "@/components/game/HomePlayerStatus";
-import { GameNeedsRail } from "@/components/game/GameNeedsRail";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { GameCameraShortcut } from "@/components/game/GameCameraShortcut";
 import { InventoryOverlay } from "@/components/game/InventoryOverlay";
@@ -315,11 +314,6 @@ function GameLayout() {
 
             {homeHud && <HomePlayerStatus key={player.id} player={player} />}
 
-            <GameNeedsRail
-              key={pathname === "/map" ? "map" : "game"}
-              player={player}
-              compact={pathname === "/map"}
-            />
             <GameCameraShortcut />
 
             <div className={phoneOpen ? "gbb is-open" : "gbb"}>
