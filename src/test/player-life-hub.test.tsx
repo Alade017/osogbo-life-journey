@@ -89,6 +89,14 @@ it("renders saved mission, skill, relationship, and current employment records",
   expect(screen.getByText("Career level 3")).toBeInTheDocument();
 });
 
+it("opens directly on Settings without rendering the Profile panel", () => {
+  render(<PlayerLifeHub player={player} open initialTab="settings" onClose={vi.fn()} />);
+
+  expect(screen.getByRole("button", { name: "Settings" })).toHaveAttribute("aria-pressed", "true");
+  expect(screen.getByText("Embedded settings content")).toBeInTheDocument();
+  expect(screen.queryByText("Your equipped appearance is shared with your in-world character.")).not.toBeInTheDocument();
+});
+
 it("does not let the synthetic click after a downward drag undo sheet collapse", () => {
   Object.defineProperty(HTMLElement.prototype, "setPointerCapture", {
     configurable: true,
