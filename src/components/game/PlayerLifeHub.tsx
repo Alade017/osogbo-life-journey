@@ -41,6 +41,7 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
   const [dragOffset, setDragOffset] = useState(0);
   const dragRef = useRef<{ pointerId: number; startY: number; offset: number; moved: boolean } | null>(null);
   const sheetRef = useRef<HTMLElement | null>(null);
+  const tabsRef = useRef<HTMLElement | null>(null);
   const { simulation, ready } = useGameTime();
   const { data: character } = useQuery(q.character());
   const { data: skills } = useQuery(q.playerSkills());
@@ -61,6 +62,13 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
     setExpanded(false);
     setDragOffset(0);
   }, [open, initialTab]);
+
+  useEffect(() => {
+    if (!open) return;
+    tabsRef.current
+      ?.querySelector<HTMLElement>('[aria-pressed="true"]')
+      ?.scrollIntoView?.({ block: "nearest", inline: "center", behavior: "smooth" });
+  }, [open, tab]);
 
   useEffect(() => {
     if (!open) return;
@@ -170,7 +178,7 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
           <button className="player-hub-close" type="button" onClick={onClose} aria-label="Close player hub"><X size={20} /></button>
         </header>
 
-        <nav className="player-hub-tabs" aria-label="Player hub sections">
+        <nav ref={tabsRef} className="player-hub-tabs" aria-label="Player hub sections">
           {TABS.map(({ id, label, icon: Icon }) => (
             <button key={id} type="button" className="player-hub-tab" aria-pressed={tab === id} onClick={() => setTab(id)}>
               <Icon size={17} /><span>{label}</span>
