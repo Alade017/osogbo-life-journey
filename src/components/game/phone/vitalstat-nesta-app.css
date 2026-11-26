@@ -195,10 +195,16 @@
   resize: vertical;
 }
 .gig-applicant {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  min-width: 0;
+}
+.gig-applicant > span:first-child {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  line-height: 1.45;
 }
 .nesta-link {
   align-self: start;
@@ -214,5 +220,21 @@
 .gig-applicant-actions {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+  min-width: 0;
+}
+.gig-applicant-actions > button {
+  min-height: 40px;
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+@media (max-width: 420px) {
+  .gig-applicant {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .gig-applicant-actions {
+    justify-content: flex-start;
+  }
 }
