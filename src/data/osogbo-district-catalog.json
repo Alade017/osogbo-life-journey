@@ -1,0 +1,582 @@
+{
+  "meta": {
+    "version": 1,
+    "source": "Osogbo Districts and Landmarks.md; user amendment retaining Oke-Baale and removing Aleku-Wodo",
+    "status": "proposed-overview-layout",
+    "coordinateSystem": "Existing navigation grid unchanged; overview coordinates not authored",
+    "assignmentNote": "Legacy district grouping and individual venue overrides are game-design proposals, not verified geographic positions."
+  },
+  "districts": [
+    {
+      "id": "olaiya",
+      "name": "Olaiya Junction",
+      "identity": "commercial-transit",
+      "density": "high",
+      "architecture": "dense commercial buildings, modern shopfronts, signature flyover",
+      "requiredAnchors": [
+        "Olaiya Flyover Bridge",
+        "Major banks",
+        "Korope parks"
+      ],
+      "legacyDistrictIds": [
+        "olaiya",
+        "central-crossing"
+      ]
+    },
+    {
+      "id": "oja-oba",
+      "name": "Oja-Oba",
+      "identity": "royal-heritage",
+      "density": "high",
+      "architecture": "traditional compounds, palace courtyards, market stalls",
+      "requiredAnchors": [
+        "Ataoja’s Palace",
+        "Oja-Oba Central Market",
+        "Central Mosque"
+      ],
+      "legacyDistrictIds": [
+        "oja-oba",
+        "ataoja",
+        "market-quarter"
+      ]
+    },
+    {
+      "id": "isale-aro",
+      "name": "Isale-Aro",
+      "identity": "traditional-residential",
+      "density": "high",
+      "architecture": "compact family compounds, tiled and corrugated roofs",
+      "requiredAnchors": [
+        "Local street markets",
+        "Neighborhood clinics",
+        "Historic family compounds"
+      ],
+      "legacyDistrictIds": [
+        "isale-aro",
+        "south-quarter"
+      ]
+    },
+    {
+      "id": "ogo-oluwa",
+      "name": "Ogo-Oluwa",
+      "identity": "modern-commercial",
+      "density": "medium",
+      "architecture": "modern plazas, banks, eateries, commercial forecourts",
+      "requiredAnchors": [
+        "Osun Mall",
+        "Major bank branches",
+        "Flagship filling stations"
+      ],
+      "legacyDistrictIds": [
+        "ogo-oluwa",
+        "commerce-quarter",
+        "garden-quarter"
+      ]
+    },
+    {
+      "id": "oke-fia",
+      "name": "Oke-Fia",
+      "identity": "mixed-transit",
+      "density": "medium",
+      "architecture": "roundabout landmark, roadside shops, mixed housing",
+      "requiredAnchors": [
+        "Oke-Fia Roundabout",
+        "Motor parks",
+        "Roadside shops"
+      ],
+      "legacyDistrictIds": [
+        "oke-fia",
+        "east-gate"
+      ]
+    },
+    {
+      "id": "old-garage",
+      "name": "Old Garage",
+      "identity": "automotive-transit",
+      "density": "high",
+      "architecture": "workshop sheds, spare-parts shops, transport terminals",
+      "requiredAnchors": [
+        "Old Garage Motor Park",
+        "Freedom Park",
+        "Auto repair clusters"
+      ],
+      "legacyDistrictIds": [
+        "transit-quarter"
+      ]
+    },
+    {
+      "id": "abere-ring-road",
+      "name": "Abere & Ring Road",
+      "identity": "administrative",
+      "density": "low",
+      "architecture": "spacious formal civic buildings and landscaped compounds",
+      "requiredAnchors": [
+        "Osun State Government Secretariat",
+        "House of Assembly",
+        "High Court"
+      ],
+      "legacyDistrictIds": [
+        "civic-quarter"
+      ]
+    },
+    {
+      "id": "ota-efun-testing-ground",
+      "name": "Ota-Efun & Testing Ground",
+      "identity": "industrial-education",
+      "density": "medium",
+      "architecture": "training campuses, workshops, stadium and expanding housing",
+      "requiredAnchors": [
+        "Osogbo Township Stadium",
+        "Technical/training centers",
+        "Mechanic villages"
+      ],
+      "legacyDistrictIds": [
+        "learning-quarter",
+        "open-fields"
+      ]
+    },
+    {
+      "id": "riverside",
+      "name": "Riverside (Osun Grove Axis)",
+      "identity": "cultural-nature",
+      "density": "low",
+      "architecture": "river, forest canopy, sculpture and cultural architecture",
+      "requiredAnchors": [
+        "Osun-Osogbo Sacred Grove",
+        "Suzanne Wenger’s Art Gallery",
+        "River bridges"
+      ],
+      "legacyDistrictIds": [
+        "river-quarter"
+      ]
+    },
+    {
+      "id": "oke-baale",
+      "name": "Oke-Baale",
+      "identity": "residential-education",
+      "density": "medium",
+      "architecture": "residential compounds, public-service buildings and education facilities",
+      "requiredAnchors": [
+        "Oke-Baale Local Government HQ",
+        "Osogbo School of Art"
+      ],
+      "legacyDistrictIds": [
+        "oke-baale"
+      ]
+    }
+  ],
+  "places": [
+    {
+      "id": "town-market",
+      "label": "Town market",
+      "districtId": "oja-oba",
+      "legacyDistrictId": "market-quarter",
+      "category": "market"
+    },
+    {
+      "id": "civic-court",
+      "label": "Civic court",
+      "districtId": "abere-ring-road",
+      "legacyDistrictId": "civic-quarter",
+      "category": "services"
+    },
+    {
+      "id": "community-police",
+      "label": "Community police station",
+      "districtId": "abere-ring-road",
+      "legacyDistrictId": "civic-quarter",
+      "category": "services"
+    },
+    {
+      "id": "cedar-bank",
+      "label": "Cedar Bank",
+      "districtId": "ogo-oluwa",
+      "legacyDistrictId": "commerce-quarter",
+      "category": "services"
+    },
+    {
+      "id": "meridian-bank",
+      "label": "Meridian Bank",
+      "districtId": "olaiya",
+      "legacyDistrictId": "learning-quarter",
+      "category": "services"
+    },
+    {
+      "id": "lantern-club",
+      "label": "Lantern Club",
+      "districtId": "ogo-oluwa",
+      "legacyDistrictId": "garden-quarter",
+      "category": "food"
+    },
+    {
+      "id": "community-clinic",
+      "label": "Community clinic",
+      "districtId": "isale-aro",
+      "legacyDistrictId": "central-crossing",
+      "category": "health"
+    },
+    {
+      "id": "transit-park",
+      "label": "Transit park",
+      "districtId": "old-garage",
+      "legacyDistrictId": "transit-quarter",
+      "category": "transport"
+    },
+    {
+      "id": "osun-mall",
+      "label": "Osun Mall",
+      "districtId": "ogo-oluwa",
+      "legacyDistrictId": "learning-quarter",
+      "category": "market"
+    },
+    {
+      "id": "sports-ground",
+      "label": "Community sports ground",
+      "districtId": "ota-efun-testing-ground",
+      "legacyDistrictId": "open-fields",
+      "category": "sport"
+    },
+    {
+      "id": "riverside-food-court",
+      "label": "Riverside Food Court",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "food"
+    },
+    {
+      "id": "sunrise-health-post",
+      "label": "Sunrise Health Post",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "health"
+    },
+    {
+      "id": "harvest-tech-hub",
+      "label": "Harvest Tech Hub",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "services"
+    },
+    {
+      "id": "old-town-library",
+      "label": "Old Town Library",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "school"
+    },
+    {
+      "id": "fish-market",
+      "label": "Fish Market",
+      "districtId": "isale-aro",
+      "legacyDistrictId": "south-quarter",
+      "category": "market"
+    },
+    {
+      "id": "lagoon-hotel",
+      "label": "Lagoon Hotel",
+      "districtId": "oke-fia",
+      "legacyDistrictId": "east-gate",
+      "category": "services"
+    },
+    {
+      "id": "cinema-star",
+      "label": "Cinema Star",
+      "districtId": "oke-fia",
+      "legacyDistrictId": "east-gate",
+      "category": "sport"
+    },
+    {
+      "id": "fuel-and-go",
+      "label": "Fuel and Go Station",
+      "districtId": "oke-fia",
+      "legacyDistrictId": "east-gate",
+      "category": "transport"
+    },
+    {
+      "id": "youth-arts-centre",
+      "label": "Youth Arts Centre",
+      "districtId": "oke-fia",
+      "legacyDistrictId": "east-gate",
+      "category": "school"
+    },
+    {
+      "id": "post-office",
+      "label": "Post Office",
+      "districtId": "isale-aro",
+      "legacyDistrictId": "south-quarter",
+      "category": "services"
+    },
+    {
+      "id": "mosque-square",
+      "label": "Oja-Oba Mosque",
+      "districtId": "oja-oba",
+      "legacyDistrictId": "oja-oba",
+      "category": "worship"
+    },
+    {
+      "id": "east-transit-terminal",
+      "label": "East Transit Terminal",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "transport"
+    },
+    {
+      "id": "eastside-produce-coop",
+      "label": "Eastside Produce Co-op",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "food"
+    },
+    {
+      "id": "adire-makers-yard",
+      "label": "Adire Makers' Yard",
+      "districtId": "oke-fia",
+      "legacyDistrictId": "east-gate",
+      "category": "school"
+    },
+    {
+      "id": "neighborhood-play-park",
+      "label": "Neighbourhood Play Park",
+      "districtId": "oke-fia",
+      "legacyDistrictId": "east-gate",
+      "category": "sport"
+    },
+    {
+      "id": "oja-oba-market",
+      "label": "Oja-Oba Market",
+      "districtId": "oja-oba",
+      "legacyDistrictId": "oja-oba",
+      "category": "market"
+    },
+    {
+      "id": "ataoja-police-station",
+      "label": "Ataoja Police Station",
+      "districtId": "oja-oba",
+      "legacyDistrictId": "ataoja",
+      "category": "services"
+    },
+    {
+      "id": "ataoja-palace",
+      "label": "Ataoja Palace",
+      "districtId": "oja-oba",
+      "legacyDistrictId": "ataoja",
+      "category": "services"
+    },
+    {
+      "id": "oke-baale-local-government-hq",
+      "label": "Oke-Baale Local Government HQ",
+      "districtId": "oke-baale",
+      "legacyDistrictId": "oke-baale",
+      "category": "services"
+    },
+    {
+      "id": "osogbo-school-of-art",
+      "label": "Osogbo School of Art",
+      "districtId": "oke-baale",
+      "legacyDistrictId": "oke-baale",
+      "category": "school"
+    },
+    {
+      "id": "osogbo-township-stadium",
+      "label": "Osogbo Township Stadium",
+      "districtId": "ota-efun-testing-ground",
+      "legacyDistrictId": "ogo-oluwa",
+      "category": "sport"
+    },
+    {
+      "id": "oke-fia-flyover",
+      "label": "Oke-Fia Flyover",
+      "districtId": "oke-fia",
+      "legacyDistrictId": "oke-fia",
+      "category": "junction"
+    },
+    {
+      "id": "art-craft-gallery",
+      "label": "Art and Craft Gallery",
+      "districtId": "riverside",
+      "legacyDistrictId": "garden-quarter",
+      "category": "services"
+    },
+    {
+      "id": "hair-salon-tailor",
+      "label": "Hair Salon and Tailor",
+      "districtId": "oja-oba",
+      "legacyDistrictId": "market-quarter",
+      "category": "services"
+    },
+    {
+      "id": "shrine-garden-park",
+      "label": "Shrine Garden Park",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "services"
+    },
+    {
+      "id": "osun-festival-grounds",
+      "label": "Osun Festival Grounds",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "sport"
+    },
+    {
+      "id": "central-church",
+      "label": "Central Church",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "worship"
+    },
+    {
+      "id": "general-hospital",
+      "label": "General Hospital",
+      "districtId": "riverside",
+      "legacyDistrictId": "river-quarter",
+      "category": "health"
+    },
+    {
+      "id": "fuel-station",
+      "label": "Fuel Station",
+      "districtId": "isale-aro",
+      "legacyDistrictId": "south-quarter",
+      "category": "transport"
+    },
+    {
+      "id": "okada-stand",
+      "label": "Okada Stand",
+      "districtId": "isale-aro",
+      "legacyDistrictId": "south-quarter",
+      "category": "transport"
+    },
+    {
+      "id": "cinema-event-hall",
+      "label": "Cinema and Event Hall",
+      "districtId": "isale-aro",
+      "legacyDistrictId": "south-quarter",
+      "category": "services"
+    },
+    {
+      "id": "post-office-cafe",
+      "label": "Post Office and Internet Cafe",
+      "districtId": "isale-aro",
+      "legacyDistrictId": "south-quarter",
+      "category": "services"
+    },
+    {
+      "id": "central-mosque",
+      "label": "Central Mosque",
+      "districtId": "oja-oba",
+      "legacyDistrictId": "south-quarter",
+      "category": "worship"
+    },
+    {
+      "id": "community-pharmacy",
+      "label": "Community Pharmacy",
+      "districtId": "oja-oba",
+      "legacyDistrictId": "oja-oba",
+      "category": "health"
+    },
+    {
+      "id": "olaiya-central",
+      "label": "Olaiya Central",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "services"
+    },
+    {
+      "id": "olaiya-fuel-pumps",
+      "label": "Fuel & Go Forecourt Pumps",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "transport"
+    },
+    {
+      "id": "olaiya-mini-mart",
+      "label": "Fuel & Go Mini-Mart",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "food"
+    },
+    {
+      "id": "olaiya-vulcanizer",
+      "label": "Vulcanizer & Tire Corner",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "services"
+    },
+    {
+      "id": "olaiya-atm",
+      "label": "Meridian Bank ATM Alcove",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "services"
+    },
+    {
+      "id": "olaiya-bank-lobby",
+      "label": "Meridian Bank Customer Lobby",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "services"
+    },
+    {
+      "id": "olaiya-adire-vats",
+      "label": "Indigo Dye Vats & Zinc Shed",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "market"
+    },
+    {
+      "id": "olaiya-adire-racks",
+      "label": "Adire Drying & Folding Racks",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "market"
+    },
+    {
+      "id": "olaiya-market-stalls",
+      "label": "Open Market Produce & Cloth Tables",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "market"
+    },
+    {
+      "id": "olaiya-buka",
+      "label": "Mama Sikira Buka Kitchen",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "food"
+    },
+    {
+      "id": "olaiya-barber",
+      "label": "Dele Cutz Barber Salon",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "services"
+    },
+    {
+      "id": "olaiya-pos",
+      "label": "FastCash POS & Airtime Kiosk",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "services"
+    },
+    {
+      "id": "olaiya-accessory",
+      "label": "Iya Adire Style & Accessories",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "market"
+    },
+    {
+      "id": "olaiya-transit",
+      "label": "Keke Napep & Korope Loading Stand",
+      "districtId": "olaiya",
+      "legacyDistrictId": "olaiya",
+      "category": "transport"
+    }
+  ],
+  "excludedOverviewPlaces": [
+    {
+      "id": "aleku-wodo-road-network",
+      "reason": "Removed district; preserve legacy navigation references until dependency audit"
+    }
+  ]
+}
