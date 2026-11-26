@@ -1,0 +1,141 @@
+{
+  "meta": {
+    "version": 1,
+    "coordinateSystem": "Normalized fictional overview units, x eastward and z southward; not GIS or navigation coordinates",
+    "status": "draft",
+    "width": 100,
+    "depth": 100
+  },
+  "districts": [
+    {
+      "districtId": "olaiya",
+      "bounds": {
+        "x": 36,
+        "z": 27,
+        "width": 24,
+        "depth": 20
+      },
+      "center": {
+        "x": 48,
+        "z": 37
+      }
+    },
+    {
+      "districtId": "oja-oba",
+      "bounds": {
+        "x": 36,
+        "z": 49,
+        "width": 25,
+        "depth": 22
+      },
+      "center": {
+        "x": 48.5,
+        "z": 60
+      }
+    },
+    {
+      "districtId": "isale-aro",
+      "bounds": {
+        "x": 63,
+        "z": 40,
+        "width": 27,
+        "depth": 22
+      },
+      "center": {
+        "x": 76.5,
+        "z": 51
+      }
+    },
+    {
+      "districtId": "ogo-oluwa",
+      "bounds": {
+        "x": 5,
+        "z": 51,
+        "width": 28,
+        "depth": 24
+      },
+      "center": {
+        "x": 19,
+        "z": 63
+      }
+    },
+    {
+      "districtId": "oke-fia",
+      "bounds": {
+        "x": 5,
+        "z": 25,
+        "width": 28,
+        "depth": 23
+      },
+      "center": {
+        "x": 19,
+        "z": 36.5
+      }
+    },
+    {
+      "districtId": "old-garage",
+      "bounds": {
+        "x": 5,
+        "z": 5,
+        "width": 28,
+        "depth": 17
+      },
+      "center": {
+        "x": 19,
+        "z": 13.5
+      }
+    },
+    {
+      "districtId": "abere-ring-road",
+      "bounds": {
+        "x": 5,
+        "z": 78,
+        "width": 40,
+        "depth": 18
+      },
+      "center": {
+        "x": 25,
+        "z": 87
+      }
+    },
+    {
+      "districtId": "ota-efun-testing-ground",
+      "bounds": {
+        "x": 36,
+        "z": 5,
+        "width": 54,
+        "depth": 19
+      },
+      "center": {
+        "x": 63,
+        "z": 14.5
+      }
+    },
+    {
+      "districtId": "riverside",
+      "bounds": {
+        "x": 65,
+        "z": 65,
+        "width": 29,
+        "depth": 31
+      },
+      "center": {
+        "x": 79.5,
+        "z": 80.5
+      }
+    },
+    {
+      "districtId": "oke-baale",
+      "bounds": {
+        "x": 47,
+        "z": 74,
+        "width": 15,
+        "depth": 22
+      },
+      "center": {
+        "x": 54.5,
+        "z": 85
+      }
+    }
+  ]
+}
