@@ -784,3 +784,193 @@
     transition: none;
   }
 }
+
+
+/* OSOGBO LIFE settings refresh — inspired by the reference video's compact,
+   category-led settings layout; uses the game's porcelain and royal-blue tokens. */
+.sx-page {
+  --sx-ink: var(--brand-ink, #102c52);
+  --sx-muted: var(--muted-foreground, #68788d);
+  --sx-line: color-mix(in srgb, var(--brand-royal, #0755ad) 13%, var(--border, #dce5ef));
+  --sx-card: var(--card, #fff);
+  --sx-accent: var(--brand-royal, #0755ad);
+  --sx-accent-soft: color-mix(in srgb, var(--brand-royal, #0755ad) 9%, var(--card, #fff));
+  max-width: 760px;
+  gap: 12px;
+  padding: clamp(10px, 2.5vw, 20px);
+  background: transparent;
+}
+.sx-page .sx-hero {
+  min-height: 116px;
+  padding: clamp(14px, 3vw, 22px);
+  gap: 14px;
+  border: 1px solid color-mix(in srgb, white 22%, transparent);
+  border-radius: 22px;
+  color: #fff;
+  background:
+    radial-gradient(circle at 92% 5%, rgb(95 163 237 / 38%), transparent 48%),
+    linear-gradient(125deg, #08274d 0%, #0b4c96 58%, #1267bc 100%);
+  box-shadow: 0 12px 28px rgb(7 36 73 / 18%);
+}
+.sx-page .sx-hero-avatar {
+  width: 76px;
+  height: 76px;
+  border: 2px solid rgb(255 255 255 / 62%);
+  background: rgb(255 255 255 / 12%);
+}
+.sx-page .sx-eyebrow {
+  color: #c8e2ff;
+  letter-spacing: .12em;
+  font-size: .62rem;
+}
+.sx-page .sx-hero h1 {
+  font-size: clamp(1.12rem, 4vw, 1.45rem);
+  line-height: 1.15;
+}
+.sx-page .sx-badge {
+  padding: 4px 9px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  background: rgb(255 255 255 / 12%);
+}
+.sx-page .sx-badge.is-guest {
+  color: #08274d;
+  background: #dceeff;
+}
+.sx-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  display: flex;
+  gap: 7px;
+  width: 100%;
+  min-width: 0;
+  padding: 5px;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  border: 1px solid var(--sx-line, var(--border));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--card) 94%, transparent);
+  box-shadow: 0 5px 16px rgb(15 42 75 / 7%);
+}
+.sx-tabs::-webkit-scrollbar { display: none; }
+.sx-tab {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 0 14px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--muted-foreground);
+  background: transparent;
+  font-size: .78rem;
+  font-weight: 750;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color 150ms ease, background 150ms ease, border-color 150ms ease;
+}
+.sx-tab[aria-pressed="true"] {
+  color: #fff;
+  border-color: var(--brand-royal);
+  background: var(--brand-royal);
+  box-shadow: 0 4px 10px rgb(7 65 133 / 18%);
+}
+.sx-tab:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.sx-page .sx-card {
+  gap: 13px;
+  padding: clamp(13px, 3vw, 18px);
+  border: 1px solid var(--sx-line);
+  border-radius: 19px;
+  background: var(--card);
+  box-shadow: 0 5px 18px rgb(15 42 75 / 5%);
+}
+.sx-page .sx-card-head { align-items: center; gap: 10px; }
+.sx-page .sx-icon {
+  width: 38px;
+  height: 38px;
+  flex-basis: 38px;
+  border-radius: 12px;
+  color: var(--brand-royal);
+  background: color-mix(in srgb, var(--brand-royal) 10%, var(--card));
+  box-shadow: none;
+}
+.sx-page .sx-card-head h2 { color: var(--brand-ink); font-size: .98rem; }
+.sx-page .sx-card-head p { font-size: .78rem; }
+.sx-page .sx-card-body { gap: 12px; }
+.sx-page .sx-row-title,
+.sx-page .sx-channel-title strong { color: var(--brand-ink); }
+.sx-page .sx-channel {
+  padding: 12px;
+  border-color: var(--sx-line);
+  border-radius: 15px;
+  background: var(--surface-secondary, #f3f7fc);
+}
+.sx-page .sx-channel.is-on {
+  background: color-mix(in srgb, var(--brand-royal) 7%, var(--card));
+}
+.sx-page .sx-channel-title svg,
+.sx-page .sx-visibility svg { color: var(--brand-royal); }
+.sx-page .sx-tile-choice {
+  min-height: 100px;
+  border-radius: 15px;
+  background: var(--surface-secondary, #f3f7fc);
+}
+.sx-page .sx-tile-sample {
+  width: 46px;
+  height: 46px;
+  border-radius: 13px;
+}
+.sx-page .sx-tile-sample-circle { border-radius: 50%; }
+.sx-page .sx-input {
+  border-color: var(--sx-line);
+  background: var(--surface, #fff);
+}
+.sx-page .sx-btn-primary:not(:disabled) {
+  min-height: 42px;
+  border-radius: 12px;
+  background: var(--brand-royal);
+  color: white;
+  box-shadow: 0 5px 12px rgb(7 65 133 / 16%);
+}
+.sx-page .sx-btn-ghost:not(:disabled) {
+  min-height: 42px;
+  border-radius: 12px;
+}
+.sx-page .sx-visibility,
+.sx-page .sx-status {
+  border: 1px solid var(--sx-line);
+  border-radius: 14px;
+  background: var(--surface-secondary, #f3f7fc);
+}
+.sx-page .sx-status-icon {
+  border-radius: 12px;
+  color: var(--brand-royal);
+  background: color-mix(in srgb, var(--brand-royal) 10%, var(--card));
+}
+.sx-page .sx-card-danger {
+  border-color: color-mix(in srgb, #c2413a 25%, var(--border));
+  background: color-mix(in srgb, #c2413a 4%, var(--card));
+}
+.sx-page .sx-btn-danger {
+  min-height: 42px;
+  border-radius: 12px;
+}
+.phone-app-body .sx-page { gap: 10px; padding: 10px; }
+.phone-app-body .sx-hero { min-height: 88px; padding: 12px; border-radius: 17px; }
+.phone-app-body .sx-hero-avatar { width: 58px; height: 58px; }
+.phone-app-body .sx-tabs { position: sticky; top: 0; }
+.phone-app-body .sx-tab { min-height: 35px; padding-inline: 11px; font-size: .73rem; }
+.phone-app-body .sx-card { padding: 12px; border-radius: 16px; }
+@media (max-width: 380px) {
+  .sx-page .sx-hero { gap: 10px; }
+  .sx-page .sx-hero-avatar { width: 62px; height: 62px; }
+  .sx-page .sx-hero h1 { font-size: 1.05rem; }
+  .sx-tab { padding-inline: 10px; }
+  .sx-inline { flex-direction: column; }
+  .sx-inline > * { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sx-tab { transition: none; }
+}
