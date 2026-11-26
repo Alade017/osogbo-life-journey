@@ -15,6 +15,7 @@ import {
 export type GuideZoneBounds = { x0: number; x1: number; y0: number; y1: number };
 
 export type HouseRoomRendererProps = {
+  onSceneAvailability?: ((available: boolean) => void) | undefined;
   houseTypeId: string;
   /** Room light switch. Off dims the room; omitted means on. */
   lightOn?: boolean;

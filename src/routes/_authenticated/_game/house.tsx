@@ -50,7 +50,6 @@ import {
   houseWallsDefaultClosed,
   houseRoomViews,
   roomViewContains,
-  WHOLE_HOME_LABEL,
 } from "@/components/game/housing/house-room-contract";
 import { HouseEditSheets } from "@/components/game/housing/HouseEditSheets";
 import { HouseCatalogue } from "@/components/game/housing/HouseCatalogue";
@@ -710,7 +709,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         queryClient.invalidateQueries({ queryKey: q.wallet().queryKey }),
       ]);
       setActivityError("");
-      toast.success(command === "enter_player_home" ? "You're home." : "You went outside.");
+      if (command === "leave_player_home") toast.success("You went outside.");
     },
     onError: (error: Error, command) => {
       if (command === "enter_player_home") endTransition();
@@ -731,23 +730,14 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     HOUSE_ROOM_SIZE[serverState?.house?.house_type_id ?? "shared-room"] ??
     HOUSE_ROOM_SIZE["shared-room"]!;
   const movement = useHouseMovement(serverState?.house?.id ?? "none", [0, 0.06, roomDepth * 0.18]);
-  // The room view shows one room close up. It follows the character until a room or the whole home is picked.
   const [activeFloor, setActiveFloor] = useState<0 | 1>(0);
   const [climbingStairs, setClimbingStairs] = useState(false);
   const roomViews = serverState?.house
     ? houseRoomViews(serverState.house.house_type_id, roomWidth, roomDepth, activeFloor)
     : [];
-  const [pinnedRoom, setPinnedRoom] = useState<string | null | undefined>(undefined);
   useEffect(() => {
     setActiveFloor(0);
-    setPinnedRoom(undefined);
   }, [serverState?.house?.id]);
-  const followedRoom =
-    roomViews.find((room) => roomViewContains(room, movement.position[0], movement.position[2]))
-      ?.id ??
-    roomViews[0]?.id ??
-    null;
-  const roomView = pinnedRoom === undefined ? followedRoom : pinnedRoom;
   const [walkingTask, setWalkingTask] = useState<string | null>(null);
   const interactionVersion = useRef(0);
   const interactionLock = useRef(false);
@@ -773,7 +763,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     interactionLock.current = true;
     setClimbingStairs(true);
     setSelectedPlacement(null);
-    setPinnedRoom(null);
     setActivityError("");
     try {
       const arrived = await runHouseStairTransition({
@@ -784,7 +773,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         setFloor: setActiveFloor,
         place: movement.place,
       });
-      if (arrived) setPinnedRoom(undefined);
       return arrived;
     } finally {
       interactionLock.current = false;
@@ -797,7 +785,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const doorSequenceLock = useRef(false);
   const [doorFacing, setDoorFacing] = useState("north");
   const outside = useOutsideTransition();
-  const enteringRan = useRef(false);
+  const [sceneAvailable, setSceneAvailable] = useState<boolean | null>(null);
   /** Walk to the door, open it, confirm the move with the server, then go to the neighbourhood. */
   const goOutside = async () => {
     if (
@@ -850,78 +838,72 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   };
   /** Arriving from the neighbourhood: the door opens and the character walks in. */
   useEffect(() => {
-    if (outside.kind !== "entering" || !isInsideHome || !serverState?.house || enteringRan.current)
+    if (
+      outside.kind !== "entering" ||
+      !isInsideHome ||
+      !serverState?.house ||
+      sceneAvailable === null
+    )
       return;
-    enteringRan.current = true;
+    const threshold = houseDoorThreshold(serverState.house.house_type_id, roomWidth, roomDepth);
+    if (!sceneAvailable) {
+      movement.place(threshold);
+      endTransition();
+      return;
+    }
+    let active = true;
+    const exterior: RoomPoint = [threshold[0], threshold[1], -roomDepth / 2 - 1.55];
+    const handle: RoomPoint = [threshold[0], threshold[1], -roomDepth / 2 - 0.55];
     doorSequenceLock.current = true;
     setDoorSequence(true);
-    const [doorX, doorY, doorZ] = houseDoorThreshold(
-      serverState.house.house_type_id,
-      roomWidth,
-      roomDepth,
-    );
-    const start: RoomPoint = [0, 0.06, roomDepth * 0.18];
     setActiveFloor(0);
-    setPinnedRoom(null);
     setDoorFacing("south");
-    setDoorInteracting(true);
-    completeTransitionStep("Opening the door");
-    const exterior: RoomPoint = [doorX, doorY, -roomDepth / 2 - 0.45];
     movement.place(exterior);
-    setDoorOpen(true);
+    const walkLeg = (path: RoomPoint[]) =>
+      runHomeEntryWalk({
+        path,
+        walk: movement.walk,
+        cancel: movement.cancel,
+        place: (point) => {
+          if (active) movement.place(point);
+        },
+        fallback: threshold,
+      });
     void (async () => {
       try {
-        await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+        if (!(await walkLeg([exterior, handle])) || !active) return;
+        setDoorInteracting(true);
+        completeTransitionStep("Opening the door");
+        setDoorOpen(true);
+        if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches)
+          await new Promise<void>((resolve) => window.setTimeout(resolve, DOOR_SWING_MS));
+        if (!active) return;
         setDoorInteracting(false);
         completeTransitionStep("Walking in");
-        const path = findRoomPath(
-          [doorX, doorY, doorZ],
-          start,
-          roomWidth,
-          roomDepth,
-          roomObstacles(
-            serverState.house!.house_type_id,
-            roomWidth,
-            roomDepth,
-            placements.filter((item) => (item.floor ?? 0) === 0),
-            slots,
-            0,
-          ),
-        );
-        if (path) {
-          const arrived = await runHomeEntryWalk({
-            path: [exterior, [doorX, doorY, doorZ], ...path],
-            walk: movement.walk,
-            cancel: movement.cancel,
-            place: movement.place,
-            fallback: [doorX, doorY, doorZ],
-          });
-          if (!arrived)
-            toast.error(
-              "The walk into your home was interrupted. You are back at the entrance; try again.",
-            );
-        } else {
-          movement.place([doorX, doorY, doorZ]);
-          toast.error("The entrance is blocked. Rearrange your furniture to clear the way.");
-        }
-      } catch (error) {
-        movement.cancel();
-        movement.place([doorX, doorY, doorZ]);
-        toast.error(
-          error instanceof Error ? error.message : "The home entrance could not be completed.",
-        );
+        await walkLeg([handle, threshold]);
+      } catch {
+        if (active) movement.place(threshold);
       } finally {
-        setDoorOpen(false);
-        setDoorInteracting(false);
-        setDoorSequence(false);
-        doorSequenceLock.current = false;
-        endTransition();
-        enteringRan.current = false;
+        if (active) {
+          setDoorOpen(false);
+          setDoorInteracting(false);
+          setDoorSequence(false);
+          doorSequenceLock.current = false;
+          endTransition();
+        }
       }
     })();
-    // The room is ready once its house data is loaded; the sequence runs once per arrival.
+    return () => {
+      active = false;
+      movement.cancel();
+      doorSequenceLock.current = false;
+      setDoorSequence(false);
+      setDoorInteracting(false);
+      setDoorOpen(false);
+    };
+    // Movement callbacks are stable; position updates must not restart the approach.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [outside.kind, serverState?.house?.id, isInsideHome]);
+  }, [outside.kind, serverState?.house?.id, isInsideHome, sceneAvailable, roomWidth, roomDepth]);
   /** A trip started from inside: finish the walk and door sequence before requesting server travel. */
   const leaveForTrip = async (departure: HomeDeparture) => {
     if (
@@ -1158,7 +1140,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         if (clear?.length) movement.place(clear[clear.length - 1]!);
       }
       setSelectedPlacement(null);
-      setPinnedRoom(null);
       setActivityError("");
       toast.success("Furniture rearranged. Walking paths are clear.");
     },
@@ -1328,7 +1309,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     const start = draftStartFor(placement, slots);
     if (!start) return;
     movement.cancel();
-    setPinnedRoom(null);
     setEditing(true);
     setCatalogueOpen(false);
     setSelectedPlacement(placement);
@@ -1820,7 +1800,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
                     ? activeSleep
                       ? "Wake up first"
                       : "Go outside"
-                    : "Travel home"}
+                    : "Enter home"}
               </span>
             </button>
           )}
@@ -1834,7 +1814,6 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             disabled={taskBusy || actionMutation.isPending || (houseOverdue && !editing)}
             onClick={() => {
               movement.cancel();
-              setPinnedRoom(null);
               setCatalogueOpen(!editing);
               setDraftMove(null);
               setEditing((value) => !value);
@@ -1898,62 +1877,21 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
             </label>
           )}
         </HomeToolsMenu>
-        {!editing && roomViews.length > 0 && (
-          <div className="house-room-views" role="group" aria-label="Room view">
-            {roomViews.length > 4 ? (
-              <select
-                aria-label="View room"
-                value={roomView ?? "whole"}
-                onChange={(event) =>
-                  setPinnedRoom(event.target.value === "whole" ? null : event.target.value)
-                }
-              >
-                <option value="whole">{WHOLE_HOME_LABEL}</option>
-                {roomViews.map((room) => (
-                  <option key={room.id} value={room.id}>
-                    {room.label}
-                  </option>
-                ))}
-              </select>
-            ) : (
-              <>
-                {roomViews.map((room) => (
-                  <button
-                    key={room.id}
-                    type="button"
-                    aria-pressed={roomView === room.id}
-                    className={roomView === room.id ? "is-active" : undefined}
-                    onClick={() => setPinnedRoom(room.id)}
-                  >
-                    {room.label}
-                  </button>
-                ))}
-                <button
-                  type="button"
-                  aria-pressed={roomView === null}
-                  className={roomView === null ? "is-active" : undefined}
-                  onClick={() => setPinnedRoom(null)}
-                >
-                  {WHOLE_HOME_LABEL}
-                </button>
-              </>
-            )}
-            {layoutConflicts.length > 0 && (
-              <button
-                type="button"
-                disabled={taskBusy || isOffline}
-                title="Some saved furniture overlaps the new walls. Reposition these items in Arrange."
-                aria-label={`Reposition ${layoutConflicts.length} items overlapping walls`}
-                onClick={() => {
-                  movement.cancel();
-                  setPinnedRoom(null);
-                  setEditing(true);
-                  setSelectedPlacement(layoutConflicts[0] ?? null);
-                }}
-              >
-                Arrange ({layoutConflicts.length})
-              </button>
-            )}
+        {!editing && layoutConflicts.length > 0 && (
+          <div className="house-room-views">
+            <button
+              type="button"
+              disabled={taskBusy || isOffline}
+              title="Some saved furniture overlaps the new walls. Reposition these items in Arrange."
+              aria-label={`Reposition ${layoutConflicts.length} items overlapping walls`}
+              onClick={() => {
+                movement.cancel();
+                setEditing(true);
+                setSelectedPlacement(layoutConflicts[0] ?? null);
+              }}
+            >
+              Arrange ({layoutConflicts.length})
+            </button>
           </div>
         )}
         {!editing && stairs && (
@@ -1972,7 +1910,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         aria-label={`${house.house_type.label} room`}
       >
         <HouseRoomRenderer
-          roomView={roomView}
+          onSceneAvailability={setSceneAvailable}
           guideZone={guide?.zoneBounds ?? null}
           inputBlocked={
             taskBusy ||
@@ -1985,13 +1923,13 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
           lightOn={lightOn}
           wallsClosed={editing ? wallsSetting : false}
           accessoryBand={canonicalHome?.accessoryBand ?? "basic"}
-          showCharacter={isInsideHome}
+          showCharacter={isInsideHome && (outside.kind !== "entering" || doorSequence)}
           characterName={character?.name ?? "Your character"}
           appearance={appearance}
           gender={character?.gender ?? "nonbinary"}
           equipment={avatarEquipment}
-          actorSpawnKey={outside.kind === "entering" && doorOpen ? "arrival" : "resident"}
-          actorPosition={performingPosition}
+          actorSpawnKey={outside.kind === "entering" ? "arrival" : "resident"}
+          actorPosition={doorSequence ? movement.position : performingPosition}
           actorFacing={
             doorInteracting ? doorFacing : currentActivity ? taskFacing : movement.facing
           }

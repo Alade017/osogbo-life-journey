@@ -2046,7 +2046,18 @@ function SlotObject({
   );
 }
 
+function FirstRoomFrame({ notify }: { notify: Props["onSceneAvailability"] }) {
+  const reported = useRef(false);
+  useFrame(() => {
+    if (reported.current) return;
+    reported.current = true;
+    notify?.(true);
+  });
+  return null;
+}
+
 export function HouseRoom3D({
+  onSceneAvailability,
   inputBlocked = false,
   lightOn = true,
   wallsClosed = null,
@@ -2101,6 +2112,10 @@ export function HouseRoom3D({
         : null,
     [houseTypeId, width, depth, roomViewId, activeFloor],
   );
+  // Follow the same world position as the avatar, including its height on stairs.
+  const followedActor = showCharacter && !editMode ? actorPosition : undefined;
+  const followWidth = Math.min(width, ROOM_SIZE["single-room"]![0]);
+  const followDepth = Math.min(depth, ROOM_SIZE["single-room"]![1]);
   // In a room view only that room's furniture is shown and can be used.
   const placements = roomView
     ? allPlacements.filter((item) => {
@@ -2243,6 +2258,7 @@ export function HouseRoom3D({
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
       <WorldCanvas
+        onSceneError={() => onSceneAvailability?.(false)}
         style={{ touchAction: "none" }}
         frameloop="demand"
         dpr={[1, quality.maxDpr]}
@@ -2251,6 +2267,7 @@ export function HouseRoom3D({
         gl={{ antialias: false, powerPreference: "low-power" }}
       >
         <RoomOverlayContext.Provider value={overlayHost}>
+          <FirstRoomFrame notify={onSceneAvailability} />
           <FurniturePaletteContext.Provider
             value={
               houseTypeId === "studio-flat"
@@ -2507,23 +2524,25 @@ export function HouseRoom3D({
                 />
               ))}
             <WorldCamera
-              width={roomView ? roomView.maxX - roomView.minX : width}
-              depth={roomView ? roomView.maxZ - roomView.minZ : depth}
+              width={followedActor ? followWidth : roomView ? roomView.maxX - roomView.minX : width}
+              depth={followedActor ? followDepth : roomView ? roomView.maxZ - roomView.minZ : depth}
               stage
               horizontalOrbit={!editMode}
               orbitArc={Math.PI}
               verticalOrbit={!editMode && !roomView}
               polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
               target={
-                roomView
-                  ? [
-                      (roomView.minX + roomView.maxX) / 2,
-                      WORLD_SCALE.door * 0.65,
-                      (roomView.minZ + roomView.maxZ) / 2,
-                    ]
-                  : editMode
-                    ? [0, 0.25, 0]
-                    : [0, WORLD_SCALE.door * 0.58, depth * 0.06]
+                followedActor
+                  ? [followedActor[0], followedActor[1] + WORLD_SCALE.door * 0.58, followedActor[2]]
+                  : roomView
+                    ? [
+                        (roomView.minX + roomView.maxX) / 2,
+                        WORLD_SCALE.door * 0.65,
+                        (roomView.minZ + roomView.maxZ) / 2,
+                      ]
+                    : editMode
+                      ? [0, 0.25, 0]
+                      : [0, WORLD_SCALE.door * 0.58, depth * 0.06]
               }
               distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 0.94}
               minZoom={ROOM_VIEW_CAMERA.minZoom}
