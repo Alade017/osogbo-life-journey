@@ -37,11 +37,9 @@ import {
   Trophy,
   UtensilsCrossed,
   Landmark,
-  Settings,
   Store,
   Smartphone,
   SlidersHorizontal,
-  UserRound,
   X,
   type LucideIcon,
 } from "lucide-react";
@@ -118,14 +116,8 @@ const CareerLifeApp = lazy(() =>
 const EducationPage = lazy(() =>
   import("@/routes/_authenticated/_game/education").then((m) => ({ default: m.EducationPage })),
 );
-const ProfilePage = lazy(() =>
-  import("@/routes/_authenticated/_game/profile").then((m) => ({ default: m.ProfilePage })),
-);
 const SupportApp = lazy(() =>
   import("@/components/game/phone/SupportApp").then((m) => ({ default: m.SupportApp })),
-);
-const SettingsPage = lazy(() =>
-  import("@/routes/_authenticated/_game/settings").then((m) => ({ default: m.SettingsPage })),
 );
 const BusinessInvestmentApp = lazy(() =>
   import("@/components/game/BusinessInvestmentApp").then((m) => ({
@@ -186,11 +178,9 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
   { label: "Osun Gist", icon: Newspaper, tone: "phone-app-blue" },
   { label: "Party", icon: PartyPopper, tone: "phone-app-coral" },
-  { label: "Profile", icon: UserRound, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Property", icon: HousePlus, tone: "phone-app-green" },
   { label: "Property Exchange", icon: Handshake, tone: "phone-app-gold", emphasis: "important" },
   { label: "Real Estate", icon: Building2, tone: "phone-app-green" },
-  { label: "Settings", icon: Settings, tone: "phone-app-muted", emphasis: "utility" },
   { label: "Support", icon: MessageCircle, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
   { label: "VitalStat", icon: Activity, tone: "phone-app-green" },
@@ -201,15 +191,7 @@ const APPS_PER_PAGE = 20;
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
 
 /** Apps restyled to the Settings design (cards, sections, rows). Others keep their current look. */
-const SETTINGS_STYLE_APPS = new Set([
-  "Profile",
-  "Settings",
-  "Support",
-  "Town News",
-  "Market",
-  "Education",
-  "Bank",
-]);
+const SETTINGS_STYLE_APPS = new Set(["Support", "Town News", "Market", "Education", "Bank"]);
 
 class PhoneAppBoundary extends Component<
   { appName: string; onHome: () => void; children: ReactNode },
@@ -491,7 +473,6 @@ export function PhoneLauncher({
     }
 
     if (appName === "People") return <PlayerSocial initialTab="players" phoneMode />;
-    if (appName === "Profile") return <ProfilePage />;
 
     if (appName === "Market" || appName === "Market Stalls") {
       return <PhoneMarketApp />;
@@ -655,7 +636,6 @@ export function PhoneLauncher({
     }
 
     if (appName === "Games") return <GamesApp />;
-    if (appName === "Settings") return <SettingsPage />;
     if (appName === "Osun Gist") return <OsunGistApp />;
     if (appName === "Support") return <SupportApp onHome={returnHome} />;
 
