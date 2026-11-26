@@ -60,7 +60,6 @@ export function canOccupyNeighborhoodPoint(
   });
 }
 
-
 /** Build a reusable collision checker when many points share the same scene geometry. */
 export function createNeighborhoodOccupancyChecker(
   origin: WorldPoint,

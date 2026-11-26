@@ -122,7 +122,7 @@
   outline-offset: 3px;
 }
 
-/* A single appearance for the persistent game dock, including Map and other scenes. */
+/* Compact persistent navigation: icon-first with a clear active destination. */
 .game-shell.city-game.navigation-redesign > .gbb:not(.is-open) {
   bottom: calc(
     max(var(--game-navigation-gap), env(safe-area-inset-bottom)) + var(--game-keyboard-inset, 0px)
@@ -174,9 +174,7 @@
 .game-shell.city-game.navigation-redesign:not(.home-hud) {
   padding-bottom: var(--game-dock-space) !important;
 }
-.game-shell.city-game.navigation-redesign:not(.home-hud) aside.game-needs-rail[aria-label] {
-  bottom: calc(var(--game-dock-space) + var(--game-keyboard-inset, 0px) + 8px);
-}
+
 /* Needs stays separate from navigation, with enough clearance above the pills. */
 .game-needs-rail.game-needs-rail.game-needs-rail {
   right: auto;
