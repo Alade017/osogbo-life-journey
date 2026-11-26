@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": 1,
+    "version": 2,
     "source": "Osogbo Districts and Landmarks.md; user amendment retaining Oke-Baale and removing Aleku-Wodo",
     "status": "proposed-overview-layout",
     "coordinateSystem": "Existing navigation grid unchanged; overview coordinates not authored",
@@ -577,6 +577,135 @@
     {
       "id": "aleku-wodo-road-network",
       "reason": "Removed district; preserve legacy navigation references until dependency audit"
+    }
+  ],
+  "streets": [
+    {
+      "id": "baruwa-street",
+      "name": "Baruwa Street",
+      "districtId": "ogo-oluwa",
+      "kind": "street",
+      "overviewVisible": false,
+      "layoutStatus": "deferred",
+      "source": "User-provided street assignment"
+    }
+  ],
+  "pendingLandmarks": [
+    {
+      "id": "olaiya-flyover-bridge",
+      "label": "Olaiya Flyover Bridge",
+      "districtId": "olaiya",
+      "category": "junction",
+      "status": "pending-asset-and-route-review",
+      "source": "Osogbo Districts and Landmarks.md",
+      "overviewVisible": false
+    },
+    {
+      "id": "oke-fia-roundabout",
+      "label": "Oke-Fia Roundabout",
+      "districtId": "oke-fia",
+      "category": "junction",
+      "status": "pending-asset-and-route-review",
+      "source": "Osogbo Districts and Landmarks.md",
+      "overviewVisible": false
+    },
+    {
+      "id": "freedom-park",
+      "label": "Freedom Park",
+      "districtId": "old-garage",
+      "category": "sport",
+      "status": "pending-asset-and-route-review",
+      "source": "Osogbo Districts and Landmarks.md",
+      "overviewVisible": false
+    },
+    {
+      "id": "osun-state-government-secretariat",
+      "label": "Osun State Government Secretariat",
+      "districtId": "abere-ring-road",
+      "category": "services",
+      "status": "pending-asset-and-route-review",
+      "source": "Osogbo Districts and Landmarks.md",
+      "overviewVisible": false
+    },
+    {
+      "id": "osun-house-of-assembly",
+      "label": "House of Assembly",
+      "districtId": "abere-ring-road",
+      "category": "services",
+      "status": "pending-asset-and-route-review",
+      "source": "Osogbo Districts and Landmarks.md",
+      "overviewVisible": false
+    },
+    {
+      "id": "osun-high-court",
+      "label": "High Court",
+      "districtId": "abere-ring-road",
+      "category": "services",
+      "status": "pending-asset-and-route-review",
+      "source": "Osogbo Districts and Landmarks.md",
+      "overviewVisible": false
+    },
+    {
+      "id": "osun-osogbo-sacred-grove",
+      "label": "Osun-Osogbo Sacred Grove",
+      "districtId": "riverside",
+      "category": "services",
+      "status": "pending-asset-and-route-review",
+      "source": "Osogbo Districts and Landmarks.md",
+      "overviewVisible": false
+    },
+    {
+      "id": "suzanne-wenger-art-gallery",
+      "label": "Suzanne Wenger’s Art Gallery",
+      "districtId": "riverside",
+      "category": "services",
+      "status": "pending-asset-and-route-review",
+      "source": "Osogbo Districts and Landmarks.md",
+      "overviewVisible": false
+    }
+  ],
+  "reconciliation": [
+    {
+      "ids": [
+        "town-market",
+        "oja-oba-market"
+      ],
+      "status": "review-distinct-venues"
+    },
+    {
+      "ids": [
+        "mosque-square",
+        "central-mosque"
+      ],
+      "status": "review-possible-duplicate"
+    },
+    {
+      "ids": [
+        "transit-park"
+      ],
+      "requiredAnchor": "Old Garage Motor Park",
+      "status": "review-reuse-before-adding"
+    },
+    {
+      "ids": [
+        "civic-court"
+      ],
+      "requiredAnchor": "High Court",
+      "status": "review-reuse-before-adding"
+    },
+    {
+      "ids": [
+        "art-craft-gallery"
+      ],
+      "requiredAnchor": "Suzanne Wenger’s Art Gallery",
+      "status": "review-reuse-before-adding"
+    },
+    {
+      "ids": [
+        "olaiya-central"
+      ],
+      "requiredAnchor": "Olaiya Flyover Bridge",
+      "status": "review-distinct-map-object"
     }
   ]
 }
