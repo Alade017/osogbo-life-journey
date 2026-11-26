@@ -1797,3 +1797,132 @@ body:has(.phone-ui-refresh) :is(
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Frame polish: a punch-hole lens instead of a flat dot, slimmer side keys on large screens, and an
+   app grid that fills the screen with even spacing instead of floating in the middle. */
+.phone-ui-refresh .phone-status-camera {
+  position: relative;
+  grid-column: 2;
+  justify-self: center;
+  width: 84px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #000;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 35%);
+}
+
+/* The lens sits inside the pill, as on modern camera phones. */
+.phone-ui-refresh .phone-status-camera::after {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 9px;
+  height: 9px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #3b5b7d 0 15%, #0b1520 62%);
+  content: "";
+}
+
+@media (min-width: 641px) {
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh::before {
+    top: 20%;
+    height: 34px;
+    width: 4px;
+  }
+
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh::after {
+    top: 29%;
+    height: 24px;
+    width: 4px;
+  }
+}
+
+.phone-screen-home .phone-app-grid {
+  grid-template-rows: repeat(5, minmax(64px, 1fr));
+  align-content: stretch;
+  gap: clamp(12px, 2.6vh, 22px) clamp(10px, 3.4vw, 18px);
+  padding: clamp(14px, 3.4vh, 30px) clamp(12px, 4vw, 22px);
+}
+
+.phone-screen-home .phone-app-grid {
+  padding-bottom: clamp(44px, 9vh, 72px);
+}
+
+.phone-screen-home .phone-app {
+  font-size: clamp(9px, 2.5vw, 11px);
+  hyphens: none;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.phone-screen-home .phone-app {
+  font-size: clamp(8.5px, 2.2vw, 10px);
+  letter-spacing: -0.03em;
+  padding-inline: 0;
+}
+
+.phone-screen-home .phone-launcher-home {
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-screen-home .phone-home-clock {
+  flex: 0 0 auto;
+  padding: clamp(10px, 2.6vh, 22px) 18px 0;
+  color: #0f172a;
+}
+
+.phone-screen-home .phone-home-clock strong {
+  display: block;
+  font-size: clamp(44px, 11vh, 64px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.phone-screen-home .phone-home-clock span {
+  display: block;
+  margin-top: 4px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.phone-screen-home .phone-app-pages {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The home clock already shows the time, so the status-bar copy beside the camera is hidden. */
+.phone-ui-refresh .phone-status-time {
+  display: none;
+}
+
+/* Premium tiles: a glossy top highlight, a soft lifted shadow and a firm press response. */
+.phone-screen-home .phone-app {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+  background-image: linear-gradient(
+    155deg,
+    rgb(255 255 255 / 34%) 0%,
+    rgb(255 255 255 / 0%) 46%,
+    rgb(0 0 0 / 12%) 100%
+  );
+  box-shadow:
+    0 14px 24px -12px rgb(15 35 65 / 45%),
+    0 2px 4px rgb(15 35 65 / 12%),
+    inset 0 1px 0 rgb(255 255 255 / 60%),
+    inset 0 -1px 0 rgb(0 0 0 / 12%);
+}
+
+.phone-screen-home .phone-app:active .phone-app-icon {
+  transform: scale(0.94);
+  box-shadow:
+    0 6px 12px -8px rgb(15 35 65 / 45%),
+    inset 0 1px 0 rgb(255 255 255 / 50%);
+}

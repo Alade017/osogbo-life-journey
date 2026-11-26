@@ -22,7 +22,9 @@ import {
   GraduationCap,
   HandCoins,
   Handshake,
+  Activity,
   HeartPulse,
+  House,
   HousePlus,
   MapPinned,
   MessageCircleCheck,
@@ -133,6 +135,15 @@ const CommunityPhoneApps = lazy(() =>
 const PhoneCommunityServices = lazy(() => import("@/components/game/phone/PhoneCommunityServices"));
 const CityServicesApp = lazy(() => import("@/components/game/phone/CityServicesApp"));
 const CameraApp = lazy(() => import("@/components/game/phone/CameraApp"));
+const NestaApp = lazy(() =>
+  import("@/components/game/phone/NestaApp").then((m) => ({ default: m.NestaApp })),
+);
+const GigWorkApp = lazy(() =>
+  import("@/components/game/phone/GigWorkApp").then((m) => ({ default: m.GigWorkApp })),
+);
+const VitalStatApp = lazy(() =>
+  import("@/components/game/phone/VitalStatApp").then((m) => ({ default: m.VitalStatApp })),
+);
 const PropertyExchangeApp = lazy(() => import("@/components/game/phone/PropertyExchangeApp"));
 
 type PhoneAppDefinition = {
@@ -155,12 +166,14 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Education", icon: GraduationCap, tone: "phone-app-blue" },
   { label: "Food Delivery", icon: UtensilsCrossed, tone: "phone-app-coral" },
   { label: "Games", icon: Gamepad2, tone: "phone-app-coral" },
+  { label: "Gig Work", icon: BriefcaseBusiness, tone: "phone-app-gold" },
   { label: "Invest", icon: ChartNoAxesCombined, tone: "phone-app-gold" },
   { label: "Leaderboard", icon: Trophy, tone: "phone-app-gold" },
   { label: "Map", icon: MapPinned, tone: "phone-app-blue", emphasis: "important" },
   { label: "Market", icon: Store, tone: "phone-app-coral", emphasis: "important" },
   { label: "Messages", icon: MessageCircleCheck, tone: "phone-app-green", emphasis: "important" },
   { label: "Missions", icon: Target, tone: "phone-app-gold", emphasis: "important" },
+  { label: "Nesta", icon: House, tone: "phone-app-blue", emphasis: "important" },
   { label: "Notifications", icon: Bell, tone: "phone-app-gold", emphasis: "utility" },
   { label: "Okada Rides", icon: Bike, tone: "phone-app-green" },
   { label: "Osun Gist", icon: Newspaper, tone: "phone-app-blue" },
@@ -170,6 +183,7 @@ const PHONE_APPS: readonly PhoneAppDefinition[] = [
   { label: "Real Estate", icon: Building2, tone: "phone-app-green" },
   { label: "Support", icon: MessageCircle, tone: "phone-app-blue", emphasis: "utility" },
   { label: "Town News", icon: Newspaper, tone: "phone-app-blue" },
+  { label: "VitalStat", icon: Activity, tone: "phone-app-green" },
 ] as const;
 
 const APPS_PER_PAGE = 20;
@@ -177,13 +191,7 @@ const APPS_PER_PAGE = 20;
 const COMMUNITY_APPS = new Set<CommunityPhoneApp>(["Leaderboard", "Town News"]);
 
 /** Apps restyled to the Settings design (cards, sections, rows). Others keep their current look. */
-const SETTINGS_STYLE_APPS = new Set([
-  "Support",
-  "Town News",
-  "Market",
-  "Education",
-  "Bank",
-]);
+const SETTINGS_STYLE_APPS = new Set(["Support", "Town News", "Market", "Education", "Bank"]);
 
 class PhoneAppBoundary extends Component<
   { appName: string; onHome: () => void; children: ReactNode },
@@ -398,6 +406,14 @@ export function PhoneLauncher({
         timeZone: OSOGBO_TIME_ZONE,
       }).format(now)
     : "--:--";
+  const homeDate = now
+    ? new Intl.DateTimeFormat("en-NG", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        timeZone: OSOGBO_TIME_ZONE,
+      }).format(now)
+    : "";
 
   const goBack = () => {
     playGameSound("ui");
@@ -473,6 +489,9 @@ export function PhoneLauncher({
     if (appName === "Education" || appName === "Courses") return <EducationPage phoneMode />;
     if (appName === "City Services") return <CityServicesApp />;
     if (appName === "Camera") return <CameraApp />;
+    if (appName === "VitalStat") return <VitalStatApp />;
+    if (appName === "Gig Work") return <GigWorkApp />;
+    if (appName === "Nesta") return <NestaApp onOpenApp={(app) => openApp(app)} />;
     if (appName === "Property Exchange") return <PropertyExchangeApp />;
 
     if (appName === "Bank") {
@@ -656,6 +675,11 @@ export function PhoneLauncher({
           className="phone-launcher-home"
           style={{ display: navigation.app === null ? undefined : "none" }}
         >
+          {/* Large clock for the home screen; the status bar already announces the time. */}
+          <div className="phone-home-clock" aria-hidden="true">
+            <strong>{phoneTime}</strong>
+            <span>{homeDate}</span>
+          </div>
           <div
             ref={launcherScrollRef}
             className="phone-app-pages"

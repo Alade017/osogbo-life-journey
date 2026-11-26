@@ -16,6 +16,7 @@ import { Route as SignupRouteImport } from './routes/signup'
 import { Route as AuthenticatedGameRouteImport } from './routes/_authenticated/_game'
 import { Route as AuthenticatedCreateCharacterRouteImport } from './routes/_authenticated/create-character'
 import { Route as AuthenticatedEnterRouteImport } from './routes/_authenticated/enter'
+import { Route as ApiGigWorkRouteImport } from './routes/api/gig-work'
 import { Route as ApiNewsRouteImport } from './routes/api/news'
 import { Route as AuthenticatedGameBusinessesRouteImport } from './routes/_authenticated/_game/businesses'
 import { Route as AuthenticatedGameEducationRouteImport } from './routes/_authenticated/_game/education'
@@ -128,6 +129,11 @@ const AuthenticatedEnterRoute = AuthenticatedEnterRouteImport.update({
   id: '/enter',
   path: '/enter',
   getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const ApiGigWorkRoute = ApiGigWorkRouteImport.update({
+  id: '/api/gig-work',
+  path: '/api/gig-work',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiNewsRoute = ApiNewsRouteImport.update({
   id: '/api/news',
@@ -541,6 +547,7 @@ export interface FileRoutesByFullPath {
   '/signup': typeof SignupRoute
   '/create-character': typeof AuthenticatedCreateCharacterRoute
   '/enter': typeof AuthenticatedEnterRoute
+  '/api/gig-work': typeof ApiGigWorkRoute
   '/api/news': typeof ApiNewsRoute
   '/businesses': typeof AuthenticatedGameBusinessesRoute
   '/education': typeof AuthenticatedGameEducationRoute
@@ -626,6 +633,7 @@ export interface FileRoutesByTo {
   '/signup': typeof SignupRoute
   '/create-character': typeof AuthenticatedCreateCharacterRoute
   '/enter': typeof AuthenticatedEnterRoute
+  '/api/gig-work': typeof ApiGigWorkRoute
   '/api/news': typeof ApiNewsRoute
   '/businesses': typeof AuthenticatedGameBusinessesRoute
   '/education': typeof AuthenticatedGameEducationRoute
@@ -714,6 +722,7 @@ export interface FileRoutesById {
   '/_authenticated/_game': typeof AuthenticatedGameRouteWithChildren
   '/_authenticated/create-character': typeof AuthenticatedCreateCharacterRoute
   '/_authenticated/enter': typeof AuthenticatedEnterRoute
+  '/api/gig-work': typeof ApiGigWorkRoute
   '/api/news': typeof ApiNewsRoute
   '/_authenticated/_game/businesses': typeof AuthenticatedGameBusinessesRoute
   '/_authenticated/_game/education': typeof AuthenticatedGameEducationRoute
@@ -801,6 +810,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/create-character'
     | '/enter'
+    | '/api/gig-work'
     | '/api/news'
     | '/businesses'
     | '/education'
@@ -886,6 +896,7 @@ export interface FileRouteTypes {
     | '/signup'
     | '/create-character'
     | '/enter'
+    | '/api/gig-work'
     | '/api/news'
     | '/businesses'
     | '/education'
@@ -973,6 +984,7 @@ export interface FileRouteTypes {
     | '/_authenticated/_game'
     | '/_authenticated/create-character'
     | '/_authenticated/enter'
+    | '/api/gig-work'
     | '/api/news'
     | '/_authenticated/_game/businesses'
     | '/_authenticated/_game/education'
@@ -1058,6 +1070,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   LoginRoute: typeof LoginRoute
   SignupRoute: typeof SignupRoute
+  ApiGigWorkRoute: typeof ApiGigWorkRoute
   ApiNewsRoute: typeof ApiNewsRoute
   ApiDrawerEquipRoute: typeof ApiDrawerEquipRoute
   ApiDrawerRetrieveRoute: typeof ApiDrawerRetrieveRoute
@@ -1167,6 +1180,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/enter'
       preLoaderRoute: typeof AuthenticatedEnterRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/api/gig-work': {
+      id: '/api/gig-work'
+      path: '/api/gig-work'
+      fullPath: '/api/gig-work'
+      preLoaderRoute: typeof ApiGigWorkRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/news': {
       id: '/api/news'
@@ -1788,6 +1808,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   LoginRoute: LoginRoute,
   SignupRoute: SignupRoute,
+  ApiGigWorkRoute: ApiGigWorkRoute,
   ApiNewsRoute: ApiNewsRoute,
   ApiDrawerEquipRoute: ApiDrawerEquipRoute,
   ApiDrawerRetrieveRoute: ApiDrawerRetrieveRoute,
