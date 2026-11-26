@@ -207,9 +207,9 @@
   gap: 6px;
 }
 .town-camera-tools button {
-  min-height: 44px;
+  min-height: 36px;
   border: 1px solid #dedbd1;
-  border-radius: 10px;
+  border-radius: 999px;
   padding: 6px 12px;
   background: #faf7f0;
   color: #16225c;
@@ -279,16 +279,22 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  width: 30px;
+  height: 30px;
   padding: 0;
   border: 2px solid #dedbd1;
   border-radius: 50%;
   background: #faf7f0;
   color: #16225c;
-  font: 22px/1 system-ui;
+  font: 16px/1 system-ui;
   box-shadow: 0 2px 6px #16225c26;
   cursor: pointer;
+}
+.map-location-marker::before {
+  content: "";
+  position: absolute;
+  inset: -7px;
+  border-radius: 50%;
 }
 .map-location-marker[hidden] {
   display: none !important;
@@ -337,4 +343,10 @@
     500 12px/1.5 system-ui,
     sans-serif;
   pointer-events: none;
+}
+
+@media (pointer: coarse) {
+  .town-camera-tools button {
+    min-height: 44px;
+  }
 }

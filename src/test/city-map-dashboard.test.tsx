@@ -203,7 +203,7 @@ function renderDashboard(currentSlug?: string, insideHome = false) {
 describe("isometric town map", () => {
   it("opens the walking route from the town map", () => {
     renderDashboard("oja-oba");
-    fireEvent.click(screen.getByRole("button", { name: "Walk the streets" }));
+    fireEvent.click(screen.getByRole("button", { name: "Current neighbourhood" }));
     expect(testState.navigate).toHaveBeenCalledWith({ to: "/neighborhood" });
   });
 

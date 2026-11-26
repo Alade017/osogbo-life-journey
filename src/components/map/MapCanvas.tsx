@@ -27,6 +27,7 @@ export type MapBillboardMarker = {
 
 /** Display-only property input. Ownership, rent, and status remain server/game-state owned. */
 export type MapProperty = {
+  districtId?: string | undefined;
   id: string;
   label?: string | undefined;
   type: "compound" | "flat" | "shophouse";

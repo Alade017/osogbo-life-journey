@@ -1,3 +1,4 @@
+import { getPitchedRoofPanel } from "@/game/district-architecture";
 import { useMemo } from "react";
 import { WorldInstances, type WorldInstance } from "@/components/3d/WorldScene";
 import type { TownHomeStyle, TownInfillHome } from "./town-residential-layout";
@@ -56,7 +57,22 @@ export function TownResidentialBlocks3D({
         rotation: home.rotation,
       });
       blocks[home.style].walls.push(part(0, height / 2, 0, [width, height, depth]));
-      blocks[home.style].roofs.push(part(0, height + 0.1, 0, [width + 0.16, 0.2, depth + 0.16]));
+      if (home.style === "apartment") {
+        blocks.apartment.roofs.push(part(0, height + 0.1, 0, [width + 0.16, 0.2, depth + 0.16]));
+      } else {
+        for (const side of ["left", "right"] as const) {
+          const panel = getPitchedRoofPanel(side, width + 0.16);
+          const rise = Math.abs(panel.positionX * Math.tan(panel.rotation));
+          blocks[home.style].roofs.push({
+            ...part(panel.positionX, height + rise, 0, [
+              panel.width / Math.cos(panel.rotation),
+              0.1,
+              depth + 0.16,
+            ]),
+            roll: panel.rotation,
+          });
+        }
+      }
       doors.push(
         part(-width * 0.2, Math.min(cell * 0.44, height * 0.8) / 2, depth / 2 + 0.025, [
           width * 0.2,

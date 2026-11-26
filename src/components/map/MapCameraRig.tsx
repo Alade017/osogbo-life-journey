@@ -4,12 +4,12 @@ import { OrbitControls } from "@react-three/drei";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { MOUSE, TOUCH, Vector3, type OrthographicCamera } from "three";
 
-import { mapCameraFrame, mapCameraPanLimits } from "./map-camera-geometry";
+import { MAP_VIEW_ELEVATION, mapCameraFrame, mapCameraPanLimits } from "./map-camera-geometry";
 
 import { EMPTY_FOCUS_INSETS, mapFocusTarget, type MapFocusInsets } from "./map-focus";
 
-const VIEW_DIRECTION = new Vector3(0, 1.35, 1).normalize();
-const VIEW_POLAR = Math.atan2(1, 1.35);
+const VIEW_DIRECTION = new Vector3(0, MAP_VIEW_ELEVATION, 1).normalize();
+const VIEW_POLAR = Math.atan2(1, MAP_VIEW_ELEVATION);
 
 /** Fixed north-up, oblique city camera: one-finger pan, pinch zoom, no orbit. */
 export function MapCameraRig({

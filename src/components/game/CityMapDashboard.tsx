@@ -1,3 +1,4 @@
+import type { MapProperty } from "@/components/map/MapCanvas";
 import { transportPreference } from "@/lib/transport-park";
 import "@/components/map/map-compact.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,11 +13,6 @@ import {
   type MapEventChip,
 } from "@/components/map/MapCanvas";
 import type { NeighborhoodLandmarkSpec } from "@/data/neighborhoodLocations";
-import {
-  enqueueNeighborhoodNavigation,
-  resolvePlayerMapPosition,
-  useLivePlayerPose,
-} from "@/store/neighborhoodNavSync";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { useMapTravelController } from "@/components/map/use-map-travel-controller";
@@ -104,7 +100,6 @@ export function CityMapDashboard(
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
-  const livePlayerPose = useLivePlayerPose();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const mapHref = useLocation({ select: (location) => location.href });
@@ -134,6 +129,7 @@ export function CityMapDashboard(
       return mapHousingMarkers(await response.json());
     },
   });
+  const districtJobs = useQuery({ ...q.jobs(), enabled: !!selectedDistrict && !offline });
   const wallet = useQuery(q.wallet());
   const worldClock = useWorldClock();
   const cityEvents = useCityEvents();
@@ -144,6 +140,30 @@ export function CityMapDashboard(
     staleTime: 60_000,
     enabled: !offline,
   });
+  const districtDestinations = new Set(
+    townData.landmarks
+      .filter((place) => place.districtId === selectedDistrict?.id)
+      .map((place) => place.locationSlug),
+  );
+  const districtLocations = (locations.data ?? []).filter((location) =>
+    districtDestinations.has(location.slug),
+  );
+  const districtWorkspaces = districtLocations.flatMap((location) => {
+    const roles = (districtJobs.data ?? []).filter(
+      (job) => job.location_id === location.id && job.is_available,
+    );
+    return roles.length
+      ? [{ id: location.id, name: location.name, roles: roles.map((role) => role.name) }]
+      : [];
+  });
+  function openProperty(property: MapProperty) {
+    setSelectedDistrict(null);
+    window.dispatchEvent(
+      new CustomEvent("osogbo-open-phone-app", {
+        detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
+      }),
+    );
+  }
   const currentLocation = locations.data?.find(
     (row) => row.id === character.data?.current_location_id,
   );
@@ -354,11 +374,6 @@ export function CityMapDashboard(
       query ? "?" + query : window.location.pathname,
     );
   }, [availableLandmarks.data, onLandmark, setDestinationTab]);
-  const playerMapPosition = useMemo(
-    () => resolvePlayerMapPosition(character.data, livePlayerPose),
-    [character.data, livePlayerPose],
-  );
-
   const effectivePocketBalance = useMemo(() => {
     if (typeof wallet.data?.balance === "number") return wallet.data.balance;
     return 0;
@@ -399,15 +414,14 @@ export function CityMapDashboard(
           <div className="ncm-3d-companion">
             <div className="ncm-3d-companion-bar">
               <div>
-                <strong>Places &amp; districts</strong>{" "}
-                <span>Pick a place, then walk its streets</span>
+                <strong>Osogbo</strong> <span>Choose a destination</span>
               </div>
               <button
                 type="button"
                 className="ncm-3d-expand-btn"
                 onClick={() => void navigate({ to: "/neighborhood" })}
               >
-                Walk the streets
+                Current neighbourhood
               </button>
             </div>
             <MapCanvas
@@ -417,14 +431,8 @@ export function CityMapDashboard(
               playerLocation={
                 currentMapPlace
                   ? {
-                      x:
-                        currentLocation?.slug === "city-centre"
-                          ? currentMapPlace.grid.x + (playerMapPosition.mapCoords.x - 0.5) * 2.2
-                          : currentMapPlace.grid.x,
-                      y:
-                        currentLocation?.slug === "city-centre"
-                          ? currentMapPlace.grid.z + (playerMapPosition.mapCoords.y - 0.5) * 1.4
-                          : currentMapPlace.grid.z,
+                      x: currentMapPlace.grid.x,
+                      y: currentMapPlace.grid.z,
                       label: "You are here",
                     }
                   : null
@@ -456,13 +464,7 @@ export function CityMapDashboard(
                   ) ?? null,
                 );
               }}
-              onSelectProperty={(property) => {
-                window.dispatchEvent(
-                  new CustomEvent("osogbo-open-phone-app", {
-                    detail: { app: property.status === "vacant" ? "Find homes" : "Property" },
-                  }),
-                );
-              }}
+              onSelectProperty={openProperty}
             />
           </div>
         </div>
@@ -479,12 +481,27 @@ export function CityMapDashboard(
       />
       {mapLevel === "town" && selectedDistrict && (
         <DistrictSheet
-          district={{
-            ...selectedDistrict,
-            landmarks: selectedDistrict.landmarks.filter((landmark) =>
-              availableLandmarks.data?.includes(landmark.id),
-            ),
-          }}
+          district={selectedDistrict}
+          availablePlaces={availableLandmarks.data ?? []}
+          homes={(housingMarkers.data ?? []).filter(
+            (home) => home.districtId === selectedDistrict.id,
+          )}
+          homesStatus={
+            housingMarkers.isError
+              ? "Housing listings unavailable."
+              : housingMarkers.isLoading
+                ? "Loading housing listings…"
+                : "No listed properties here."
+          }
+          workspaces={districtWorkspaces}
+          jobsStatus={
+            districtJobs.isError || locations.isError
+              ? "Workplace listings unavailable."
+              : districtJobs.isLoading || locations.isLoading
+                ? "Loading workplaces…"
+                : "No workplaces with listed roles here."
+          }
+          onProperty={openProperty}
           event={
             activeEvents[0]
               ? { label: activeEvents[0].title, endsAt: activeEvents[0].endsAt }

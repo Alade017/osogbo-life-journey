@@ -261,6 +261,7 @@ export type WorldInstance = {
   position: [number, number, number];
   scale?: [number, number, number];
   rotation?: number;
+  roll?: number;
 };
 export function WorldInstances({
   items,
@@ -292,7 +293,7 @@ export function WorldInstances({
     items.forEach((item, index) => {
       animatedObject.position.set(...item.position);
       animatedObject.scale.set(...(item.scale ?? [1, 1, 1]));
-      animatedObject.rotation.set(0, item.rotation ?? 0, 0);
+      animatedObject.rotation.set(0, item.rotation ?? 0, item.roll ?? 0, "YXZ");
       animate(animatedObject, index, clock.elapsedTime);
       animatedObject.updateMatrix();
       mesh.current!.setMatrixAt(index, animatedObject.matrix);
@@ -306,7 +307,7 @@ export function WorldInstances({
     items.forEach((item, index) => {
       object.position.set(...item.position);
       object.scale.set(...(item.scale ?? [1, 1, 1]));
-      object.rotation.set(0, item.rotation ?? 0, 0);
+      object.rotation.set(0, item.rotation ?? 0, item.roll ?? 0, "YXZ");
       object.updateMatrix();
       mesh.current!.setMatrixAt(index, object.matrix);
     });

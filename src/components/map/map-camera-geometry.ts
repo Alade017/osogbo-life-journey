@@ -1,4 +1,4 @@
-export const MAP_VIEW_ELEVATION = 1.35;
+export const MAP_VIEW_ELEVATION = 2.5;
 export const MAP_VIEW_GROUND_PROJECTION = MAP_VIEW_ELEVATION / Math.hypot(MAP_VIEW_ELEVATION, 1);
 
 export function mapCameraFrame(

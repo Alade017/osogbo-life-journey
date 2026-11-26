@@ -96,6 +96,33 @@ function GameLayout() {
   const unread = notes?.filter((n) => !n.read_at).length ?? 0;
 
   useEffect(() => {
+    const openAtlas = (event: KeyboardEvent) => {
+      if (
+        !character ||
+        pathname === "/map" ||
+        phoneOpen ||
+        inventoryOpen ||
+        event.defaultPrevented ||
+        event.repeat ||
+        event.altKey ||
+        event.ctrlKey ||
+        event.metaKey ||
+        event.key.toLowerCase() !== "m"
+      )
+        return;
+      if (
+        event.target instanceof Element &&
+        event.target.closest('input, textarea, select, [contenteditable], [role="dialog"]')
+      )
+        return;
+      event.preventDefault();
+      void navigate({ to: "/map" });
+    };
+    window.addEventListener("keydown", openAtlas);
+    return () => window.removeEventListener("keydown", openAtlas);
+  }, [character, pathname, phoneOpen, inventoryOpen, navigate]);
+
+  useEffect(() => {
     let timeout = window.setTimeout(() => setHudIdle(true), 4000);
     const wakeHud = () => {
       setHudIdle(false);

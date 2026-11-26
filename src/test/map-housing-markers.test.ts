@@ -27,6 +27,7 @@ describe("housing map marker input", () => {
     ).toEqual([
       {
         id: "property-1",
+        districtId: "market-quarter",
         label: "Shared room",
         type: "compound",
         tier: 2,
