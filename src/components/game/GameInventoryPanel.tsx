@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
 import { Backpack, Gift, Laptop, Package, Search, Shirt, Utensils, X } from "lucide-react";
 import { toast } from "sonner";
 import * as AlertDialog from "@radix-ui/react-alert-dialog";
@@ -89,7 +90,7 @@ export function GameInventoryPanel() {
               <h2>{selected.item?.name ?? "Unknown item"}</h2><p className="pi-sub">{selected.item?.description ?? "No description is available for this item."}</p>
               <div className="pi-collection-badges"><span>{groupLabel}</span><strong>×{selected.quantity} owned</strong></div>
               {selectedUse && <Button className="pi-action-primary" disabled={!!useError || pending} onClick={() => useItem.mutate(selected.id)}>{useItem.isPending ? "Using…" : selectedUse.action === "eat" ? "Eat" : selectedUse.action === "drink" ? "Drink" : "Use item"}</Button>}
-              {groupFor(selected.item) === "clothing" && <a className="pi-action-profile-link" href="/profile">Change appearance in Profile</a>}
+              {groupFor(selected.item) === "clothing" && <Link className="pi-action-profile-link" to="/profile">Change appearance in Profile</Link>}
               {selected.item && <Button variant="outline" className="pi-action-destructive" disabled={!!discardError || pending} onClick={() => setDiscardId(selected.id)}>Discard one</Button>}
               {((!!useError && !!selectedUse) || !!discardError) && <p className="pi-action-guidance" role="status">{selectedUse && useError ? useError : discardError}</p>}
             </> : <div className="pi-collection-empty-detail"><Package size={38} /><strong>Select an item</strong><p>Choose an item from your collection to inspect its details and available actions.</p></div>}
