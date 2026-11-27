@@ -5,7 +5,6 @@ import { toast } from "sonner";
 import {
   Check,
   Clock3,
-  Gauge,
   Pause,
   Play,
   KeyRound,
