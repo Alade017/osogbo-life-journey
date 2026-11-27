@@ -59,6 +59,7 @@ function GameLayout() {
       typeof (state.location.search as Record<string, unknown>)["visit"] === "string",
   });
   const homeHud = (pathname === "/home" || pathname === "/house") && !visitingFriend;
+  const outsideHud = !visitingFriend && (pathname.startsWith("/location/") || pathname === "/neighborhood");
   const qc = useQueryClient();
   const {
     data: character,
@@ -312,7 +313,9 @@ function GameLayout() {
               </div>
             </div>
 
-            {homeHud && <HomePlayerStatus key={player.id} player={player} />}
+            {(homeHud || outsideHud) && (
+              <HomePlayerStatus key={player.id} player={player} variant={homeHud ? "home" : "outside"} />
+            )}
 
             <GameCameraShortcut />
 
