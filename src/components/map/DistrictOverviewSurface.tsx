@@ -1,5 +1,6 @@
 import { Component, useEffect, type ReactNode } from "react";
 import { Canvas } from "@react-three/fiber";
+import { OverviewModelResources } from "./OverviewModelResources";
 import { DistrictOverviewWorld, type DistrictOverviewProps } from "./DistrictOverviewWorld";
 
 class OverviewBoundary extends Component<{ children: ReactNode; onUnavailable: () => void }, { failed: boolean }> {
@@ -27,7 +28,7 @@ export function DistrictOverviewSurface({ onReady, onUnavailable, ...props }: Di
         gl={{ antialias: true, powerPreference: "low-power" }}
         fallback={<Unavailable onUnavailable={onUnavailable} />}>
         <color attach="background" args={["#dce7dc"]}/>
-        <DistrictOverviewWorld {...props}/>
+        <OverviewModelResources><DistrictOverviewWorld {...props}/></OverviewModelResources>
         <Ready onReady={onReady}/>
       </Canvas>
     </OverviewBoundary>
