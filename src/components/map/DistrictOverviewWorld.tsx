@@ -11,6 +11,7 @@ import layout from "@/data/osogbo-overview-layout.json";
 import { TownBrandBillboards3D } from "./TownBrandBillboards3D";
 import { OverviewLandmarkModel } from "./OverviewLandmarkModel";
 import { OverviewPropertyModel } from "./OverviewPropertyModel";
+import { OverviewLandscape } from "./OverviewLandscape";
 
 type Position = { x: number; z: number };
 
@@ -143,6 +144,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
         const [x, , z] = world(p);
         return <mesh key={marker.campaignId} position={[x+0.7, 3.2, z]} onClick={e => { e.stopPropagation(); if (e.delta < 6) onSelectBillboard?.(marker.campaignId); }}><boxGeometry args={[0.8,0.5,0.15]}/><meshStandardMaterial color="#38577d"/></mesh>;
       })}
+      <OverviewLandscape />
       <TownBrandBillboards3D positions={brands} cell={2} />
     </>
   );
