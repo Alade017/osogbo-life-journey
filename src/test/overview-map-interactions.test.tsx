@@ -1,11 +1,16 @@
 import { useEffect } from "react";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { act, fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { MapCanvas, type MapProperty, type MapSearchTarget } from "@/components/map/MapCanvas";
 
+const lifecycle = vi.hoisted(() => ({ fail: null as (() => void) | null }));
 vi.mock("@/components/map/DistrictOverviewSurface", () => ({
-  DistrictOverviewSurface: ({ onReady }: { onReady: () => void }) => {
-    useEffect(onReady, [onReady]);
+  DistrictOverviewSurface: ({ onReady, onUnavailable }: { onReady: () => void; onUnavailable: () => void }) => {
+    useEffect(() => {
+      lifecycle.fail = onUnavailable;
+      onReady();
+      return () => { lifecycle.fail = null; };
+    }, [onReady, onUnavailable]);
     return null;
   },
 }));
@@ -55,8 +60,23 @@ describe("overview map interactions", () => {
     const onSelectProperty = vi.fn();
     render(<MapCanvas onSelectDistrict={vi.fn()} onSelectLandmark={vi.fn()}
       properties={[property]} onSelectProperty={onSelectProperty} />);
-    fireEvent.click(screen.getByText("Properties"));
+    const details = screen.getByText("Properties").closest("details");
+    if (!details) throw new Error("Missing property panel");
+    details.open = true;
     fireEvent.click(screen.getByRole("button", { name: "Open Rental unit: Rent due" }));
     expect(onSelectProperty).toHaveBeenCalledExactlyOnceWith(property);
+  });
+  it("recovers the renderer without replaying destination selection", async () => {
+    const onSelectLandmark = vi.fn();
+    render(<MapCanvas onSelectDistrict={vi.fn()} onSelectLandmark={onSelectLandmark}
+      searchTarget="cedar-bank" availableLandmarkIds={["cedar-bank"]} />);
+    await screen.findByRole("button", { name: "Zoom in" });
+    expect(onSelectLandmark).toHaveBeenCalledTimes(1);
+    act(() => { lifecycle.fail?.(); });
+    expect(screen.getByRole("alert")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "Try again" }));
+    await screen.findByRole("button", { name: "Zoom in" });
+    expect(onSelectLandmark).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole("alert")).toBeNull();
   });
 });
