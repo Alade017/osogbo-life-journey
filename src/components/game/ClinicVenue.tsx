@@ -147,7 +147,7 @@ export function ClinicVenue({
                     gender={character.gender}
                     appearance={appearance}
                     equipment={playerEquipment}
-                    position={walk.position}
+                    position={[walk.position[0], 0.06, walk.position[1]]}
                     facing={walk.facing}
                     animation={walk.walking ? "walk" : "idle"}
                   />
