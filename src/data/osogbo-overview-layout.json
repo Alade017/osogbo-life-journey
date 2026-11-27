@@ -1,11 +1,12 @@
 {
   "meta": {
-    "version": 3,
+    "version": 4,
     "coordinateSystem": "Normalized fictional overview units, x eastward and z southward; not GIS or navigation coordinates",
     "status": "draft-footprints",
     "width": 100,
     "depth": 100,
-    "replacementPolicy": "Replace legacy city overview geometry at cutover; retain gameplay identifiers and navigation until dependency migration. No visible roads or moving entities. Baruwa Street deferred."
+    "replacementPolicy": "Replace legacy city overview geometry at cutover; retain gameplay identifiers and navigation until dependency migration. No visible roads or moving entities. Baruwa Street deferred.",
+    "housingPlacementNote": "Authored display-only relocation of six existing reusable housing listings; no change to ownership, rent, navigation or server coordinates. House type IDs are stable listing keys for this existing API; ambiguous duplicate rows must not be positioned."
   },
   "districts": [
     {
@@ -1385,6 +1386,32 @@
       },
       "kind": "decorative-commercial",
       "propertyId": null
+    }
+  ],
+  "housingListingAnchors": [
+    {
+      "houseTypeId": "shared-room",
+      "parcelId": "oja-oba-residential-1"
+    },
+    {
+      "houseTypeId": "single-room",
+      "parcelId": "oja-oba-residential-2"
+    },
+    {
+      "houseTypeId": "studio-flat",
+      "parcelId": "ogo-oluwa-residential-2"
+    },
+    {
+      "houseTypeId": "mini-flat",
+      "parcelId": "olaiya-residential-1"
+    },
+    {
+      "houseTypeId": "bungalow",
+      "parcelId": "isale-aro-residential-3"
+    },
+    {
+      "houseTypeId": "duplex",
+      "parcelId": "ogo-oluwa-residential-1"
     }
   ]
 }
