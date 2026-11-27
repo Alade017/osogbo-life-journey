@@ -142,4 +142,68 @@ describe("Drizzle migration ledger audit", () => {
     expect(result.timestampWarnings).toEqual([]);
     expect(result.unknown).toHaveLength(2);
   });
+
+  it("reports an explicit raw checksum match at the exact timestamp", () => {
+    const result = auditDrizzleLedger(
+      [migration({
+        acceptedHashes: [hashA, hashB],
+        checksumHashes: { raw: hashB, lfNormalized: hashA },
+      })],
+      [row({ hash: hashB })],
+    );
+    expect(result.checksumMatches).toEqual([
+      {
+        tag: "0091_mini_game_hardening",
+        hash: hashB,
+        checksumType: "raw",
+        timestampMatch: "exact",
+      },
+    ]);
+  });
+
+  it("reports an explicit LF-normalized checksum match at the exact timestamp", () => {
+    const result = auditDrizzleLedger(
+      [migration({
+        acceptedHashes: [hashA, hashB],
+        checksumHashes: { raw: hashB, lfNormalized: hashA },
+      })],
+      [row({ hash: hashA })],
+    );
+    expect(result.checksumMatches).toEqual([
+      {
+        tag: "0091_mini_game_hardening",
+        hash: hashA,
+        checksumType: "lf-normalized",
+        timestampMatch: "exact",
+      },
+    ]);
+  });
+
+  it("reports checksum representation separately from timestamp fallback", () => {
+    const result = auditDrizzleLedger(
+      [migration({
+        acceptedHashes: [hashA, hashB],
+        checksumHashes: { raw: hashB, lfNormalized: hashA },
+      })],
+      [row({ created_at: 1794463200001, hash: hashB })],
+    );
+    expect(result.checksumMatches).toEqual([
+      {
+        tag: "0091_mini_game_hardening",
+        hash: hashB,
+        checksumType: "raw",
+        timestampMatch: "fallback",
+      },
+    ]);
+    expect(result.timestampWarnings).toHaveLength(1);
+  });
+
+  it("does not guess checksum representation when explicit metadata is absent", () => {
+    const result = auditDrizzleLedger(
+      [migration({ acceptedHashes: [hashA, hashB] })],
+      [row({ hash: hashB })],
+    );
+    expect(result.checksumMatches[0]?.checksumType).toBe("unspecified");
+  });
+
 });
