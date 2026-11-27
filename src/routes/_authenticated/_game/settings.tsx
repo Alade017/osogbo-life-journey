@@ -45,7 +45,6 @@ import {
   enableGameAudio,
   readGameAudioLevels,
   setGameAudioLevels,
-  isGameAudioActive,
   readMuteOnTabSwitch,
   setMuteOnTabSwitch,
 } from "@/lib/game-audio";
@@ -199,6 +198,11 @@ export function SettingsPage() {
 
   return (
     <div className="sx-page" data-reduced={profile.reduced_motion ? "true" : "false"}>
+      <div className="sx-page-heading">
+        <p>OSOGBO LIFE · PLAYER PREFERENCES</p>
+        <h1>Settings</h1>
+        <span>Fine-tune your world, display and account.</span>
+      </div>
 
 
       <>
@@ -496,13 +500,6 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
     const next = { ...levels, master: volume };
     setGameAudioLevels(next);
     setLevels(next);
-    if (volume > 0 && !isGameAudioActive()) {
-      const started = await enableGameAudio(next);
-      if (!started) {
-        setBlocked(true);
-        toast.error("Your browser needs one tap on this page before audio can start.");
-      }
-    }
   }
 
   function updateMuteOnTabSwitch(enabled: boolean) {
