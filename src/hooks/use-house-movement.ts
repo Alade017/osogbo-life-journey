@@ -1,24 +1,64 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { RoomPoint } from "@/game/house-navigation";
+
+const POSITION_KEY_PREFIX = "osun:house:position:";
+
+/** Last resting spot in a house, kept per house for this browser tab so a refresh resumes there. */
+function readSavedPosition(houseKey: string): RoomPoint | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(POSITION_KEY_PREFIX + houseKey);
+    if (!raw) return null;
+    const value: unknown = JSON.parse(raw);
+    if (
+      Array.isArray(value) &&
+      value.length === 3 &&
+      value.every((part) => typeof part === "number" && Number.isFinite(part))
+    )
+      return [value[0], value[1], value[2]] as RoomPoint;
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+function savePosition(houseKey: string, point: RoomPoint): void {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(POSITION_KEY_PREFIX + houseKey, JSON.stringify(point));
+  } catch {
+    // Storage can be full or disabled; the character then simply starts at the default spot.
+  }
+}
+
 export function useHouseMovement(resetKey: string, initial: RoomPoint) {
-  const [position, setPosition] = useState<RoomPoint>(initial),
-    [walking, setWalking] = useState(false);
+  const [position, setPosition] = useState<RoomPoint>(() => readSavedPosition(resetKey) ?? initial);
+  const [walking, setWalking] = useState(false);
   const [facing, setFacing] = useState<"north" | "south" | "east" | "west">("south");
   const current = useRef(position),
     frame = useRef(0),
-    resolve = useRef<((arrived: boolean) => void) | null>(null);
+    resolve = useRef<((arrived: boolean) => void) | null>(null),
+    houseKey = useRef(resetKey);
+  houseKey.current = resetKey;
   const cancel = useCallback(() => {
     cancelAnimationFrame(frame.current);
     resolve.current?.(false);
     resolve.current = null;
+    savePosition(houseKey.current, current.current);
     setWalking(false);
   }, []);
   useEffect(() => {
     cancel();
-    current.current = initial;
-    setPosition(initial);
+    const start = readSavedPosition(resetKey) ?? initial;
+    current.current = start;
+    setPosition(start);
     return cancel;
   }, [resetKey, cancel]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const save = () => savePosition(houseKey.current, current.current);
+    window.addEventListener("pagehide", save);
+    return () => window.removeEventListener("pagehide", save);
+  }, []);
   useEffect(() => {
     const stop = () => {
       if (document.hidden || !navigator.onLine) cancel();
@@ -52,8 +92,14 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
               distance = Math.hypot(dx, dy, dz);
             if (Math.hypot(dx, dz) > 0.001) {
               setFacing(
-              Math.abs(dx) > Math.abs(dz) ? (dx > 0 ? "east" : "west") : dz > 0 ? "south" : "north",
-            );
+                Math.abs(dx) > Math.abs(dz)
+                  ? dx > 0
+                    ? "east"
+                    : "west"
+                  : dz > 0
+                    ? "south"
+                    : "north",
+              );
             }
             if (distance <= remaining || reduced) {
               current.current = to;
@@ -75,6 +121,7 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
           if (segment === path.length) {
             setWalking(false);
             resolve.current = null;
+            savePosition(houseKey.current, current.current);
             done(true);
           } else frame.current = requestAnimationFrame(tick);
         };
@@ -88,6 +135,7 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
     (point: RoomPoint) => {
       cancel();
       current.current = point;
+      savePosition(houseKey.current, point);
       setPosition(point);
     },
     [cancel],

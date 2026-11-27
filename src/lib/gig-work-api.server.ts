@@ -6,6 +6,7 @@ const statusByCode: Record<string, number> = {
   APPLICANT_NOT_FOUND: 404,
   GIG_UNAVAILABLE: 409,
   OWN_GIG: 409,
+  OFFER_OUT_OF_RANGE: 400,
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -58,6 +59,7 @@ type GigBody = {
   title?: unknown;
   description?: unknown;
   pay?: unknown;
+  payMax?: unknown;
   offer?: unknown;
   applicantId?: unknown;
 };
@@ -75,10 +77,13 @@ export async function handleGigActionRequest(request: Request) {
   const call = rpcCaller();
   try {
     if (body.action === "post") {
+      const payMax = body.payMax ?? body.pay;
       if (
         typeof body.title !== "string" ||
         typeof body.description !== "string" ||
-        !isPositiveInt(body.pay)
+        !isPositiveInt(body.pay) ||
+        !isPositiveInt(payMax) ||
+        payMax < body.pay
       )
         return response({ error: { code: "INVALID_REQUEST" } }, 400);
       return response(
@@ -88,6 +93,7 @@ export async function handleGigActionRequest(request: Request) {
           p_title: body.title,
           p_description: body.description,
           p_pay_minor: body.pay,
+          p_pay_max_minor: payMax,
         }),
       );
     }

@@ -1,45 +1,125 @@
-import { useState } from "react";
-import {
-  Camera,
-  Check,
-  Image as ImageIcon,
-  Monitor,
-  RotateCcw,
-  Smartphone,
-  Sparkles,
-  SwitchCamera,
-  Zap,
-} from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Camera, Check, Image as ImageIcon, Monitor, SwitchCamera, Trash2, X } from "lucide-react";
+import { captureGameScreen } from "@/lib/camera-screen-capture";
+import { deletePhoto, listPhotos, savePhoto, type CapturedPhoto } from "@/lib/camera-gallery";
 import "./camera-app.css";
 
 type CameraFacing = "rear" | "front";
-type CaptureMode = "world" | "screen";
+type CaptureMode = "photo" | "screen";
+type LiveState = "starting" | "live" | "unavailable";
 
-/**
- * UI prototype only. No getUserMedia, screen capture, file writes or camera permissions.
- * Capture state is simulated until the media pipeline is implemented.
- */
+/** Real device camera preview and capture, with an on-device gallery. Screenshots read the 3D view. */
 export function CameraApp() {
   const [facing, setFacing] = useState<CameraFacing>("rear");
-  const [mode, setMode] = useState<CaptureMode>("world");
-  const [captureCount, setCaptureCount] = useState(0);
-  const [lastCapture, setLastCapture] = useState<string | null>(null);
-  const [flash, setFlash] = useState(false);
+  const [mode, setMode] = useState<CaptureMode>("photo");
+  const [live, setLive] = useState<LiveState>("starting");
+  const [photos, setPhotos] = useState<CapturedPhoto[]>([]);
+  const [thumbs, setThumbs] = useState<Record<string, string>>({});
   const [galleryOpen, setGalleryOpen] = useState(false);
+  const [flash, setFlash] = useState(false);
+  const [message, setMessage] = useState<string | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const isScreen = mode === "screen";
 
-  const capture = () => {
-    const nextCount = captureCount + 1;
-    const label =
-      mode === "screen" ? "Screen capture" : facing === "front" ? "Selfie" : "World photo";
+  const refreshPhotos = () => {
+    void listPhotos().then(setPhotos);
+  };
 
-    setCaptureCount(nextCount);
-    setLastCapture(label);
-    setGalleryOpen(false);
+  useEffect(() => {
+    let cancelled = false;
+    void listPhotos().then((items) => {
+      if (!cancelled) setPhotos(items);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (typeof URL.createObjectURL !== "function") return;
+    const next: Record<string, string> = {};
+    for (const photo of photos) next[photo.id] = URL.createObjectURL(photo.blob);
+    setThumbs(next);
+    return () => {
+      for (const url of Object.values(next)) URL.revokeObjectURL(url);
+    };
+  }, [photos]);
+
+  useEffect(() => {
+    if (isScreen) return;
+    const devices = typeof navigator !== "undefined" ? navigator.mediaDevices : undefined;
+    if (!devices?.getUserMedia) {
+      setLive("unavailable");
+      return;
+    }
+    let stream: MediaStream | null = null;
+    let cancelled = false;
+    setLive("starting");
+    devices
+      .getUserMedia({ video: { facingMode: facing === "front" ? "user" : "environment" } })
+      .then((media) => {
+        if (cancelled) {
+          media.getTracks().forEach((track) => track.stop());
+          return;
+        }
+        stream = media;
+        if (videoRef.current) videoRef.current.srcObject = media;
+        setLive("live");
+      })
+      .catch(() => {
+        if (!cancelled) setLive("unavailable");
+      });
+    return () => {
+      cancelled = true;
+      stream?.getTracks().forEach((track) => track.stop());
+      if (videoRef.current) videoRef.current.srcObject = null;
+    };
+  }, [facing, isScreen]);
+
+  const flashOnce = () => {
     setFlash(true);
     window.setTimeout(() => setFlash(false), 180);
   };
 
-  const isScreen = mode === "screen";
+  const capturePhoto = async () => {
+    const video = videoRef.current;
+    if (live !== "live" || !video || !video.videoWidth) {
+      setMessage("The camera is not available on this device. Try a screenshot instead.");
+      return;
+    }
+    const canvas = document.createElement("canvas");
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext("2d")?.drawImage(video, 0, 0, canvas.width, canvas.height);
+    const blob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((result) => resolve(result), "image/jpeg", 0.9),
+    );
+    if (!blob) {
+      setMessage("That photo could not be saved. Please try again.");
+      return;
+    }
+    await savePhoto(blob, facing === "front" ? "Selfie" : "Photo");
+    flashOnce();
+    setMessage(`${facing === "front" ? "Selfie" : "Photo"} saved to your gallery`);
+    refreshPhotos();
+  };
+
+  const captureScreen = async () => {
+    const blob = await captureGameScreen();
+    if (!blob) {
+      setMessage("There is no 3D view on this screen to capture.");
+      return;
+    }
+    await savePhoto(blob, "Screenshot");
+    flashOnce();
+    setMessage("Screenshot saved to your gallery");
+    refreshPhotos();
+  };
+
+  const remove = async (id: string) => {
+    await deletePhoto(id);
+    refreshPhotos();
+  };
 
   return (
     <section className="phone-camera-app" aria-label="Camera">
@@ -49,10 +129,10 @@ export function CameraApp() {
         </span>
         <div>
           <strong>Camera</strong>
-          <p>Capture your moments around Osogbo</p>
+          <p>Take photos around Osogbo</p>
         </div>
-        <span className="phone-camera-count" aria-label={`${captureCount} captures`}>
-          {captureCount}
+        <span className="phone-camera-count" aria-label={`${photos.length} captures`}>
+          {photos.length}
         </span>
       </header>
 
@@ -66,18 +146,14 @@ export function CameraApp() {
           ]
             .filter(Boolean)
             .join(" ")}
-          role="img"
-          aria-label={
-            isScreen
-              ? "Illustrative screen capture preview"
-              : `Illustrative ${facing} camera preview`
-          }
         >
           <div className="phone-camera-viewfinder-top">
             <span>
-              <i /> {isScreen ? "SCREEN" : facing === "front" ? "FRONT CAMERA" : "WORLD CAMERA"}
+              <i /> {isScreen ? "SCREEN" : facing === "front" ? "FRONT CAMERA" : "CAMERA"}
             </span>
-            <span className="phone-camera-resolution">UI PREVIEW</span>
+            <span className="phone-camera-resolution">
+              {isScreen ? "3D VIEW" : live === "live" ? "LIVE" : live === "starting" ? "…" : "OFF"}
+            </span>
           </div>
 
           <div className="phone-camera-scene">
@@ -85,39 +161,38 @@ export function CameraApp() {
               <div className="phone-camera-screen-art">
                 <Monitor aria-hidden="true" />
                 <strong>Game screen</strong>
-                <small>Screenshot framing preview</small>
+                <small>Captures the 3D view on this screen</small>
               </div>
             ) : (
               <>
-                <div className="phone-camera-sky" />
-                <div className="phone-camera-sun" />
-                <div className="phone-camera-horizon" />
-                <div className="phone-camera-building building-one" />
-                <div className="phone-camera-building building-two" />
-                <div className="phone-camera-building building-three" />
-                <div className="phone-camera-person" />
-                <span className="phone-camera-location">OSOGBO · NIGERIA</span>
+                <video
+                  ref={videoRef}
+                  className="phone-camera-video"
+                  autoPlay
+                  playsInline
+                  muted
+                  aria-label={`${facing} camera live view`}
+                  hidden={live !== "live"}
+                />
+                {live !== "live" && (
+                  <div className="phone-camera-screen-art">
+                    <Camera aria-hidden="true" />
+                    <strong>
+                      {live === "starting" ? "Starting camera…" : "Camera not available"}
+                    </strong>
+                    <small>Allow camera access in your browser to take photos.</small>
+                  </div>
+                )}
               </>
             )}
             <span className="phone-camera-focus" />
           </div>
 
           <div className="phone-camera-viewfinder-bottom">
-            <span>
-              {isScreen
-                ? "Capture what is on screen"
-                : facing === "front"
-                  ? "Self portrait"
-                  : "Explore your surroundings"}
-            </span>
+            <span>{isScreen ? "Capture what is on screen" : "Explore your surroundings"}</span>
             <span>1×</span>
           </div>
         </div>
-
-        <p className="phone-camera-prototype-note">
-          <Sparkles size={13} aria-hidden="true" />
-          Preview interface only — device camera and screen capture are not connected yet.
-        </p>
       </div>
 
       <div className="phone-camera-modes" role="group" aria-label="Capture mode">
@@ -125,7 +200,7 @@ export function CameraApp() {
           type="button"
           className={!isScreen ? "is-active" : ""}
           aria-pressed={!isScreen}
-          onClick={() => setMode("world")}
+          onClick={() => setMode("photo")}
         >
           <Camera size={15} aria-hidden="true" /> Photo
         </button>
@@ -143,20 +218,19 @@ export function CameraApp() {
         <button
           type="button"
           className="phone-camera-side-control"
-          aria-label={galleryOpen ? "Close captured preview" : "Open captured preview"}
+          aria-label={galleryOpen ? "Close gallery" : "Open gallery"}
           aria-expanded={galleryOpen}
           onClick={() => setGalleryOpen((open) => !open)}
-          disabled={!lastCapture}
         >
           <ImageIcon aria-hidden="true" />
-          <small>{captureCount ? "Preview" : "Gallery"}</small>
+          <small>Gallery</small>
         </button>
 
         <button
           type="button"
           className="phone-camera-shutter"
-          onClick={capture}
-          aria-label={isScreen ? "Capture screenshot preview" : "Capture photo preview"}
+          onClick={() => void (isScreen ? captureScreen() : capturePhoto())}
+          aria-label={isScreen ? "Take screenshot" : "Take photo"}
         >
           <span />
         </button>
@@ -173,49 +247,51 @@ export function CameraApp() {
         </button>
       </div>
 
-      <div className="phone-camera-footer">
-        <span>
-          <Zap size={14} aria-hidden="true" /> Flash off
-        </span>
-        <span>
-          <Smartphone size={14} aria-hidden="true" />{" "}
-          {isScreen ? "Screen mode" : facing === "front" ? "Front lens" : "Rear lens"}
-        </span>
-        <button
-          type="button"
-          onClick={() => {
-            setCaptureCount(0);
-            setLastCapture(null);
-            setGalleryOpen(false);
-          }}
-          disabled={!captureCount}
-        >
-          <RotateCcw size={13} aria-hidden="true" /> Reset
-        </button>
-      </div>
-
-      {lastCapture && galleryOpen && (
-        <div className="phone-camera-gallery-preview" role="region" aria-label="Captured preview">
-          <div className="phone-camera-gallery-thumb">
-            <ImageIcon aria-hidden="true" />
-          </div>
-          <span>
-            <strong>{lastCapture}</strong>
-            <small>Illustrative preview · Capture #{captureCount}</small>
-          </span>
-        </div>
+      {message && (
+        <p className="phone-camera-prototype-note" role="status" aria-live="polite">
+          <Check size={13} aria-hidden="true" />
+          {message}
+        </p>
       )}
 
-      {lastCapture && (
-        <div className="phone-camera-captured" role="status" aria-live="polite">
-          <span className="phone-camera-captured-icon">
-            <Check size={16} aria-hidden="true" />
-          </span>
-          <span>
-            <strong>{lastCapture} preview captured</strong>
-            <small>Capture #{captureCount} · UI state only, not saved as a file</small>
-          </span>
-        </div>
+      {galleryOpen && (
+        <section className="phone-camera-gallery" aria-label="Captured photos">
+          {photos.length === 0 ? (
+            <p className="phone-camera-prototype-note">
+              No photos yet. Take one, or hold the camera button on the game screen for a
+              screenshot.
+            </p>
+          ) : (
+            <ul className="phone-camera-gallery-grid">
+              {photos.map((photo) => (
+                <li key={photo.id}>
+                  {thumbs[photo.id] ? (
+                    <img src={thumbs[photo.id]} alt={`${photo.label} from gallery`} />
+                  ) : (
+                    <span className="phone-camera-gallery-placeholder">
+                      <ImageIcon aria-hidden="true" />
+                    </span>
+                  )}
+                  <small>{photo.label}</small>
+                  <button
+                    type="button"
+                    aria-label={`Delete ${photo.label.toLowerCase()} from gallery`}
+                    onClick={() => void remove(photo.id)}
+                  >
+                    <Trash2 size={13} aria-hidden="true" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+          <button
+            type="button"
+            className="phone-camera-gallery-close"
+            onClick={() => setGalleryOpen(false)}
+          >
+            <X size={13} aria-hidden="true" /> Close
+          </button>
+        </section>
       )}
     </section>
   );

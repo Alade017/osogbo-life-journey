@@ -76,6 +76,8 @@ import { homeFurnitureAction, homeFurnitureActions } from "@/lib/home-furniture-
 
 /** Length of the door swing, matching the door animation in the room. */
 const DOOR_SWING_MS = 650;
+/** Entry stops this far past the back wall: beyond the open door leaf (1.12 m wide) so nobody stands in the door. */
+const ENTRY_STOP_DEPTH = 1.25;
 import { foodDeliveryService } from "@/lib/food-delivery-service";
 import { ACTION_CATALOG, type LifeActionId } from "@/lib/life-simulation";
 import { HousingReliefPanel } from "@/components/game/housing/HousingReliefPanel";
@@ -88,6 +90,8 @@ import type { Appearance } from "@/game/avatar-appearance";
 import housingData from "@/data/housing.json";
 import { avatarAnimationForActivity } from "@/game/character-animation";
 import { formatNaira, q, rpc } from "@/lib/game";
+import { EQUIPMENT_REFRESH_EVENT } from "@/lib/equipment-service";
+import { publicWornEquipment } from "@/game/wearable-outfits";
 import {
   runHomeDepartureAfterWalk,
   takeDepartureFromHomeWhenReady,
@@ -372,6 +376,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
   const queryClient = useQueryClient();
   const gameTime = useGameTime();
   const { data: character, isLoading: characterLoading } = useQuery(q.character());
+  const equipmentQuery = useQuery({ ...q.equipment(), enabled: !!character });
   const { data: wallet } = useQuery(q.wallet());
   const [online, setOnline] = useState(() => typeof navigator === "undefined" || navigator.onLine);
   const [editing, setEditing] = useState(false);
@@ -434,6 +439,21 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
       document.removeEventListener("visibilitychange", onVisibilityChange);
     };
   }, [refreshHouseState]);
+
+  // Inventory equip/unequip announces a refresh; the house avatar must follow it straight away.
+  useEffect(() => {
+    const onEquipmentChanged = () => {
+      void queryClient.invalidateQueries({ queryKey: q.equipment().queryKey });
+      void queryClient.invalidateQueries({ queryKey: q.character().queryKey });
+      if (character?.id)
+        void queryClient.invalidateQueries({
+          queryKey: houseStateQueryKey(character.id),
+          exact: true,
+        });
+    };
+    window.addEventListener(EQUIPMENT_REFRESH_EVENT, onEquipmentChanged);
+    return () => window.removeEventListener(EQUIPMENT_REFRESH_EVENT, onEquipmentChanged);
+  }, [character?.id, queryClient]);
 
   const stateQuery = useQuery({
     queryKey: character?.id
@@ -846,8 +866,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     )
       return;
     const threshold = houseDoorThreshold(serverState.house.house_type_id, roomWidth, roomDepth);
+    const entryStop: RoomPoint = [threshold[0], threshold[1], -roomDepth / 2 + ENTRY_STOP_DEPTH];
     if (!sceneAvailable) {
-      movement.place(threshold);
+      movement.place(entryStop);
       endTransition();
       return;
     }
@@ -867,7 +888,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         place: (point) => {
           if (active) movement.place(point);
         },
-        fallback: threshold,
+        fallback: entryStop,
       });
     void (async () => {
       try {
@@ -880,9 +901,9 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
         if (!active) return;
         setDoorInteracting(false);
         completeTransitionStep("Walking in");
-        await walkLeg([handle, threshold]);
+        await walkLeg([handle, entryStop]);
       } catch {
-        if (active) movement.place(threshold);
+        if (active) movement.place(entryStop);
       } finally {
         if (active) {
           setDoorOpen(false);
@@ -1588,9 +1609,12 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
     ? Math.min(100, Math.round((displayedElapsed / Math.max(1, taskTiming.duration)) * 100))
     : 0;
 
-  const avatarEquipment = (["head", "top", "bottom", "shoes", "accessory"] as const).flatMap(
-    (slot) => (outfit[slot] ? [{ slot }] : []),
-  );
+  // Full equipment rows (with item details) so the avatar shows the worn item, not just its slot.
+  const avatarEquipment = equipmentQuery.data
+    ? publicWornEquipment(equipmentQuery.data)
+    : (["head", "top", "bottom", "shoes", "accessory"] as const).flatMap((slot) =>
+        outfit[slot] ? [{ slot }] : [],
+      );
   const currentActivity = gameTime.simulation.currentAction;
   const activityFurniture = currentActivity
     ? ACTION_CATALOG[currentActivity.actionId].requiredFurniture
