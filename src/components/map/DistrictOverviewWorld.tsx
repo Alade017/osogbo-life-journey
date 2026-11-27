@@ -8,6 +8,7 @@ import { useThree } from "@react-three/fiber";
 import { MapPointerGesture } from "./map-pointer-gesture";
 import catalog from "@/data/osogbo-district-catalog.json";
 import layout from "@/data/osogbo-overview-layout.json";
+import { overviewBillboards } from "./overview-billboard-placement";
 import { TownBrandBillboards3D } from "./TownBrandBillboards3D";
 import { OverviewLandmarkModel } from "./OverviewLandmarkModel";
 import { OverviewPropertyModel } from "./OverviewPropertyModel";
@@ -157,8 +158,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
     controls.current?.update();
     invalidate();
   }, [camera, fit, invalidate, zoomRequest]);
-  const brands = layout.districts.filter(d => d.districtId === "olaiya" || d.districtId === "ogo-oluwa")
-    .map(d => ({ position: [d.bounds.x - layout.meta.width / 2 + 0.35, d.center.z - layout.meta.depth / 2] as const }));
+  const brands = overviewBillboards.map(board => ({ id: board.id, brandId: board.brandId, position: [board.position.x - layout.meta.width / 2, board.position.z - layout.meta.depth / 2] as const }));
   return (
     <>
       <OrbitControls ref={controls} makeDefault enableRotate enablePan enableZoom minPolarAngle={0.25}
@@ -226,7 +226,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
         return <mesh key={marker.campaignId} position={[x+0.7, 3.2, z]} onClick={e => { e.stopPropagation(); if (!gesture.current.moved && e.delta < 6) onSelectBillboard?.(marker.campaignId); }}><boxGeometry args={[0.8,0.5,0.15]}/><meshStandardMaterial color="#38577d"/></mesh>;
       })}
       <OverviewLandscape />
-      <TownBrandBillboards3D positions={brands} cell={2} />
+      <TownBrandBillboards3D positions={brands} cell={layout.billboardPolicy.cell} />
     </>
   );
 }
