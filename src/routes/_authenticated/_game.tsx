@@ -12,7 +12,6 @@ import { HomeDashboard } from "@/components/game/HomeDashboard";
 import { HomePlayerStatus } from "@/components/game/HomePlayerStatus";
 import { PhoneLauncher } from "@/components/game/PhoneLauncher";
 import { GameCameraShortcut } from "@/components/game/GameCameraShortcut";
-import { InventoryOverlay } from "@/components/game/InventoryOverlay";
 import { Smartphone } from "lucide-react";
 import { useGameViewport } from "@/hooks/use-game-viewport";
 import { GameMobileNav } from "@/components/game/GameMobileNav";
@@ -76,10 +75,8 @@ function GameLayout() {
   const [housingOpen, setHousingOpen] = useState(false);
   const {
     phoneOpen,
-    inventoryOpen,
     phoneRequest,
     setPhoneOpen,
-    setInventoryOpen,
     onPhoneNavigation,
     openHud,
   } = useGameHud();
@@ -127,10 +124,10 @@ function GameLayout() {
   }, [pathname]);
 
   useEffect(() => {
-    if (!phoneOpen && !housingOpen && !inventoryOpen) return;
+    if (!phoneOpen && !housingOpen) return;
     setHudPanelOpen(false);
     window.dispatchEvent(new Event("osogbo-hud-dismiss-panels"));
-  }, [phoneOpen, housingOpen, inventoryOpen]);
+  }, [phoneOpen, housingOpen]);
   useEffect(() => {
     configureGameMusic(character?.id ?? null);
     return () => {
@@ -275,7 +272,7 @@ function GameLayout() {
               homeHud && "home-hud",
               profile?.reduced_motion && "reduce-motion",
               phoneOpen && "phone-open",
-              (housingOpen || inventoryOpen) && "hud-menu-open",
+              housingOpen && "hud-menu-open",
               hudPanelOpen && "hud-panel-open",
               hudIdle && "hud-idle",
             )}
@@ -318,10 +315,9 @@ function GameLayout() {
 
             <div className={phoneOpen ? "gbb is-open" : "gbb"}>
               <GameMobileNav
-                hidden={phoneOpen || inventoryOpen}
+                hidden={phoneOpen}
                 onHudOpen={openHud}
                 onNavigate={() => setPhoneOpen(false)}
-                onInventoryOpen={() => setInventoryOpen(true)}
               />
               <PhoneLauncher
                 compact
@@ -334,16 +330,11 @@ function GameLayout() {
                   <div className="gbb">
                     <GameMobileNav
                       onNavigate={() => setPhoneOpen(false)}
-                      onInventoryOpen={() => {
-                        setPhoneOpen(false);
-                        setInventoryOpen(true);
-                      }}
                     />
                   </div>
                 }
               />
             </div>
-            <InventoryOverlay open={inventoryOpen} onOpenChange={setInventoryOpen} />
             <HousingChooser
               open={housingOpen}
               pending={housingPending || (housingRequested && housingSource === "profile")}
