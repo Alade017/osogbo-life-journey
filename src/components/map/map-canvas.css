@@ -273,3 +273,48 @@
 .overview-property-panel ul { display: grid; gap: 0.25rem; padding: 0; list-style: none; }
 .overview-property-panel button { min-height: 2.75rem; width: 100%; text-align: left; padding: 0.35rem; }
 .overview-property-panel button:focus-visible, .overview-property-panel summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
+
+/* Overview-only labels and access feedback. */
+.overview-district-label,
+.overview-landmark-label {
+  display: inline-block;
+  max-width: min(12rem, 36vw);
+  padding: 0.25rem 0.45rem;
+  border-radius: 0.4rem;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: clamp(0.65rem, 1.2vw, 0.8rem);
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+.overview-landmark-label {
+  font-weight: 700;
+  border: 1px solid var(--border);
+}
+.overview-access-notice {
+  position: absolute;
+  bottom: 0.75rem;
+  left: 0.75rem;
+  z-index: 23;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  max-width: min(24rem, calc(100% - 5rem));
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.8rem;
+}
+.overview-access-notice button {
+  flex-shrink: 0;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+}
+.overview-access-notice button:focus-visible {
+  outline: 2px solid var(--ring);
+}
