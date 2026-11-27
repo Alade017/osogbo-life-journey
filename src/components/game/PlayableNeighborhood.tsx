@@ -1849,6 +1849,24 @@ export function PlayableNeighborhood() {
                 </DialogContent>
               </Dialog>
               <div className="neighborhood-controls-row">
+                {connectionState === "connected" && (
+                  <PlayerMovementControls
+                    keyboardEnabled={false}
+                    onDirectionChange={(next) => {
+                      if (next.size > 0) {
+                        autoWalkRouteRef.current = null;
+                        groundTargetRef.current = null;
+                        setGroundTarget(null);
+                        setPendingTargetId(null);
+                        dispatchZone(setPendingZoneId(null));
+                        setHomeBound(false);
+                        setHasWalked(true);
+                      }
+                      setDirections(next);
+                    }}
+                    onFollowChange={(enabled) => scene?.setFollow(enabled)}
+                  />
+                )}
                 {district?.personalHome && (
                   <button
                     type="button"
