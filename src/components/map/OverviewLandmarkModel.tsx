@@ -1,10 +1,11 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
+import { OverviewBox } from "./OverviewModelResources";
 
 type ModelProps = { profile: string; width: number; depth: number; color: string };
 type Vec = [number, number, number];
 
 function Box({ p, s, color }: { p: Vec; s: Vec; color: string }) {
-  return <mesh position={p}><boxGeometry args={s}/><meshStandardMaterial color={color}/></mesh>;
+  return <OverviewBox position={p} size={s} color={color}/>;
 }
 function Cylinder({ p, radius, height, color, sides = 16 }: { p: Vec; radius: number; height: number; color: string; sides?: number }) {
   return <mesh position={p}><cylinderGeometry args={[radius, radius, height, sides]}/><meshStandardMaterial color={color}/></mesh>;
@@ -27,7 +28,7 @@ function Facade({ color, height = 0.32 }: { color: string; height?: number }) {
 }
 
 /** Models use normalized local coordinates; the enclosing footprint controls their scale. */
-export function OverviewLandmarkModel({ profile, width, depth, color }: ModelProps) {
+export const OverviewLandmarkModel = memo(function OverviewLandmarkModel({ profile, width, depth, color }: ModelProps) {
   let model: ReactNode;
   switch (profile) {
     case "flyover":
@@ -141,4 +142,4 @@ export function OverviewLandmarkModel({ profile, width, depth, color }: ModelPro
       model = <Facade color={color}/>;
   }
   return <group scale={[width, Math.min(width,depth), depth]}>{model}</group>;
-}
+});
