@@ -1,3 +1,4 @@
+import { SceneHtml } from "@/components/3d/SceneHtml";
 import { useLayoutEffect, useState } from "react";
 import { CanvasTexture, SRGBColorSpace } from "three";
 import layout from "@/data/osogbo-overview-layout.json";
@@ -30,13 +31,25 @@ function BrandBoard({
   position,
   cell,
   texture,
+  label,
 }: {
   position: readonly [number, number];
   cell: number;
   texture: CanvasTexture | null;
+  label?: string | undefined;
 }) {
   return (
     <group position={[position[0], 0, position[1]]}>
+      {label && (
+        <SceneHtml
+          position={[0, cell * 1.22, 0]}
+          center
+          pointerEvents="none"
+          zIndexRange={[15, 10]}
+        >
+          <span className="overview-billboard-label">{label}</span>
+        </SceneHtml>
+      )}
       {[-1, 1].map((side) => (
         <mesh key={side} position={[side * cell * 0.35, cell * 0.35, 0]} castShadow>
           <boxGeometry args={[0.1, cell * 0.7, 0.1]} />
@@ -64,7 +77,9 @@ function BrandBoard({
 export function TownBrandBillboards3D({
   positions,
   cell,
+  showLabels = false,
 }: {
+  showLabels?: boolean;
   positions: readonly { id?: string; brandId?: string; position: readonly [number, number] }[];
   cell: number;
 }) {
@@ -94,6 +109,7 @@ export function TownBrandBillboards3D({
             texture={textures.get(brand.id) ?? null}
             position={sign.position}
             cell={cell}
+            label={showLabels ? `${brand.name} ${brand.subtitle}` : undefined}
           />
         );
       })}

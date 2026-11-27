@@ -214,7 +214,7 @@ export function MapCanvas({
     <section
       className="map-canvas town-map-canvas"
       style={{ background: WORLD_PALETTE.ground }}
-      aria-label="Interactive 3D town map with open camera exploration"
+      aria-label="Osogbo district map with pan and zoom"
     >
       <MapLoadBoundary key={rendererAttempt} onUnavailable={handleUnavailable}>
         <Suspense fallback={null}>

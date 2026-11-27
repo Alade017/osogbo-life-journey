@@ -428,8 +428,7 @@ export function CityMapDashboard(
           <div className="ncm-3d-companion">
             <div className="ncm-3d-companion-bar">
               <div>
-                <strong>Places &amp; districts</strong>{" "}
-                <span>Explore districts and select a destination</span>
+                <strong>Osogbo</strong> <span>Drag to pan · Zoom for place names</span>
               </div>
               <button
                 type="button"

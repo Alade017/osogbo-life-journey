@@ -1,3 +1,4 @@
+import { OVERVIEW_CAMERA_POSITION } from "./overview-camera";
 import { Component, useEffect, useRef, type ReactNode } from "react";
 import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OverviewModelResources } from "./OverviewModelResources";
@@ -58,7 +59,7 @@ export function DistrictOverviewSurface({
         orthographic
         frameloop="demand"
         dpr={[1, 1.5]}
-        camera={{ position: [75, 100, 95], near: 0.1, far: 500 }}
+        camera={{ position: OVERVIEW_CAMERA_POSITION, near: 0.1, far: 500 }}
         gl={{ antialias: true, powerPreference: "low-power" }}
         fallback={<span>3D map rendering is unavailable in this browser.</span>}
       >

@@ -1,6 +1,8 @@
+export const OVERVIEW_CAMERA_POSITION: [number, number, number] = [0, 125, 22];
+
 /** Pure camera constraints for the presentation-only overview. */
 export function overviewFit(width: number, height: number, mapWidth: number, mapDepth: number) {
-  return Math.max(0.01, Math.min(width, height) / (Math.hypot(mapWidth, mapDepth) * 1.12));
+  return Math.max(0.01, Math.min(width / mapWidth, height / mapDepth) / 1.08);
 }
 export function overviewClampZoom(zoom: number, fit: number) {
   return Math.max(fit, Math.min(fit * 5, zoom));

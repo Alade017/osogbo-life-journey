@@ -39,10 +39,10 @@ function fixture(initial: string) {
               : "closed"}
         </output>
         <GameMobileNav
-          onHudOpen={hud.openHud}
           onNavigate={() => hud.setPhoneOpen(false)}
           onInventoryOpen={() => hud.setInventoryOpen(true)}
         />
+        <button onClick={() => hud.openHud("map")}>Open map directory</button>
         <button onClick={() => hud.setPhoneOpen(false)}>Close phone</button>
         <Outlet />
       </>
@@ -81,13 +81,21 @@ it("closes the directory instead of reopening it when Map is tapped on the city 
   expect(screen.getByText("City map world")).toBeVisible();
 });
 
+it("opens the city map directly from the house dock", async () => {
+  fixture("/house");
+  await screen.findByText("Home world remains mounted");
+  fireEvent.click(screen.getByRole("link", { name: "Map" }));
+  await screen.findByText("City map world");
+  expect(screen.getByTestId("href")).toHaveTextContent("/map");
+  expect(screen.getByTestId("panel")).toHaveTextContent("closed");
+});
+
 it("opens HUDs and follows Back/Forward without remounting the world route", async () => {
   const { router, mounted, departed } = fixture("/house?floor=1#bed");
   await screen.findByText("Home world remains mounted");
-  // Career Life is a page link now (see be8a6d8b), so only the Map HUD is opened from here.
   expect(screen.getByRole("link", { name: "Career Life" })).toHaveAttribute("href", "/jobs");
   expect(screen.getByRole("link", { name: "Map" })).toHaveAttribute("href", "/map");
-  fireEvent.click(screen.getByRole("link", { name: "Map" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open map directory" }));
   await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("Map"));
   expect(screen.getByTestId("href")).toHaveTextContent("/house?floor=1&hud=map#bed");
   await act(async () => router.history.back());

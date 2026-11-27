@@ -1,11 +1,16 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import { SceneHtml } from "@/components/3d/SceneHtml";
-import { Vector3, OrthographicCamera } from "three";
+import { Vector3, OrthographicCamera, MOUSE, TOUCH } from "three";
 import { overviewDistrictId, overviewPlacePosition } from "./overview-district-routing";
 import type { MapSearchTarget, MapEventChip, MapBillboardMarker, MapProperty } from "./MapCanvas";
 import { OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
-import { overviewFit, overviewClampZoom, overviewPanCorrection } from "./overview-camera";
+import {
+  OVERVIEW_CAMERA_POSITION,
+  overviewFit,
+  overviewClampZoom,
+  overviewPanCorrection,
+} from "./overview-camera";
 import { MapPointerGesture } from "./map-pointer-gesture";
 import catalog from "@/data/osogbo-district-catalog.json";
 import layout from "@/data/osogbo-overview-layout.json";
@@ -28,9 +33,6 @@ const districtById = new Map(catalog.districts.map((d) => [d.id, d] as const));
 const placeById = new Map(
   [...catalog.places, ...catalog.pendingLandmarks].map((p) => [p.id, p] as const),
 );
-const mobileDistricts = [...layout.districts]
-  .sort((a, b) => b.bounds.width * b.bounds.depth - a.bounds.width * a.bounds.depth)
-  .map((d) => d.districtId);
 const palette: Record<string, string> = {
   "commercial-transit": "#c5a478",
   "royal-heritage": "#b68c62",
@@ -129,7 +131,7 @@ export function DistrictOverviewWorld({
     target: undefined,
     landmark: undefined,
   });
-  const [focusedDistrict, setFocusedDistrict] = useState<string | null>(null);
+  const [detailLabels, setDetailLabels] = useState(false);
   const fit = overviewFit(size.width, size.height, layout.meta.width, layout.meta.depth);
   const constrainCamera = useCallback(() => {
     const orbit = controls.current;
@@ -143,12 +145,13 @@ export function DistrictOverviewWorld({
       camera.position.add(panCorrection);
       camera.updateMatrixWorld();
     }
+    setDetailLabels(camera instanceof OrthographicCamera && camera.zoom >= fit * 1.8);
     invalidate();
-  }, [camera, invalidate, panCorrection]);
+  }, [camera, fit, invalidate, panCorrection]);
   useEffect(() => {
     if (!(camera instanceof OrthographicCamera) || !controls.current) return;
     if (!initialized.current) {
-      camera.position.set(75, 100, 95);
+      camera.position.set(...OVERVIEW_CAMERA_POSITION);
       controls.current.target.set(0, 0, 0);
       camera.zoom = fit;
       initialized.current = true;
@@ -169,10 +172,9 @@ export function DistrictOverviewWorld({
     lastFocus.current = { target: searchTarget, landmark: selectedLandmarkId };
     if (lastReset.current !== resetVersion) {
       lastReset.current = resetVersion;
-      camera.position.set(75, 100, 95);
+      camera.position.set(...OVERVIEW_CAMERA_POSITION);
       controls.current.target.set(0, 0, 0);
       camera.zoom = fit;
-      setFocusedDistrict(null);
     } else {
       const target =
         changedTarget && searchTarget
@@ -192,9 +194,6 @@ export function DistrictOverviewWorld({
       camera.position.add(next.clone().sub(controls.current.target));
       controls.current.target.copy(next);
       camera.zoom = fit * 2.5;
-      setFocusedDistrict(
-        districtId ?? layout.places.find((p) => p.placeId === id)?.districtId ?? null,
-      );
     }
     camera.updateProjectionMatrix();
     controls.current.update();
@@ -219,11 +218,11 @@ export function DistrictOverviewWorld({
       <OrbitControls
         ref={controls}
         makeDefault
-        enableRotate
+        enableRotate={false}
+        mouseButtons={{ LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.PAN }}
+        touches={{ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }}
         enablePan
         enableZoom
-        minPolarAngle={0.25}
-        maxPolarAngle={Math.PI / 2.25}
         minZoom={fit}
         maxZoom={fit * 5}
         onChange={constrainCamera}
@@ -251,25 +250,18 @@ export function DistrictOverviewWorld({
                 polygonOffsetUnits={-1}
               />
             </mesh>
-            {(size.width >= 640 ||
-              (focusedDistrict
-                ? focusedDistrict === d.districtId
-                : mobileDistricts
-                    .slice(0, Math.max(1, Math.floor(size.width / 120)))
-                    .includes(d.districtId))) && (
-              <SceneHtml
-                position={[
-                  d.center.x - layout.meta.width / 2,
-                  0.35,
-                  d.bounds.z + 0.5 - layout.meta.depth / 2,
-                ]}
-                center
-                pointerEvents="none"
-                zIndexRange={[10, 0]}
-              >
-                <span className="district-label overview-district-label">{district?.name}</span>
-              </SceneHtml>
-            )}
+            <SceneHtml
+              position={[
+                d.center.x - layout.meta.width / 2,
+                0.35,
+                d.bounds.z + 0.5 - layout.meta.depth / 2,
+              ]}
+              center
+              pointerEvents="none"
+              zIndexRange={[10, 0]}
+            >
+              <span className="district-label overview-district-label">{district?.name}</span>
+            </SceneHtml>
           </group>
         );
       })}
@@ -304,23 +296,30 @@ export function DistrictOverviewWorld({
               {...entry.footprint}
               color={palette[district?.identity ?? ""] ?? "#d4c7af"}
             />
-            {place && (hoveredPlace === entry.placeId || selectedLandmarkId === entry.placeId) && (
-              <SceneHtml
-                position={[0, Math.min(entry.footprint.width, entry.footprint.depth) * 0.85, 0]}
-                center
-                pointerEvents="none"
-                zIndexRange={[20, 11]}
-              >
-                <span className="district-label overview-landmark-label">
-                  {place.label}
-                  {entry.status === "reserved"
-                    ? " · Not yet open"
-                    : !available.has(entry.placeId)
-                      ? " · Locked"
-                      : ""}
-                </span>
-              </SceneHtml>
-            )}
+            {place &&
+              (detailLabels ||
+                hoveredPlace === entry.placeId ||
+                selectedLandmarkId === entry.placeId) && (
+                <SceneHtml
+                  position={[0, Math.min(entry.footprint.width, entry.footprint.depth) * 0.85, 0]}
+                  center
+                  pointerEvents="none"
+                  zIndexRange={[20, 11]}
+                >
+                  <span
+                    className="district-label overview-landmark-label"
+                    data-locked={entry.status === "reserved" || !available.has(entry.placeId)}
+                  >
+                    <span className="overview-pin-dot" aria-hidden="true" />
+                    {place.label}
+                    {entry.status === "reserved"
+                      ? " · Not yet open"
+                      : !available.has(entry.placeId)
+                        ? " · Locked"
+                        : ""}
+                  </span>
+                </SceneHtml>
+              )}
           </group>
         );
       })}
@@ -352,6 +351,20 @@ export function DistrictOverviewWorld({
                 <meshStandardMaterial color={color} />
               </mesh>
             )}
+            {property?.label && detailLabels && (
+              <SceneHtml
+                position={[
+                  0,
+                  Math.min(parcel.footprint.width, parcel.footprint.depth) * 0.85 + 0.5,
+                  0,
+                ]}
+                center
+                pointerEvents="none"
+                zIndexRange={[20, 11]}
+              >
+                <span className="overview-landmark-label">{property.label}</span>
+              </SceneHtml>
+            )}
           </group>
         );
       })}
@@ -361,7 +374,7 @@ export function DistrictOverviewWorld({
         if (!p) return null;
         const [x, , z] = world(p);
         return (
-          <mesh
+          <group
             key={event.id}
             position={[x, 3.8, z]}
             onClick={(e) => {
@@ -369,9 +382,16 @@ export function DistrictOverviewWorld({
               if (!gesture.current.moved && e.delta < 6) onSelectEvent?.(event.id);
             }}
           >
-            <sphereGeometry args={[0.36, 12, 8]} />
-            <meshStandardMaterial color="#e4a23c" />
-          </mesh>
+            <mesh>
+              <sphereGeometry args={[0.36, 12, 8]} />
+              <meshStandardMaterial color="#e4a23c" />
+            </mesh>
+            {detailLabels && (
+              <SceneHtml position={[0, 0.6, 0]} center pointerEvents="none" zIndexRange={[20, 11]}>
+                <span className="overview-landmark-label">{event.label}</span>
+              </SceneHtml>
+            )}
+          </group>
         );
       })}
       {billboardMarkers.map((marker) => {
@@ -379,21 +399,34 @@ export function DistrictOverviewWorld({
         if (!p) return null;
         const [x, , z] = world(p);
         return (
-          <mesh
+          <group
             key={marker.campaignId}
             position={[x + 0.7, 3.2, z]}
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!gesture.current.moved && e.delta < 6) onSelectBillboard?.(marker.campaignId);
+            onClick={(event) => {
+              event.stopPropagation();
+              if (!gesture.current.moved && event.delta < 6) onSelectBillboard?.(marker.campaignId);
             }}
           >
-            <boxGeometry args={[0.8, 0.5, 0.15]} />
-            <meshStandardMaterial color="#38577d" />
-          </mesh>
+            <mesh>
+              <boxGeometry args={[0.8, 0.5, 0.15]} />
+              <meshStandardMaterial color="#38577d" />
+            </mesh>
+            {detailLabels && (
+              <SceneHtml position={[0, 0.45, 0]} center pointerEvents="none" zIndexRange={[20, 11]}>
+                <span className="overview-billboard-label">
+                  {marker.title ?? marker.advertiserName}
+                </span>
+              </SceneHtml>
+            )}
+          </group>
         );
       })}
       <OverviewLandscape />
-      <TownBrandBillboards3D positions={brands} cell={layout.billboardPolicy.cell} />
+      <TownBrandBillboards3D
+        positions={brands}
+        cell={layout.billboardPolicy.cell}
+        showLabels={detailLabels}
+      />
     </>
   );
 }

@@ -81,7 +81,6 @@ function GameLayout() {
     setPhoneOpen,
     setInventoryOpen,
     onPhoneNavigation,
-    openHud,
   } = useGameHud();
   const [hudIdle, setHudIdle] = useState(false);
   const [hudPanelOpen, setHudPanelOpen] = useState(false);
@@ -319,7 +318,6 @@ function GameLayout() {
             <div className={phoneOpen ? "gbb is-open" : "gbb"}>
               <GameMobileNav
                 hidden={phoneOpen || inventoryOpen}
-                onHudOpen={openHud}
                 onNavigate={() => setPhoneOpen(false)}
                 onInventoryOpen={() => setInventoryOpen(true)}
               />
