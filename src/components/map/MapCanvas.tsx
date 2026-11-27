@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import townData from "@/data/osogbo-town.json";
+import { overviewDistrictId, overviewDistricts, overviewHasPlace } from "./overview-district-routing";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
@@ -127,17 +128,21 @@ export function MapCanvas({
     handledSearchTarget.current = searchTarget;
     if (!searchTarget) return;
     const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
-    if (townData.landmarks.some((landmark) => landmark.id === id)) {
+    const kind = typeof searchTarget === "string" ? undefined : searchTarget.kind;
+    if (kind !== "district" && overviewHasPlace(id)) {
       onSelectLandmark(id);
       return;
     }
-    if (townData.districts.some((district) => district.id === id)) onSelectDistrict(id);
+    if (kind !== "landmark") {
+      const districtId = overviewDistrictId(id);
+      if (districtId) onSelectDistrict(districtId);
+    }
   }, [onSelectDistrict, onSelectLandmark, searchTarget]);
 
   const availablePlaces = useMemo(
     () =>
       townData.landmarks.filter(
-        (place) => availableLandmarkIds === undefined || availableLandmarkIds.includes(place.id),
+        (place) => overviewHasPlace(place.id) && (availableLandmarkIds === undefined || availableLandmarkIds.includes(place.id)),
       ),
     [availableLandmarkIds],
   );
@@ -148,7 +153,7 @@ export function MapCanvas({
         ? []
         : townData.landmarks.filter(
             (place) =>
-              !availableLandmarkIds.includes(place.id) && place.mapObjectType !== "junction",
+              overviewHasPlace(place.id) && !availableLandmarkIds.includes(place.id) && place.mapObjectType !== "junction",
           ),
     [availableLandmarkIds],
   );
@@ -243,7 +248,7 @@ export function MapCanvas({
         ))}
       </ul>
       <ul className="town-map-accessible-list" aria-label="Districts on the map">
-        {townData.districts.map((district) => (
+        {overviewDistricts.map((district) => (
           <li key={district.id}>
             <button type="button" onClick={() => onSelectDistrict(district.id)}>
               {district.name} district
