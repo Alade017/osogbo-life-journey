@@ -9,7 +9,7 @@ import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
 import { TierOneClinicScene } from "@/components/3d/TierOneClinicScene";
 import { VenueVisitor } from "@/components/3d/VenueVisitor";
-import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
+import { WORLD_PALETTE, WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { useClinicWalkthrough } from "@/hooks/use-clinic-walkthrough";
 import { CLINIC_ROOMS } from "@/game/tier-one-clinic";
 import { CLINIC_ROOM_APPROACH, CLINIC_SPAWN } from "@/game/clinic-navigation";
@@ -140,18 +140,16 @@ export function ClinicVenue({
                 selected={fixture}
                 onSelect={setFixture}
               />
-              {!exterior && (
-                {character && (
-                  <WorldCharacter
-                    name={character.name}
-                    gender={character.gender}
-                    appearance={appearance}
-                    equipment={playerEquipment}
-                    position={[walk.position[0], 0.06, walk.position[1]]}
-                    facing={walk.facing}
-                    animation={walk.walking ? "walk" : "idle"}
-                  />
-                )}
+              {!exterior && character && (
+                <WorldCharacter
+                  name={character.name}
+                  gender={character.gender}
+                  appearance={appearance}
+                  equipment={playerEquipment}
+                  position={[walk.position[0], 0.06, walk.position[1]]}
+                  facing={walk.facing}
+                  animation={walk.walking ? "walk" : "idle"}
+                />
               )}
               {!exterior && staff && (
                 <VenueVisitor
