@@ -473,6 +473,9 @@
   color: var(--primary-foreground);
   box-shadow: var(--home-shadow);
   text-decoration: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
   backdrop-filter: blur(16px);
 }
 .game-shell.city-game.navigation-redesign.home-hud .home-player-portrait {
@@ -549,7 +552,6 @@
 /* Home alone reserves desktop room beside the portrait and scene tools. */
 .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) {
   bottom: var(--home-bottom);
-  width: min(720px, calc(100vw - 600px));
 }
 
 .game-shell.city-game.navigation-redesign.home-hud aside.game-needs-rail[aria-label] {
@@ -911,9 +913,6 @@
 }
 
 @media (max-width: 1199px) {
-  .game-shell.city-game.navigation-redesign.home-hud > .gbb:not(.is-open) {
-    width: min(700px, calc(100% - 2 * var(--home-gutter)));
-  }
   .game-shell.city-game.navigation-redesign.home-hud .home-player-status {
     bottom: calc(var(--home-bottom) + var(--home-dock-height) + 14px);
     width: 220px;
@@ -1351,3 +1350,76 @@
     translate: 0 0;
   }
 }
+
+@media (min-width: 960px) {
+  .game-shell.city-game.navigation-redesign.home-hud {
+    & .home-world-conditions,
+    & > .world-environment > :is(.world-event, [role="status"], .world-outage) {
+      min-height: 44px;
+      padding: 4px 14px;
+      border-radius: 999px;
+      align-content: center;
+    }
+    & .home-dashboard .hd-status {
+      top: calc(var(--home-top) + 54px);
+    }
+    & .home-dashboard .hd-area {
+      flex-basis: 210px;
+      gap: 8px;
+      min-height: 44px;
+      padding: 4px 12px;
+      border-radius: 999px;
+    }
+    & .home-dashboard .hd-area > svg {
+      width: 18px;
+      height: 18px;
+      padding: 5px;
+    }
+    & .home-dashboard :is(.hd-icon-button, .hd-balance),
+    & .house-room-views button,
+    & .house-toolbar .house-scene-exit,
+    & aside.game-needs-rail[aria-label] .game-needs-toggle {
+      min-height: 44px;
+      padding: 5px 12px;
+      border-radius: 999px;
+    }
+    & .home-dashboard .hd-icon-button,
+    & .home-tools-menu > summary {
+      width: 44px;
+      height: 44px;
+      padding: 0;
+      border-radius: 50%;
+    }
+    & .home-dashboard .hd-icon-button svg {
+      width: 20px;
+      height: 20px;
+    }
+    & .house-toolbar .house-room-views {
+      top: calc(var(--home-top) + 108px);
+    }
+    & .home-player-status {
+      width: 175px;
+      min-height: 50px;
+      gap: 8px;
+    }
+    & .home-player-portrait {
+      width: 40px;
+      height: 40px;
+    }
+    & .home-player-energy-meter {
+      max-width: 75px;
+    }
+  }
+}
+
+/* Settings entry in the existing home menu. */
+.game-shell.city-game.navigation-redesign.home-hud .home-tools-content .home-settings-menu-item{grid-column:1/-1;display:flex;align-items:center;gap:11px;width:100%;min-height:62px;padding:10px 12px;border:1px solid color-mix(in srgb,var(--brand-royal) 22%,var(--home-edge));border-radius:17px;background:linear-gradient(135deg,color-mix(in srgb,var(--brand-royal) 9%,var(--card)),var(--card));color:var(--foreground);text-align:left;cursor:pointer;transition:border-color 160ms ease,background-color 160ms ease,transform 160ms ease}
+.game-shell.city-game.navigation-redesign.home-hud .home-settings-menu-item:hover{border-color:var(--brand-royal);background:color-mix(in srgb,var(--brand-royal) 12%,var(--card))}
+.game-shell.city-game.navigation-redesign.home-hud .home-settings-menu-item:active{transform:scale(.985)}
+.game-shell.city-game.navigation-redesign.home-hud .home-settings-menu-item:focus-visible{outline:2px solid var(--ring);outline-offset:3px}
+.game-shell.city-game.navigation-redesign.home-hud .home-settings-menu-icon{display:grid;flex:0 0 40px;width:40px;height:40px;place-items:center;border-radius:13px;background:var(--brand-royal);color:var(--primary-foreground)}
+.game-shell.city-game.navigation-redesign.home-hud .home-settings-menu-copy{display:grid;flex:1;min-width:0;gap:2px}
+.game-shell.city-game.navigation-redesign.home-hud .home-settings-menu-copy strong{font-size:13px;font-weight:800}
+.game-shell.city-game.navigation-redesign.home-hud .home-settings-menu-copy small{color:var(--muted-foreground);font-size:11px;line-height:1.35}
+.game-shell.city-game.navigation-redesign.home-hud .home-settings-menu-arrow{color:var(--brand-royal);font-size:25px;line-height:1}
+@media(prefers-reduced-motion:reduce){.game-shell.city-game.navigation-redesign.home-hud .home-tools-content .home-settings-menu-item{transition:none}}

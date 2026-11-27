@@ -11,6 +11,15 @@ describe("market stall error messages", () => {
     expect(message).not.toMatch(/home|end that rental/i);
   });
 
+  it("explains why a stall cannot be opened when its lease is no longer current", () => {
+    expect(marketStallErrorMessage(new Error("Rent a current stall before saving"))).toBe(
+      "Your Oja-Oba stall lease is not current. Rent the first week or pay overdue rent before opening it.",
+    );
+    expect(
+      marketStallErrorMessage(new Error("The stall lease is not current")),
+    ).toContain("before opening it");
+  });
+
   it("finds the code inside a longer server message", () => {
     expect(marketStallErrorMessage(new Error("ERROR: INSUFFICIENT_FUNDS (wallet)"))).toContain(
       "enough cash",

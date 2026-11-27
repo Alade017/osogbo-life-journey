@@ -1,3 +1,4 @@
+import { multiplayerEndpoints } from "./multiplayer-endpoints";
 import { Client } from "@colyseus/sdk";
 import { supabase } from "@/integrations/supabase/client";
 import { EQUIPMENT_REFRESH_EVENT } from "@/lib/equipment-service";
@@ -10,11 +11,10 @@ export async function joinNeighborhood(locationId: string) {
   const accessToken = data.session?.access_token;
   if (!accessToken) throw new Error("Sign in again to join the neighborhood.");
 
-  const configuredEndpoints = import.meta.env["VITE_MULTIPLAYER_URL"]
-    ?.split(",")
-    .map((endpoint: string) => endpoint.trim())
-    .filter(Boolean);
-  const endpoints = configuredEndpoints?.length ? configuredEndpoints : ["ws://127.0.0.1:2567"];
+  const endpoints = multiplayerEndpoints(
+    import.meta.env["VITE_MULTIPLAYER_URL"],
+    import.meta.env.DEV,
+  );
   const startIndex = Math.floor(Math.random() * endpoints.length);
   let lastError: unknown;
 
@@ -60,11 +60,10 @@ async function joinGameRoom(roomName: "party" | "mall", locationId: string, sign
   const accessToken = data.session?.access_token;
   if (!accessToken) throw new Error(signInMessage);
 
-  const configuredEndpoints = import.meta.env["VITE_MULTIPLAYER_URL"]
-    ?.split(",")
-    .map((endpoint: string) => endpoint.trim())
-    .filter(Boolean);
-  const endpoints = configuredEndpoints?.length ? configuredEndpoints : ["ws://127.0.0.1:2567"];
+  const endpoints = multiplayerEndpoints(
+    import.meta.env["VITE_MULTIPLAYER_URL"],
+    import.meta.env.DEV,
+  );
   const startIndex = Math.floor(Math.random() * endpoints.length);
   let lastError: unknown;
 

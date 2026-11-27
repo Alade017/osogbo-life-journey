@@ -1,6 +1,6 @@
-/** Authored presentation layouts only; account eligibility and transactions stay server-owned. */
+/** Bounds for embedded callers. Full branch geometry lives in bank-world-layout. */
 export const BANK_INTERIORS = {
-  "teller-hall": { width: 12, depth: 9, tellerWindows: [-2.3, 0, 2.3], queueRows: [-0.1, 1.2, 2.5] },
-  "digital-lounge": { width: 12, depth: 9, kioskOffsets: [-0.65, 0.65], loungeAngles: [Math.PI / 2, -Math.PI / 2] },
+  "teller-hall": { width: 12, depth: 9 },
+  "digital-lounge": { width: 12, depth: 9 },
 } as const;
 export type BankInteriorVariant = keyof typeof BANK_INTERIORS;

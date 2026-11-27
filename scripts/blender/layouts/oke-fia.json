@@ -1,0 +1,300 @@
+{
+  "slug": "oke-fia",
+  "name": "Hillview Quarter",
+  "frame": {
+    "width_m": 60,
+    "depth_m": 45
+  },
+  "roads": [
+    {
+      "id": "hillview-boulevard",
+      "axis": "horizontal",
+      "offset_m": -11.25,
+      "width_m": 8,
+      "type": "arterial"
+    },
+    {
+      "id": "hillview-service-road",
+      "axis": "vertical",
+      "offset_m": -15,
+      "width_m": 2.5,
+      "type": "street"
+    },
+    {
+      "id": "hillview-east-road",
+      "axis": "vertical",
+      "offset_m": 13.1,
+      "width_m": 2.5,
+      "type": "street"
+    },
+    {
+      "id": "hillview-south-road",
+      "axis": "horizontal",
+      "offset_m": 9,
+      "width_m": 4,
+      "type": "street"
+    }
+  ],
+  "lots": [
+    {
+      "id": "ne",
+      "x": -7.5,
+      "z": -19.25,
+      "w": 11,
+      "d": 6.5,
+      "side": 1
+    },
+    {
+      "id": "se",
+      "x": -7.5,
+      "z": -3.25,
+      "w": 11,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "sw",
+      "x": -24,
+      "z": -3.25,
+      "w": 8,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "n-east",
+      "x": 5.75,
+      "z": -19.25,
+      "w": 8,
+      "d": 6.5,
+      "side": 1
+    },
+    {
+      "id": "n-far",
+      "x": 21.75,
+      "z": -19.25,
+      "w": 11,
+      "d": 6.5,
+      "side": 1
+    },
+    {
+      "id": "s-east",
+      "x": 5.75,
+      "z": -3.25,
+      "w": 8,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "s-far",
+      "x": 21.75,
+      "z": -3.25,
+      "w": 11,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "c-w",
+      "x": -24,
+      "z": 3.55,
+      "w": 8,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "c-mid",
+      "x": -7.5,
+      "z": 3.55,
+      "w": 11,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "c-east",
+      "x": 5.75,
+      "z": 3.55,
+      "w": 8,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "c-far",
+      "x": 21.75,
+      "z": 3.55,
+      "w": 11,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "d-w",
+      "x": -24,
+      "z": 15,
+      "w": 8,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "d-mid",
+      "x": -7.5,
+      "z": 15,
+      "w": 11,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "d-east",
+      "x": 5.75,
+      "z": 15,
+      "w": 8,
+      "d": 6.5,
+      "side": -1
+    },
+    {
+      "id": "d-far",
+      "x": 21.75,
+      "z": 15,
+      "w": 11,
+      "d": 6.5,
+      "side": -1
+    }
+  ],
+  "shop": {
+    "id": "estate-mini-mart",
+    "x": -19,
+    "z": -19.75,
+    "w": 4,
+    "d": 4,
+    "label": "Hillview Mini-Mart"
+  },
+  "kiosk": {
+    "id": "pos-kiosk",
+    "x": -18,
+    "z": -4.75,
+    "w": 1.5,
+    "d": 1.5,
+    "label": "POS"
+  },
+  "gatehouse": {
+    "id": "gatehouse",
+    "x": -23.5,
+    "z": -19.75,
+    "w": 4,
+    "d": 4,
+    "label": "Estate Security Post"
+  },
+  "places": [
+    {
+      "id": "estate-mini-mart",
+      "x": -19,
+      "z": -19.75,
+      "w": 4,
+      "d": 4,
+      "kind": "shop",
+      "label": "Hillview Mini-Mart"
+    },
+    {
+      "id": "gatehouse",
+      "x": -23.5,
+      "z": -19.75,
+      "w": 4,
+      "d": 4,
+      "kind": "landmark",
+      "label": "Estate Security Post"
+    },
+    {
+      "id": "pos-kiosk",
+      "x": -18,
+      "z": -4.75,
+      "w": 1.5,
+      "d": 1.5,
+      "kind": "kiosk",
+      "label": "POS"
+    },
+    {
+      "id": "district-feature-0",
+      "x": -27.75,
+      "z": -18,
+      "w": 2.25,
+      "d": 1.5,
+      "kind": "landmark",
+      "label": "Eateries"
+    },
+    {
+      "id": "district-feature-1",
+      "x": -17.6,
+      "z": -2.6,
+      "w": 2.25,
+      "d": 1.5,
+      "kind": "landmark",
+      "label": "Small Shops"
+    },
+    {
+      "id": "district-feature-2",
+      "x": -24.35,
+      "z": -16.5,
+      "w": 2.25,
+      "d": 1.5,
+      "kind": "landmark",
+      "label": "Gym"
+    }
+  ],
+  "trees": [
+    [
+      -27.5,
+      -21.25
+    ],
+    [
+      -29,
+      -5.25
+    ],
+    [
+      -1,
+      -5.25
+    ],
+    [
+      -1.2,
+      -21.75
+    ],
+    [
+      29,
+      -21.85
+    ],
+    [
+      29,
+      21.65
+    ],
+    [
+      -29,
+      21.65
+    ]
+  ],
+  "objects": [
+    {
+      "id": "home",
+      "name": "Hillview homes",
+      "kind": "home",
+      "x": -7.5,
+      "z": -13.75
+    },
+    {
+      "id": "market",
+      "name": "Hillview Mini-Mart",
+      "kind": "market",
+      "x": -19,
+      "z": -14.75
+    },
+    {
+      "id": "work",
+      "name": "Estate Security Post",
+      "kind": "work",
+      "x": -22,
+      "z": -14.25
+    },
+    {
+      "id": "npc",
+      "name": "Gardener in Hillview Quarter",
+      "kind": "npc",
+      "x": -11,
+      "z": -9.75
+    }
+  ]
+}

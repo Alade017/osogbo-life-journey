@@ -256,19 +256,17 @@ export function CareerPanel({ mode = "all" }: { mode?: "all" | "current" | "oppo
               {start.isPending ? "Starting…" : "Start career shift"}
             </Button>
           )}
-          {character.current_location_id !== activeCareer.location_id && (
-            <Link
-              className="block text-sm font-semibold underline"
-              to="/location/$slug"
-              params={{
-                slug:
-                  locations?.find((item) => item.id === activeCareer.location_id)?.slug ??
-                  "city-centre",
-              }}
-            >
-              Travel to your workplace
-            </Link>
-          )}
+          {character.current_location_id !== activeCareer.location_id &&
+            (() => {
+              const workplace = locations?.find((item) => item.id === activeCareer.location_id);
+              return workplace ? (
+                <Link className="block text-sm font-semibold underline" to="/location/$slug" params={{ slug: workplace.slug }}>
+                  Travel to your workplace
+                </Link>
+              ) : (
+                <p className="text-sm text-muted-foreground" role="status">Workplace location unavailable.</p>
+              );
+            })()}
         </div>
       )}
 

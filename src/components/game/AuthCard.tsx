@@ -12,9 +12,17 @@ import { primeGameAudioForLogin, disableGameAudio } from "@/lib/game-audio";
 import "./auth-switch.css";
 import "./auth-redesign.css";
 
+import { afterLogin } from "@/lib/login-destination";
+
 type Mode = "login" | "signup";
 
-export function AuthCard({ mode: initialMode }: { mode: Mode }) {
+export function AuthCard({
+  mode: initialMode,
+  destination,
+}: {
+  mode: Mode;
+  destination?: string | undefined;
+}) {
   const navigate = useNavigate();
   const [mode, setMode] = useState<Mode>(initialMode);
   const [direction, setDirection] = useState<1 | -1>(1);
@@ -23,6 +31,7 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
   const [showPassword, setShowPassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [formError, setFormError] = useState("");
   const [busy, setBusy] = useState(false);
   const [recoverySent, setRecoverySent] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
@@ -42,6 +51,7 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
 
   function switchMode(next: Mode) {
     if (next === mode || busy || resettingPassword) return;
+    setFormError("");
     setDirection(next === "signup" ? 1 : -1);
     setMode(next);
     setRecoverySent(false);
@@ -52,6 +62,7 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
 
   async function submit(e: FormEvent) {
     e.preventDefault();
+    setFormError("");
     if (mode === "signup") {
       const cleanUsername = username.trim();
       if (!/^[a-zA-Z0-9_]{3,24}$/.test(cleanUsername)) {
@@ -108,11 +119,13 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
           const { error } = await supabase.auth.setSession(result);
           if (error) throw error;
         }
-        navigate({ to: "/enter" });
+        await navigate(afterLogin(destination));
       }
     } catch (err) {
       void disableGameAudio();
-      toast.error((err as Error).message);
+      setFormError(
+        err instanceof Error ? err.message : "Unable to complete this request. Please try again.",
+      );
     } finally {
       setBusy(false);
     }
@@ -222,6 +235,11 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
               className="auth-pane"
               style={paneStyle}
             >
+              {formError && (
+                <p role="alert" className="mt-2 text-sm font-semibold text-destructive">
+                  {formError}
+                </p>
+              )}
               {recoverySent ? (
                 <>
                   <h2 className="text-2xl font-bold">Reset your password</h2>
@@ -317,7 +335,7 @@ export function AuthCard({ mode: initialMode }: { mode: Mode }) {
                           id="password"
                           type={showPassword ? "text" : "password"}
                           required
-                          minLength={8}
+                          minLength={mode === "signup" || resettingPassword ? 8 : undefined}
                           value={password}
                           onChange={(e) => setPassword(e.target.value)}
                           className="h-11 border bg-card pr-12"

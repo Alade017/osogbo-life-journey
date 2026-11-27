@@ -83,3 +83,11 @@ describe("nextRiderTarget", () => {
     expect(nextRiderTarget([0, 0], [0.1, 0.1], false)).toEqual([0, 0]);
   });
 });
+
+it("keeps the entrance and rider accessible around the new frontage railings", () => {
+  const from: [number, number] = [0, -3.4];
+  expect(findStreetPath(from, [0, 1])).not.toBeNull();
+  expect(findStreetPath(from, STREET_RIDER_SPOT)).not.toBeNull();
+  expect(canWalkOnStreet([-4, -3.1])).toBe(false);
+  expect(canWalkOnStreet([4, -3.1])).toBe(false);
+});

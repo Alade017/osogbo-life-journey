@@ -24,10 +24,18 @@
 
   z-index: var(--game-dialog-layer) !important;
 }.phone-app-view {
+  display: flex;
+  min-width: 0;
   min-height: 0;
-  flex: 1;
+  flex: 1 1 auto;
+  flex-direction: column;
+  overflow: hidden;
   color: #0a0a0a;
   background: var(--brand-porcelain, var(--background));
+}
+
+.phone-app-view > .phone-app-toolbar {
+  flex: 0 0 auto;
 }
 
 .phone-app-view .phone-app-toolbar {
@@ -39,11 +47,11 @@
 .phone-status-page,
 .phone-theme-page {
   display: flex;
-  min-height: 0;
-  flex: 1;
+  min-height: 100%;
+  flex: 0 0 auto;
   flex-direction: column;
   gap: 0.8rem;
-  overflow-y: auto;
+  overflow: visible;
   padding: 0.9rem;
   color: #0a0a0a;
   background: var(--brand-porcelain, var(--background));
@@ -339,7 +347,6 @@
   overscroll-behavior-x: contain;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  touch-action: pan-y;
 }
 
 .phone-app-pages::-webkit-scrollbar {
@@ -560,18 +567,23 @@
 
 .phone-app-body {
   display: flex;
+  flex: 1 1 auto;
   flex-direction: column;
   width: 100%;
-  flex: 1;
+  min-width: 0;
   min-height: 0;
-  overflow-y: auto;
   overflow-x: hidden;
-  background: var(--brand-porcelain, var(--background));
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
   -webkit-overflow-scrolling: touch;
+  background: var(--brand-porcelain, var(--background));
 }
 
 .phone-app-body > * {
+  flex: 0 0 auto;
   min-width: 0;
+  min-height: 100%;
+  width: 100%;
 }
 
 .phone-route-app {
@@ -1227,11 +1239,11 @@
 /* Local-only community apps: all interaction stays in component state. */
 .phone-local-app {
   display: grid;
-  min-height: 0;
-  flex: 1;
+  min-height: 100%;
+  flex: 0 0 auto;
   align-content: start;
   gap: 0.75rem;
-  overflow-y: auto;
+  overflow: visible;
   padding: 0.9rem;
   color: var(--foreground);
   background: var(--background);
@@ -1488,11 +1500,10 @@
 }
 
 .phone-sub-content {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
+  flex: 0 0 auto;
+  min-height: auto;
+  min-width: 0;
+  overflow: visible;
 }
 
 .phone-segmented-tabs {
@@ -4193,4 +4204,333 @@
   color: var(--muted-foreground);
   font-size: 0.85rem;
   text-align: center;
+}
+
+/* Scoped Career Life phone layout; desktop jobs and Education retain their styles. */
+.phone-app-body .career-learning-app[data-career-phone] {
+  min-width: 0;
+  display: grid;
+  gap: 12px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-hero {
+  padding: 14px;
+  margin: 0;
+  border-radius: 16px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-hero h1 {
+  font-size: 1.3rem;
+  margin: 5px 0;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-hero-role {
+  margin-top: 10px;
+  padding-top: 8px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-tabs {
+  margin: 0;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  border-radius: 999px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-tabs button {
+  flex: 1 0 auto;
+  flex-direction: row;
+  min-height: 44px;
+  padding: 6px 9px;
+  font-size: 0.72rem;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-stats {
+  margin: 0;
+  gap: 6px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-stats > div {
+  padding: 10px 8px;
+  border-radius: 12px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-stats dd {
+  font-size: 0.95rem;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-card {
+  padding: 12px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+}
+.phone-app-body .career-learning-app[data-career-phone] .learning-card button {
+  border-radius: 999px;
+}
+.phone-app-body .phone-job-list .learning-search {
+  border-radius: 999px;
+}
+.phone-app-body .phone-job-list .learning-search input {
+  min-height: 44px;
+  padding-block: 8px;
+}
+.phone-app-body .phone-job-filter {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: var(--muted-foreground);
+}
+.phone-app-body .phone-job-filter select {
+  min-width: 0;
+  flex: 1;
+  min-height: 44px;
+  padding-inline: 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+}
+.phone-app-body .phone-job-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 10px;
+  padding: 12px;
+}
+.phone-app-body .phone-job-workplace,
+.phone-app-body .phone-job-location-state {
+  grid-column: 1 / -1;
+  justify-self: start;
+  font-size: 0.75rem;
+}
+.phone-app-body .phone-job-workplace {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding-inline: 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--primary);
+  font-weight: 700;
+}
+.phone-app-body .phone-job-workplace:focus-visible,
+.phone-app-body .phone-job-filter select:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+.phone-app-body .phone-job-location-state {
+  color: var(--muted-foreground);
+}
+
+
+/* One vertical scroll owner per phone app: the screen body. */
+.phone-app-body,
+.phone-app-body :where(.phone-local-app, .phone-sub-content) {
+  scrollbar-gutter: stable;
+}
+.phone-app-body :where(img, video, canvas, input, select, textarea) {
+  max-width: 100%;
+}
+
+
+/* OSOGBO LIFE launcher refresh: a location-inspired wallpaper and a balanced app grid. */
+.phone-screen-home .phone-launcher-home {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at 14% 8%, rgb(147 197 253 / 48%), transparent 42%),
+    radial-gradient(ellipse at 88% 76%, rgb(251 191 36 / 18%), transparent 38%),
+    linear-gradient(155deg, #e8f2ff 0%, #f8fbff 48%, #f2f5fa 100%);
+}
+
+.phone-screen-home .phone-launcher-home::after {
+  position: absolute;
+  z-index: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: clamp(3.8rem, 14%, 6.5rem);
+  background: linear-gradient(180deg, transparent, rgb(30 64 175 / 5%)), #244d83;
+  clip-path: polygon(0 70%, 7% 70%, 7% 46%, 12% 46%, 12% 70%, 19% 70%, 19% 27%, 25% 27%, 25% 70%, 32% 70%, 32% 52%, 38% 52%, 38% 70%, 45% 70%, 45% 39%, 52% 39%, 52% 70%, 59% 70%, 59% 18%, 65% 18%, 65% 70%, 73% 70%, 73% 48%, 79% 48%, 79% 70%, 86% 70%, 86% 34%, 92% 34%, 92% 70%, 100% 70%, 100% 100%, 0 100%);
+  opacity: 0.09;
+  content: "";
+  pointer-events: none;
+}
+
+.phone-screen-home .phone-launcher-home > * {
+  position: relative;
+  z-index: 1;
+}
+
+.phone-screen-home .phone-app-pages {
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.phone-screen-home .phone-app-grid {
+  box-sizing: border-box;
+  min-height: 100%;
+  grid-template-rows: repeat(5, minmax(68px, auto));
+  align-content: center;
+  align-items: center;
+  gap: clamp(6px, 0.8vh, 10px) clamp(4px, 1.2vw, 8px);
+  padding: clamp(6px, 1.2vh, 10px) clamp(5px, 1.6vw, 9px);
+  background: transparent !important;
+}
+
+.phone-screen-home .phone-app {
+  display: flex;
+  min-height: 62px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: clamp(5px, 1vh, 8px);
+  padding: 3px 1px;
+  color: #172b46;
+  font-size: clamp(9px, 2.7vw, 11px);
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+  width: clamp(48px, 14vw, 58px);
+  height: clamp(48px, 14vw, 58px);
+  flex: 0 0 auto;
+  border-radius: clamp(15px, 4.2vw, 19px);
+  box-shadow: 0 7px 16px rgb(15 35 65 / 12%), inset 0 1px 0 rgb(255 255 255 / 48%);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.phone-screen-home .phone-app-icon > svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2;
+}
+
+.phone-screen-home .phone-app:focus-visible .phone-app-icon {
+  outline: 3px solid #f4b942;
+  outline-offset: 3px;
+}
+
+.phone-screen-home .phone-app:active .phone-app-icon {
+  transform: scale(0.93);
+  box-shadow: 0 3px 8px rgb(15 35 65 / 14%);
+}
+
+.phone-screen-home .phone-page-dots {
+  min-height: 28px;
+  padding-bottom: 1px;
+}
+
+.phone-screen-home .phone-page-dot::before {
+  background: #8b9bb0;
+  opacity: 0.65;
+}
+
+.phone-screen-home .phone-page-dot[aria-current="page"]::before {
+  background: #174b91;
+  box-shadow: 0 2px 7px rgb(23 75 145 / 25%);
+}
+
+@media (max-width: 360px) {
+  .phone-screen-home .phone-app-grid {
+    gap: 2px 3px;
+    padding: 4px 3px;
+  }
+
+  .phone-screen-home .phone-app {
+    font-size: 9px;
+  }
+
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    transition: none;
+  }
+}
+
+
+/* Launcher density and pagination refinements for compact handset viewports. */
+.phone-screen-home .phone-app-pages {
+  scroll-behavior: smooth;
+  touch-action: pan-y pinch-zoom;
+  overscroll-behavior-x: contain;
+}
+
+.phone-screen-home .phone-page-dots {
+  gap: 0;
+  min-height: 26px;
+}
+
+.phone-screen-home .phone-page-dot {
+  width: 24px;
+  height: 26px;
+}
+
+.phone-screen-home .phone-page-dot::before {
+  width: 6px;
+  height: 6px;
+}
+
+.phone-screen-home .phone-page-dot[aria-current="page"]::before {
+  width: 18px;
+  height: 6px;
+}
+
+@media (max-height: 700px) {
+  .phone-screen-home .phone-app-grid {
+    grid-template-rows: repeat(5, minmax(54px, auto));
+    gap: 2px 4px;
+    padding-block: 4px;
+  }
+
+  .phone-screen-home .phone-app {
+    min-height: 54px;
+    gap: 3px;
+  }
+
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    width: clamp(40px, 11vw, 48px);
+    height: clamp(40px, 11vw, 48px);
+  }
+}
+
+
+/* In landscape, keep the five-row launcher reachable on short phone viewports.
+   Horizontal paging remains available; vertical overflow scrolls within the app
+   viewport instead of being clipped by the fixed-height handset shell. */
+@media (orientation: landscape) and (max-height: 500px) {
+  .phone-screen-home .phone-app-pages {
+    min-height: 0;
+    overflow-x: auto;
+    overflow-y: auto;
+    touch-action: pan-x pan-y pinch-zoom;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    overscroll-behavior-y: contain;
+    scroll-snap-type: x mandatory;
+  }
+
+  .phone-screen-home .phone-app-grid {
+    min-height: 100%;
+    height: max-content;
+    grid-template-rows: repeat(5, minmax(54px, auto));
+    align-content: start;
+    gap: 2px 4px;
+    padding: 4px 5px 8px;
+  }
+
+  .phone-screen-home .phone-app {
+    min-height: 54px;
+    gap: 3px;
+  }
+
+  .phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+    width: clamp(36px, 7vh, 42px);
+    height: clamp(36px, 7vh, 42px);
+  }
+
+  .phone-screen-home .phone-page-dots {
+    flex: 0 0 24px;
+    min-height: 24px;
+  }
 }

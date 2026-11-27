@@ -45,7 +45,7 @@ describe("player needs panel", () => {
   it("opens details inside the panel and restores focus when dismissed with Escape", () => {
     render(<GameNeedsRail player={player} />);
     openPanel();
-    fireEvent.click(screen.getByRole("button", { name: "Social: 10 percent, critical" }));
+    expect(screen.getByRole("button", { name: "Open your messages" })).toBeVisible();
     expect(screen.getByRole("region", { name: "Social need status" })).toHaveTextContent(
       "10% · critical",
     );

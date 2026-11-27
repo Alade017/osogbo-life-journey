@@ -102,7 +102,10 @@ export function WorshipVenue({ slug, locationName }: { slug: string; locationNam
 
   return (
     <section aria-label={`${locationName} prayer hall`} className="relative">
-      <div className="relative h-[calc(100dvh-7rem)] min-h-[24rem] overflow-hidden bg-muted">
+      <div
+        data-venue-viewport
+        className="relative h-[calc(100dvh-7rem)] min-h-[24rem] overflow-hidden bg-muted"
+      >
         <Canvas
           frameloop="demand"
           dpr={[1, 1.25]}

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useId, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Canvas } from "@react-three/fiber";
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
+import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
 import { SchoolCampusScene } from "@/components/3d/SchoolCampusScene";
 import { VenueVisitor } from "@/components/3d/VenueVisitor";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
@@ -10,12 +11,24 @@ import { VenueSceneBoundary } from "./VenueSceneBoundary";
 import { WorldLoadingIndicator } from "./WorldLoadingIndicator";
 
 /** Local scene tour. Education eligibility, fees and completion stay in education RPCs. */
-export function SchoolCampusVenue({ slug, locationName }: { slug: string; locationName: string }) {
+export function SchoolCampusVenue({
+  slug,
+  locationName,
+  immersive = false,
+}: {
+  slug: string;
+  locationName: string;
+  immersive?: boolean | undefined;
+}) {
   const walk = useCampusWalkthrough(slug);
   const area = campusArea(walk.area);
   const heading = useId();
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const unavailable = useCallback(() => setStatus("fallback"), []);
+  const ready = useCallback(
+    () => setStatus((status) => (status === "loading" ? "ready" : status)),
+    [],
+  );
   useEffect(() => {
     const timer = window.setTimeout(
       () => setStatus((previous) => (previous === "loading" ? "fallback" : previous)),
@@ -24,7 +37,10 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
     return () => window.clearTimeout(timer);
   }, []);
   return (
-    <section className="game-panel space-y-3 p-3 md:p-5" aria-labelledby={heading}>
+    <section
+      className={immersive ? "destination-venue-root" : "game-panel space-y-3 p-3 md:p-5"}
+      aria-labelledby={heading}
+    >
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
           <p className="text-sm text-muted-foreground">{locationName}</p>
@@ -39,7 +55,12 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
           View courses
         </Link>
       </header>
-      <div role="group" aria-label="Campus areas" className="flex gap-2 overflow-x-auto pb-1">
+      <div
+        data-venue-toolbar
+        role="group"
+        aria-label="Campus areas"
+        className="flex gap-2 overflow-x-auto pb-1"
+      >
         {CAMPUS_AREAS.map((item) => (
           <button
             key={item.id}
@@ -55,15 +76,18 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
           </button>
         ))}
       </div>
-      <div className="relative h-[55svh] min-h-72 overflow-hidden rounded-lg border border-edge bg-muted">
+      <div
+        data-venue-viewport
+        className="relative h-[55svh] min-h-72 overflow-hidden rounded-lg border border-edge bg-muted"
+      >
         {status !== "fallback" && (
           <VenueSceneBoundary resetKey={slug} onError={unavailable}>
-            <Canvas
+            <WorldCanvas
+              onSceneError={unavailable}
               shadows="percentage"
               frameloop="demand"
               dpr={[1, 1.25]}
               gl={{ antialias: false, powerPreference: "low-power" }}
-              onCreated={() => setStatus("ready")}
               fallback={<p className="p-4">WebGL is unavailable. Use the campus controls below.</p>}
               aria-label="Interactive 3D school campus"
             >
@@ -72,7 +96,7 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
                 depth={area.depth}
                 stage
                 target={[0, 1.2, 0]}
-                zoom={1}
+                zoom={1.35}
               />
               <WorldLighting size={Math.max(area.width, area.depth)} />
               <SchoolCampusScene
@@ -85,7 +109,8 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
                 }}
               />
               <VenueVisitor position={walk.position} facing={walk.facing} walking={walk.walking} />
-            </Canvas>
+              <WorldSceneReady onReady={ready} />
+            </WorldCanvas>
           </VenueSceneBoundary>
         )}
         {status === "loading" && (
@@ -101,7 +126,7 @@ export function SchoolCampusVenue({ slug, locationName }: { slug: string; locati
         )}
       </div>
       <p role="status" className="text-sm text-muted-foreground">
-        Local walkthrough · {walk.message}
+        {walk.message}
       </p>
       <p className="text-sm">{area.detail}</p>
     </section>

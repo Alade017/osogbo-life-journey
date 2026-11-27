@@ -343,7 +343,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     bankInterior: "teller-hall",
     name: "Cedar Bank lobby",
     description:
-      "A timber-finished teller hall with screened service windows, a guided queue and shared seating.",
+      "An emerald and timber branch with five screened teller windows, a security vestibule and upstairs customer care.",
     floorColor: "#d5d1c5",
     wallColor: "#e6e1d4",
     accentColor: "#4b806f",
@@ -371,7 +371,7 @@ const venues: Readonly<Record<string, LocationVenueDesign>> = {
     bankInterior: "digital-lounge",
     name: "Meridian Bank lobby",
     description:
-      "An open self-service branch with twin kiosks, window seating and a screened customer-service desk.",
+      "A navy and glass branch with six teller windows, staggered customer-care cubicles and a separate exterior ATM gallery.",
     floorColor: "#c8d2d0",
     wallColor: "#e3e9e5",
     accentColor: "#527c9b",

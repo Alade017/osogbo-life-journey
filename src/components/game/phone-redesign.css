@@ -3,19 +3,14 @@
 @media (min-width: 641px) {
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh,
   .phone-dialog.phone-ui-refresh {
-    width: 400px !important;
-    max-width: calc(100% - 32px) !important;
-    height: min(
-      670px,
-      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px)
-    ) !important;
-    max-height: calc(
-      100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px
-    ) !important;
+    width: clamp(18rem, 28vw, 25rem) !important;
+    max-width: min(92vw, calc(100vw - 2rem)) !important;
+    height: min(85dvh, 52.5rem, calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)) !important;
+    max-height: min(85dvh, calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)) !important;
     padding: 0 !important;
-    border: 5px solid #2c3036 !important;
-    border-radius: 44px !important;
-    background: #2c3036 !important;
+    border: 4px solid #707985 !important;
+    border-radius: 43px !important;
+    background: linear-gradient(115deg, #343b45 0%, #a6adb6 8%, #515a66 18%, #242b34 48%, #929ba5 86%, #303741 100%) !important;
     box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.5) !important;
   }
 }
@@ -39,8 +34,9 @@
 
 .phone-dialog-shell {
   --phone-frame-height: min(
-    670px,
-    calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 28px)
+    85dvh,
+    52.5rem,
+    calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
   );
   --phone-frame-bottom: calc(var(--game-dock-space) + var(--game-keyboard-inset, 0px) + 8px);
 }
@@ -48,12 +44,13 @@
 .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
   overflow: visible;
   height: var(--phone-frame-height) !important;
-  border-color: color-mix(in srgb, var(--brand-ink) 78%, #6b737e) !important;
+  max-height: var(--phone-frame-height) !important;
+  border-color: color-mix(in srgb, #aeb7c2 78%, var(--brand-ink)) !important;
   background: linear-gradient(
     100deg,
-    color-mix(in srgb, var(--brand-ink) 80%, #69717c),
+    color-mix(in srgb, var(--brand-ink) 68%, #9ba4ae),
     var(--brand-ink) 35%,
-    color-mix(in srgb, var(--brand-ink) 84%, #89919a) 75%,
+    color-mix(in srgb, var(--brand-ink) 66%, #c0c7ce) 75%,
     var(--brand-ink)
   ) !important;
   box-shadow:
@@ -89,11 +86,25 @@
 }
 
 .phone-dialog-shell-solo {
-  --phone-frame-height: min(670px, calc(100dvh - 28px));
+  --phone-frame-height: min(
+    85dvh,
+    52.5rem,
+    calc(100dvh - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
+  );
 }
 
 .phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
-  inset: auto auto calc((100dvh - var(--phone-frame-height)) / 2) 50%;
+  inset: auto auto calc(
+    var(--game-keyboard-inset, 0px) +
+    env(safe-area-inset-bottom) +
+    (
+      100dvh -
+      var(--game-keyboard-inset, 0px) -
+      env(safe-area-inset-top) -
+      env(safe-area-inset-bottom) -
+      var(--phone-frame-height)
+    ) / 2
+  ) 50%;
   transform: translateX(-50%);
 }
 
@@ -190,30 +201,36 @@
 
 @media (max-width: 640px) {
   .phone-dialog-shell {
-    --phone-frame-height: calc(
-      100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - 64px
+    --phone-frame-height: min(
+      85dvh,
+      45rem,
+      calc(100dvh - var(--game-dock-space) - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
     );
   }
 
   .phone-dialog-shell-solo {
-    --phone-frame-height: calc(100dvh - 64px);
+    --phone-frame-height: min(
+      85dvh,
+      45rem,
+      calc(100dvh - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
+    );
   }
 
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh {
-    width: calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
-    max-width: calc(
-      100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)
-    ) !important;
+    width: min(88vw, 26rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)) !important;
+    max-width: min(88vw, 26rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)) !important;
     height: var(--phone-frame-height) !important;
-    border-radius: 25px !important;
+    border-radius: 38px !important;
   }
 
   .phone-dialog-shell > .phone-dialog.phone-ui-refresh .phone-screen {
-    border-radius: 20px !important;
+    border-radius: 34px !important;
   }
 
   .phone-dialog-shell-solo > .phone-dialog.phone-ui-refresh {
-    bottom: 8px;
+    top: auto;
+    bottom: calc((100dvh - var(--phone-frame-height)) / 2);
+    transform: translateX(-50%);
   }
 
   .phone-dialog-shell > .phone-cancel-button,
@@ -607,10 +624,10 @@
     inset: max(6px, env(safe-area-inset-top)) 0 0 !important;
     display: flex !important;
     width: 100vw !important;
-    height: auto !important;
+    height: 100dvh !important;
     max-width: 100vw !important;
     max-height: none !important;
-    align-items: stretch !important;
+    align-items: center !important;
     justify-content: center !important;
     transform: none !important;
     pointer-events: none;
@@ -621,19 +638,17 @@
     inset: auto !important;
     /* The desktop centring offset would push the handset off the left edge. */
     transform: none !important;
-    width: calc(100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)) !important;
-    max-width: calc(
-      100vw - 12px - env(safe-area-inset-left) - env(safe-area-inset-right)
-    ) !important;
-    height: 100% !important;
-    max-height: none !important;
+    width: min(88vw, 26rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)) !important;
+    max-width: min(88vw, 26rem, calc(100vw - env(safe-area-inset-left) - env(safe-area-inset-right) - 1.5rem)) !important;
+    height: var(--phone-frame-height) !important;
+    max-height: var(--phone-frame-height) !important;
     margin: 0 !important;
-    border-radius: 25px 25px 0 0 !important;
+    border-radius: clamp(1.5rem, 5vw, 2.4rem) !important;
     pointer-events: auto;
   }
 
   .phone-dialog-shell-docked > .phone-dialog.phone-ui-refresh .phone-screen {
-    border-radius: 20px 20px 0 0 !important;
+    border-radius: clamp(1.25rem, 4vw, 2rem) !important;
     padding-bottom: env(safe-area-inset-bottom);
   }
 
@@ -654,12 +669,12 @@
 @media (max-width: 640px) {
   .phone-dialog-shell.phone-dialog-shell.phone-dialog-shell-solo {
     position: fixed !important;
-    inset: 0 !important;
+    inset: env(safe-area-inset-top) 0 calc(var(--game-keyboard-inset, 0px) + env(safe-area-inset-bottom)) 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     width: 100vw !important;
-    height: 100dvh !important;
+    height: auto !important;
     max-width: none !important;
     max-height: none !important;
     padding: 0 !important;
@@ -673,10 +688,1241 @@
     margin: 0 !important;
     transform: none !important;
     translate: none !important;
-    width: 88vw !important;
-    max-width: 88vw !important;
-    height: 88dvh !important;
-    max-height: 88dvh !important;
+    width: min(88vw, 26rem) !important;
+    max-width: min(88vw, 26rem) !important;
+    height: var(--phone-frame-height) !important;
+    max-height: var(--phone-frame-height) !important;
     pointer-events: auto;
   }
+}
+
+
+/* Galaxy S26 Ultra-inspired handset: flat Armor Aluminum rails, narrow glass bezel,
+   centered punch-hole camera and a taller flagship screen proportion. */
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh {
+  box-sizing: border-box;
+  outline: 1px solid rgb(255 255 255 / 26%);
+}
+.phone-dialog-shell > .phone-dialog.phone-ui-refresh .phone-screen {
+  overflow: hidden;
+  border-radius: 36px !important;
+}
+.phone-ui-refresh .phone-status-camera {
+  width: 13px;
+  height: 13px;
+  border-width: 2px;
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, #7c8794 45%, transparent),
+    inset 0 0 4px #05070a;
+}
+@media (max-width: 640px) {
+  .phone-dialog-shell-solo {
+    --phone-frame-height: min(
+      85dvh,
+      45rem,
+      calc(100dvh - var(--game-keyboard-inset, 0px) - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 2rem)
+    );
+  }
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh .phone-screen {
+    border-radius: 32px !important;
+  }
+}
+
+
+/* Fluid handset/app scale: viewport-relative sizing first, rem-based component rhythm. */
+.phone-ui-refresh,
+.phone-dialog {
+  --phone-space-xs: clamp(0.35rem, 1.2vw, 0.55rem);
+  --phone-space-sm: clamp(0.55rem, 1.8vw, 0.8rem);
+  --phone-space-md: clamp(0.75rem, 2.4vw, 1.1rem);
+  --phone-space-lg: clamp(1rem, 3vw, 1.5rem);
+  --phone-control-size: clamp(2.5rem, 7.5vw, 2.9rem);
+  --phone-heading-size: clamp(1.15rem, 4.5vw, 1.5rem);
+  --phone-body-size: clamp(0.82rem, 2.5vw, 0.95rem);
+  --phone-radius-shell: clamp(1.8rem, 5vw, 2.7rem);
+}
+
+/* One UI-inspired app and dialog system.
+   All surfaces inherit OSOGBO LIFE design tokens; no app-specific palette is introduced. */
+.phone-ui-refresh,
+.phone-dialog {
+  --phone-surface: var(--brand-porcelain, var(--background));
+  --phone-card: var(--card, var(--background));
+  --phone-ink: var(--foreground, var(--brand-ink));
+  --phone-muted: var(--muted-foreground, var(--muted));
+  --phone-line: color-mix(in srgb, var(--border) 78%, transparent);
+  --phone-accent: var(--brand-royal, var(--primary));
+  --phone-radius-card: 1.15rem;
+  --phone-radius-control: 0.85rem;
+}
+
+.phone-ui-refresh .phone-screen,
+.phone-dialog .phone-screen {
+  color: var(--phone-ink);
+  background: var(--phone-surface);
+}
+
+.phone-ui-refresh .phone-app-view,
+.phone-dialog .phone-app-view,
+.phone-ui-refresh .phone-app-body,
+.phone-dialog .phone-app-body {
+  color: var(--phone-ink);
+  background: var(--phone-surface);
+}
+
+.phone-ui-refresh .phone-app-toolbar,
+.phone-dialog .phone-app-toolbar {
+  min-height: clamp(3rem, 7.5dvh, 3.5rem);
+  padding: var(--phone-space-sm) var(--phone-space-md);
+  border-bottom: 1px solid var(--phone-line);
+  background: color-mix(in srgb, var(--phone-card) 94%, var(--phone-surface));
+  -webkit-backdrop-filter: saturate(1.4) blur(18px);
+  backdrop-filter: saturate(1.4) blur(18px);
+}
+
+.phone-ui-refresh .phone-app-toolbar > strong,
+.phone-dialog .phone-app-toolbar > strong {
+  color: var(--phone-ink);
+  font-size: var(--phone-body-size);
+  font-weight: 750;
+  letter-spacing: -0.025em;
+}
+
+.phone-ui-refresh .phone-back-button,
+.phone-dialog .phone-back-button {
+  min-height: 38px;
+  padding: 0 10px;
+  border-radius: var(--shape-pill, 999px);
+  color: var(--phone-accent);
+  font-weight: 700;
+}
+
+.phone-ui-refresh .phone-app-body > *,
+.phone-dialog .phone-app-body > * {
+  min-width: 0;
+}
+
+.phone-ui-refresh .phone-app-body :is(
+  .phone-card,
+  .phone-local-card,
+  .town-news-card,
+  .market-app-product,
+  .property-exchange-section,
+  .phone-group-card,
+  .phone-group-message,
+  .phone-group-friends
+),
+.phone-dialog .phone-app-body :is(
+  .phone-card,
+  .phone-local-card,
+  .town-news-card,
+  .market-app-product,
+  .property-exchange-section,
+  .phone-group-card,
+  .phone-group-message,
+  .phone-group-friends
+) {
+  border: 1px solid var(--phone-line);
+  border-radius: var(--phone-radius-card);
+  background: var(--phone-card);
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--phone-ink) 5%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea),
+.phone-dialog .phone-app-body :is(input:not([type="checkbox"]):not([type="radio"]), select, textarea) {
+  min-width: 0;
+  max-width: 100%;
+  border: 1px solid var(--phone-line);
+  border-radius: var(--phone-radius-control);
+  color: var(--phone-ink);
+  background: var(--phone-card);
+  accent-color: var(--phone-accent);
+}
+
+.phone-ui-refresh .phone-app-body :is(input, select, textarea):focus-visible,
+.phone-dialog .phone-app-body :is(input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring, var(--phone-accent));
+  outline-offset: 2px;
+}
+
+.phone-ui-refresh .phone-app-body button,
+.phone-dialog .phone-app-body button {
+  min-height: 36px;
+  border-radius: var(--phone-radius-control);
+  transition: transform 140ms ease, filter 140ms ease, background-color 140ms ease;
+}
+
+.phone-ui-refresh .phone-app-body button:active,
+.phone-dialog .phone-app-body button:active {
+  transform: scale(0.98);
+}
+
+.phone-ui-refresh .phone-app-body button:focus-visible,
+.phone-dialog .phone-app-body button:focus-visible {
+  outline: 2px solid var(--ring, var(--phone-accent));
+  outline-offset: 2px;
+}
+
+.phone-ui-refresh .phone-app-body :is([role="dialog"], [data-radix-dialog-content]),
+.phone-dialog .phone-app-body :is([role="dialog"], [data-radix-dialog-content]) {
+  max-width: min( calc(100vw - 32px), 26rem);
+  max-height: min( calc(100dvh - 32px), 42rem);
+  overflow: auto;
+  border: 1px solid var(--phone-line);
+  border-radius: 1.5rem;
+  color: var(--phone-ink);
+  background: var(--phone-card);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--phone-ink) 22%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body :is(.phone-empty-state, [role="status"], [role="alert"]),
+.phone-dialog .phone-app-body :is(.phone-empty-state, [role="status"], [role="alert"]) {
+  overflow-wrap: anywhere;
+}
+
+.phone-ui-refresh .phone-app-body :is(img, video, canvas),
+.phone-dialog .phone-app-body :is(img, video, canvas) {
+  max-width: 100%;
+}
+
+@media (max-width: 380px) {
+  .phone-ui-refresh .phone-app-toolbar,
+  .phone-dialog .phone-app-toolbar {
+    padding-inline: 10px;
+  }
+
+  .phone-ui-refresh .phone-app-body,
+  .phone-dialog .phone-app-body {
+    overflow-x: clip;
+  }
+
+  .phone-ui-refresh .phone-app-body :is(.flex, [class*="flex-row"]),
+  .phone-dialog .phone-app-body :is(.flex, [class*="flex-row"]) {
+    min-width: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-ui-refresh .phone-app-body button,
+  .phone-dialog .phone-app-body button {
+    transition: none;
+  }
+}
+
+
+/* Radix portals render dialogs and menus beside the phone root, not inside it.
+   Scope their visual treatment to the period when the in-game handset is open. */
+body:has(.phone-ui-refresh) :is(
+  [role="dialog"]:not(.phone-dialog):not(.phone-dialog-shell),
+  [role="alertdialog"],
+  [data-radix-dialog-content]:not(.phone-dialog-shell),
+  [data-radix-alert-dialog-content]:not(.phone-dialog-shell)
+) {
+  box-sizing: border-box;
+  max-width: min(calc(100vw - 28px), 27rem);
+  max-height: min(calc(100dvh - 28px), 44rem);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 1.5rem;
+  color: var(--foreground);
+  background: var(--card);
+  box-shadow: 0 24px 64px color-mix(in srgb, var(--foreground) 22%, transparent);
+}
+
+body:has(.phone-ui-refresh) :is(
+  [role="menu"],
+  [role="listbox"],
+  [data-radix-menu-content],
+  [data-radix-select-content],
+  [data-radix-popover-content],
+  [data-radix-dropdown-menu-content]
+) {
+  max-width: min(calc(100vw - 24px), 24rem);
+  max-height: min(60dvh, 28rem);
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 1rem;
+  color: var(--foreground);
+  background: var(--popover, var(--card));
+  box-shadow: 0 16px 40px color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+body:has(.phone-ui-refresh) :is(
+  [role="dialog"],
+  [role="alertdialog"],
+  [role="menu"],
+  [role="listbox"]
+) :is(button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--ring, var(--primary));
+  outline-offset: 2px;
+}
+
+@media (max-width: 380px) {
+  body:has(.phone-ui-refresh) :is(
+    [role="dialog"]:not(.phone-dialog):not(.phone-dialog-shell),
+    [role="alertdialog"]:not(.phone-dialog-shell),
+    [data-radix-dialog-content]:not(.phone-dialog-shell),
+    [data-radix-alert-dialog-content]:not(.phone-dialog-shell)
+  ) {
+    width: calc(100vw - 24px);
+    max-width: calc(100vw - 24px);
+    padding-inline: 14px;
+    border-radius: 1.25rem;
+  }
+}
+
+
+/* App-level One UI pass: apply the same visual hierarchy to every phone app,
+   including screens that do not use the Settings-style component classes. */
+.phone-ui-refresh .phone-app-body {
+  min-width: 0;
+  padding: 0;
+  color: var(--foreground);
+  background: var(--brand-porcelain, var(--background));
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--foreground) 22%, transparent) transparent;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-app,
+  .phone-sub-app,
+  .phone-party,
+  .support-app,
+  .phone-camera-app,
+  .property-exchange-app,
+  .phone-service-screen,
+  .phone-coming-soon-screen
+) {
+  box-sizing: border-box;
+  min-width: 0;
+  width: 100%;
+  padding: var(--phone-space-md);
+  color: var(--foreground);
+  background: var(--brand-porcelain, var(--background));
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-app,
+  .phone-sub-app,
+  .phone-party,
+  .support-app,
+  .phone-camera-app,
+  .property-exchange-app,
+  .phone-service-screen,
+  .phone-coming-soon-screen
+) :where(h1, h2, h3, h4) {
+  color: var(--foreground);
+  letter-spacing: -0.025em;
+  text-wrap: pretty;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-card,
+  .phone-service-card,
+  .city-services-card,
+  .phone-map-card,
+  .phone-party-hero,
+  .support-panel,
+  .support-feedback-card,
+  .support-faq,
+  .food-card,
+  .phone-record-row,
+  .property-exchange-section,
+  .market-app-stall,
+  .phone-card
+) {
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: clamp(0.85rem, 3vw, 1.15rem);
+  background: var(--card);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-card,
+  .phone-service-card,
+  .city-services-card,
+  .phone-map-card,
+  .support-panel,
+  .support-feedback-card,
+  .support-faq,
+  .food-card,
+  .phone-record-row,
+  .property-exchange-section,
+  .market-app-stall,
+  .phone-card
+) {
+  padding: 12px;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-app > header,
+  .phone-sub-header,
+  .support-header,
+  .phone-camera-heading,
+  .property-exchange-hero,
+  .city-services-hero,
+  .food-hero,
+  .calendar-hero,
+  .okada-hero
+) {
+  min-width: 0;
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 1.25rem;
+  background: var(--card);
+  box-shadow: 0 3px 12px color-mix(in srgb, var(--foreground) 5%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs,
+  .phone-map-filters,
+  .city-services-filters,
+  .phone-camera-modes
+) {
+  display: flex;
+  min-width: 0;
+  gap: 5px;
+  padding: 4px;
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 52%, var(--card));
+  scrollbar-width: none;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs,
+  .phone-map-filters,
+  .city-services-filters,
+  .phone-camera-modes
+) > button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs,
+  .phone-map-filters,
+  .city-services-filters,
+  .phone-camera-modes
+) > button[aria-selected="true"],
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs,
+  .phone-map-filters,
+  .city-services-filters,
+  .phone-camera-modes
+) > button[aria-pressed="true"],
+.phone-ui-refresh .phone-app-body :where(
+  .phone-segmented-tabs,
+  .support-tabs
+) > button.is-active {
+  color: var(--primary);
+  background: var(--card);
+  box-shadow: 0 1px 4px color-mix(in srgb, var(--foreground) 12%, transparent);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .support-field,
+  .phone-service-field,
+  .food-kitchen-field
+) {
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea
+) {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  min-height: var(--phone-control-size);
+  padding: var(--phone-space-sm) var(--phone-space-md);
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  color: var(--foreground);
+  background: var(--card);
+  font: inherit;
+}
+
+.phone-ui-refresh .phone-app-body textarea {
+  min-height: clamp(5.5rem, 18dvh, 8rem);
+  resize: vertical;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-btn-primary,
+  .phone-service-action,
+  .food-checkout,
+  .food-add-button,
+  .support-submit,
+  .phone-map-open
+) {
+  min-height: var(--phone-control-size);
+  padding-inline: var(--phone-space-md);
+  border-radius: 999px;
+  font-weight: 750;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  button,
+  a,
+  input,
+  select,
+  textarea,
+  [role="tab"],
+  [role="button"]
+):focus-visible {
+  outline: 2px solid var(--ring, var(--primary));
+  outline-offset: 3px;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-list,
+  .phone-record-list,
+  .support-faq-list,
+  .support-feedback-list,
+  .city-services-list
+) {
+  min-width: 0;
+  gap: 8px;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-card,
+  .city-services-card,
+  .phone-service-card,
+  .property-exchange-section,
+  .support-feedback-card
+) {
+  overflow-wrap: anywhere;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-local-card p,
+  .city-services-card p,
+  .phone-service-card p,
+  .property-exchange-section p,
+  .support-panel p
+) {
+  line-height: 1.5;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-preview-wrap,
+  .phone-camera-scene
+) {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--border) 75%, var(--foreground));
+  border-radius: 1.35rem;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-controls,
+  .phone-camera-footer
+) {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-side-control,
+  .phone-camera-shutter,
+  .phone-camera-gallery-thumb
+) {
+  flex: 0 0 auto;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-map-search,
+  .city-services-search,
+  .support-search
+) {
+  min-width: 0;
+  width: 100%;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .market-app-hero,
+  .property-exchange-hero,
+  .city-services-hero,
+  .phone-party-hero,
+  .support-header
+) {
+  padding: 14px;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-sub-header,
+  .phone-app-toolbar
+) {
+  flex: 0 0 auto;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-empty-state,
+  .phone-service-state,
+  .city-services-state,
+  .phone-map-state,
+  .support-empty
+) {
+  overflow-wrap: anywhere;
+  border-radius: 1rem;
+  line-height: 1.5;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .grid,
+  .flex,
+  ul,
+  ol,
+  form,
+  section,
+  article
+) {
+  min-width: 0;
+}
+
+.phone-ui-refresh .phone-app-body :where(img, video, canvas, svg) {
+  max-width: 100%;
+}
+
+@media (max-width: 380px) {
+  .phone-ui-refresh .phone-app-body :where(
+    .phone-local-app,
+    .phone-sub-app,
+    .phone-party,
+    .support-app,
+    .phone-camera-app,
+    .property-exchange-app,
+    .phone-service-screen,
+    .phone-coming-soon-screen
+  ) {
+    padding: 10px;
+  }
+
+  .phone-ui-refresh .phone-app-body :where(
+    .phone-local-list,
+    .city-services-list,
+    .phone-record-list
+  ) {
+    gap: 7px;
+  }
+
+  .phone-ui-refresh .phone-app-body :where(
+    .phone-camera-controls,
+    .phone-camera-footer
+  ) {
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .phone-ui-refresh .phone-app-body :where(button, a) {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+
+/* Final responsive sizing pass: scale app controls and visual components with the
+   handset viewport, while retaining rem-based minimums for touch accessibility. */
+.phone-ui-refresh,
+.phone-dialog {
+  --phone-inline-gutter: clamp(0.65rem, 3.2vw, 1.1rem);
+  --phone-card-padding: clamp(0.7rem, 2.8vw, 1rem);
+  --phone-icon-size: clamp(2.25rem, 10vw, 3rem);
+  --phone-small-icon-size: clamp(1.1rem, 5vw, 1.5rem);
+  --phone-row-gap: clamp(0.45rem, 1.8vw, 0.75rem);
+  --phone-app-title: clamp(1.1rem, 4.8vw, 1.55rem);
+  --phone-app-copy: clamp(0.78rem, 2.6vw, 0.92rem);
+}
+
+.phone-ui-refresh .phone-app-body,
+.phone-dialog .phone-app-body {
+  font-size: var(--phone-app-copy);
+  line-height: 1.45;
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-app,
+  .property-exchange-app,
+  .city-services-app,
+  .market-app,
+  .leaderboard-app,
+  .phone-messenger,
+  .phone-local-app,
+  .phone-sub-app,
+  .support-app
+) {
+  gap: var(--phone-row-gap);
+  padding: var(--phone-inline-gutter);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-heading-icon,
+  .city-services-icon,
+  .market-app-hero-icon,
+  .property-exchange-mark,
+  .phone-local-icon,
+  .phone-service-icon
+) {
+  width: var(--phone-icon-size);
+  height: var(--phone-icon-size);
+  flex-basis: var(--phone-icon-size);
+  border-radius: clamp(0.75rem, 3vw, 1rem);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-heading-icon svg,
+  .city-services-icon svg,
+  .property-exchange-mark svg,
+  .market-app-hero-icon svg
+) {
+  width: var(--phone-small-icon-size);
+  height: var(--phone-small-icon-size);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-heading strong,
+  .city-services-hero strong,
+  .property-exchange-title-row h2,
+  .market-app-hero h2,
+  .leaderboard-app > header strong
+) {
+  font-size: var(--phone-app-title);
+  line-height: 1.15;
+}
+
+.phone-ui-refresh .phone-app-body .phone-camera-viewfinder {
+  min-height: clamp(12rem, 36dvh, 18rem);
+}
+
+.phone-ui-refresh .phone-app-body .phone-camera-scene {
+  min-height: clamp(8rem, 24dvh, 13rem);
+}
+
+.phone-ui-refresh .phone-app-body .phone-camera-viewfinder {
+  border-width: clamp(0.12rem, 0.5vw, 0.25rem);
+  border-radius: clamp(1rem, 4vw, 1.4rem);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-viewfinder-top,
+  .phone-camera-viewfinder-bottom
+) {
+  min-height: clamp(1.8rem, 5.5dvh, 2.2rem);
+  padding-inline: var(--phone-card-padding);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .city-services-search input,
+  .market-app-tabs button,
+  .phone-message-switch button
+) {
+  min-height: var(--phone-control-size);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .city-services-card,
+  .property-exchange-section,
+  .market-app-stall,
+  .phone-group-card,
+  .leaderboard-ranks > li
+) {
+  padding: var(--phone-card-padding);
+  border-radius: clamp(0.8rem, 3vw, 1.15rem);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-chat-panel,
+  .phone-message-switch,
+  .market-app-section,
+  .phone-app-body .leaderboard-app
+) {
+  padding-inline: var(--phone-inline-gutter);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-controls,
+  .phone-camera-footer,
+  .city-services-filters,
+  .market-app-tabs,
+  .phone-message-switch
+) {
+  gap: var(--phone-row-gap);
+}
+
+.phone-ui-refresh .phone-app-body :where(
+  .phone-camera-side-control,
+  .phone-camera-shutter,
+  .phone-camera-gallery-thumb
+) {
+  min-width: var(--phone-control-size);
+  min-height: var(--phone-control-size);
+}
+
+@media (max-width: 380px) {
+  .phone-ui-refresh,
+  .phone-dialog {
+    --phone-inline-gutter: clamp(0.55rem, 2.8vw, 0.8rem);
+    --phone-card-padding: clamp(0.55rem, 2.5vw, 0.75rem);
+    --phone-icon-size: clamp(2rem, 9vw, 2.5rem);
+    --phone-app-title: clamp(1rem, 4.5vw, 1.25rem);
+  }
+
+  .phone-ui-refresh .phone-app-body .phone-camera-viewfinder {
+    min-height: clamp(10rem, 30dvh, 13rem);
+  }
+
+  .phone-ui-refresh .phone-app-body .phone-camera-scene {
+    min-height: clamp(7rem, 19dvh, 10rem);
+  }
+}
+
+@media (min-width: 641px) {
+  .phone-ui-refresh,
+  .phone-dialog {
+    --phone-inline-gutter: clamp(0.85rem, 2.5vw, 1.25rem);
+    --phone-card-padding: clamp(0.8rem, 2vw, 1.1rem);
+  }
+}
+
+
+/* Mobile preview corrections: app content owns its scroll, never a clipped inner card. */
+.phone-ui-refresh .phone-app-body {
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  scrollbar-gutter: stable;
+}
+.phone-ui-refresh .phone-app-body > :where(.support-app, .property-exchange-app, .city-services-app) {
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+/* Property Exchange: restore readable contrast after the shared header-surface reset. */
+.phone-ui-refresh .phone-app-body .property-exchange-hero {
+  color: #17243a;
+  background: linear-gradient(145deg, #ffffff 0%, #f2f6fc 100%);
+  border: 1px solid #d7e1ef;
+  box-shadow: 0 3px 14px rgb(18 43 78 / 8%);
+}
+.phone-ui-refresh .phone-app-body .property-exchange-kicker {
+  color: #174da6;
+  letter-spacing: 0.09em;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-title-row h2 {
+  color: #111c2d;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-title-row p,
+.phone-ui-refresh .phone-app-body .property-exchange-promise {
+  color: #526174;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-promise {
+  border-top-color: #d8e1ed;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-mark {
+  color: #174da6;
+  border-color: #d5e1f2;
+  background: #e8effa;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-section,
+.phone-ui-refresh .phone-app-body .property-exchange-section > * {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-section :where(input, select, textarea, button) {
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-app-body .property-exchange-section :where(ul, li, form) {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* Support: tabs stay inside the handset and the full FAQ list scrolls with the app. */
+.phone-ui-refresh .phone-app-body .support-app {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 100%;
+  height: auto;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 14px;
+}
+.phone-ui-refresh .phone-app-body .support-tabs > button {
+  min-width: 0;
+  padding-inline: 4px;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+.phone-ui-refresh .phone-app-body .support-panel {
+  flex: 0 0 auto;
+  min-width: 0;
+  max-height: none;
+  height: auto;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-faq-list {
+  max-height: none;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-faq button {
+  min-width: 0;
+}
+.phone-ui-refresh .phone-app-body .support-faq button > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.phone-ui-refresh .phone-app-body .support-back {
+  flex: 0 0 auto;
+  align-self: center;
+  margin-block: 0.25rem 0.75rem;
+}
+
+/* City Services: use a compact category grid, not a horizontally clipped pill cloud. */
+.phone-ui-refresh .phone-app-body .city-services-app {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  min-height: 100%;
+  height: auto;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .city-services-search {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: 0.55rem;
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0.8rem;
+  box-sizing: border-box;
+}
+.phone-ui-refresh .phone-app-body .city-services-search input {
+  width: 100%;
+  min-width: 0;
+  padding-inline: 0;
+  border: 0;
+  box-shadow: none;
+}
+.phone-ui-refresh .phone-app-body .city-services-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.45rem;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.phone-ui-refresh .phone-app-body .city-services-filters > button {
+  min-width: 0;
+  max-width: 100%;
+  min-height: 40px;
+  padding: 0.45rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.2;
+}
+.phone-ui-refresh .phone-app-body .city-services-card-copy {
+  flex: 1 1 0;
+}
+
+@media (max-width: 380px) {
+  .phone-ui-refresh .phone-app-body .city-services-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .phone-ui-refresh .phone-app-body .support-tabs > button {
+    font-size: 0.7rem;
+  }
+}
+
+
+/* Support app: prevent the header and segmented navigation from shrinking into
+   overlapping slivers when the FAQ list grows inside the scrollable phone body. */
+.phone-ui-refresh .phone-app-body .support-app {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  align-items: stretch;
+  align-self: stretch;
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: auto;
+  gap: clamp(0.65rem, 2.8vw, 0.9rem);
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-header,
+.phone-ui-refresh .phone-app-body .support-app > .support-tabs,
+.phone-ui-refresh .phone-app-body .support-app > .support-panel,
+.phone-ui-refresh .phone-app-body .support-app > .support-form,
+.phone-ui-refresh .phone-app-body .support-app > .support-feedback-list,
+.phone-ui-refresh .phone-app-body .support-app > .support-back {
+  position: relative;
+  flex: 0 0 auto;
+  min-width: 0;
+  width: 100%;
+  transform: none;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-header {
+  min-height: 5rem;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  min-height: 3.25rem;
+  height: auto;
+  padding: 4px;
+  overflow: visible;
+  border-radius: 14px;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-tabs > .support-tab {
+  display: flex;
+  min-width: 0;
+  min-height: 2.75rem;
+  height: auto;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.25rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+}
+.phone-ui-refresh .phone-app-body .support-app > .support-panel,
+.phone-ui-refresh .phone-app-body .support-app > .support-form {
+  display: block;
+  min-height: 0;
+  max-height: none;
+  height: auto;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-app .support-search,
+.phone-ui-refresh .phone-app-body .support-app .support-faq-list,
+.phone-ui-refresh .phone-app-body .support-app .support-faq {
+  position: relative;
+  flex: none;
+  min-width: 0;
+  height: auto;
+  max-height: none;
+  overflow: visible;
+}
+.phone-ui-refresh .phone-app-body .support-app .support-faq button {
+  min-height: 3.5rem;
+  align-items: center;
+}
+.phone-ui-refresh .phone-app-body .support-app .support-back {
+  align-self: center;
+  width: auto;
+  min-height: 2.75rem;
+}
+
+/* Map filters: replace the clipped oval carousel with a readable, wrapping grid. */
+.phone-ui-refresh .phone-app-body .map-app .phone-map-filters {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  gap: 0.45rem;
+  padding: 0;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.phone-ui-refresh .phone-app-body .map-app .phone-map-filters > button {
+  display: flex;
+  min-width: 0;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  padding: 0.45rem 0.35rem;
+  border: 1px solid var(--border);
+  border-radius: 0.8rem;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+  text-align: center;
+}
+@media (max-width: 380px) {
+  .phone-ui-refresh .phone-app-body .map-app .phone-map-filters {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Frame polish: a punch-hole lens instead of a flat dot, slimmer side keys on large screens, and an
+   app grid that fills the screen with even spacing instead of floating in the middle. */
+.phone-ui-refresh .phone-status-camera {
+  position: relative;
+  grid-column: 2;
+  justify-self: center;
+  width: 84px;
+  height: 24px;
+  border: 0;
+  border-radius: 999px;
+  background: #000;
+  box-shadow: 0 0 0 1px rgb(0 0 0 / 35%);
+}
+
+/* The lens sits inside the pill, as on modern camera phones. */
+.phone-ui-refresh .phone-status-camera::after {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  width: 9px;
+  height: 9px;
+  margin-top: -4.5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #3b5b7d 0 15%, #0b1520 62%);
+  content: "";
+}
+
+@media (min-width: 641px) {
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh::before {
+    top: 20%;
+    height: 34px;
+    width: 4px;
+  }
+
+  .phone-dialog-shell > .phone-dialog.phone-ui-refresh::after {
+    top: 29%;
+    height: 24px;
+    width: 4px;
+  }
+}
+
+.phone-screen-home .phone-app-grid {
+  grid-template-rows: repeat(5, minmax(64px, 1fr));
+  align-content: stretch;
+  gap: clamp(12px, 2.6vh, 22px) clamp(10px, 3.4vw, 18px);
+  padding: clamp(14px, 3.4vh, 30px) clamp(12px, 4vw, 22px);
+}
+
+.phone-screen-home .phone-app-grid {
+  padding-bottom: clamp(44px, 9vh, 72px);
+}
+
+.phone-screen-home .phone-app {
+  font-size: clamp(9px, 2.5vw, 11px);
+  hyphens: none;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.phone-screen-home .phone-app {
+  font-size: clamp(8.5px, 2.2vw, 10px);
+  letter-spacing: -0.03em;
+  padding-inline: 0;
+}
+
+.phone-screen-home .phone-launcher-home {
+  display: flex;
+  flex-direction: column;
+}
+
+.phone-screen-home .phone-home-clock {
+  flex: 0 0 auto;
+  padding: clamp(10px, 2.6vh, 22px) 18px 0;
+  color: #0f172a;
+}
+
+.phone-screen-home .phone-home-clock strong {
+  display: block;
+  font-size: clamp(44px, 11vh, 64px);
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.04em;
+}
+
+.phone-screen-home .phone-home-clock span {
+  display: block;
+  margin-top: 4px;
+  color: #334155;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.phone-screen-home .phone-app-pages {
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* The home clock already shows the time, so the status-bar copy beside the camera is hidden. */
+.phone-ui-refresh .phone-status-time {
+  display: none;
+}
+
+/* Premium tiles: a glossy top highlight, a soft lifted shadow and a firm press response. */
+.phone-screen-home .phone-app {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.phone-screen-home:not([data-tile-style="circle"]) .phone-app-icon {
+  background-image: linear-gradient(
+    155deg,
+    rgb(255 255 255 / 34%) 0%,
+    rgb(255 255 255 / 0%) 46%,
+    rgb(0 0 0 / 12%) 100%
+  );
+  box-shadow:
+    0 14px 24px -12px rgb(15 35 65 / 45%),
+    0 2px 4px rgb(15 35 65 / 12%),
+    inset 0 1px 0 rgb(255 255 255 / 60%),
+    inset 0 -1px 0 rgb(0 0 0 / 12%);
+}
+
+.phone-screen-home .phone-app:active .phone-app-icon {
+  transform: scale(0.94);
+  box-shadow:
+    0 6px 12px -8px rgb(15 35 65 / 45%),
+    inset 0 1px 0 rgb(255 255 255 / 50%);
 }

@@ -1,3 +1,4 @@
+import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { useRenderQuality } from "@/hooks/use-render-quality";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
 import {
@@ -9,10 +10,10 @@ import {
   useState,
   type RefObject,
 } from "react";
-import { Canvas, useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
+import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { RoundedBox } from "@react-three/drei";
 import { SceneHtml as Html } from "@/components/3d/SceneHtml";
-import { DoubleSide, Plane, Vector3, type Group } from "three";
+import { DoubleSide, Plane, Vector3, PerspectiveCamera, type Group } from "three";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import type { FoodDelivery } from "@/lib/food-delivery-service";
 import { homeFurnitureLabel } from "@/lib/home-furniture-label";
@@ -2045,7 +2046,18 @@ function SlotObject({
   );
 }
 
+function FirstRoomFrame({ notify }: { notify: Props["onSceneAvailability"] }) {
+  const reported = useRef(false);
+  useFrame(() => {
+    if (reported.current) return;
+    reported.current = true;
+    notify?.(true);
+  });
+  return null;
+}
+
 export function HouseRoom3D({
+  onSceneAvailability,
   inputBlocked = false,
   lightOn = true,
   wallsClosed = null,
@@ -2084,6 +2096,12 @@ export function HouseRoom3D({
   onDraftMove,
 }: Props & { inputBlocked?: boolean }) {
   const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
+  const sceneCamera = useMemo(() => {
+    const camera = new PerspectiveCamera(42, 1, 0.1, 80);
+    camera.position.set(0, 4, 12);
+    camera.lookAt(0, 0, 0);
+    return camera;
+  }, []);
   const [width, depth] = ROOM_SIZE[houseTypeId] ?? ROOM_SIZE["shared-room"]!;
   const roomView = useMemo(
     () =>
@@ -2094,6 +2112,10 @@ export function HouseRoom3D({
         : null,
     [houseTypeId, width, depth, roomViewId, activeFloor],
   );
+  // Follow the same world position as the avatar, including its height on stairs.
+  const followedActor = showCharacter && !editMode ? actorPosition : undefined;
+  const followWidth = Math.min(width, ROOM_SIZE["single-room"]![0]);
+  const followDepth = Math.min(depth, ROOM_SIZE["single-room"]![1]);
   // In a room view only that room's furniture is shown and can be used.
   const placements = roomView
     ? allPlacements.filter((item) => {
@@ -2235,33 +2257,30 @@ export function HouseRoom3D({
   }, [waitingCouriers]);
   return (
     <div className="house-3d-scene" aria-label={`${houseTypeId.replaceAll("-", " ")} 3D room`}>
-      <RoomOverlayContext.Provider value={overlayHost}>
-        <FurniturePaletteContext.Provider
-          value={
-            houseTypeId === "studio-flat"
-              ? STUDIO_FURNITURE_STYLE
-              : houseTypeId === "shared-room"
-                ? SHARED_FURNITURE_STYLE
-                : houseTypeId === "single-room" ||
-                    houseTypeId === "mini-flat" ||
-                    houseTypeId === "bungalow" ||
-                    houseTypeId === "duplex"
-                  ? PRIVATE_FURNITURE_STYLE
-                  : DEFAULT_FURNITURE_STYLE
-          }
-        >
-          <Canvas
-            style={{ touchAction: "none" }}
-            frameloop="demand"
-            dpr={[1, quality.maxDpr]}
-            shadows="percentage"
-            camera={{
-              position: [0, 4, 12],
-              fov: 42,
-              near: 0.1,
-              far: 80,
-            }}
-            gl={{ antialias: false, powerPreference: "low-power" }}
+      <WorldCanvas
+        onSceneError={() => onSceneAvailability?.(false)}
+        style={{ touchAction: "none" }}
+        frameloop="demand"
+        dpr={[1, quality.maxDpr]}
+        shadows="percentage"
+        camera={sceneCamera}
+        gl={{ antialias: false, powerPreference: "low-power" }}
+      >
+        <RoomOverlayContext.Provider value={overlayHost}>
+          <FirstRoomFrame notify={onSceneAvailability} />
+          <FurniturePaletteContext.Provider
+            value={
+              houseTypeId === "studio-flat"
+                ? STUDIO_FURNITURE_STYLE
+                : houseTypeId === "shared-room"
+                  ? SHARED_FURNITURE_STYLE
+                  : houseTypeId === "single-room" ||
+                      houseTypeId === "mini-flat" ||
+                      houseTypeId === "bungalow" ||
+                      houseTypeId === "duplex"
+                    ? PRIVATE_FURNITURE_STYLE
+                    : DEFAULT_FURNITURE_STYLE
+            }
           >
             <WorldLighting size={Math.max(width, depth) * 1.5} dimmed={!lightOn} />
 
@@ -2505,32 +2524,34 @@ export function HouseRoom3D({
                 />
               ))}
             <WorldCamera
-              width={roomView ? roomView.maxX - roomView.minX : width}
-              depth={roomView ? roomView.maxZ - roomView.minZ : depth}
+              width={followedActor ? followWidth : roomView ? roomView.maxX - roomView.minX : width}
+              depth={followedActor ? followDepth : roomView ? roomView.maxZ - roomView.minZ : depth}
               stage
               horizontalOrbit={!editMode}
               orbitArc={Math.PI}
               verticalOrbit={!editMode && !roomView}
               polarAngle={editMode ? Math.PI / 5 : Math.PI / 4}
               target={
-                roomView
-                  ? [
-                      (roomView.minX + roomView.maxX) / 2,
-                      WORLD_SCALE.door * 0.65,
-                      (roomView.minZ + roomView.maxZ) / 2,
-                    ]
-                  : editMode
-                    ? [0, 0.25, 0]
-                    : [0, WORLD_SCALE.door * 0.58, depth * 0.06]
+                followedActor
+                  ? [followedActor[0], followedActor[1] + WORLD_SCALE.door * 0.58, followedActor[2]]
+                  : roomView
+                    ? [
+                        (roomView.minX + roomView.maxX) / 2,
+                        WORLD_SCALE.door * 0.65,
+                        (roomView.minZ + roomView.maxZ) / 2,
+                      ]
+                    : editMode
+                      ? [0, 0.25, 0]
+                      : [0, WORLD_SCALE.door * 0.58, depth * 0.06]
               }
               distanceScale={roomView ? ROOM_VIEW_CAMERA.distanceScale : 0.94}
               minZoom={ROOM_VIEW_CAMERA.minZoom}
               maxZoom={ROOM_VIEW_CAMERA.maxZoom}
               enabled={!inputBlocked && !activePreview}
             />
-          </Canvas>
-        </FurniturePaletteContext.Provider>
-      </RoomOverlayContext.Provider>
+          </FurniturePaletteContext.Provider>
+        </RoomOverlayContext.Provider>
+      </WorldCanvas>
       <div
         ref={overlayHost}
         style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2 }}

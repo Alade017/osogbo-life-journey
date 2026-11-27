@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { describe, expect, it, vi } from "vitest";
 
@@ -38,5 +38,28 @@ describe("settings page", () => {
       </QueryClientProvider>,
     );
     expect(await screen.findByDisplayValue("Adeyemi")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Display" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("switch", { name: "Reduce motion" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Privacy" }));
+    expect(screen.getByRole("switch", { name: "Allow friend visits" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Sound & play" }));
+    expect(screen.getByRole("switch", { name: "Background music on or off" })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "Account" }));
+    expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
+  });
+
+  it("supports embedded mode without duplicating the player hub identity header", async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { container } = render(
+      <QueryClientProvider client={client}>
+        <SettingsPage embedded />
+      </QueryClientProvider>,
+    );
+    expect(await screen.findByDisplayValue("Adeyemi")).toBeTruthy();
+    expect(container.querySelector(".sx-hero")).toBeNull();
+    expect(screen.getByRole("navigation", { name: "Settings categories" })).toBeInTheDocument();
   });
 });

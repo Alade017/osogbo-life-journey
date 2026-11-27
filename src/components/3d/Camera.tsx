@@ -7,9 +7,11 @@ import { clampTownTarget } from "@/lib/town-grid";
 export function Camera({
   zoom = 38,
   mapControls = false,
+  minZoom = 18,
 }: {
   zoom?: number;
   mapControls?: boolean;
+  minZoom?: number;
 }) {
   const controls = useRef<OrbitControlsImpl>(null);
   useEffect(() => {
@@ -56,12 +58,16 @@ export function Camera({
         enablePan={mapControls}
         enableZoom
         enableRotate={!mapControls}
-        mouseButtons={{ LEFT: MOUSE.PAN, MIDDLE: MOUSE.DOLLY, RIGHT: MOUSE.DOLLY }}
-        touches={{ ONE: TOUCH.PAN, TWO: TOUCH.DOLLY_PAN }}
+        mouseButtons={{
+          LEFT: mapControls ? MOUSE.PAN : MOUSE.ROTATE,
+          MIDDLE: MOUSE.DOLLY,
+          RIGHT: mapControls ? MOUSE.DOLLY : MOUSE.PAN,
+        }}
+        touches={{ ONE: mapControls ? TOUCH.PAN : TOUCH.ROTATE, TWO: TOUCH.DOLLY_PAN }}
         zoomToCursor={mapControls}
         screenSpacePanning={mapControls}
         keyPanSpeed={16}
-        minZoom={mapControls ? 20 : 18}
+        minZoom={mapControls ? 20 : minZoom}
         maxZoom={mapControls ? 64 : 80}
         minPolarAngle={mapControls ? 0.86 : 0.6}
         maxPolarAngle={mapControls ? 0.86 : 1.1}

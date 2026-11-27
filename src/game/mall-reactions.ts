@@ -1,3 +1,22 @@
+import type { WalkPoint } from "./grid-walk-path.ts";
+import { isSegmentWalkable, type MallWalker } from "./mall-movement.ts";
+import { isPaying } from "./mall-crowd.ts";
+
+export const MALL_CHAT_RADIUS = 2;
+
+export function canChatWithShopper(player: WalkPoint, walker: MallWalker, waitingForCheckout = false): boolean {
+  return (!walker.done || waitingForCheckout) && Math.hypot(player[0] - walker.pos[0], player[1] - walker.pos[1]) <= MALL_CHAT_RADIUS
+    && isSegmentWalkable(player, walker.pos);
+}
+
+export function shopperReaction(walker: MallWalker, pick: number, waitingForCheckout = false): string {
+  if (waitingForCheckout) return "Shopper: I’m waiting for a checkout to become free.";
+  if (isPaying(walker)) return "Shopper: Let me finish paying first, please.";
+  if (walker.dwellLeft > 0) return "Shopper: I'm just checking the items on this shelf.";
+  if (walker.moving) return "Shopper: Excuse me, I'm on my way.";
+  return reactionFor({ kind: "shopper", id: "" }, pick);
+}
+
 /** What a visitor can click in the mall. Ids come from the layout and staff data. */
 export type MallTarget =
   | { kind: "shelf"; id: string }

@@ -23,23 +23,42 @@ vi.mock("@/lib/game-audio", () => ({ playGameSound: vi.fn() }));
 vi.mock("@/hooks/use-live-clock", () => ({ useLiveClock: () => null }));
 vi.mock("@/hooks/use-missions", () => ({ useMissions: () => ({ data: [] }) }));
 vi.mock("@/hooks/use-mission-claim", () => ({ useMissionClaim: () => ({ mutate: vi.fn() }) }));
+vi.mock("@/components/game/CareerLifeApp", () => ({
+  CareerLifeApp: () => <div>Career HUD content</div>,
+}));
+vi.mock("@/components/game/phone/CameraApp", () => ({
+  default: () => <div>Camera app content</div>,
+}));
+vi.mock("@/components/game/phone/CityServicesApp", () => ({
+  default: () => <div>City Services content</div>,
+}));
+vi.mock("@/components/game/phone/PropertyExchangeApp", () => ({
+  default: () => <div>Property Exchange content</div>,
+}));
+vi.mock("@/components/game/phone/PhoneMapApp", () => ({
+  PhoneMapApp: () => (
+    <div>
+      Map HUD content <a href="/map">Open full city map</a>
+    </div>
+  ),
+}));
 beforeEach(() => {
   state.href = "/jobs";
   vi.clearAllMocks();
 });
 afterEach(cleanup);
 
-it.each([["Map", "/map"]])(
-  "opens the %s launcher as a full page and closes the phone",
-  async (app, href) => {
-    render(<PhoneLauncher />);
-    fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
-    fireEvent.click(screen.getByRole("button", { name: `Open ${app}` }));
-    expect(state.navigate).toHaveBeenCalledWith({ href });
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
-    expect(document.querySelector("canvas")).toBeNull();
-  },
-);
+it("opens the Map directory in the phone and travels only on explicit map selection", async () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open Map" }));
+  expect(await screen.findByText("Map HUD content")).toBeVisible();
+  expect(state.navigate).not.toHaveBeenCalled();
+  fireEvent.click(screen.getByRole("link", { name: "Open full city map" }));
+  expect(state.navigate).toHaveBeenCalledWith({ href: "/map" });
+  await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+  expect(document.querySelector("canvas")).toBeNull();
+});
 
 it("redirects external neighborhood and friend-home requests without opening a phone world", () => {
   render(<PhoneLauncher />);
@@ -80,12 +99,12 @@ it("keeps the navigation out of the phone so the handset shows only the phone", 
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
 });
 
-it("groups launcher apps into pages of sixteen and includes optional Shortcuts", () => {
+it("groups launcher apps into pages of twenty and includes optional Shortcuts", () => {
   render(<PhoneLauncher shortcutEditor={<div>Editor</div>} />);
   fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
 
   const pages = document.querySelectorAll(".phone-app-grid");
-  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([16, 11]);
+  expect(Array.from(pages, (page) => page.querySelectorAll(".phone-app").length)).toEqual([20, 10]);
   expect(pages[0]?.querySelector('[aria-label="Open Shortcuts"]')).not.toBeNull();
   expect(screen.getAllByRole("button", { name: /Go to app page/ })).toHaveLength(pages.length);
   expect(screen.getByRole("button", { name: "Go to app page 1" })).toHaveAttribute(
@@ -125,4 +144,70 @@ it("moves one launcher page per swipe and closes from the external Cancel button
   expect(document.querySelector(".phone-status-camera")).not.toBeNull();
   fireEvent.click(cancel);
   await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument());
+});
+
+it("keeps Profile and Settings out of the phone without changing the remaining apps", () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  expect(screen.queryByRole("button", { name: "Open Profile" })).not.toBeInTheDocument();
+  expect(screen.queryByRole("button", { name: "Open Settings" })).not.toBeInTheDocument();
+  for (const app of ["Camera", "Map", "Career Life", "Bank", "Messages", "Support"]) {
+    expect(screen.getByRole("button", { name: `Open ${app}` })).toBeInTheDocument();
+  }
+});
+
+it("restores a Career HUD request without leaving the underlying world", async () => {
+  state.href = "/house?hud=jobs";
+  render(<PhoneLauncher open requestedNavigation={{ app: "Career Life" }} />);
+  expect(await screen.findByText("Career HUD content")).toBeVisible();
+  expect(state.navigate).not.toHaveBeenCalled();
+});
+
+it("keeps the phone open on HUD-only URL changes and restores browser history selections", async () => {
+  state.href = "/house?hud=jobs";
+  const changed = vi.fn();
+  const view = render(
+    <PhoneLauncher open requestedNavigation={{ app: "Career Life" }} onOpenChange={changed} />,
+  );
+  await screen.findByText("Career HUD content");
+  state.href = "/house?hud=map";
+  view.rerender(<PhoneLauncher open requestedNavigation={{ app: "Map" }} onOpenChange={changed} />);
+  expect(await screen.findByText("Map HUD content")).toBeVisible();
+  expect(changed).not.toHaveBeenCalledWith(false);
+  state.href = "/house?hud=jobs";
+  view.rerender(
+    <PhoneLauncher open requestedNavigation={{ app: "Career Life" }} onOpenChange={changed} />,
+  );
+  expect(await screen.findByText("Career HUD content")).toBeVisible();
+  expect(state.navigate).not.toHaveBeenCalled();
+});
+
+it("publishes phone app and Back-to-apps changes to the URL owner", async () => {
+  const selected = vi.fn();
+  render(<PhoneLauncher open requestedNavigation={{ app: null }} onNavigationChange={selected} />);
+  fireEvent.click(screen.getByRole("button", { name: "Open Career Life" }));
+  await screen.findByText("Career HUD content");
+  expect(selected).toHaveBeenLastCalledWith({ app: "Career Life" });
+  fireEvent.click(screen.getByRole("button", { name: "Back to apps" }));
+  expect(selected).toHaveBeenLastCalledWith({ app: null });
+});
+
+it("opens the replacement City Services and Property Exchange apps from the launcher", async () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open City Services" }));
+  expect(await screen.findByText("City Services content")).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Back to apps" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open Property Exchange" }));
+  expect(await screen.findByText("Property Exchange content")).toBeVisible();
+  expect(screen.queryByRole("button", { name: "Open Activities" })).toBeNull();
+});
+
+it("opens the Camera app from the launcher and from the global shortcut event", async () => {
+  render(<PhoneLauncher />);
+  fireEvent.click(screen.getByRole("button", { name: "Open in-game phone" }));
+  fireEvent.click(screen.getByRole("button", { name: "Open Camera" }));
+  expect(await screen.findByText("Camera app content")).toBeVisible();
+  fireEvent(window, new CustomEvent("osogbo-open-phone-app", { detail: { app: "Camera" } }));
+  expect(await screen.findByText("Camera app content")).toBeVisible();
 });

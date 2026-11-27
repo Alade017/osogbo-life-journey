@@ -1,3 +1,4 @@
+import { WorldCamera } from "@/components/3d/WorldScene";
 import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
@@ -164,15 +165,28 @@ export function OsunMallStreet({
 
   return (
     <section className="relative" aria-label="Osun Mall street">
-      <div className="relative h-[calc(100dvh-7rem)] min-h-[24rem] overflow-hidden bg-muted">
+      <div
+        data-venue-viewport
+        className="relative h-[calc(100dvh-7rem)] min-h-[24rem] overflow-hidden bg-muted"
+      >
         <Canvas
+          shadows
           frameloop="always"
           dpr={[1, 1.25]}
           gl={{ antialias: false, powerPreference: "low-power" }}
-          camera={{ position: [0, 16, 9], fov: 40 }}
-          onCreated={({ camera }) => camera.lookAt(0, 0, 0.6)}
+
           aria-label="Street outside the Osun Mall. Tap the ground to walk, the door to go in, or the rider to order a ride."
         >
+          <WorldCamera
+            width={20}
+            depth={12}
+            stage
+            target={[0, 1.2, -0.5]}
+            zoom={1.4}
+            horizontalOrbit
+            verticalOrbit
+            polarAngle={Math.PI / 3}
+          />
           <OsunMallStreet3D
             sim={sim}
             playerAppearance={playerAppearance}
