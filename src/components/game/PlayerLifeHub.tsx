@@ -1,4 +1,5 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { CharacterWardrobePanel } from "@/components/game/CharacterWardrobePanel";
 import { useQuery } from "@tanstack/react-query";
 import {
   Backpack, BriefcaseBusiness, CheckCircle2, Heart, Sparkles, Target, UserRound, Users, X, Zap,
@@ -200,6 +201,7 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
               <article><span>Location</span><strong>{readable(player.location?.name, "Location unavailable")}</strong></article>
             </div>
             <p className="player-hub-note">Your equipped appearance is shared with your in-world character.</p>
+            <CharacterWardrobePanel />
           </div>}
 
           {tab === "inventory" && <div className="player-hub-inventory">
