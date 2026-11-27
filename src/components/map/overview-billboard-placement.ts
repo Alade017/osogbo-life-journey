@@ -19,7 +19,7 @@ function riverClear(position: Position) {
     return Math.hypot(position.x-a.x-t*dx,position.z-a.z-t*dz) >= width/2 + Math.hypot(policy.footprint.width,policy.footprint.depth)/2 + policy.clearance;
   });
 }
-function generateBillboards(): Billboard[] {
+export function generateBillboards(): Billboard[] {
   const result: Billboard[] = [];
   if (!policy.brands.length) return result;
   for (const district of layout.districts) {
