@@ -36,6 +36,7 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
   const [walking, setWalking] = useState(false);
   const [facing, setFacing] = useState<"north" | "south" | "east" | "west">("south");
   const current = useRef(position),
+    resting = useRef(position),
     frame = useRef(0),
     resolve = useRef<((arrived: boolean) => void) | null>(null),
     houseKey = useRef(resetKey);
@@ -44,18 +45,21 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
     cancelAnimationFrame(frame.current);
     resolve.current?.(false);
     resolve.current = null;
-    savePosition(houseKey.current, current.current);
+    current.current = resting.current;
+    setPosition([...resting.current]);
+    savePosition(houseKey.current, resting.current);
     setWalking(false);
   }, []);
   useEffect(() => {
     cancel();
     const start = readSavedPosition(resetKey) ?? initial;
     current.current = start;
+    resting.current = start;
     setPosition(start);
     return cancel;
   }, [resetKey, cancel]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    const save = () => savePosition(houseKey.current, current.current);
+    const save = () => savePosition(houseKey.current, resting.current);
     window.addEventListener("pagehide", save);
     return () => window.removeEventListener("pagehide", save);
   }, []);
@@ -103,6 +107,7 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
             }
             if (distance <= remaining || reduced) {
               current.current = to;
+              resting.current = to;
               remaining -= distance;
               segment++;
               continue;
@@ -121,7 +126,7 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
           if (segment === path.length) {
             setWalking(false);
             resolve.current = null;
-            savePosition(houseKey.current, current.current);
+            savePosition(houseKey.current, resting.current);
             done(true);
           } else frame.current = requestAnimationFrame(tick);
         };
@@ -135,6 +140,7 @@ export function useHouseMovement(resetKey: string, initial: RoomPoint) {
     (point: RoomPoint) => {
       cancel();
       current.current = point;
+      resting.current = point;
       savePosition(houseKey.current, point);
       setPosition(point);
     },

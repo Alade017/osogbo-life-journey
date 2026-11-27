@@ -41,7 +41,7 @@ it("interpolates height along a stair path and reaches the elevated landing", as
   expect(await arrived).toBe(true);
   expect(result.current.position).toEqual([0, 1.5, -2]);
 });
-it("keeps its position and resolves false when walking is cancelled", async () => {
+it("rests at the last waypoint reached and resolves false when walking is cancelled", async () => {
   const { result } = renderHook(() => useHouseMovement("room", [0, 0.06, 0]));
   let arrived!: Promise<boolean>;
   act(() => {
@@ -52,12 +52,12 @@ it("keeps its position and resolves false when walking is cancelled", async () =
   });
   tick();
   expect(result.current.walking).toBe(true);
-  const position = [...result.current.position];
   act(() => result.current.cancel());
   expect(await arrived).toBe(false);
   tick();
   expect(result.current.walking).toBe(false);
-  expect(result.current.position).toEqual(position);
+  // No waypoint was reached yet, so the character rests at its start rather than mid-step.
+  expect(result.current.position).toEqual([0, 0.06, 0]);
 });
 it("finishes a route and cancels the previous promise when a new destination is chosen", async () => {
   const { result } = renderHook(() => useHouseMovement("room", [0, 0.06, 0]));

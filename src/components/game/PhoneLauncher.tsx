@@ -687,7 +687,6 @@ export function PhoneLauncher({
             onWheel={(event) => {
               const travel = event.shiftKey ? event.deltaY : event.deltaX;
               if (Math.abs(travel) < 1) return;
-              event.preventDefault();
               if (Date.now() - lastWheelPageRef.current < 550) return;
               wheelTravelRef.current += travel;
               if (Math.abs(wheelTravelRef.current) < 90) return;

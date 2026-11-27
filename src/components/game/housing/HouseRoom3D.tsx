@@ -2270,7 +2270,7 @@ export function HouseRoom3D({
         onSceneError={() => onSceneAvailability?.(false)}
         style={{ touchAction: "none" }}
         frameloop="demand"
-        dpr={[1, quality.maxDpr]}
+        dpr={[1, Math.min(1.25, quality.maxDpr)]}
         shadows="percentage"
         camera={sceneCamera}
         gl={{ antialias: false, powerPreference: "low-power" }}

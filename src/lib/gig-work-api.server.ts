@@ -1,4 +1,5 @@
 const statusByCode: Record<string, number> = {
+  SERVICE_UNAVAILABLE: 503,
   UNAUTHORIZED: 401,
   INVALID_REQUEST: 400,
   NO_CHARACTER: 404,
@@ -42,13 +43,25 @@ function rpcCaller() {
   };
 }
 
+/** The server cannot reach its database, usually because an environment variable is missing. */
+function unavailable(error: unknown) {
+  console.error("Gig Work server unavailable:", error instanceof Error ? error.message : error);
+  return response({ error: { code: "SERVICE_UNAVAILABLE" } }, 503);
+}
+
 export async function handleGigBoardRequest(request: Request) {
-  const userId = await authenticatedUserId(request);
+  let userId: string | null;
+  try {
+    userId = await authenticatedUserId(request);
+  } catch (error) {
+    return unavailable(error);
+  }
   if (!userId) return response({ error: { code: "UNAUTHORIZED" } }, 401);
   try {
     return response(await rpcCaller()("gig_board", { p_user_id: userId }));
   } catch (error) {
     const code = errorCode(error);
+    if (code === "INTERNAL_ERROR") console.error("Gig Work request failed:", error);
     return response({ error: { code } }, statusByCode[code] ?? 500);
   }
 }
@@ -65,7 +78,12 @@ type GigBody = {
 };
 
 export async function handleGigActionRequest(request: Request) {
-  const userId = await authenticatedUserId(request);
+  let userId: string | null;
+  try {
+    userId = await authenticatedUserId(request);
+  } catch (error) {
+    return unavailable(error);
+  }
   const key = request.headers.get("idempotency-key")?.trim() ?? "";
   if (!userId) return response({ error: { code: "UNAUTHORIZED" } }, 401);
   const body = (await request.json().catch(() => null)) as GigBody | null;
@@ -133,6 +151,7 @@ export async function handleGigActionRequest(request: Request) {
     return response({ error: { code: "INVALID_REQUEST" } }, 400);
   } catch (error) {
     const code = errorCode(error);
+    if (code === "INTERNAL_ERROR") console.error("Gig Work request failed:", error);
     return response({ error: { code } }, statusByCode[code] ?? 500);
   }
 }

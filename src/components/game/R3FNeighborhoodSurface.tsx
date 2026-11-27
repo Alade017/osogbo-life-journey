@@ -804,7 +804,7 @@ export function R3FNeighborhoodSurface({
           orthographic={Boolean(overview)}
           shadows="percentage"
           frameloop="demand"
-          dpr={[1, quality.maxDpr]}
+          dpr={[1, Math.min(1.25, quality.maxDpr)]}
           gl={{
             antialias: false,
             powerPreference: "low-power",
