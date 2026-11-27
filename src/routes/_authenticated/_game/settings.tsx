@@ -4,9 +4,6 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   Check,
-  Clock3,
-  Pause,
-  Play,
   KeyRound,
   Lock,
   LogOut,
@@ -20,6 +17,7 @@ import {
   Users,
   Volume2,
   Waves,
+  SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -27,7 +25,6 @@ import type { Database } from "@/integrations/supabase/types";
 import { q, rpc } from "@/lib/game";
 import { parseAppTileStyle, type AppTileStyle } from "@/lib/app-tile-style";
 import { pageMeta } from "@/lib/seo";
-import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -49,9 +46,9 @@ import {
   enableGameAudio,
   readGameAudioLevels,
   setGameAudioLevels,
+  readMuteOnTabSwitch,
+  setMuteOnTabSwitch,
 } from "@/lib/game-audio";
-import type { Appearance } from "@/game/avatar-appearance";
-import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 import "@/components/game/settings-hub.css";
 
 export const Route = createFileRoute("/_authenticated/_game/settings")({
@@ -200,29 +197,10 @@ export function SettingsPage() {
     : isUsernameAccount
       ? "Username sign-in"
       : account.email || "Account";
-  const appearance = (character?.appearance ?? {}) as unknown as Appearance;
 
   return (
     <div className="sx-page" data-reduced={profile.reduced_motion ? "true" : "false"}>
-      <header className="sx-hero">
-        <div className="sx-hero-avatar" aria-hidden="true">
-          <CharacterPreview
-            appearance={appearance}
-            gender={character?.gender ?? "nonbinary"}
-            equipment={[]}
-            label={`${profile.display_name || "Your character"}, head portrait`}
-            framing="head"
-          />
-        </div>
-        <div className="sx-hero-copy">
-          <p className="sx-eyebrow">OSOGBO LIFE · PLAYER SETTINGS</p>
-          <h1>Settings</h1>
-          <p className="sx-hero-player">{profile.display_name || "Your character"}</p>
-          <span className={`sx-badge${account.isGuest ? " is-guest" : ""}`}>
-            <ShieldCheck aria-hidden="true" /> {accountLabel}
-          </span>
-        </div>
-      </header>
+
 
       <>
       <Section
@@ -358,15 +336,6 @@ export function SettingsPage() {
 
       <>
       <Section
-        id="sx-simulation"
-        icon={Clock3}
-        title="Life simulation"
-        description="Control the pace of your character's personal life simulation."
-      >
-        <SimulationSettings />
-      </Section>
-
-      <Section
         id="sx-privacy"
         icon={Eye}
         title="Home privacy"
@@ -471,6 +440,7 @@ function SavedPill({ show }: { show: boolean }) {
 
 function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: Patch) => void }) {
   const [levels, setLevels] = useState(() => readGameAudioLevels());
+  const [muteOnTabSwitch, setMuteOnTabSwitchState] = useState(() => readMuteOnTabSwitch());
   const [blocked, setBlocked] = useState(false);
 
   // Volume is stored in this browser. The on/off state comes from the account.
@@ -523,8 +493,45 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
     if (!next.music && !next.effects && !next.environment) await disableGameAudio();
   }
 
+  async function applyMasterVolume(volume: number) {
+    const next = { ...levels, master: volume };
+    setGameAudioLevels(next);
+    setLevels(next);
+    if (volume > 0 && !isGameAudioActive()) {
+      const started = await enableGameAudio(next);
+      if (!started) {
+        setBlocked(true);
+        toast.error("Your browser needs one tap on this page before audio can start.");
+      }
+    }
+  }
+
+  function updateMuteOnTabSwitch(enabled: boolean) {
+    setMuteOnTabSwitch(enabled);
+    setMuteOnTabSwitchState(enabled);
+  }
+
   return (
     <>
+      <div className="sx-channel is-on">
+        <div className="sx-channel-head">
+          <span className="sx-channel-title"><Volume2 aria-hidden="true" /><strong>Master volume</strong></span>
+          <output className="sx-volume-value">{Math.round(levels.master * 100)}%</output>
+        </div>
+        <p className="sx-row-hint">Overall volume for every game audio channel.</p>
+        <div className="sx-volume">
+          <Slider className="sx-slider" aria-label="Master volume" min={0} max={100} step={1}
+            value={[Math.round(levels.master * 100)]}
+            onValueChange={([value]) => void applyMasterVolume((value ?? 0) / 100)} />
+        </div>
+      </div>
+      <div className="sx-row">
+        <div className="sx-row-copy">
+          <span className="sx-row-title">Mute on tab switch</span>
+          <p className="sx-row-hint">Automatically mute game audio when this browser tab is hidden.</p>
+        </div>
+        <Switch checked={muteOnTabSwitch} onCheckedChange={updateMuteOnTabSwitch} aria-label="Mute on tab switch" />
+      </div>
       {(Object.keys(CHANNELS) as Channel[]).map((channel) => {
         const cfg = CHANNELS[channel];
         const on = profile[cfg.flag];
@@ -566,7 +573,7 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
         <div className="sx-channel-head">
           <span className="sx-channel-title">
             <Waves aria-hidden="true" />
-            <strong>Ambient texture</strong>
+            <strong>Ambient world noise</strong>
           </span>
           <output className="sx-volume-value">
             {Math.round((levels.environment ?? 0) * 100)}%
@@ -593,57 +600,6 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
           Tap the page once to allow audio, then try again.
         </p>
       )}
-    </>
-  );
-}
-
-function SimulationSettings() {
-  const gameTime = useOptionalGameTime();
-
-  if (!gameTime) {
-    return <p className="sx-row-hint">Life simulation controls are available while you are in the game.</p>;
-  }
-
-  const { simulation, syncError, busy, ready, pause, resume, setSpeed } = gameTime;
-  return (
-    <>
-      <div className="sx-row">
-        <div className="sx-row-copy">
-          <span className="sx-row-title">Pause life simulation</span>
-          <p className="sx-row-hint">Pause your character's needs and personal activities while you step away.</p>
-        </div>
-        <Switch
-          checked={simulation.paused}
-          disabled={!ready || busy}
-          onCheckedChange={(paused) => (paused ? pause() : resume())}
-          aria-label="Pause life simulation"
-        />
-      </div>
-      <div className="sx-speed-setting">
-        <div className="sx-row-copy">
-          <span className="sx-row-title">Simulation speed</span>
-          <p className="sx-row-hint">Choose how quickly your personal life simulation advances.</p>
-        </div>
-        <div className="sx-speed-options" role="group" aria-label="Simulation speed">
-          {([0.5, 1, 2] as const).map((speed) => (
-            <Button
-              key={speed}
-              type="button"
-              variant={simulation.timeSpeed === speed ? "default" : "outline"}
-              className="sx-speed-option"
-              aria-pressed={simulation.timeSpeed === speed}
-              disabled={!ready || busy || simulation.paused}
-              onClick={() => setSpeed(speed)}
-            >
-              {speed}×
-            </Button>
-          ))}
-        </div>
-      </div>
-      {!ready && <p className="sx-row-hint" role="status">Connecting to your life simulation…</p>}
-      {syncError && <p className="sx-error" role="alert">{syncError}</p>}
-      {simulation.paused && <p className="sx-paused-note"><Pause size={15} aria-hidden="true" /> Your personal simulation is paused.</p>}
-      {!simulation.paused && ready && <p className="sx-paused-note"><Play size={15} aria-hidden="true" /> Your personal simulation is running.</p>}
     </>
   );
 }
