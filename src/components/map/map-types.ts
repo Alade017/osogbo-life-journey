@@ -68,6 +68,7 @@ export type MapDistrict = {
   verify?: boolean;
   theme: DistrictTheme;
   traffic: Traffic;
+  density?: Traffic;
   description: string;
   shape: [number, number][];
   source?: string;
