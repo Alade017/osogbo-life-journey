@@ -1,6 +1,7 @@
 import { OverviewModelBatch } from "./OverviewModelBatch";
 import { memo, type ReactNode } from "react";
 import { OverviewBox } from "./OverviewModelResources";
+import { OverviewLandmarkModel } from "./OverviewLandmarkModel";
 
 type Vec = [number, number, number];
 type Props = { profile: string; width: number; depth: number };
@@ -46,6 +47,9 @@ function Plaza() {
 }
 /** Decorative, non-purchasable overview buildings, scaled to authored parcels. */
 export const OverviewPropertyModel = memo(function OverviewPropertyModel({profile,width,depth}: Props) {
+  if (profile === "filling-station" || profile === "transit-pavilion" || profile === "education-block") {
+    return <OverviewLandmarkModel profile={profile} width={width} depth={depth} color={wall}/>;
+  }
   let model: ReactNode;
   switch(profile) {
     case "family-compound": model=<Courtyard/>; break;
