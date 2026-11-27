@@ -1,4 +1,5 @@
 import { useMissions } from "@/hooks/use-missions";
+import { CharacterWardrobePanel } from "@/components/game/CharacterWardrobePanel";
 import { lazy, Suspense, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
@@ -185,6 +186,8 @@ export function ProfilePage() {
           </section>
         </div>
       </div>
+
+      <CharacterWardrobePanel />
 
       <details className="pi-section pi-badges-disclosure" aria-labelledby="profile-badges-title">
         <summary className="pi-section-heading">
