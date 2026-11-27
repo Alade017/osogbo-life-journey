@@ -14,6 +14,13 @@ class RendererBoundary extends Component<
   static getDerivedStateFromError() {
     return { failed: true };
   }
+  override componentDidCatch(error: Error, info: { componentStack?: string | null }) {
+    console.error(
+      "House 3D room failed and was replaced by the controls:",
+      error,
+      info.componentStack,
+    );
+  }
   override componentDidUpdate(previous: Readonly<{ resetKey: string }>) {
     if (previous.resetKey !== this.props.resetKey && this.state.failed)
       this.setState({ failed: false });
