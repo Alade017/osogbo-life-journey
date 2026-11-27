@@ -176,20 +176,6 @@
   padding: 0.65rem;
 }
 
-.house-room-card.is-sleeping::after {
-  position: absolute;
-  inset: 0.65rem;
-  border-radius: calc(var(--shape-card, 20px) - 6px);
-  background: linear-gradient(
-    180deg,
-    rgba(25, 43, 73, 0.2),
-    transparent 48%,
-    rgba(27, 34, 54, 0.28)
-  );
-  content: "";
-  pointer-events: none;
-}
-
 .house-sleep-overlay {
   position: absolute;
   z-index: 2;
