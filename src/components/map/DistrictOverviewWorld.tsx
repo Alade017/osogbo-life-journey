@@ -34,6 +34,8 @@ export type DistrictOverviewProps = {
   onSelectLandmark: (id: string) => void;
   searchTarget?: MapSearchTarget | null | undefined;
   selectedLandmarkId?: string | null | undefined;
+  resetVersion?: number | undefined;
+  zoomRequest?: { step: number; version: number } | undefined;
   eventChips?: readonly MapEventChip[] | undefined;
   billboardMarkers?: readonly MapBillboardMarker[] | undefined;
   onSelectEvent?: ((id: string) => void) | undefined;
@@ -43,7 +45,7 @@ export type DistrictOverviewProps = {
 };
 
 /** Static overview geometry only. Navigation coordinates never enter this scene. */
-export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, onSelectLandmark, searchTarget, selectedLandmarkId, eventChips = [], billboardMarkers = [], onSelectEvent, onSelectBillboard, properties = [], onSelectProperty }: DistrictOverviewProps) {
+export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, onSelectLandmark, searchTarget, selectedLandmarkId, resetVersion = 0, zoomRequest, eventChips = [], billboardMarkers = [], onSelectEvent, onSelectBillboard, properties = [], onSelectProperty }: DistrictOverviewProps) {
   const [hoveredPlace, setHoveredPlace] = useState<string | null>(null);
   const available = useMemo(() => new Set(availableLandmarkIds), [availableLandmarkIds]);
   const propertyByParcel = useMemo(() => {
@@ -57,6 +59,10 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
   const { size, camera, invalidate } = useThree();
   const controls = useRef<OrbitControlsImpl>(null);
   const initialized = useRef(false);
+  const lastReset = useRef(0);
+  const lastZoom = useRef(0);
+  const lastFocus = useRef<{ target: typeof searchTarget; landmark: typeof selectedLandmarkId }>({ target: undefined, landmark: undefined });
+  const [focusedDistrict, setFocusedDistrict] = useState<string | null>(null);
   const fit = Math.max(0.01, Math.min(size.width, size.height) / (Math.hypot(layout.meta.width, layout.meta.depth) * 1.12));
   useEffect(() => {
     if (!(camera instanceof OrthographicCamera) || !controls.current) return;
@@ -71,19 +77,43 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
     invalidate();
   }, [camera, fit, invalidate]);
   useEffect(() => {
-    const id = selectedLandmarkId ?? (typeof searchTarget === "string" ? searchTarget : searchTarget?.id);
-    if (!id || !controls.current || !(camera instanceof OrthographicCamera)) return;
-    const districtOnly = !selectedLandmarkId && typeof searchTarget === "object" && searchTarget?.kind === "district";
-    const p = (districtOnly ? undefined : overviewPlacePosition(id)) ?? layout.districts.find(d => d.districtId === overviewDistrictId(id))?.center;
-    if (!p) return;
-    const next = new Vector3(...world(p));
-    camera.position.add(next.clone().sub(controls.current.target));
-    controls.current.target.copy(next);
-    camera.zoom = fit * 2.5;
+    if (!controls.current || !(camera instanceof OrthographicCamera)) return;
+    const previous = lastFocus.current;
+    const changedTarget = previous.target !== searchTarget;
+    const changedLandmark = previous.landmark !== selectedLandmarkId;
+    lastFocus.current = { target: searchTarget, landmark: selectedLandmarkId };
+    if (lastReset.current !== resetVersion) {
+      lastReset.current = resetVersion;
+      camera.position.set(75,100,95);
+      controls.current.target.set(0,0,0);
+      camera.zoom = fit;
+      setFocusedDistrict(null);
+    } else {
+      const target = changedTarget ? searchTarget : changedLandmark && selectedLandmarkId ? {id:selectedLandmarkId,kind:"landmark"} : null;
+      if (!target) return;
+      const id = typeof target === "string" ? target : target.id;
+      const districtOnly = typeof target === "object" && target.kind === "district";
+      const districtId = overviewDistrictId(id);
+      const p = (districtOnly ? undefined : overviewPlacePosition(id)) ?? layout.districts.find(d => d.districtId === districtId)?.center;
+      if (!p) return;
+      const next = new Vector3(...world(p));
+      camera.position.add(next.clone().sub(controls.current.target));
+      controls.current.target.copy(next);
+      camera.zoom = fit * 2.5;
+      setFocusedDistrict(districtOnly ? districtId ?? null : layout.places.find(p => p.placeId === id)?.districtId ?? null);
+    }
     camera.updateProjectionMatrix();
     controls.current.update();
     invalidate();
-  }, [camera, fit, invalidate, searchTarget, selectedLandmarkId]);
+  }, [camera, fit, invalidate, searchTarget, selectedLandmarkId, resetVersion]);
+  useEffect(() => {
+    if (!zoomRequest || zoomRequest.version === lastZoom.current || !(camera instanceof OrthographicCamera)) return;
+    lastZoom.current = zoomRequest.version;
+    camera.zoom = Math.max(fit * 0.65, Math.min(fit * 5, camera.zoom * Math.pow(1.25, zoomRequest.step)));
+    camera.updateProjectionMatrix();
+    controls.current?.update();
+    invalidate();
+  }, [camera, fit, invalidate, zoomRequest]);
   const brands = layout.districts.filter(d => d.districtId === "olaiya" || d.districtId === "ogo-oluwa")
     .map(d => ({ position: [d.bounds.x - layout.meta.width / 2 + 0.35, d.center.z - layout.meta.depth / 2] as const }));
   return (
@@ -102,9 +132,9 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
             <planeGeometry args={[d.bounds.width, d.bounds.depth]} />
             <meshStandardMaterial color={palette[district?.identity ?? ""] ?? "#b4ac92"} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
           </mesh>
-          <SceneHtml position={[d.center.x - layout.meta.width / 2, 0.35, d.bounds.z + 0.5 - layout.meta.depth / 2]} center pointerEvents="none" zIndexRange={[10, 0]}>
+          {(size.width >= 640 || (focusedDistrict ? focusedDistrict === d.districtId : d.districtId === "olaiya" || d.districtId === "oja-oba" || d.districtId === "ogo-oluwa")) && <SceneHtml position={[d.center.x - layout.meta.width / 2, 0.35, d.bounds.z + 0.5 - layout.meta.depth / 2]} center pointerEvents="none" zIndexRange={[10, 0]}>
             <span className="district-label">{district?.name}</span>
-          </SceneHtml>
+          </SceneHtml>}
           </group>
         );
       })}
