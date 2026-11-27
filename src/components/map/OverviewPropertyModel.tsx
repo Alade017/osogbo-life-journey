@@ -1,9 +1,10 @@
-import type { ReactNode } from "react";
+import { memo, type ReactNode } from "react";
+import { OverviewBox } from "./OverviewModelResources";
 
 type Vec = [number, number, number];
 type Props = { profile: string; width: number; depth: number };
 function Box({ position, size, color, rotation }: { position: Vec; size: Vec; color: string; rotation?: Vec }) {
-  return <mesh position={position} rotation={rotation ?? [0,0,0]}><boxGeometry args={size}/><meshStandardMaterial color={color}/></mesh>;
+  return <OverviewBox position={position} size={size} color={color} rotation={rotation}/>;
 }
 const wall = "#d6c2a0", roof = "#805849", glass = "#577983", concrete = "#aaa99c", grass = "#78925e";
 function Dwelling({ position, width, depth, floors = 1, modern = false }: {position: Vec; width:number; depth:number; floors?:number; modern?:boolean}) {
@@ -43,7 +44,7 @@ function Plaza() {
   </>;
 }
 /** Decorative, non-purchasable overview buildings, scaled to authored parcels. */
-export function OverviewPropertyModel({profile,width,depth}: Props) {
+export const OverviewPropertyModel = memo(function OverviewPropertyModel({profile,width,depth}: Props) {
   let model: ReactNode;
   switch(profile) {
     case "family-compound": model=<Courtyard/>; break;
@@ -59,4 +60,4 @@ export function OverviewPropertyModel({profile,width,depth}: Props) {
     <Box position={[0,0.012,0]} size={[0.94,0.024,0.94]} color={profile==="commercial-plaza"||profile==="mechanic-workshop"||profile==="industrial-shed"?concrete:grass}/>
     {model}
   </group>;
-}
+});
