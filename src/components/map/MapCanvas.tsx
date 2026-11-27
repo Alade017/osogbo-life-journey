@@ -83,9 +83,11 @@ export function MapCanvas({
   onSelectProperty,
   onSelectEvent,
 }: MapCanvasProps) {
-  const [districtFocus, setDistrictFocus] = useState<MapSearchTarget | null>(null);
+  const [cameraFocus, setCameraFocus] = useState<MapSearchTarget | null>(null);
+  const [resetVersion, setResetVersion] = useState(0);
+  const [zoomRequest, setZoomRequest] = useState({ step: 0, version: 0 });
   const selectDistrict = (id: string) => {
-    setDistrictFocus({ id, kind: "district" });
+    setCameraFocus({ id, kind: "district" });
     onSelectDistrict(id);
   };
   const [rendererState, setRendererState] = useState<"loading" | "ready" | "unavailable">(
@@ -98,6 +100,7 @@ export function MapCanvas({
     if (handledSearchTarget.current === searchTarget) return;
     handledSearchTarget.current = searchTarget;
     if (!searchTarget) return;
+    setCameraFocus(searchTarget);
     const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
     const kind = typeof searchTarget === "string" ? undefined : searchTarget.kind;
     if (kind !== "district" && overviewHasPlace(id)) {
@@ -117,6 +120,7 @@ export function MapCanvas({
       ),
     [availableLandmarkIds],
   );
+  const availableIds = useMemo(() => availablePlaces.map(place => place.id), [availablePlaces]);
   const handleReady = useCallback(() => setRendererState("ready"), []);
   const handleUnavailable = useCallback(() => setRendererState("unavailable"), []);
 
@@ -129,8 +133,10 @@ export function MapCanvas({
       <Suspense fallback={null}>
         {rendererState !== "unavailable" && (
           <TownSurface3D
-            availableLandmarkIds={availablePlaces.map(place => place.id)}
-            searchTarget={searchTarget ?? districtFocus}
+            availableLandmarkIds={availableIds}
+            searchTarget={cameraFocus}
+            resetVersion={resetVersion}
+            zoomRequest={zoomRequest}
             selectedLandmarkId={selectedLandmarkId}
             onSelectLandmark={onSelectLandmark}
             onSelectDistrict={selectDistrict}
@@ -145,6 +151,13 @@ export function MapCanvas({
           />
         )}
       </Suspense>
+      {rendererState === "ready" && (
+        <div className="town-map-zoom-controls" aria-label="Map camera controls">
+          <button type="button" aria-label="Zoom in" onClick={() => setZoomRequest(old => ({step: 1, version: old.version + 1}))}>+</button>
+          <button type="button" aria-label="Zoom out" onClick={() => setZoomRequest(old => ({step: -1, version: old.version + 1}))}>−</button>
+          <button type="button" aria-label="Reset map camera" onClick={() => { setCameraFocus(null); setResetVersion(old => old + 1); }}>↺</button>
+        </div>
+      )}
       {rendererState === "loading" && (
         <div className="town-map-renderer-status">
           <WorldLoadingIndicator
