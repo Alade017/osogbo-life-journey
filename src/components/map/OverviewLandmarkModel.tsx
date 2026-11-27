@@ -85,8 +85,27 @@ export function OverviewLandmarkModel({ profile, width, depth, color }: ModelPro
         <Box p={[0,0.34,-0.15]} s={[0.85,0.06,0.45]} color={cream}/></>; break;
     case "junction-sculpture":
       model = <><Cylinder p={[0,0.04,0]} radius={0.28} height={0.08} color={stone}/><Cylinder p={[0,0.19,0]} radius={0.08} height={0.25} color={color}/></>; break;
+    case "education-block":
+      model = <><Facade color={cream} height={0.42}/>
+        <Box p={[0,0.22,-0.36]} s={[0.72,0.40,0.12]} color={color}/>
+        {[-0.28,0,0.28].map(x => <Box key={x} p={[x,0.34,0.35]} s={[0.12,0.075,0.022]} color={glass}/>)}
+        <Box p={[0,0.035,0.41]} s={[0.55,0.07,0.14]} color={stone}/></>; break;
+    case "clinic":
+      model = <><Facade color={cream} height={0.30}/>
+        <Box p={[0,0.26,0.366]} s={[0.20,0.055,0.022]} color="#a74f48"/>
+        <Box p={[0,0.26,0.368]} s={[0.055,0.18,0.024]} color="#a74f48"/>
+        <Box p={[0,0.17,0.41]} s={[0.35,0.035,0.15]} color={stone}/></>; break;
+    case "eatery":
+      model = <><Facade color={color} height={0.24}/>
+        <Box p={[0,0.24,0.40]} s={[0.86,0.045,0.19]} color={roof}/>
+        {[-0.35,0.35].map(x => <Box key={x} p={[x,0.11,0.45]} s={[0.035,0.22,0.035]} color={stone}/>)}
+        <Box p={[0,0.06,0.43]} s={[0.28,0.05,0.10]} color={cream}/></>; break;
+    case "service-building":
+      model = <><Facade color={color} height={0.35}/>
+        <Box p={[0,0.36,0.37]} s={[0.70,0.065,0.025]} color={cream}/>
+        <Box p={[0,0.19,0.37]} s={[0.20,0.22,0.025]} color={glass}/></>; break;
     default:
-      model = <Facade color={color} height={profile === "education-block" ? 0.42 : 0.30}/>;
+      model = <Facade color={color}/>;
   }
   return <group scale={[width, Math.min(width,depth), depth]}>{model}</group>;
 }
