@@ -22,7 +22,7 @@ export function OverviewTerrain() {
   useLayoutEffect(() => {
     const mesh = geometry.current;
     if (!mesh) return;
-    const positions = mesh.attributes.position;
+    const positions = mesh.getAttribute("position");
     if (!positions) return;
     for (let i = 0; i < positions.count; i++) {
       const x = positions.getX(i) + layout.meta.width / 2;
