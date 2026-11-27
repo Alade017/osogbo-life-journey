@@ -11,7 +11,9 @@ it("keeps home tools available without exposing a Settings action", () => {
     </HomeToolsMenu>,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: "Home tools" }));
+  const summary = screen.getByTitle("Home tools");
+  fireEvent.click(summary);
+  expect(summary.closest("details")).toHaveAttribute("open");
   expect(screen.queryByRole("button", { name: /Settings/ })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Shop" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Lights" })).toBeInTheDocument();
