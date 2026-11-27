@@ -50,12 +50,14 @@ describe("settings page", () => {
     expect(screen.getByRole("heading", { name: "Sound" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "App tiles" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Display" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "About & support" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Home privacy" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Sign out" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Reduce motion" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Mute on tab switch" })).toBeInTheDocument();
     expect(screen.getByRole("slider", { name: "Master volume" })).toBeInTheDocument();
     expect(screen.queryByText("Life simulation")).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Send feedback" })).toBeInTheDocument();
     expect(screen.getByRole("switch", { name: "Allow friend visits" })).toBeInTheDocument();
     expect(screen.queryByRole("navigation", { name: "Settings categories" })).not.toBeInTheDocument();
   });
