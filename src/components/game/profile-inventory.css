@@ -1744,3 +1744,11 @@
 @media(max-width:900px) { .pi-inventory-toolbar { align-items:stretch; flex-direction:column; } .pi-inventory-toolbar .pi-inventory-search { flex:1 1 auto; width:100%; } .pi-collection-layout { grid-template-columns:minmax(0,1fr); } .pi-collection-detail { position:static; } }
 @media(max-width:520px) { .pi-inventory-topbar { align-items:flex-start; flex-direction:column; } .pi-inventory-metrics { width:100%; } .pi-wallet-chip,.pi-capacity-chip { flex:1; } .pi-collection-results { padding:.7rem; } .pi-collection-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:.55rem; } .pi-collection-card { min-height:150px; } .pi-collection-art { width:72px; height:68px; } .pi-collection-detail { padding:.85rem; } }
 @media(prefers-reduced-motion:reduce){.pi-collection-card{transition:none}.pi-collection-card:hover{transform:none}}
+
+.pi-wardrobe-preview { display:grid; justify-items:center; gap:.35rem; min-height:280px; padding:.5rem; border:1px solid var(--brand-mist); border-radius:18px; background:var(--brand-porcelain); }
+.pi-wardrobe-preview .pi-canvas { width:100%; height:280px; }
+.pi-wardrobe-preview > span { color:var(--brand-slate); font-size:.76rem; font-weight:700; text-align:center; }
+.pi-wardrobe-option-actions { display:flex; gap:.4rem; flex-wrap:wrap; }
+.pi-wardrobe-option.is-preview { border-color:var(--brand-royal); box-shadow:0 0 0 2px var(--color-primary-soft); }
+.pi-collection-detail { align-self:stretch; }
+@media(max-width:520px) { .pi-wardrobe-preview,.pi-wardrobe-preview .pi-canvas { min-height:220px; height:220px; } .pi-wardrobe-option-actions { width:100%; } }
