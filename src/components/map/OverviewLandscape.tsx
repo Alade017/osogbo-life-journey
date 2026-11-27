@@ -1,10 +1,11 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { InstancedMesh, Object3D } from "three";
 import layout from "@/data/osogbo-overview-layout.json";
+import { overviewBillboards } from "./overview-billboard-placement";
 
 type Tree = { x: number; z: number; height: number };
 const trees: Tree[] = [];
-const occupied = [...layout.places, ...layout.residentialParcels, ...layout.commercialParcels, ...layout.terrain.river.bridges];
+const occupied = [...layout.places, ...layout.residentialParcels, ...layout.commercialParcels, ...layout.terrain.river.bridges, ...overviewBillboards];
 function nearRiver(x: number, z: number) {
   const { centerline, width } = layout.terrain.river;
   return centerline.slice(1).some((b, i) => {
