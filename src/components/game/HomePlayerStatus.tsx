@@ -24,7 +24,7 @@ class PortraitBoundary extends Component<{ children: ReactNode }, { failed: bool
 }
 
 /** Uses the same character and worn equipment as the profile, with live simulation energy. */
-export function HomePlayerStatus({ player }: { player: PlayerState }) {
+export function HomePlayerStatus({ player, variant = "home" }: { player: PlayerState; variant?: "home" | "outside" }) {
   const { simulation, ready } = useGameTime();
   const [hubOpen, setHubOpen] = useState(false);
   const [hubInitialTab, setHubInitialTab] = useState<"profile" | "settings">("profile");
@@ -54,7 +54,7 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
     <>
     <button
       type="button"
-      className="home-player-status"
+      className={variant === "outside" ? "home-player-status outside-player-status" : "home-player-status"}
       onClick={() => { setHubInitialTab("profile"); setHubOpen(true); }}
       aria-haspopup="dialog"
       aria-expanded={hubOpen}
