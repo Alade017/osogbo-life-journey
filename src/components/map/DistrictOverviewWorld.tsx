@@ -6,6 +6,7 @@ import { overviewDistrictId, overviewPlacePosition } from "./overview-district-r
 import type { MapSearchTarget, MapEventChip, MapBillboardMarker, MapProperty } from "./MapCanvas";
 import { OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
+import { MapPointerGesture } from "./map-pointer-gesture";
 import catalog from "@/data/osogbo-district-catalog.json";
 import layout from "@/data/osogbo-overview-layout.json";
 import { TownBrandBillboards3D } from "./TownBrandBillboards3D";
@@ -56,7 +57,25 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
     }
     return result;
   }, [properties]);
-  const { size, camera, invalidate } = useThree();
+  const { size, camera, invalidate, gl } = useThree();
+  const gesture = useRef(new MapPointerGesture());
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const down = (e: PointerEvent) => gesture.current.down(e.pointerId, e.clientX, e.clientY);
+    const move = (e: PointerEvent) => gesture.current.move(e.clientX, e.clientY);
+    const up = (e: PointerEvent) => gesture.current.up(e.pointerId);
+    const cancel = (e: PointerEvent) => gesture.current.cancel(e.pointerId);
+    canvas.addEventListener("pointerdown", down, true);
+    window.addEventListener("pointermove", move, true);
+    window.addEventListener("pointerup", up, true);
+    window.addEventListener("pointercancel", cancel, true);
+    return () => {
+      canvas.removeEventListener("pointerdown", down, true);
+      window.removeEventListener("pointermove", move, true);
+      window.removeEventListener("pointerup", up, true);
+      window.removeEventListener("pointercancel", cancel, true);
+    };
+  }, [gl]);
   const controls = useRef<OrbitControlsImpl>(null);
   const initialized = useRef(false);
   const lastReset = useRef(0);
@@ -126,9 +145,9 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
       {layout.districts.map(d => {
         const district = catalog.districts.find(item => item.id === d.districtId);
         return (
-          <group key={d.districtId}>
+          <group key={d.districtId} name={`overview-district:${d.districtId}`}>
           <mesh position={[...world(d.center)]} rotation={[-Math.PI / 2, 0, 0]}
-            onClick={event => { event.stopPropagation(); if (event.delta < 6) onSelectDistrict(d.districtId); }}>
+            onClick={event => { event.stopPropagation(); if (!gesture.current.moved && event.delta < 6) onSelectDistrict(d.districtId); }}>
             <planeGeometry args={[d.bounds.width, d.bounds.depth]} />
             <meshStandardMaterial color={palette[district?.identity ?? ""] ?? "#b4ac92"} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
           </mesh>
@@ -142,10 +161,10 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
         const district = catalog.districts.find(d => d.id === entry.districtId);
         const place = catalog.places.find(p => p.id === entry.placeId) ?? catalog.pendingLandmarks.find(p => p.id === entry.placeId);
         return (
-          <group key={entry.placeId} position={world(entry.position)} rotation={[0, entry.rotationY, 0]}
+          <group key={entry.placeId} name={`overview-landmark:${entry.placeId}`} position={world(entry.position)} rotation={[0, entry.rotationY, 0]}
             onPointerOver={event => { event.stopPropagation(); setHoveredPlace(entry.placeId); }}
             onPointerOut={() => setHoveredPlace(old => old === entry.placeId ? null : old)}
-            onClick={event => { event.stopPropagation(); if (event.delta < 6 && entry.status === "existing-reference" && available.has(entry.placeId)) onSelectLandmark(entry.placeId); }}>
+            onClick={event => { event.stopPropagation(); if (!gesture.current.moved && event.delta < 6 && entry.status === "existing-reference" && available.has(entry.placeId)) onSelectLandmark(entry.placeId); }}>
             <OverviewLandmarkModel profile={entry.profile} {...entry.footprint} color={palette[district?.identity ?? ""] ?? "#d4c7af"} />
             {place && (hoveredPlace === entry.placeId || selectedLandmarkId === entry.placeId) && (
               <SceneHtml position={[0, Math.min(entry.footprint.width, entry.footprint.depth) * 0.85, 0]} center pointerEvents="none" zIndexRange={[20, 11]}>
@@ -160,7 +179,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
         const color = property?.status === "overdue" || property?.status === "rent_due" ? "#b96840" : property?.status === "vacant" ? "#8c9692" : "#327c59";
         return (
           <group key={parcel.id} position={world(parcel.position)}
-            onClick={event => { if (property) { event.stopPropagation(); if (event.delta < 6) onSelectProperty?.(property); } }}>
+            onClick={event => { if (property) { event.stopPropagation(); if (!gesture.current.moved && event.delta < 6) onSelectProperty?.(property); } }}>
             <OverviewPropertyModel profile={parcel.profile} {...parcel.footprint} />
             {property && <mesh position={[0, Math.min(parcel.footprint.width, parcel.footprint.depth) * 0.85, 0]}>
               <sphereGeometry args={[0.32, 12, 8]} />
@@ -174,13 +193,13 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
         const p = overviewPlacePosition(event.id);
         if (!p) return null;
         const [x, , z] = world(p);
-        return <mesh key={event.id} position={[x, 3.8, z]} onClick={e => { e.stopPropagation(); if (e.delta < 6) onSelectEvent?.(event.id); }}><sphereGeometry args={[0.36, 12, 8]}/><meshStandardMaterial color="#e4a23c"/></mesh>;
+        return <mesh key={event.id} position={[x, 3.8, z]} onClick={e => { e.stopPropagation(); if (!gesture.current.moved && e.delta < 6) onSelectEvent?.(event.id); }}><sphereGeometry args={[0.36, 12, 8]}/><meshStandardMaterial color="#e4a23c"/></mesh>;
       })}
       {billboardMarkers.map(marker => {
         const p = overviewPlacePosition(marker.landmarkId);
         if (!p) return null;
         const [x, , z] = world(p);
-        return <mesh key={marker.campaignId} position={[x+0.7, 3.2, z]} onClick={e => { e.stopPropagation(); if (e.delta < 6) onSelectBillboard?.(marker.campaignId); }}><boxGeometry args={[0.8,0.5,0.15]}/><meshStandardMaterial color="#38577d"/></mesh>;
+        return <mesh key={marker.campaignId} position={[x+0.7, 3.2, z]} onClick={e => { e.stopPropagation(); if (!gesture.current.moved && e.delta < 6) onSelectBillboard?.(marker.campaignId); }}><boxGeometry args={[0.8,0.5,0.15]}/><meshStandardMaterial color="#38577d"/></mesh>;
       })}
       <OverviewLandscape />
       <TownBrandBillboards3D positions={brands} cell={2} />
