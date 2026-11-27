@@ -46,6 +46,9 @@ vi.mock("@/lib/game", () => ({
     myJobs: () => ({ queryKey: ["myJobs"] }),
   },
 }));
+vi.mock("@/components/game/CharacterWardrobePanel", () => ({
+  CharacterWardrobePanel: () => <div data-testid="character-wardrobe">Character wardrobe editor</div>,
+}));
 vi.mock("@/components/game/GameInventoryPanel", () => ({
   GameInventoryPanel: () => <div data-testid="inventory-panel">Saved inventory content</div>,
 }));
@@ -93,6 +96,7 @@ it("does not expose Settings inside the player hub", () => {
   render(<PlayerLifeHub player={player} open onClose={vi.fn()} />);
   expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
   expect(screen.getByText("Your equipped appearance is shared with your in-world character.")).toBeInTheDocument();
+  expect(screen.getByTestId("character-wardrobe")).toBeInTheDocument();
 });
 
 it("does not let the synthetic click after a downward drag undo sheet collapse", () => {
