@@ -93,6 +93,7 @@ export function MapCanvas({
   onSelectEvent,
 }: MapCanvasProps) {
   const [rendererAttempt, setRendererAttempt] = useState(0);
+  const [notice, setNotice] = useState<string | null>(null);
   const [cameraFocus, setCameraFocus] = useState<MapSearchTarget | null>(null);
   const [resetVersion, setResetVersion] = useState(0);
   const [zoomRequest, setZoomRequest] = useState({ step: 0, version: 0 });
@@ -118,7 +119,10 @@ export function MapCanvas({
       if (availabilityPending) return;
       handledSearchTarget.current = searchTarget;
       setCameraFocus(searchTarget);
-      if (availableLandmarkIds === undefined || availableLandmarkIds.includes(id)) onSelectLandmark(id);
+      if (availableLandmarkIds === undefined || availableLandmarkIds.includes(id)) {
+        setNotice(null);
+        onSelectLandmark(id);
+      } else setNotice("This destination is currently unavailable.");
       return;
     }
     handledSearchTarget.current = searchTarget;
@@ -139,7 +143,6 @@ export function MapCanvas({
   const availableIds = useMemo(() => availablePlaces.map(place => place.id), [availablePlaces]);
   const availableSet = useMemo(() => new Set(availableIds), [availableIds]);
   const selectableEvents = _eventChips.filter(event => availableSet.has(event.id));
-  const [notice, setNotice] = useState<string | null>(null);
   const selectLandmark = (id: string) => {
     if (!availableSet.has(id) || availabilityPending) return;
     setNotice(null);
@@ -186,7 +189,7 @@ export function MapCanvas({
         <div className="town-map-zoom-controls" aria-label="Map camera controls">
           <button type="button" aria-label="Zoom in" onClick={() => setZoomRequest(old => ({step: 1, version: old.version + 1}))}>+</button>
           <button type="button" aria-label="Zoom out" onClick={() => setZoomRequest(old => ({step: -1, version: old.version + 1}))}>−</button>
-          <button type="button" aria-label="Reset map camera" onClick={() => { setCameraFocus(null); setResetVersion(old => old + 1); }}>↺</button>
+          <button type="button" aria-label="Reset map camera" onClick={() => { setCameraFocus(null); setZoomRequest({ step: 0, version: 0 }); setResetVersion(old => old + 1); }}>↺</button>
         </div>
       )}
       {rendererState === "loading" && (
@@ -204,7 +207,7 @@ export function MapCanvas({
           <button
             type="button"
             className="phone-btn-primary"
-            onClick={() => { setRendererState("loading"); setRendererAttempt(n => n + 1); }}
+            onClick={() => { setResetVersion(0); setZoomRequest({ step: 0, version: 0 }); setRendererState("loading"); setRendererAttempt(n => n + 1); }}
           >
             Try again
           </button>
