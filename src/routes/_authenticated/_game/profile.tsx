@@ -1,5 +1,5 @@
 import { useMissions } from "@/hooks/use-missions";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -24,7 +24,9 @@ import { playerStateFromRows } from "@/lib/player-state";
 import { EQUIPMENT_SLOTS, normalizeEquippedItems } from "@/lib/equipment-service";
 import { moodLabel } from "@/lib/profile-service";
 import { profileBadges, type BadgeId } from "@/lib/profile-badges";
-import { GameInventoryPanel } from "@/components/game/GameInventoryPanel";
+const GameInventoryPanel = lazy(() =>
+  import("@/components/game/GameInventoryPanel").then((module) => ({ default: module.GameInventoryPanel })),
+);
 import "@/components/game/profile-inventory.css";
 
 export const Route = createFileRoute("/_authenticated/_game/profile")({
@@ -251,7 +253,9 @@ export function ProfilePage() {
       {walletQuery.isError && <p className="pi-note">Your wallet is temporarily unavailable.</p>}
         </>
       ) : (
-        <GameInventoryPanel />
+        <Suspense fallback={<LoadingState />}>
+          <GameInventoryPanel />
+        </Suspense>
       )}
     </div>
   );
