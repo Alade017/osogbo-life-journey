@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": 8,
+    "version": 9,
     "coordinateSystem": "Normalized fictional overview units, x eastward and z southward; not GIS or navigation coordinates",
     "status": "draft-footprints",
     "width": 100,
@@ -1528,34 +1528,26 @@
       "parcelId": "ogo-oluwa-residential-1"
     }
   ],
-  "brandBillboards": [
-    {
-      "id": "brand-aladtech",
-      "brandId": "aladtech",
-      "districtId": "olaiya",
-      "position": {
-        "x": 48.05,
-        "z": 46.1
+  "billboardPolicy": {
+    "brands": [
+      {
+        "id": "aladtech",
+        "name": "ALADTECH",
+        "subtitle": "WEB SOLUTIONS"
       },
-      "footprint": {
-        "width": 2.6,
-        "depth": 1.2
-      },
-      "rotationY": 0
+      {
+        "id": "elegance",
+        "name": "ELEGANCE",
+        "subtitle": "TECH HUB"
+      }
+    ],
+    "footprint": {
+      "width": 2.6,
+      "depth": 1.2
     },
-    {
-      "id": "brand-wlegance",
-      "brandId": "wlegance",
-      "districtId": "ogo-oluwa",
-      "position": {
-        "x": 19.05,
-        "z": 74.1
-      },
-      "footprint": {
-        "width": 2.6,
-        "depth": 1.2
-      },
-      "rotationY": 0
-    }
-  ]
+    "clearance": 0.5,
+    "spacing": 12,
+    "maxPerDistrict": 3,
+    "cell": 2
+  }
 }
