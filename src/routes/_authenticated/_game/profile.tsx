@@ -10,6 +10,7 @@ import {
   Medal,
   Route as RouteIcon,
   Settings2,
+  Shirt,
   Star,
   Users,
   type LucideIcon,
