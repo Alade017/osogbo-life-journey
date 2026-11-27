@@ -1,4 +1,4 @@
-import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Component, type ReactNode, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import townData from "@/data/osogbo-town.json";
 import { overviewDistrictId, overviewDistricts, overviewHasPlace } from "./overview-district-routing";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
@@ -7,6 +7,13 @@ import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 const TownSurface3D = lazy(() =>
   import("./DistrictOverviewSurface").then((module) => ({ default: module.DistrictOverviewSurface })),
 );
+
+class MapLoadBoundary extends Component<{ children: ReactNode; onUnavailable: () => void }, { failed: boolean }> {
+  override state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  override componentDidCatch() { this.props.onUnavailable(); }
+  override render() { return this.state.failed ? null : this.props.children; }
+}
 
 export type MapSearchTarget = string | { id: string; kind?: "district" | "landmark" };
 export type MapPlayerLocation = {
@@ -85,6 +92,7 @@ export function MapCanvas({
   onSelectProperty,
   onSelectEvent,
 }: MapCanvasProps) {
+  const [rendererAttempt, setRendererAttempt] = useState(0);
   const [cameraFocus, setCameraFocus] = useState<MapSearchTarget | null>(null);
   const [resetVersion, setResetVersion] = useState(0);
   const [zoomRequest, setZoomRequest] = useState({ step: 0, version: 0 });
@@ -150,6 +158,7 @@ export function MapCanvas({
       style={{ background: WORLD_PALETTE.ground }}
       aria-label="Interactive 3D town map with open camera exploration"
     >
+      <MapLoadBoundary key={rendererAttempt} onUnavailable={handleUnavailable}>
       <Suspense fallback={null}>
         {rendererState !== "unavailable" && (
           <TownSurface3D
@@ -172,6 +181,7 @@ export function MapCanvas({
           />
         )}
       </Suspense>
+      </MapLoadBoundary>
       {rendererState === "ready" && (
         <div className="town-map-zoom-controls" aria-label="Map camera controls">
           <button type="button" aria-label="Zoom in" onClick={() => setZoomRequest(old => ({step: 1, version: old.version + 1}))}>+</button>
@@ -190,11 +200,11 @@ export function MapCanvas({
       )}
       {rendererState === "unavailable" && (
         <div className="town-map-renderer-status" role="alert" style={{ pointerEvents: "auto" }}>
-          <p>The 3D town could not start on this device.</p>
+          <p>The 3D town is unavailable. You can retry the renderer without reloading your game.</p>
           <button
             type="button"
             className="phone-btn-primary"
-            onClick={() => window.location.reload()}
+            onClick={() => { setRendererState("loading"); setRendererAttempt(n => n + 1); }}
           >
             Try again
           </button>
