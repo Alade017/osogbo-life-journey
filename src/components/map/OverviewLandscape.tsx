@@ -1,19 +1,14 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { InstancedMesh, Object3D } from "three";
 import layout from "@/data/osogbo-overview-layout.json";
+import { overviewRiverDistance, overviewRiverBankWidth } from "./overview-river-layout";
 import { overviewBillboards } from "./overview-billboard-placement";
 
 type Tree = { x: number; z: number; height: number };
 const trees: Tree[] = [];
 const occupied = [...layout.places, ...layout.residentialParcels, ...layout.commercialParcels, ...layout.terrain.river.bridges, ...overviewBillboards];
 function nearRiver(x: number, z: number) {
-  const { centerline, width } = layout.terrain.river;
-  return centerline.slice(1).some((b, i) => {
-    const a = centerline[i]!;
-    const dx = b.x - a.x, dz = b.z - a.z;
-    const t = Math.max(0, Math.min(1, ((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz || 1)));
-    return Math.hypot(x-a.x-t*dx,z-a.z-t*dz) < width/2+1.2;
-  });
+  return overviewRiverDistance(x,z) < overviewRiverBankWidth/2 + 0.85;
 }
 for (const district of layout.districts) {
   const b = district.bounds;
