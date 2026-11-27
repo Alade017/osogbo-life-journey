@@ -37,7 +37,7 @@ import {
 } from "@/lib/map-api";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useCityEvents } from "@/hooks/use-city-events";
-import { cityEventsForDistrict } from "@/lib/city-event-service";
+import { overviewDistrictId, overviewDistricts as districts, overviewLandmarks as landmarks, overviewHasPlace } from "@/components/map/overview-district-routing";
 import {
   getBillboardLandmarkId,
   getCurrentMapBillboards,
@@ -51,25 +51,17 @@ import "@/components/map/map-hud.css";
 import "@/components/map/neighborhood-city-map.css";
 import "@/components/map/map-explorer.css";
 
-const townLandmarks = townData.landmarks as (MapLandmark & { districtId: string })[];
-const districts = townData.districts.map((district) => ({
-  ...district,
-  landmarks: townLandmarks.filter((landmark) => landmark.districtId === district.id),
-})) as unknown as MapDistrict[];
-const landmarks = districts.flatMap((district) =>
-  district.landmarks.map((landmark) => ({ ...landmark, district })),
-);
 const quickTravelLandmarkDetails: Record<
   string,
   { districtId: string; label: string; category: MapLandmark["category"] }
 > = {
   "olaiya-junction": {
-    districtId: "central-crossing",
+    districtId: "olaiya",
     label: "Olaiya Junction",
     category: "junction",
   },
   "oja-oba-market": {
-    districtId: "market-quarter",
+    districtId: "oja-oba",
     label: "Oja-Oba Market",
     category: "market",
   },
@@ -232,11 +224,11 @@ export function CityMapDashboard(
   ]);
   const activeEvents = cityEvents.isError
     ? []
-    : cityEventsForDistrict(cityEvents.data?.events ?? [], selectedDistrict?.id);
+    : (cityEvents.data?.events ?? []).filter(event => event.status === "active" && selectedDistrict && overviewDistrictId(event.districtId, event.landmarkId) === selectedDistrict.id);
   const eventChips: MapEventChip[] = (cityEvents.data?.events ?? [])
     .filter((event) => event.status === "active")
     .flatMap((event) => {
-      const landmark = townData.landmarks.find((place) => place.id === event.landmarkId);
+      const landmark = townData.landmarks.find((place) => place.id === event.landmarkId && overviewHasPlace(place.id));
       return landmark
         ? [{ id: event.landmarkId, label: event.title, x: landmark.grid.x, y: landmark.grid.z }]
         : [];
@@ -312,7 +304,7 @@ export function CityMapDashboard(
   const setDestinationTab = travelController.setTab;
   const onDistrict = (id: string) => {
     if (travelController.busy || travelController.arrivalConfirmed) return;
-    const district = districts.find((item) => item.id === id);
+    const district = districts.find((item) => item.id === overviewDistrictId(id));
     if (district) {
       travelController.close();
       setSelectedDistrict(district);
