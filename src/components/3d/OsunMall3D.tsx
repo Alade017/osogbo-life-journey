@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree, type ThreeEvent } from "@react-three/fiber";
 import { Vector3, type Camera, type Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
@@ -7,10 +7,11 @@ import {
   advanceCrowd,
   getShopperById,
   isPaying,
+  payingCashierId,
   MALL_CROWD_TARGET,
   type MallShopper,
 } from "@/game/mall-crowd";
-import { createWalker, stepWalker, type MallWalker } from "@/game/mall-movement";
+import { createWalker, stepWalker, isSegmentWalkable, type MallWalker } from "@/game/mall-movement";
 import {
   MALL_BOUNDS,
   MALL_ENTRANCE,
@@ -20,7 +21,7 @@ import {
   type MallRect,
 } from "@/game/osun-mall-layout";
 import { staffLook, type MallGender } from "@/game/mall-appearance";
-import { MALL_PROPS, type MallPropId, type MallTarget } from "@/game/mall-reactions";
+import { MALL_PROPS, MALL_CHAT_RADIUS, type MallPropId, type MallTarget } from "@/game/mall-reactions";
 import type { AvatarEquipment } from "@/components/game/Avatar";
 import { WorldCharacter } from "./WorldCharacter";
 import { WorldLighting, WorldMaterial } from "./WorldScene";
@@ -202,10 +203,11 @@ function MallStaffLayer({
   onInteract: (target: MallTarget) => void;
 }) {
   // Cashiers reach forward to take money whenever a shopper is paying at a till.
-  const [paying, setPaying] = useState(false);
+  const [paying, setPaying] = useState<ReadonlySet<string>>(() => new Set());
   useEffect(() => {
     const timer = window.setInterval(() => {
-      setPaying(sim.current.shoppers.some((shopper) => isPaying(shopper.walker)));
+      const next = new Set(sim.current.shoppers.map(shopper => payingCashierId(shopper.walker)).filter((id): id is string => id !== null));
+      setPaying(previous => previous.size === next.size && [...next].every(id => previous.has(id)) ? previous : next);
     }, SNAPSHOT_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [sim]);
@@ -228,7 +230,7 @@ function MallStaffLayer({
               appearance={look.appearance}
               name={member.id}
               facing={member.facing}
-              animation={member.role === "till" ? (paying ? "interact" : "work") : "idle"}
+              animation={member.role === "till" ? (paying.has(member.id) ? "interact" : "work") : "idle"}
               position={[0, 0, 0]}
             />
           </group>
@@ -239,11 +241,11 @@ function MallStaffLayer({
 }
 
 /** One shopper. Position comes from the simulation every frame; only animation is React state. */
-function ShopperFigure({
+const ShopperFigure = memo(function ShopperFigure({
   id,
   moving,
   paying,
-  lookAt,
+  distant,
   gender,
   appearance,
   sim,
@@ -252,20 +254,24 @@ function ShopperFigure({
   id: string;
   moving: boolean;
   paying: boolean;
-  /** Local point to turn toward, relative to this shopper; null when facing ahead. */
-  lookAt: readonly [number, number, number] | null;
+  distant: boolean;
   gender: MallGender;
   appearance: Appearance;
   sim: { current: MallSim };
   onInteract: (target: MallTarget) => void;
 }) {
   const group = useRef<Group>(null);
-  useFrame(() => {
+  useFrame((_, delta) => {
     const shopper = getShopperById(sim.current.shoppers, id);
     const node = group.current;
     if (!node) return;
     node.visible = Boolean(shopper);
-    if (shopper) node.position.set(shopper.walker.pos[0], 0, shopper.walker.pos[1]);
+    if (!shopper) return;
+    node.position.set(shopper.walker.pos[0], 0, shopper.walker.pos[1]);
+    const target = shopper.walker.moving ? null : lookTargetFor(shopper, sim.current.player.pos);
+    const yaw = target && !shopper.walker.moving ? Math.atan2(target[0], target[2]) : shopper.heading ?? 0;
+    const difference = Math.atan2(Math.sin(yaw - node.rotation.y), Math.cos(yaw - node.rotation.y));
+    node.rotation.y += difference * (1 - Math.exp(-10 * Math.min(delta, 0.1)));
   });
   return (
     <group
@@ -282,13 +288,13 @@ function ShopperFigure({
         name={id}
         facing="south"
         animation={paying ? "interact" : moving ? "walk" : "idle"}
-        lookAt={lookAt}
+        poseUpdateInterval={distant ? 1 / 15 : 0}
         held={paying ? <PaymentNote /> : null}
         position={[0, 0, 0]}
       />
     </group>
   );
-}
+});
 
 /** The card or note a shopper hands over at the till. */
 function PaymentNote() {
@@ -320,7 +326,7 @@ function lookTargetFor(
     if (nearest) return [nearest[0] - sx, 0, nearest[1] - sz];
   }
   const toPlayer = Math.hypot(player[0] - sx, player[1] - sz);
-  if (toPlayer < 6) return [player[0] - sx, 0, player[1] - sz];
+  if (toPlayer < MALL_CHAT_RADIUS && toPlayer > 0.01 && isSegmentWalkable(shopper.walker.pos, player)) return [player[0] - sx, 0, player[1] - sz];
   return null;
 }
 
@@ -344,8 +350,10 @@ function PlacedPropsLayer({ placed }: { placed: readonly PlacedProp[] }) {
 function CrowdLayer({
   sim,
   onInteract,
+  crowdTarget,
 }: {
   sim: { current: MallSim };
+  crowdTarget: number;
   onInteract: (target: MallTarget) => void;
 }) {
   const [snapshot, setSnapshot] = useState<
@@ -353,7 +361,7 @@ function CrowdLayer({
       id: string;
       moving: boolean;
       paying: boolean;
-      lookAt: readonly [number, number, number] | null;
+      distant: boolean;
       gender: MallGender;
       appearance: Appearance;
     }>
@@ -364,7 +372,8 @@ function CrowdLayer({
       state.shoppers,
       Math.min(delta, 0.1),
       state.nextSeed,
-      MALL_CROWD_TARGET,
+      crowdTarget,
+      [state.player.pos, ...state.people.map(person => person.position)],
     );
     state.shoppers = next.shoppers;
     state.nextSeed = next.nextSeed;
@@ -372,16 +381,19 @@ function CrowdLayer({
   useEffect(() => {
     const timer = window.setInterval(() => {
       const player = sim.current.player.pos;
-      setSnapshot(
-        sim.current.shoppers.map((shopper) => ({
-          id: shopper.id,
-          moving: shopper.walker.moving,
-          paying: isPaying(shopper.walker),
-          lookAt: lookTargetFor(shopper, player),
-          gender: shopper.gender,
-          appearance: shopper.appearance,
-        })),
-      );
+      const next = sim.current.shoppers.map((shopper) => ({
+        id: shopper.id,
+        moving: shopper.walker.moving,
+        paying: isPaying(shopper.walker),
+        distant: Math.hypot(shopper.walker.pos[0] - player[0], shopper.walker.pos[1] - player[1]) > MALL_CHAT_RADIUS * 4,
+        gender: shopper.gender,
+        appearance: shopper.appearance,
+      }));
+      setSnapshot(previous => previous.length === next.length && next.every((shopper, index) => {
+        const old = previous[index];
+        return old?.id === shopper.id && old.moving === shopper.moving &&
+          old.paying === shopper.paying && old.distant === shopper.distant && old.gender === shopper.gender && old.appearance === shopper.appearance;
+      }) ? previous : next);
     }, SNAPSHOT_INTERVAL_MS);
     return () => window.clearInterval(timer);
   }, [sim]);
@@ -393,7 +405,7 @@ function CrowdLayer({
           id={shopper.id}
           moving={shopper.moving}
           paying={shopper.paying}
-          lookAt={shopper.lookAt}
+          distant={shopper.distant}
           gender={shopper.gender}
           appearance={shopper.appearance}
           sim={sim}
@@ -521,6 +533,7 @@ function OsunMallContents({
   onInteract,
   cameraRef,
   accent,
+  crowdTarget = MALL_CROWD_TARGET,
 }: {
   sim: { current: MallSim };
   people: MallPerson[];
@@ -534,6 +547,7 @@ function OsunMallContents({
   onInteract: (target: MallTarget) => void;
   cameraRef: { current: Camera | null };
   accent: string;
+  crowdTarget?: number;
 }) {
   return (
     <>
@@ -543,7 +557,7 @@ function OsunMallContents({
       <MallInterior onWalk={onWalk} onInteract={onInteract} accent={accent} />
       <MallStaffLayer sim={sim} onInteract={onInteract} />
       <PlacedPropsLayer placed={placed} />
-      <CrowdLayer sim={sim} onInteract={onInteract} />
+      <CrowdLayer sim={sim} onInteract={onInteract} crowdTarget={crowdTarget} />
       {people.map((person) => (
         <RemoteFigure key={person.sessionId} person={person} />
       ))}
