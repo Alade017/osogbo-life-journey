@@ -1,4 +1,16 @@
+import { OverviewLabelLayout } from "./OverviewLabelLayout";
 import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import {
+  Building2,
+  BusFront,
+  GraduationCap,
+  HeartPulse,
+  Landmark,
+  MapPin,
+  ShoppingBag,
+  Trophy,
+  Utensils,
+} from "lucide-react";
 import { SceneHtml } from "@/components/3d/SceneHtml";
 import { Vector3, OrthographicCamera, MOUSE, TOUCH } from "three";
 import { overviewDistrictId, overviewPlacePosition } from "./overview-district-routing";
@@ -33,17 +45,27 @@ const districtById = new Map(catalog.districts.map((d) => [d.id, d] as const));
 const placeById = new Map(
   [...catalog.places, ...catalog.pendingLandmarks].map((p) => [p.id, p] as const),
 );
+const categoryIcons = {
+  market: ShoppingBag,
+  transport: BusFront,
+  school: GraduationCap,
+  health: HeartPulse,
+  sport: Trophy,
+  food: Utensils,
+  worship: Landmark,
+  services: Building2,
+} as const;
 const palette: Record<string, string> = {
   "commercial-transit": "#c5a478",
   "royal-heritage": "#b68c62",
-  "traditional-residential": "#b9a17e",
+  "traditional-residential": "#aab37b",
   "modern-commercial": "#b4b9ae",
   "mixed-transit": "#c0b69c",
   "automotive-transit": "#a99b82",
   administrative: "#c5c7ba",
   "industrial-education": "#b7b49b",
-  "cultural-nature": "#789366",
-  "residential-education": "#b5ac88",
+  "cultural-nature": "#629451",
+  "residential-education": "#91a574",
 };
 
 const brands = overviewBillboards.map((board) => ({
@@ -131,7 +153,8 @@ export function DistrictOverviewWorld({
     target: undefined,
     landmark: undefined,
   });
-  const [detailLabels, setDetailLabels] = useState(false);
+  const [labelDetail, setLabelDetail] = useState(0);
+  const detailLabels = labelDetail >= 2;
   const fit = overviewFit(size.width, size.height, layout.meta.width, layout.meta.depth);
   const constrainCamera = useCallback(() => {
     const orbit = controls.current;
@@ -145,7 +168,10 @@ export function DistrictOverviewWorld({
       camera.position.add(panCorrection);
       camera.updateMatrixWorld();
     }
-    setDetailLabels(camera instanceof OrthographicCamera && camera.zoom >= fit * 1.8);
+    if (camera instanceof OrthographicCamera) {
+      const scale = camera.zoom / fit;
+      setLabelDetail(scale >= 2.6 ? 2 : scale >= 1.35 ? 1 : 0);
+    }
     invalidate();
   }, [camera, fit, invalidate, panCorrection]);
   useEffect(() => {
@@ -260,7 +286,9 @@ export function DistrictOverviewWorld({
               pointerEvents="none"
               zIndexRange={[10, 0]}
             >
-              <span className="district-label overview-district-label">{district?.name}</span>
+              <span className="district-label overview-district-label" data-atlas-label="3">
+                {district?.name}
+              </span>
             </SceneHtml>
           </group>
         );
@@ -268,6 +296,10 @@ export function DistrictOverviewWorld({
       {layout.places.map((entry) => {
         const district = districtById.get(entry.districtId);
         const place = placeById.get(entry.placeId);
+        const category = place?.category as keyof typeof categoryIcons | undefined;
+        const Icon = (category && categoryIcons[category]) || MapPin;
+        const highlighted = hoveredPlace === entry.placeId || selectedLandmarkId === entry.placeId;
+        const showName = highlighted || detailLabels;
         return (
           <group
             key={entry.placeId}
@@ -296,30 +328,29 @@ export function DistrictOverviewWorld({
               {...entry.footprint}
               color={palette[district?.identity ?? ""] ?? "#d4c7af"}
             />
-            {place &&
-              (detailLabels ||
-                hoveredPlace === entry.placeId ||
-                selectedLandmarkId === entry.placeId) && (
-                <SceneHtml
-                  position={[0, Math.min(entry.footprint.width, entry.footprint.depth) * 0.85, 0]}
-                  center
-                  pointerEvents="none"
-                  zIndexRange={[20, 11]}
+            {place && (labelDetail > 0 || highlighted) && (
+              <SceneHtml
+                position={[0, Math.min(entry.footprint.width, entry.footprint.depth) * 0.85, 0]}
+                center
+                pointerEvents="none"
+                zIndexRange={[20, 11]}
+              >
+                <span
+                  className="district-label overview-landmark-label"
+                  data-atlas-label={highlighted ? 5 : 2}
+                  data-locked={entry.status === "reserved" || !available.has(entry.placeId)}
                 >
-                  <span
-                    className="district-label overview-landmark-label"
-                    data-locked={entry.status === "reserved" || !available.has(entry.placeId)}
-                  >
-                    <span className="overview-pin-dot" aria-hidden="true" />
-                    {place.label}
-                    {entry.status === "reserved"
+                  <Icon size={13} aria-hidden="true" />
+                  {showName && place.label}
+                  {showName &&
+                    (entry.status === "reserved"
                       ? " · Not yet open"
                       : !available.has(entry.placeId)
                         ? " · Locked"
-                        : ""}
-                  </span>
-                </SceneHtml>
-              )}
+                        : "")}
+                </span>
+              </SceneHtml>
+            )}
           </group>
         );
       })}
@@ -362,7 +393,9 @@ export function DistrictOverviewWorld({
                 pointerEvents="none"
                 zIndexRange={[20, 11]}
               >
-                <span className="overview-landmark-label">{property.label}</span>
+                <span className="overview-landmark-label" data-atlas-label="1">
+                  {property.label}
+                </span>
               </SceneHtml>
             )}
           </group>
@@ -388,7 +421,9 @@ export function DistrictOverviewWorld({
             </mesh>
             {detailLabels && (
               <SceneHtml position={[0, 0.6, 0]} center pointerEvents="none" zIndexRange={[20, 11]}>
-                <span className="overview-landmark-label">{event.label}</span>
+                <span className="overview-landmark-label" data-atlas-label="4">
+                  {event.label}
+                </span>
               </SceneHtml>
             )}
           </group>
@@ -413,7 +448,7 @@ export function DistrictOverviewWorld({
             </mesh>
             {detailLabels && (
               <SceneHtml position={[0, 0.45, 0]} center pointerEvents="none" zIndexRange={[20, 11]}>
-                <span className="overview-billboard-label">
+                <span className="overview-billboard-label" data-atlas-label="1">
                   {marker.title ?? marker.advertiserName}
                 </span>
               </SceneHtml>
@@ -422,11 +457,8 @@ export function DistrictOverviewWorld({
         );
       })}
       <OverviewLandscape />
-      <TownBrandBillboards3D
-        positions={brands}
-        cell={layout.billboardPolicy.cell}
-        showLabels={detailLabels}
-      />
+      <OverviewLabelLayout />
+      <TownBrandBillboards3D positions={brands} cell={layout.billboardPolicy.cell} />
     </>
   );
 }

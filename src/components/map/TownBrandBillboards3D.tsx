@@ -1,4 +1,3 @@
-import { SceneHtml } from "@/components/3d/SceneHtml";
 import { useLayoutEffect, useState } from "react";
 import { CanvasTexture, SRGBColorSpace } from "three";
 import layout from "@/data/osogbo-overview-layout.json";
@@ -31,45 +30,29 @@ function BrandBoard({
   position,
   cell,
   texture,
-  label,
 }: {
   position: readonly [number, number];
   cell: number;
   texture: CanvasTexture | null;
-  label?: string | undefined;
 }) {
   return (
     <group position={[position[0], 0, position[1]]}>
-      {label && (
-        <SceneHtml
-          position={[0, cell * 1.22, 0]}
-          center
-          pointerEvents="none"
-          zIndexRange={[15, 10]}
-        >
-          <span className="overview-billboard-label">{label}</span>
-        </SceneHtml>
-      )}
       {[-1, 1].map((side) => (
         <mesh key={side} position={[side * cell * 0.35, cell * 0.35, 0]} castShadow>
           <boxGeometry args={[0.1, cell * 0.7, 0.1]} />
           <WorldMaterial tone="metal" />
         </mesh>
       ))}
-      <mesh position={[0, cell * 0.91, 0]} castShadow>
-        <boxGeometry args={[cell * 1.12, cell * 0.44, 0.12]} />
-        <WorldMaterial tone="indigo" />
-      </mesh>
-      {[-1, 1].map((side) => (
-        <mesh
-          key={side}
-          position={[0, cell * 0.91, side * 0.065]}
-          rotation={[0, side === -1 ? Math.PI : 0, 0]}
-        >
-          <planeGeometry args={[cell * 1.08, cell * 0.405]} />
+      <group position={[0, cell * 0.91, 0]} rotation={[-Math.PI * 0.39, 0, 0]}>
+        <mesh castShadow>
+          <boxGeometry args={[cell * 1.12, cell * 0.52, 0.12]} />
+          <WorldMaterial tone="indigo" />
+        </mesh>
+        <mesh position={[0, 0, 0.065]}>
+          <planeGeometry args={[cell * 1.08, cell * 0.48]} />
           <meshBasicMaterial map={texture} toneMapped={false} />
         </mesh>
-      ))}
+      </group>
     </group>
   );
 }
@@ -77,9 +60,7 @@ function BrandBoard({
 export function TownBrandBillboards3D({
   positions,
   cell,
-  showLabels = false,
 }: {
-  showLabels?: boolean;
   positions: readonly { id?: string; brandId?: string; position: readonly [number, number] }[];
   cell: number;
 }) {
@@ -109,7 +90,6 @@ export function TownBrandBillboards3D({
             texture={textures.get(brand.id) ?? null}
             position={sign.position}
             cell={cell}
-            label={showLabels ? `${brand.name} ${brand.subtitle}` : undefined}
           />
         );
       })}

@@ -337,7 +337,7 @@ describe("isometric town map", () => {
   }, 15_000);
   it("renders the 3D town region and a keyboard-accessible list", () => {
     renderDashboard();
-    expect(screen.getByRole("region", { name: /Interactive 3D town map/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Osogbo district map/i })).toBeInTheDocument();
     expect(screen.getByRole("list", { name: "Places on the map" })).toBeInTheDocument();
     expect(
       within(screen.getByRole("list", { name: "Places on the map" })).getByRole("button", {

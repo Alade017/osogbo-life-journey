@@ -53,10 +53,10 @@ export function OverviewRiver() {
   return (
     <>
       <mesh geometry={banks}>
-        <meshStandardMaterial color="#819166" side={DoubleSide} />
+        <meshStandardMaterial color="#628654" side={DoubleSide} />
       </mesh>
       <mesh geometry={water}>
-        <meshStandardMaterial color="#568b9b" roughness={0.32} side={DoubleSide} />
+        <meshStandardMaterial color="#287fa3" roughness={0.32} side={DoubleSide} />
       </mesh>
       {layout.terrain.river.bridges.map((bridge) => {
         const { width, depth } = bridge.footprint;

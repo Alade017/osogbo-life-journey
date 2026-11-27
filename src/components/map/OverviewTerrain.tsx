@@ -41,7 +41,7 @@ export function OverviewTerrain() {
   return (
     <mesh rotation={[-Math.PI / 2, 0, 0]}>
       <planeGeometry ref={geometry} args={[layout.meta.width, layout.meta.depth, 100, 100]} />
-      <meshStandardMaterial color="#9aa77c" roughness={0.95} />
+      <meshStandardMaterial color="#789858" roughness={0.95} />
     </mesh>
   );
 }

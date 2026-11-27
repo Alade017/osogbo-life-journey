@@ -337,15 +337,18 @@
   color: #192b32;
   box-shadow: 0 2px 5px #172b3233;
 }
-.overview-pin-dot {
-  display: inline-block;
-  margin-inline-end: 0.28rem;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: #207e69;
+.district-label.overview-landmark-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
 }
-.overview-landmark-label[data-locked="true"] .overview-pin-dot { background: #a57238; }
+.overview-landmark-label svg {
+  flex: 0 0 auto;
+  color: #207e69;
+}
+.overview-landmark-label[data-locked="true"] svg {
+  color: #a57238;
+}
 .overview-billboard-label {
   display: inline-block;
   padding: 0.25rem 0.45rem;
