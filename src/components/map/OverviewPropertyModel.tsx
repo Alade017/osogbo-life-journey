@@ -1,3 +1,4 @@
+import { OverviewModelBatch } from "./OverviewModelBatch";
 import { memo, type ReactNode } from "react";
 import { OverviewBox } from "./OverviewModelResources";
 
@@ -56,8 +57,8 @@ export const OverviewPropertyModel = memo(function OverviewPropertyModel({profil
     case "industrial-shed": model=<><Box position={[0,0.19,0]} size={[0.84,0.33,0.72]} color="#aaa89c"/><Box position={[0,0.37,0]} size={[0.88,0.06,0.76]} color="#68736b"/><Box position={[0,0.15,0.37]} size={[0.40,0.25,0.02]} color="#535b56"/></>; break;
     default: model=<Dwelling position={[0,0.025,0]} width={0.70} depth={0.60} modern/>;
   }
-  return <group scale={[width,Math.min(width,depth),depth]}>
+  return <group scale={[width,Math.min(width,depth),depth]}><OverviewModelBatch>
     <Box position={[0,0.012,0]} size={[0.94,0.024,0.94]} color={profile==="commercial-plaza"||profile==="mechanic-workshop"||profile==="industrial-shed"?concrete:grass}/>
     {model}
-  </group>;
+  </OverviewModelBatch></group>;
 });
