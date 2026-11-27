@@ -22,8 +22,8 @@ type Position = { x: number; z: number };
 const world = ({ x, z }: Position): [number, number, number] => [
   x - layout.meta.width / 2, 0, z - layout.meta.depth / 2,
 ];
-const districtById = new Map(catalog.districts.map(d => [d.id, d]));
-const placeById = new Map([...catalog.places, ...catalog.pendingLandmarks].map(p => [p.id, p]));
+const districtById = new Map(catalog.districts.map(d => [d.id, d] as const));
+const placeById = new Map([...catalog.places, ...catalog.pendingLandmarks].map(p => [p.id, p] as const));
 const mobileDistricts = [...layout.districts].sort((a, b) => b.bounds.width * b.bounds.depth - a.bounds.width * a.bounds.depth).map(d => d.districtId);
 const palette: Record<string, string> = {
   "commercial-transit": "#c5a478", "royal-heritage": "#b68c62",
@@ -32,6 +32,11 @@ const palette: Record<string, string> = {
   administrative: "#c5c7ba", "industrial-education": "#b7b49b",
   "cultural-nature": "#789366", "residential-education": "#b5ac88",
 };
+
+const brands = overviewBillboards.map(board => ({ id: board.id, brandId: board.brandId, position: [board.position.x - layout.meta.width / 2, board.position.z - layout.meta.depth / 2] as const }));
+const EMPTY_EVENTS: readonly MapEventChip[] = [];
+const EMPTY_BILLBOARDS: readonly MapBillboardMarker[] = [];
+const EMPTY_PROPERTIES: readonly MapProperty[] = [];
 
 export type DistrictOverviewProps = {
   availableLandmarkIds: readonly string[];
@@ -51,7 +56,7 @@ export type DistrictOverviewProps = {
 };
 
 /** Static overview geometry only. Navigation coordinates never enter this scene. */
-export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, onSelectLandmark, onSelectUnavailable, searchTarget, selectedLandmarkId, resetVersion = 0, zoomRequest, eventChips = [], billboardMarkers = [], onSelectEvent, onSelectBillboard, properties = [], onSelectProperty }: DistrictOverviewProps) {
+export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, onSelectLandmark, onSelectUnavailable, searchTarget, selectedLandmarkId, resetVersion = 0, zoomRequest, eventChips = EMPTY_EVENTS, billboardMarkers = EMPTY_BILLBOARDS, onSelectEvent, onSelectBillboard, properties = EMPTY_PROPERTIES, onSelectProperty }: DistrictOverviewProps) {
   const [hoveredPlace, setHoveredPlace] = useState<string | null>(null);
   const available = useMemo(() => new Set(availableLandmarkIds), [availableLandmarkIds]);
   const propertyByParcel = useMemo(() => {
@@ -156,7 +161,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
     controls.current?.update();
     invalidate();
   }, [camera, fit, invalidate, zoomRequest]);
-  const brands = overviewBillboards.map(board => ({ id: board.id, brandId: board.brandId, position: [board.position.x - layout.meta.width / 2, board.position.z - layout.meta.depth / 2] as const }));
+
   return (
     <>
       <OrbitControls ref={controls} makeDefault enableRotate enablePan enableZoom minPolarAngle={0.25}
