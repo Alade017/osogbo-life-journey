@@ -40,6 +40,7 @@ export function mapHousingMarkers(value: unknown): MapProperty[] {
     return [
       {
         id: row["propertyId"],
+        ...(typeof row["houseTypeId"] === "string" ? { houseTypeId: row["houseTypeId"] } : {}),
         label: row["label"],
         type: row["model"] as MapProperty["type"],
         status: row["status"] as MapProperty["status"],
