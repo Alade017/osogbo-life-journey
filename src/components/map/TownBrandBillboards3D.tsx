@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useLayoutEffect, useState } from "react";
 import { CanvasTexture, SRGBColorSpace } from "three";
 import layout from "@/data/osogbo-overview-layout.json";
 import { WorldMaterial } from "@/components/3d/WorldScene";
@@ -59,8 +59,14 @@ export function TownBrandBillboards3D({
   cell: number;
 }) {
   const brands = layout.billboardPolicy.brands;
-  const textures = useMemo(() => new Map(brands.map(brand => [brand.id, createBrandTexture(brand.name, brand.subtitle)])), [brands]);
-  useEffect(() => () => { for (const texture of textures.values()) texture?.dispose(); }, [textures]);
+  const [textures, setTextures] = useState<ReadonlyMap<string, CanvasTexture | null>>(() => new Map());
+  useLayoutEffect(() => {
+    const owned = new Map(brands.map(brand => [brand.id, createBrandTexture(brand.name, brand.subtitle)]));
+    setTextures(owned);
+    return () => {
+      for (const texture of owned.values()) texture?.dispose();
+    };
+  }, [brands]);
   return (
     <group>
       {positions.map((sign, index) => {
