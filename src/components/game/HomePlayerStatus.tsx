@@ -27,13 +27,10 @@ class PortraitBoundary extends Component<{ children: ReactNode }, { failed: bool
 export function HomePlayerStatus({ player }: { player: PlayerState }) {
   const { simulation, ready } = useGameTime();
   const [hubOpen, setHubOpen] = useState(false);
-  const [hubInitialTab, setHubInitialTab] = useState<"profile" | "settings">("profile");
   const closeHub = useCallback(() => setHubOpen(false), []);
 
   useEffect(() => {
     const openHub = (event: Event) => {
-      const detail = (event as CustomEvent<{ tab?: "profile" | "settings" }>).detail;
-      setHubInitialTab(detail?.tab === "settings" ? "settings" : "profile");
       setHubOpen(true);
     };
     window.addEventListener("osogbo-open-player-hub", openHub);
@@ -55,7 +52,7 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
     <button
       type="button"
       className="home-player-status"
-      onClick={() => { setHubInitialTab("profile"); setHubOpen(true); }}
+      onClick={() => setHubOpen(true)}
       aria-haspopup="dialog"
       aria-expanded={hubOpen}
       aria-label={`${player.name}, level ${player.level}. ${ready ? `Energy ${energy}%` : "Connecting needs"}. Open player hub`}
@@ -92,7 +89,7 @@ export function HomePlayerStatus({ player }: { player: PlayerState }) {
         </span>
       </span>
     </button>
-    {hubOpen && <PlayerLifeHub player={player} open={hubOpen} initialTab={hubInitialTab} onClose={closeHub} />}
+    {hubOpen && <PlayerLifeHub player={player} open={hubOpen} onClose={closeHub} />}
     </>
   );
 }
