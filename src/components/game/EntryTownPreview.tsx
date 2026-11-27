@@ -6,8 +6,8 @@ import "@/components/map/map-hud.css";
 
 // Load the same 3D town used by the playable map, without blocking the entry screen.
 const TownSurface3D = lazy(() =>
-  import("@/components/map/R3FTownSurface").then((module) => ({
-    default: module.R3FTownSurface,
+  import("@/components/map/DistrictOverviewSurface").then((module) => ({
+    default: module.DistrictOverviewSurface,
   })),
 );
 
@@ -44,14 +44,9 @@ export function EntryTownPreview({
   activeSlugs = null,
 }: Props) {
   const [status, setStatus] = useState<"loading" | "ready" | "unavailable">("loading");
-  const places = useMemo(
+  const availableLandmarkIds = useMemo(
     () =>
-      previewLandmarks(activeSlugs).map((place) => ({
-        id: place.id,
-        label: place.label,
-        category: place.category,
-        grid: place.grid,
-      })),
+      previewLandmarks(activeSlugs).map((place) => place.id),
     [activeSlugs],
   );
   const handleReady = useCallback(() => setStatus("ready"), []);
@@ -78,16 +73,10 @@ export function EntryTownPreview({
               }
             >
               <TownSurface3D
-                places={places}
-                properties={undefined}
-                playerLocation={null}
-                billboardMarkers={[]}
+                availableLandmarkIds={availableLandmarkIds}
                 searchTarget={focusLandmarkId}
-                focusCloseUp
                 onSelectLandmark={noop}
                 onSelectDistrict={noop}
-                onSelectBillboard={undefined}
-                eventChips={[]}
                 onReady={handleReady}
                 onUnavailable={handleUnavailable}
               />
