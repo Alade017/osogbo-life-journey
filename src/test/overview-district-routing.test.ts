@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import catalog from "@/data/osogbo-district-catalog.json";
+import layout from "@/data/osogbo-overview-layout.json";
 import { overviewDistrictId, overviewDistricts, overviewHasPlace, overviewLandmarks, overviewPlacePosition } from "@/components/map/overview-district-routing";
 
 describe("replacement overview routing", () => {
@@ -32,5 +33,43 @@ describe("replacement overview routing", () => {
       expect(Number.isFinite(p?.x)).toBe(true);
       expect(Number.isFinite(p?.z)).toBe(true);
     }
+  });
+});
+
+describe("replacement overview layout invariants", () => {
+  const entries = [...layout.places, ...layout.residentialParcels, ...layout.commercialParcels];
+  it("keeps footprints within their assigned districts", () => {
+    for (const entry of entries) {
+      const district = layout.districts.find(d => d.districtId === entry.districtId);
+      expect(district).toBeDefined();
+      const b = district!.bounds;
+      const { x, z } = entry.position;
+      const { width, depth } = entry.footprint;
+      expect(width).toBeGreaterThan(0);
+      expect(depth).toBeGreaterThan(0);
+      expect(x - width / 2).toBeGreaterThanOrEqual(b.x);
+      expect(x + width / 2).toBeLessThanOrEqual(b.x + b.width);
+      expect(z - depth / 2).toBeGreaterThanOrEqual(b.z);
+      expect(z + depth / 2).toBeLessThanOrEqual(b.z + b.depth);
+    }
+  });
+  it("does not overlap authored footprints", () => {
+    for (const [i, a] of entries.entries()) {
+      for (const b of entries.slice(i + 1)) {
+        const overlaps = Math.abs(a.position.x - b.position.x) < (a.footprint.width + b.footprint.width) / 2 &&
+          Math.abs(a.position.z - b.position.z) < (a.footprint.depth + b.footprint.depth) / 2;
+        expect(overlaps).toBe(false);
+      }
+    }
+  });
+  it("accounts for every existing venue exactly once in overview or neighborhood-only data", () => {
+    const represented = [...layout.places.filter(p => p.status === "existing-reference"), ...layout.sceneOnlyPlaces];
+    expect(represented.map(p => p.placeId).sort()).toEqual(catalog.places.map(p => p.id).sort());
+  });
+  it("uses unique valid housing listing anchors", () => {
+    const anchors = layout.housingListingAnchors;
+    expect(new Set(anchors.map(a => a.houseTypeId)).size).toBe(anchors.length);
+    expect(new Set(anchors.map(a => a.parcelId)).size).toBe(anchors.length);
+    for (const anchor of anchors) expect(layout.residentialParcels.some(p => p.id === anchor.parcelId)).toBe(true);
   });
 });
