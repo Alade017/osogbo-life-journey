@@ -85,12 +85,17 @@ export function ProfilePage() {
 
   return (
     <div className="pi-page pi-profile">
-      <header className="pi-masthead">
-        <p className="pi-eyebrow">Your journey</p>
+      <header className="pi-masthead pi-masthead-profile">
+        <div className="pi-profile-heading-copy">
+          <p className="pi-eyebrow">Your journey</p>
         <h1>{player.name}</h1>
         <p className="pi-sub">
           {occupation} · {player.location?.name ?? "Osogbo"}
         </p>
+        </div>
+        <Link to="/settings" className="pi-pill pi-pill-primary pi-profile-settings-link">
+          <Settings2 size={17} aria-hidden="true" /> Settings
+        </Link>
       </header>
 
       <div className="pi-hero">
@@ -227,9 +232,6 @@ export function ProfilePage() {
         </button>
         <Link to="/social" search={{ playerId: undefined }}>
           <Users size={20} aria-hidden="true" /> Friends
-        </Link>
-        <Link to="/settings">
-          <Settings2 size={20} aria-hidden="true" /> Settings
         </Link>
       </nav>
 
