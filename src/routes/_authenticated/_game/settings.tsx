@@ -604,7 +604,7 @@ function SimulationSettings() {
     return <p className="sx-row-hint">Life simulation controls are available while you are in the game.</p>;
   }
 
-  const { simulation, busy, ready, pause, resume, setSpeed } = gameTime;
+  const { simulation, syncError, busy, ready, pause, resume, setSpeed } = gameTime;
   return (
     <>
       <div className="sx-row">
@@ -641,6 +641,7 @@ function SimulationSettings() {
         </div>
       </div>
       {!ready && <p className="sx-row-hint" role="status">Connecting to your life simulation…</p>}
+      {syncError && <p className="sx-error" role="alert">{syncError}</p>}
       {simulation.paused && <p className="sx-paused-note"><Pause size={15} aria-hidden="true" /> Your personal simulation is paused.</p>}
       {!simulation.paused && ready && <p className="sx-paused-note"><Play size={15} aria-hidden="true" /> Your personal simulation is running.</p>}
     </>
