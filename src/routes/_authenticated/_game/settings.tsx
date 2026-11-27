@@ -222,7 +222,7 @@ export function SettingsPage() {
             <ShieldCheck aria-hidden="true" /> {accountLabel}
           </span>
         </div>
-      </header>}
+      </header>
 
       <>
       <Section
