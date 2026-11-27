@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": 2,
+    "version": 3,
     "coordinateSystem": "Normalized fictional overview units, x eastward and z southward; not GIS or navigation coordinates",
     "status": "draft-footprints",
     "width": 100,
@@ -949,7 +949,8 @@
         "depth": 6.66
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "apartment-block"
     },
     {
       "id": "oja-oba-residential-1",
@@ -963,7 +964,8 @@
         "depth": 4.9333
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "family-compound"
     },
     {
       "id": "oja-oba-residential-2",
@@ -977,7 +979,8 @@
         "depth": 4.9333
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "family-compound"
     },
     {
       "id": "isale-aro-residential-1",
@@ -991,7 +994,8 @@
         "depth": 4.9333
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "family-compound"
     },
     {
       "id": "isale-aro-residential-2",
@@ -1005,7 +1009,8 @@
         "depth": 4.9333
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "family-compound"
     },
     {
       "id": "isale-aro-residential-3",
@@ -1019,7 +1024,8 @@
         "depth": 4.9333
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "bungalow"
     },
     {
       "id": "isale-aro-residential-4",
@@ -1033,7 +1039,8 @@
         "depth": 4.9333
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "family-compound"
     },
     {
       "id": "ogo-oluwa-residential-1",
@@ -1047,7 +1054,8 @@
         "depth": 8.14
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "duplex"
     },
     {
       "id": "ogo-oluwa-residential-2",
@@ -1061,7 +1069,8 @@
         "depth": 8.14
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "apartment-block"
     },
     {
       "id": "oke-fia-residential-1",
@@ -1075,7 +1084,8 @@
         "depth": 5.18
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "bungalow"
     },
     {
       "id": "oke-fia-residential-2",
@@ -1089,7 +1099,8 @@
         "depth": 5.18
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "duplex"
     },
     {
       "id": "old-garage-residential-1",
@@ -1103,7 +1114,8 @@
         "depth": 11.1
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "bungalow"
     },
     {
       "id": "abere-ring-road-residential-1",
@@ -1117,7 +1129,8 @@
         "depth": 5.92
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "duplex"
     },
     {
       "id": "ota-efun-testing-ground-residential-1",
@@ -1131,7 +1144,8 @@
         "depth": 6.29
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "residential-estate"
     },
     {
       "id": "ota-efun-testing-ground-residential-2",
@@ -1145,7 +1159,8 @@
         "depth": 6.29
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "bungalow"
     },
     {
       "id": "ota-efun-testing-ground-residential-3",
@@ -1159,7 +1174,8 @@
         "depth": 6.29
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "residential-estate"
     },
     {
       "id": "oke-baale-residential-1",
@@ -1173,7 +1189,8 @@
         "depth": 7.4
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "family-compound"
     },
     {
       "id": "oke-baale-residential-2",
@@ -1187,7 +1204,8 @@
         "depth": 7.4
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "bungalow"
     },
     {
       "id": "oke-baale-residential-3",
@@ -1201,7 +1219,8 @@
         "depth": 7.4
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "duplex"
     },
     {
       "id": "oke-baale-residential-4",
@@ -1215,7 +1234,8 @@
         "depth": 7.4
       },
       "kind": "decorative-residential",
-      "propertyId": null
+      "propertyId": null,
+      "profile": "apartment-block"
     }
   ],
   "sceneOnlyPlaces": [
@@ -1319,5 +1339,52 @@
     },
     "ground": "continuous-natural-terrain",
     "districtSurface": "landscape-not-road-grid"
-  }
+  },
+  "commercialParcels": [
+    {
+      "id": "old-garage-workshop-1",
+      "districtId": "old-garage",
+      "profile": "mechanic-workshop",
+      "position": {
+        "x": 6,
+        "z": 6
+      },
+      "footprint": {
+        "width": 2,
+        "depth": 2
+      },
+      "kind": "decorative-commercial",
+      "propertyId": null
+    },
+    {
+      "id": "ota-efun-industrial-1",
+      "districtId": "ota-efun-testing-ground",
+      "profile": "industrial-shed",
+      "position": {
+        "x": 37,
+        "z": 6
+      },
+      "footprint": {
+        "width": 2,
+        "depth": 2
+      },
+      "kind": "decorative-commercial",
+      "propertyId": null
+    },
+    {
+      "id": "ogo-oluwa-plaza-1",
+      "districtId": "ogo-oluwa",
+      "profile": "commercial-plaza",
+      "position": {
+        "x": 6,
+        "z": 52
+      },
+      "footprint": {
+        "width": 2,
+        "depth": 2
+      },
+      "kind": "decorative-commercial",
+      "propertyId": null
+    }
+  ]
 }
