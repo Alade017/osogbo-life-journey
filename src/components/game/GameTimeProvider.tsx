@@ -53,6 +53,27 @@ type ContextValue = {
 };
 const GameTimeContext = createContext<ContextValue | null>(null);
 
+const SESSION_KEY = "osogbo:simulation-session";
+
+/**
+ * This tab's simulation session. A reload keeps the same id, so the server does not treat the
+ * reloaded page as a second tab and make it wait out the 15-second lock. A new tab, including one
+ * duplicated from this tab, gets a new id, so the server still refuses two live tabs.
+ */
+export function simulationSessionForThisTab(): string {
+  try {
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      PerformanceNavigationTiming | undefined;
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved && navigation?.type === "reload") return saved;
+    const id = crypto.randomUUID();
+    sessionStorage.setItem(SESSION_KEY, id);
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
 /** A sync that never answers must not hold the sync lock forever; the next tick retries it. */
 const SYNC_TIMEOUT_MS = 15_000;
 function withSyncTimeout<T>(work: Promise<T>): Promise<T> {
@@ -185,7 +206,7 @@ export function GameTimeProvider({
       inFlight.current = true;
       setBusy(true);
       try {
-        if (!session.current) session.current = crypto.randomUUID();
+        if (!session.current) session.current = simulationSessionForThisTab();
         const result = await withSyncTimeout(
           simulationCommand({
             session: session.current,
