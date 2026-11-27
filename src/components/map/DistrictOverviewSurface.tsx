@@ -1,5 +1,5 @@
-import { Component, useEffect, type ReactNode } from "react";
-import { Canvas } from "@react-three/fiber";
+import { Component, useEffect, useRef, type ReactNode } from "react";
+import { Canvas, useThree, useFrame } from "@react-three/fiber";
 import { OverviewModelResources } from "./OverviewModelResources";
 import { DistrictOverviewWorld, type DistrictOverviewProps } from "./DistrictOverviewWorld";
 
@@ -9,8 +9,24 @@ class OverviewBoundary extends Component<{ children: ReactNode; onUnavailable: (
   override componentDidCatch() { this.props.onUnavailable(); }
   override render() { return this.state.failed ? null : this.props.children; }
 }
-function Ready({ onReady }: { onReady: () => void }) {
-  useEffect(onReady, [onReady]);
+function RendererLifecycle({ onReady, onUnavailable }: { onReady: () => void; onUnavailable: () => void }) {
+  const { gl, invalidate } = useThree();
+  const firstFrame = useRef(false);
+  useFrame(() => {
+    if (firstFrame.current) return;
+    firstFrame.current = true;
+    onReady();
+  });
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const onLost = (event: Event) => {
+      event.preventDefault();
+      onUnavailable();
+    };
+    canvas.addEventListener("webglcontextlost", onLost);
+    invalidate();
+    return () => canvas.removeEventListener("webglcontextlost", onLost);
+  }, [gl, invalidate, onUnavailable]);
   return null;
 }
 function Unavailable({ onUnavailable }: { onUnavailable: () => void }) {
@@ -29,7 +45,7 @@ export function DistrictOverviewSurface({ onReady, onUnavailable, ...props }: Di
         fallback={<Unavailable onUnavailable={onUnavailable} />}>
         <color attach="background" args={["#dce7dc"]}/>
         <OverviewModelResources><DistrictOverviewWorld {...props}/></OverviewModelResources>
-        <Ready onReady={onReady}/>
+        <RendererLifecycle onReady={onReady} onUnavailable={onUnavailable}/>
       </Canvas>
     </OverviewBoundary>
   );
