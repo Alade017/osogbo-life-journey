@@ -129,6 +129,18 @@ export function MapCanvas({
     [availableLandmarkIds],
   );
   const availableIds = useMemo(() => availablePlaces.map(place => place.id), [availablePlaces]);
+  const availableSet = useMemo(() => new Set(availableIds), [availableIds]);
+  const selectableEvents = _eventChips.filter(event => availableSet.has(event.id));
+  const [notice, setNotice] = useState<string | null>(null);
+  const selectLandmark = (id: string) => {
+    if (!availableSet.has(id) || availabilityPending) return;
+    setNotice(null);
+    onSelectLandmark(id);
+  };
+  const selectUnavailable = (id: string, reason: "locked" | "reserved") => {
+    setCameraFocus({ id, kind: "landmark" });
+    setNotice(reason === "reserved" ? "This landmark is not open for travel yet." : availabilityPending ? "Checking destination access…" : "This destination is currently unavailable.");
+  };
   const handleReady = useCallback(() => setRendererState("ready"), []);
   const handleUnavailable = useCallback(() => setRendererState("unavailable"), []);
 
@@ -146,10 +158,11 @@ export function MapCanvas({
             resetVersion={resetVersion}
             zoomRequest={zoomRequest}
             selectedLandmarkId={selectedLandmarkId}
-            onSelectLandmark={onSelectLandmark}
+            onSelectLandmark={selectLandmark}
+            onSelectUnavailable={selectUnavailable}
             onSelectDistrict={selectDistrict}
             onSelectBillboard={onSelectBillboard}
-            eventChips={_eventChips}
+            eventChips={selectableEvents}
             onSelectEvent={onSelectEvent}
             billboardMarkers={billboardMarkers}
             properties={properties}
@@ -187,6 +200,7 @@ export function MapCanvas({
           </button>
         </div>
       )}
+      {notice && <div className="overview-access-notice" role="status">{notice}<button type="button" onClick={() => setNotice(null)} aria-label="Dismiss destination notice">×</button></div>}
       {!!properties?.length && (
         <details className="overview-property-panel">
           <summary>Properties</summary>
@@ -209,12 +223,12 @@ export function MapCanvas({
       <ul className="town-map-accessible-list" aria-label="Places on the map">
         {availablePlaces.map((place) => (
           <li key={place.id}>
-            <button type="button" onClick={() => onSelectLandmark(place.id)}>
+            <button type="button" onClick={() => selectLandmark(place.id)}>
               {place.label}, {place.category}
             </button>
           </li>
         ))}
-        {_eventChips.map((event) => (
+        {selectableEvents.map((event) => (
           <li key={event.id}>
             <button type="button" onClick={() => onSelectEvent?.(event.id)}>
               Live event: {event.label}
