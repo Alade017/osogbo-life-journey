@@ -39,7 +39,7 @@ it.each([
 ])("%s keeps its full-page route and closes the phone", (label, route) => {
   const closePhone = vi.fn();
   render(
-    <GameMobileNav hidden={false} onNavigate={closePhone} onInventoryOpen={vi.fn()} />,
+    <GameMobileNav hidden={false} onNavigate={closePhone} />,
   );
   const link = screen.getByRole("link", { name: label });
   expect(link).toHaveAttribute("href", route);
@@ -55,7 +55,6 @@ it("navigates Career to its full page instead of opening the Career Life phone a
   render(
     <GameMobileNav
       onNavigate={closePhone}
-      onInventoryOpen={vi.fn()}
       onHudOpen={openHud}
     />,
   );
