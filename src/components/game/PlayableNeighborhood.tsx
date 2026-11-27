@@ -452,6 +452,28 @@ export function PlayableNeighborhood() {
   const autoWalkRouteRef = useRef<{ route: WorldPoint[]; index: number } | null>(null);
   const zoneModalOpen = zoneState.activeZoneId !== null || zoneState.activeNpcId !== null;
   const anyModalOpen = activePanel !== null || zoneModalOpen || compoundOpen;
+  const setManualDirection = useCallback(
+    (direction: MovementDirection, pressed: boolean) => {
+      if (connectionState !== "connected" || anyModalOpen) return;
+      if (pressed) {
+        autoWalkRouteRef.current = null;
+        groundTargetRef.current = null;
+        setGroundTarget(null);
+        setPendingTargetId(null);
+        dispatchZone(setPendingZoneId(null));
+        setHomeBound(false);
+        setHasWalked(true);
+      }
+      setDirections((current) => {
+        const next = new Set(current);
+        if (pressed) next.add(direction);
+        else next.delete(direction);
+        return next;
+      });
+    },
+    [connectionState, anyModalOpen],
+  );
+
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const playerRef = useRef(player);
   playerRef.current = player;
@@ -1280,6 +1302,33 @@ export function PlayableNeighborhood() {
         </div>
       ) : (
         <div className="neighborhood-world-card">
+          {connectionState === "connected" && (
+            <div className="neighborhood-touch-controls" role="group" aria-label="Movement controls">
+              <button type="button" aria-label="Move forward"
+                onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setManualDirection("north", true); }}
+                onPointerUp={() => setManualDirection("north", false)}
+                onPointerCancel={() => setManualDirection("north", false)}
+                onLostPointerCapture={() => setManualDirection("north", false)}>↑</button>
+              <div className="neighborhood-touch-controls-row">
+                <button type="button" aria-label="Move left"
+                  onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setManualDirection("west", true); }}
+                  onPointerUp={() => setManualDirection("west", false)}
+                  onPointerCancel={() => setManualDirection("west", false)}
+                  onLostPointerCapture={() => setManualDirection("west", false)}>←</button>
+                <button type="button" aria-label="Move backward"
+                  onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setManualDirection("south", true); }}
+                  onPointerUp={() => setManualDirection("south", false)}
+                  onPointerCancel={() => setManualDirection("south", false)}
+                  onLostPointerCapture={() => setManualDirection("south", false)}>↓</button>
+                <button type="button" aria-label="Move right"
+                  onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setManualDirection("east", true); }}
+                  onPointerUp={() => setManualDirection("east", false)}
+                  onPointerCancel={() => setManualDirection("east", false)}
+                  onLostPointerCapture={() => setManualDirection("east", false)}>→</button>
+              </div>
+            </div>
+          )}
+
           {connectionState === "connected" && !hasWalked && (
             <div className="neighborhood-walk-hint" aria-label="Movement instruction">
               Tap the ground or a zone to walk
