@@ -2025,7 +2025,7 @@ export function HousePage({ homeRoute = false }: { homeRoute?: boolean }) {
               ) : houseOverdue ? (
                 <p role="status">Rent is overdue. Pay it to change or use this home.</p>
               ) : !gameTime.ready ? (
-                <p role="status">Connecting character needs...</p>
+                <p role="status">{gameTime.syncError ?? "Connecting character needs..."}</p>
               ) : gameTime.sleepElapsedSeconds === null &&
                 !activeSleep &&
                 placements.some(

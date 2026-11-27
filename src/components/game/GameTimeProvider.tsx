@@ -53,6 +53,21 @@ type ContextValue = {
 };
 const GameTimeContext = createContext<ContextValue | null>(null);
 
+/** A sync that never answers must not hold the sync lock forever; the next tick retries it. */
+const SYNC_TIMEOUT_MS = 15_000;
+function withSyncTimeout<T>(work: Promise<T>): Promise<T> {
+  let timer: number | undefined;
+  return Promise.race([
+    work,
+    new Promise<never>((_, reject) => {
+      timer = window.setTimeout(
+        () => reject(new Error("Syncing your simulation took too long. It will retry.")),
+        SYNC_TIMEOUT_MS,
+      );
+    }),
+  ]).finally(() => window.clearTimeout(timer));
+}
+
 export function GameTimeProvider({
   children,
   gameTime,
@@ -171,12 +186,14 @@ export function GameTimeProvider({
       setBusy(true);
       try {
         if (!session.current) session.current = crypto.randomUUID();
-        const result = await simulationCommand({
-          session: session.current,
-          revision: revision.current,
-          command,
-          ...extra,
-        });
+        const result = await withSyncTimeout(
+          simulationCommand({
+            session: session.current,
+            revision: revision.current,
+            command,
+            ...extra,
+          }),
+        );
         if (command === "complete") {
           void qc.invalidateQueries({ queryKey: ["dailyTasks", character.user_id] });
         }
