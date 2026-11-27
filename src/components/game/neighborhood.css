@@ -971,3 +971,8 @@ body:has(.neighborhood-page) {
 }
 
 
+
+
+@media (pointer: fine) {
+  .neighborhood-controls-row .player-movement-controls { display: none; }
+}
