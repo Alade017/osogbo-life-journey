@@ -13,6 +13,7 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
   const pending = [];
   const mismatches = [];
   const timestampWarnings = [];
+  const checksumMatches = [];
   const consumedRows = new Set();
 
   if (!Array.isArray(journalEntries) || !Array.isArray(databaseRows)) {
@@ -22,6 +23,7 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
       pending,
       mismatches,
       timestampWarnings,
+      checksumMatches,
       unknown: [],
       issues: ["Drizzle journal entries and database rows must be arrays"],
     };
@@ -47,13 +49,21 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
     const hashes = [...new Set([entry?.hash, ...acceptedHashes].map((value) =>
       String(value ?? "").toLowerCase(),
     ).filter((value) => /^[a-f0-9]{64}$/.test(value)))];
+    const rawHash = String(entry?.checksumHashes?.raw ?? "").toLowerCase();
+    const lfNormalizedHash = String(entry?.checksumHashes?.lfNormalized ?? "").toLowerCase();
+    const checksumMetadataValid =
+      (!entry?.checksumHashes || (
+        /^[a-f0-9]{64}$/.test(rawHash) &&
+        /^[a-f0-9]{64}$/.test(lfNormalizedHash)
+      ));
 
     if (
       !entry ||
       typeof entry.tag !== "string" ||
       !Number.isSafeInteger(Number(entry.when)) ||
       !/^[a-f0-9]{64}$/i.test(String(entry.hash ?? "")) ||
-      hashes.length === 0
+      hashes.length === 0 ||
+      !checksumMetadataValid
     ) {
       issues.push(`Invalid Drizzle journal migration entry: ${entry?.tag ?? "unknown"}`);
       continue;
@@ -64,6 +74,9 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
       when: Number(entry.when),
       hash: String(entry.hash).toLowerCase(),
       acceptedHashes: hashes,
+      checksumHashes: entry.checksumHashes
+        ? { raw: rawHash, lfNormalized: lfNormalizedHash }
+        : null,
     };
     validEntries.push(normalized);
     addToIndex(journalTimestamps, normalized.when, normalized);
@@ -98,6 +111,13 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
     if (rows.length > 1) issues.push(`Duplicate Drizzle database checksum: ${hash}`);
   }
 
+  const getChecksumType = (entry, hash) => {
+    if (!entry.checksumHashes) return "unspecified";
+    if (hash === entry.checksumHashes.raw) return "raw";
+    if (hash === entry.checksumHashes.lfNormalized) return "lf-normalized";
+    return "unrecognized";
+  };
+
   for (const entry of validEntries) {
     const timestampMatches = databaseTimestamps.get(entry.when) ?? [];
     if (timestampMatches.length > 1) continue;
@@ -111,6 +131,12 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
       consumedRows.add(row);
       if (entry.acceptedHashes.includes(row.hash)) {
         appliedMigrations.push(entry.tag);
+        checksumMatches.push({
+          tag: entry.tag,
+          hash: row.hash,
+          checksumType: getChecksumType(entry, row.hash),
+          timestampMatch: "exact",
+        });
       } else {
         mismatches.push({
           tag: entry.tag,
@@ -144,6 +170,12 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
 
     consumedRows.add(row);
     appliedMigrations.push(entry.tag);
+    checksumMatches.push({
+      tag: entry.tag,
+      hash: row.hash,
+      checksumType: getChecksumType(entry, row.hash),
+      timestampMatch: "fallback",
+    });
     timestampWarnings.push({
       tag: entry.tag,
       expectedTimestamp: entry.when,
@@ -160,6 +192,7 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
     pending,
     mismatches,
     timestampWarnings,
+    checksumMatches,
     unknown,
     issues,
   };
