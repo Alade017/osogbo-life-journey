@@ -1,6 +1,7 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
 import { auditDrizzleLedger } from "../../scripts/drizzle-migration-ledger-audit.mjs";
+import { getVerifiedLegacyChecksumHashes } from "../../scripts/drizzle-legacy-checksum-aliases.mjs";
 
 const hashA = "a".repeat(64);
 const hashB = "b".repeat(64);
@@ -216,6 +217,43 @@ describe("Drizzle migration ledger audit", () => {
       [row({ hash: hashA })],
     );
     expect(result.checksumMatches[0]?.checksumType).toBe("identical");
+  });
+
+  it("accepts and labels a pinned legacy production checksum", () => {
+    const legacyHash = "7304141d0897cb4ac6f932e79cbf5e5329017ce80d524400d48bff3d5d9a366";
+    const canonicalHash = "6559a00369a91aab28726ded8ec0580d012324c0d46d74d671d550a40a34d1f8";
+    const legacyHashes = getVerifiedLegacyChecksumHashes(
+      "0017_milestone8_career_recurring_economy",
+      canonicalHash,
+    );
+    const result = auditDrizzleLedger(
+      [migration({
+        tag: "0017_milestone8_career_recurring_economy",
+        hash: canonicalHash,
+        acceptedHashes: [canonicalHash, legacyHash],
+        legacyHashes,
+        checksumHashes: { raw: hashA, lfNormalized: canonicalHash },
+      })],
+      [row({ hash: legacyHash })],
+    );
+
+    expect(legacyHashes).toEqual([legacyHash]);
+    expect(result.applied).toBe(1);
+    expect(result.mismatches).toEqual([]);
+    expect(result.checksumMatches[0]?.checksumType).toBe("legacy-verified");
+  });
+
+  it("does not grant a legacy checksum alias when normalized migration content changes", () => {
+    expect(
+      getVerifiedLegacyChecksumHashes(
+        "0017_milestone8_career_recurring_economy",
+        "d".repeat(64),
+      ),
+    ).toEqual([]);
+  });
+
+  it("does not grant legacy aliases to unreviewed migration tags", () => {
+    expect(getVerifiedLegacyChecksumHashes("0091_mini_game_hardening", hashA)).toEqual([]);
   });
 
 });
