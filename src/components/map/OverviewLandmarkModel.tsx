@@ -1,5 +1,5 @@
 import { memo, type ReactNode } from "react";
-import { OverviewBox } from "./OverviewModelResources";
+import { OverviewBox, OverviewPrimitive } from "./OverviewModelResources";
 
 type ModelProps = { profile: string; width: number; depth: number; color: string };
 type Vec = [number, number, number];
@@ -8,16 +8,16 @@ function Box({ p, s, color }: { p: Vec; s: Vec; color: string }) {
   return <OverviewBox position={p} size={s} color={color}/>;
 }
 function Cylinder({ p, radius, height, color, sides = 16 }: { p: Vec; radius: number; height: number; color: string; sides?: number }) {
-  return <mesh position={p}><cylinderGeometry args={[radius, radius, height, sides]}/><meshStandardMaterial color={color}/></mesh>;
+  return <OverviewPrimitive shape={sides === 6 ? "cylinder6" : "cylinder16"} position={p} size={[radius,height,radius]} color={color}/>;
 }
 function Roof({ p, color }: { p: Vec; color: string }) {
-  return <mesh position={p} rotation={[0, Math.PI / 4, 0]}><coneGeometry args={[0.44, 0.24, 4]}/><meshStandardMaterial color={color}/></mesh>;
+  return <OverviewPrimitive shape="cone" position={p} rotation={[0, Math.PI / 4, 0]} size={[0.44,0.24,0.44]} color={color}/>;
 }
 const roof = "#765345", glass = "#577a83", cream = "#e5d5b8", stone = "#b7b3a5", green = "#567b46";
 function Trees() {
   return <>{[-0.29, 0, 0.29].flatMap(x => [-0.28, 0.28].map(z => <group key={`${x}:${z}`} position={[x,0,z]}>
     <Cylinder p={[0,0.10,0]} radius={0.025} height={0.20} color={roof} sides={6}/>
-    <mesh position={[0,0.26,0]}><icosahedronGeometry args={[0.12,0]}/><meshStandardMaterial color={green}/></mesh>
+    <OverviewPrimitive shape="icosahedron" position={[0,0.26,0]} size={[0.12,0.12,0.12]} color={green}/>
   </group>))}</>;
 }
 function Facade({ color, height = 0.32 }: { color: string; height?: number }) {
@@ -39,7 +39,7 @@ export const OverviewLandmarkModel = memo(function OverviewLandmarkModel({ profi
       model = <><Cylinder p={[0,0.035,0]} radius={0.40} height={0.07} color={stone}/>
         <Cylinder p={[0,0.075,0]} radius={0.30} height={0.04} color={green}/>
         <Cylinder p={[0,0.22,0]} radius={0.07} height={0.27} color={cream}/>
-        <mesh position={[0,0.39,0]}><icosahedronGeometry args={[0.10,0]}/><meshStandardMaterial color={roof}/></mesh></>; break;
+        <OverviewPrimitive shape="icosahedron" position={[0,0.39,0]} size={[0.10,0.10,0.10]} color={roof}/></>; break;
     case "yoruba-palace":
       model = <><Box p={[0,0.025,0]} s={[0.92,0.05,0.92]} color={cream}/>
         <Box p={[0,0.16,-0.27]} s={[0.82,0.27,0.34]} color={color}/>
@@ -49,7 +49,7 @@ export const OverviewLandmarkModel = memo(function OverviewLandmarkModel({ profi
         <Box p={[0,0.34,0.39]} s={[0.58,0.08,0.14]} color={roof}/></>; break;
     case "mosque": case "worship-building":
       model = <><Box p={[0,0.15,0]} s={[0.62,0.30,0.65]} color={cream}/>
-        <mesh position={[0,0.30,0]}><sphereGeometry args={[0.25,16,8,0,Math.PI*2,0,Math.PI/2]}/><meshStandardMaterial color={green}/></mesh>
+        <OverviewPrimitive shape="dome" position={[0,0.30,0]} size={[0.25,0.25,0.25]} color={green}/>
         {[-0.37,0.37].map(x => <Cylinder key={x} p={[x,0.28,0.26]} radius={0.055} height={0.56} color={cream}/>)}</>; 
       if(profile === "worship-building") model = <Facade color={cream} height={0.42}/>;
       break;
@@ -128,10 +128,9 @@ export const OverviewLandmarkModel = memo(function OverviewLandmarkModel({ profi
         <Box p={[0,0.34,0.12]} s={[0.84,0.06,0.48]} color={color}/></>; break;
     case "church":
       model = <><Box p={[0,0.18,-0.04]} s={[0.65,0.36,0.76]} color={cream}/>
-        {[-1,1].map(side => <mesh key={side} position={[side*0.17,0.43,-0.04]} rotation={[0,0,-side*0.38]}>
-          <boxGeometry args={[0.38,0.04,0.80]}/><meshStandardMaterial color={roof}/></mesh>)}
+        {[-1,1].map(side => <OverviewBox key={side} position={[side*0.17,0.43,-0.04]} rotation={[0,0,-side*0.38]} size={[0.38,0.04,0.80]} color={roof}/>)}
         <Box p={[0,0.29,0.33]} s={[0.20,0.58,0.20]} color={cream}/>
-        <mesh position={[0,0.68,0.33]} rotation={[0,Math.PI/4,0]}><coneGeometry args={[0.15,0.22,4]}/><meshStandardMaterial color={roof}/></mesh>
+        <OverviewPrimitive shape="cone" position={[0,0.68,0.33]} rotation={[0,Math.PI/4,0]} size={[0.15,0.22,0.15]} color={roof}/>
         <Box p={[0,0.83,0.33]} s={[0.025,0.15,0.025]} color={stone}/>
         <Box p={[0,0.85,0.33]} s={[0.11,0.025,0.025]} color={stone}/></>; break;
     case "service-building":
