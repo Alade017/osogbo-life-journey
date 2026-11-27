@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": 6,
+    "version": 7,
     "coordinateSystem": "Normalized fictional overview units, x eastward and z southward; not GIS or navigation coordinates",
     "status": "draft-footprints",
     "width": 100,
@@ -1335,6 +1335,30 @@
         {
           "x": 96,
           "z": 99
+        }
+      ],
+      "bridges": [
+        {
+          "id": "riverside-bridge-1",
+          "position": {
+            "x": 96.21428571428571,
+            "z": 72
+          },
+          "footprint": {
+            "width": 4.3,
+            "depth": 0.75
+          }
+        },
+        {
+          "id": "riverside-bridge-2",
+          "position": {
+            "x": 96.5625,
+            "z": 90
+          },
+          "footprint": {
+            "width": 4.3,
+            "depth": 0.75
+          }
         }
       ]
     },
