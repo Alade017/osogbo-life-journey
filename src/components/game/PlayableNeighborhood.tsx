@@ -452,27 +452,6 @@ export function PlayableNeighborhood() {
   const autoWalkRouteRef = useRef<{ route: WorldPoint[]; index: number } | null>(null);
   const zoneModalOpen = zoneState.activeZoneId !== null || zoneState.activeNpcId !== null;
   const anyModalOpen = activePanel !== null || zoneModalOpen || compoundOpen;
-  const setManualDirection = useCallback(
-    (direction: MovementDirection, pressed: boolean) => {
-      if (connectionState !== "connected" || anyModalOpen) return;
-      if (pressed) {
-        autoWalkRouteRef.current = null;
-        groundTargetRef.current = null;
-        setGroundTarget(null);
-        setPendingTargetId(null);
-        dispatchZone(setPendingZoneId(null));
-        setHomeBound(false);
-        setHasWalked(true);
-      }
-      setDirections((current) => {
-        const next = new Set(current);
-        if (pressed) next.add(direction);
-        else next.delete(direction);
-        return next;
-      });
-    },
-    [connectionState, anyModalOpen],
-  );
 
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const playerRef = useRef(player);
