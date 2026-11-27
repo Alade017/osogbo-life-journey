@@ -5,7 +5,7 @@ import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
 const TownSurface3D = lazy(() =>
-  import("./R3FTownSurface").then((module) => ({ default: module.R3FTownSurface })),
+  import("./DistrictOverviewSurface").then((module) => ({ default: module.DistrictOverviewSurface })),
 );
 
 export type MapSearchTarget = string | { id: string; kind?: "district" | "landmark" };
@@ -74,9 +74,6 @@ export function MapCanvas({
   onSelectLandmark,
   searchTarget,
   selectedLandmarkId,
-  travelMode,
-  travelPending,
-  playerLocation,
   eventChips: _eventChips = [],
   billboardMarkers = [],
   availableLandmarkIds,
@@ -85,38 +82,11 @@ export function MapCanvas({
   onSelectProperty,
   onSelectEvent,
 }: MapCanvasProps) {
-  const container = useRef<HTMLElement>(null);
-  const [focusInsets, setFocusInsets] = useState({ right: 0, bottom: 0 });
-  useEffect(() => {
-    if (!selectedLandmarkId) return; // Closing must not move the camera back.
-    const sheet = document.querySelector(".destination-sheet");
-    const map = container.current;
-    if (!sheet || !map || typeof ResizeObserver === "undefined") return;
-    const update = () => {
-      const m = map.getBoundingClientRect(),
-        s = sheet.getBoundingClientRect();
-      const intersects =
-        s.left < m.right && s.right > m.left && s.top < m.bottom && s.bottom > m.top;
-      const mobile = window.matchMedia("(max-width: 640px)").matches;
-      const next = !intersects
-        ? { right: 0, bottom: 0 }
-        : mobile
-          ? { right: 0, bottom: Math.max(0, m.bottom - s.top) }
-          : { right: Math.max(0, m.right - s.left), bottom: 0 };
-      setFocusInsets((old) =>
-        old.right === next.right && old.bottom === next.bottom ? old : next,
-      );
-    };
-    const observer = new ResizeObserver(update);
-    observer.observe(sheet);
-    observer.observe(map);
-    window.addEventListener("resize", update);
-    update();
-    return () => {
-      observer.disconnect();
-      window.removeEventListener("resize", update);
-    };
-  }, [selectedLandmarkId]);
+  const [districtFocus, setDistrictFocus] = useState<MapSearchTarget | null>(null);
+  const selectDistrict = (id: string) => {
+    setDistrictFocus({ id, kind: "district" });
+    onSelectDistrict(id);
+  };
   const [rendererState, setRendererState] = useState<"loading" | "ready" | "unavailable">(
     "loading",
   );
@@ -146,24 +116,11 @@ export function MapCanvas({
       ),
     [availableLandmarkIds],
   );
-  // Keep locked landmarks visible as non-interactive pins.
-  const lockedPlaces = useMemo(
-    () =>
-      availableLandmarkIds === undefined
-        ? []
-        : townData.landmarks.filter(
-            (place) =>
-              overviewHasPlace(place.id) && !availableLandmarkIds.includes(place.id) && place.mapObjectType !== "junction",
-          ),
-    [availableLandmarkIds],
-  );
-
   const handleReady = useCallback(() => setRendererState("ready"), []);
   const handleUnavailable = useCallback(() => setRendererState("unavailable"), []);
 
   return (
     <section
-      ref={container}
       className="map-canvas town-map-canvas"
       style={{ background: WORLD_PALETTE.ground }}
       aria-label="Interactive 3D town map with open camera exploration"
@@ -171,22 +128,15 @@ export function MapCanvas({
       <Suspense fallback={null}>
         {rendererState !== "unavailable" && (
           <TownSurface3D
-            places={availablePlaces}
-            lockedPlaces={lockedPlaces}
-            properties={properties}
-            playerLocation={playerLocation}
-            billboardMarkers={billboardMarkers}
-            searchTarget={searchTarget ?? null}
+            availableLandmarkIds={availablePlaces.map(place => place.id)}
+            searchTarget={searchTarget ?? districtFocus}
             selectedLandmarkId={selectedLandmarkId}
-            travelMode={travelMode}
-            travelPending={travelPending}
-            focusInsets={focusInsets}
             onSelectLandmark={onSelectLandmark}
-            onSelectDistrict={onSelectDistrict}
+            onSelectDistrict={selectDistrict}
             onSelectBillboard={onSelectBillboard}
-            {...(onSelectProperty ? { onSelectProperty } : {})}
             eventChips={_eventChips}
-            {...(onSelectEvent ? { onSelectEvent } : {})}
+            onSelectEvent={onSelectEvent}
+            billboardMarkers={billboardMarkers}
             onReady={handleReady}
             onUnavailable={handleUnavailable}
           />
@@ -202,7 +152,7 @@ export function MapCanvas({
         </div>
       )}
       {rendererState === "unavailable" && (
-        <div className="town-map-renderer-status" role="alert">
+        <div className="town-map-renderer-status" role="alert" style={{ pointerEvents: "auto" }}>
           <p>The 3D town could not start on this device.</p>
           <button
             type="button"
@@ -213,8 +163,12 @@ export function MapCanvas({
           </button>
         </div>
       )}
-      <ul className="town-map-accessible-list" aria-label="Places on the map">
-        {properties?.map((property) => (
+      {!!properties?.length && (
+        <details style={{ position: "absolute", top: 12, left: 12, zIndex: 4, maxWidth: "min(18rem, 90%)", maxHeight: "60%", overflow: "auto", background: "var(--card)", color: "var(--foreground)", padding: "0.5rem", borderRadius: 8 }}>
+          <summary>Properties · locations pending</summary>
+          <p>Property positions are not yet mapped to the new city layout.</p>
+          <ul aria-label="Existing properties">
+        {properties.map((property) => (
           <li key={property.id}>
             <button
               type="button"
@@ -225,6 +179,10 @@ export function MapCanvas({
             </button>
           </li>
         ))}
+          </ul>
+        </details>
+      )}
+      <ul className="town-map-accessible-list" aria-label="Places on the map">
         {availablePlaces.map((place) => (
           <li key={place.id}>
             <button type="button" onClick={() => onSelectLandmark(place.id)}>
@@ -250,7 +208,7 @@ export function MapCanvas({
       <ul className="town-map-accessible-list" aria-label="Districts on the map">
         {overviewDistricts.map((district) => (
           <li key={district.id}>
-            <button type="button" onClick={() => onSelectDistrict(district.id)}>
+            <button type="button" onClick={() => selectDistrict(district.id)}>
               {district.name} district
             </button>
           </li>
