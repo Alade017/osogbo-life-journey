@@ -3,6 +3,7 @@ import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Backpack,
   Footprints,
   Handshake,
   House,
