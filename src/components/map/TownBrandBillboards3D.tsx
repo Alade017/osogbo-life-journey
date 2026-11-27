@@ -1,5 +1,6 @@
 import { useEffect, useMemo } from "react";
 import { CanvasTexture, SRGBColorSpace } from "three";
+import layout from "@/data/osogbo-overview-layout.json";
 import { WorldMaterial } from "@/components/3d/WorldScene";
 
 function BrandBoard({
@@ -48,10 +49,10 @@ function BrandBoard({
         <boxGeometry args={[cell * 1.12, cell * 0.44, 0.12]} />
         <WorldMaterial tone="indigo" />
       </mesh>
-      <mesh position={[0, cell * 0.91, 0.065]}>
+      {[-1, 1].map(side => <mesh key={side} position={[0, cell * 0.91, side * 0.065]} rotation={[0, side === -1 ? Math.PI : 0, 0]}>
         <planeGeometry args={[cell * 1.08, cell * 0.405]} />
         <meshBasicMaterial map={texture} toneMapped={false} />
-      </mesh>
+      </mesh>)}
     </group>
   );
 }
@@ -60,21 +61,20 @@ export function TownBrandBillboards3D({
   positions,
   cell,
 }: {
-  positions: readonly { position: readonly [number, number] }[];
+  positions: readonly { id?: string; brandId?: string; position: readonly [number, number] }[];
   cell: number;
 }) {
-  const brands = [
-    { name: "ALADTECH", subtitle: "Web Solutions" },
-    { name: "Wlegance", subtitle: "Tech Hub" },
-  ];
+  const brands = layout.billboardPolicy.brands;
   return (
     <group>
-      {positions.slice(0, 2).map((sign, index) => {
-        const brand = brands[index]!;
+      {positions.map((sign, index) => {
+        const brand = sign.brandId ? brands.find(b => b.id === sign.brandId) : brands[index % brands.length];
+        if (!brand) return null;
         return (
           <BrandBoard
-            key={brand.name}
-            {...brand}
+            key={sign.id ?? index}
+            name={brand.name}
+            subtitle={brand.subtitle}
             position={sign.position}
             cell={cell}
           />
