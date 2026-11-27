@@ -1,6 +1,7 @@
 import { useLayoutEffect, useState } from "react";
-import { BufferGeometry, Float32BufferAttribute, Vector3, CatmullRomCurve3, DoubleSide } from "three";
+import { BufferGeometry, Float32BufferAttribute, Vector3, DoubleSide } from "three";
 import layout from "@/data/osogbo-overview-layout.json";
+import { overviewRiverSamples, overviewRiverBankWidth } from "./overview-river-layout";
 
 function ribbon(points: Vector3[], width: number, elevation: number) {
   const vertices: number[] = [];
@@ -30,13 +31,9 @@ export function OverviewRiver() {
   const [geometry, setGeometry] = useState<{ water: BufferGeometry; banks: BufferGeometry } | null>(null);
   useLayoutEffect(() => {
     const river = layout.terrain.river;
-    const points = river.centerline.map(p => new Vector3(
-      p.x - layout.meta.width / 2, 0, p.z - layout.meta.depth / 2,
-    ));
-    const curve = new CatmullRomCurve3(points);
-    const sampled = curve.getPoints(Math.max(24, (points.length - 1) * 12));
+    const sampled = overviewRiverSamples.map(p => new Vector3(p.x-layout.meta.width/2, 0, p.z-layout.meta.depth/2));
     const owned = { water: ribbon(sampled, river.width, 0.045),
-      banks: ribbon(sampled, river.width + 0.65, 0.025) };
+      banks: ribbon(sampled, overviewRiverBankWidth, 0.025) };
     setGeometry(owned);
     return () => { owned.water.dispose(); owned.banks.dispose(); };
   }, []);
