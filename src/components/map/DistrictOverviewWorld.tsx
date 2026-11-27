@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import { SceneHtml } from "@/components/3d/SceneHtml";
 import { Vector3, OrthographicCamera } from "three";
-import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { overviewDistrictId, overviewPlacePosition } from "./overview-district-routing";
 import type { MapSearchTarget, MapEventChip, MapBillboardMarker, MapProperty } from "./MapCanvas";
 import { OrbitControls } from "@react-three/drei";
@@ -76,7 +75,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
       window.removeEventListener("pointercancel", cancel, true);
     };
   }, [gl]);
-  const controls = useRef<OrbitControlsImpl>(null);
+  const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const initialized = useRef(false);
   const lastReset = useRef(0);
   const lastZoom = useRef(0);
