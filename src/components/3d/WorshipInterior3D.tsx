@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
+import type { AvatarEquipment } from "@/components/game/Avatar";
 import { shopperLook } from "@/game/mall-appearance";
 import type { WorshipLayout } from "@/game/worship-layouts";
 import { WorldCharacter } from "./WorldCharacter";
@@ -155,11 +156,13 @@ function Visitor({
   praying,
   appearance,
   gender,
+  equipment,
 }: {
   layout: WorshipLayout;
   praying: boolean;
   appearance: Appearance;
   gender: string;
+  equipment: readonly AvatarEquipment[];
 }) {
   const { invalidate } = useThree();
   const group = useRef<Group>(null);
@@ -190,6 +193,7 @@ function Visitor({
         name="You"
         gender={gender}
         appearance={appearance}
+        equipment={equipment}
         facing="north"
         animation="idle"
         position={[0, 0, 0]}
@@ -203,11 +207,13 @@ export function WorshipInterior3D({
   praying,
   playerAppearance,
   playerGender,
+  playerEquipment,
 }: {
   layout: WorshipLayout;
   praying: boolean;
   playerAppearance: Appearance;
   playerGender: string;
+  playerEquipment: readonly AvatarEquipment[];
 }) {
   return (
     <>
@@ -241,6 +247,7 @@ export function WorshipInterior3D({
         praying={praying}
         appearance={playerAppearance}
         gender={playerGender}
+        equipment={playerEquipment}
       />
     </>
   );
