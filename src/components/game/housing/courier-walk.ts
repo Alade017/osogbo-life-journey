@@ -6,6 +6,9 @@ export type CourierHeading = "north" | "south" | "east" | "west";
 /** Courier walking speed, in room metres per second. */
 export const COURIER_WALK_SPEED = 1.2;
 
+/** Milliseconds between courier position updates to React (about 20 per second). */
+const COURIER_PAINT_MS = 50;
+
 export function routeLength(route: RoomPoint[]): number {
   let total = 0;
   for (let i = 1; i < route.length; i++) {
@@ -96,10 +99,16 @@ export function useCourierWalk(
     const duration = reduced || total === 0 ? 0 : (total / speed) * 1000;
     const startedAt = performance.now();
     let frame = 0;
+    let lastPaint = -Infinity;
     const step = (now: number) => {
       const progress = duration === 0 ? 1 : Math.min(1, (now - startedAt) / duration);
-      const sample = pointAlongRoute(current, total * progress);
-      setState({ ...sample, done: progress >= 1 });
+      // React re-renders the whole room for each state update, so paint at about 20 Hz rather than
+      // every animation frame. The walk itself still follows the clock, so it stays on time.
+      if (progress >= 1 || now - lastPaint >= COURIER_PAINT_MS) {
+        lastPaint = now;
+        const sample = pointAlongRoute(current, total * progress);
+        setState({ ...sample, done: progress >= 1 });
+      }
       if (progress < 1) frame = window.requestAnimationFrame(step);
       else arriveRef.current?.();
     };
