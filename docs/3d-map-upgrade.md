@@ -24,7 +24,7 @@ The terrain previously used a fixed 18-row depth for a 24-row map. Its top surfa
 
 Landmarks now have category-based building heights and upper-floor façade details. Deterministic decorative housing fills eligible roadside grass cells using batched meshes, capped at 96 homes. Authored venues, water, street props and known property markers are reserved. These homes are scenery, not additional purchasable properties or geographically verified buildings.
 
-Daylight uses stronger directional contrast, the map starts closer to street detail, and two existing roadside sign positions carry ALADTECH Web Solutions and Wlegance Tech Hub billboards. No renderer package or backend change was needed.
+Daylight uses stronger directional contrast, the map starts closer to street detail, and two existing roadside sign positions carry ALADTECH Web Solutions and the former Wlegance Tech Hub billboards (now ELEGANCE TECH HUB; see the current city map specification). No renderer package or backend change was needed.
 
 For this revision, 29 selected tests passed (terrain clearance, water openings, infill reservations, camera, lighting, dashboard and authored map validation). Production build passed; changed-file lint had no errors and two existing fast-refresh warnings. Full type checking still encounters pre-existing errors outside the changed files. Visual matching to the supplied reference remains subject to review; the inline preview uses the real revised town components with a fixed midday clock and no live player session.
 
