@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ComponentRef } from "react";
 import { SceneHtml } from "@/components/3d/SceneHtml";
 import { Vector3, OrthographicCamera } from "three";
 import { overviewDistrictId, overviewPlacePosition } from "./overview-district-routing";
@@ -32,6 +32,7 @@ export type DistrictOverviewProps = {
   availableLandmarkIds: readonly string[];
   onSelectDistrict: (id: string) => void;
   onSelectLandmark: (id: string) => void;
+  onSelectUnavailable?: ((id: string, reason: "locked" | "reserved") => void) | undefined;
   searchTarget?: MapSearchTarget | null | undefined;
   selectedLandmarkId?: string | null | undefined;
   resetVersion?: number | undefined;
@@ -45,7 +46,7 @@ export type DistrictOverviewProps = {
 };
 
 /** Static overview geometry only. Navigation coordinates never enter this scene. */
-export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, onSelectLandmark, searchTarget, selectedLandmarkId, resetVersion = 0, zoomRequest, eventChips = [], billboardMarkers = [], onSelectEvent, onSelectBillboard, properties = [], onSelectProperty }: DistrictOverviewProps) {
+export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, onSelectLandmark, onSelectUnavailable, searchTarget, selectedLandmarkId, resetVersion = 0, zoomRequest, eventChips = [], billboardMarkers = [], onSelectEvent, onSelectBillboard, properties = [], onSelectProperty }: DistrictOverviewProps) {
   const [hoveredPlace, setHoveredPlace] = useState<string | null>(null);
   const available = useMemo(() => new Set(availableLandmarkIds), [availableLandmarkIds]);
   const propertyByParcel = useMemo(() => {
@@ -77,11 +78,28 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
   }, [gl]);
   const controls = useRef<ComponentRef<typeof OrbitControls>>(null);
   const initialized = useRef(false);
+  const previousFit = useRef(0);
+  const panCorrection = useMemo(() => new Vector3(), []);
   const lastReset = useRef(0);
   const lastZoom = useRef(0);
   const lastFocus = useRef<{ target: typeof searchTarget; landmark: typeof selectedLandmarkId }>({ target: undefined, landmark: undefined });
   const [focusedDistrict, setFocusedDistrict] = useState<string | null>(null);
   const fit = Math.max(0.01, Math.min(size.width, size.height) / (Math.hypot(layout.meta.width, layout.meta.depth) * 1.12));
+  const constrainCamera = useCallback(() => {
+    const orbit = controls.current;
+    if (!orbit) return;
+    const target = orbit.target;
+    panCorrection.set(
+      Math.max(-layout.meta.width / 2, Math.min(layout.meta.width / 2, target.x)) - target.x,
+      -target.y,
+      Math.max(-layout.meta.depth / 2, Math.min(layout.meta.depth / 2, target.z)) - target.z,
+    );
+    if (panCorrection.lengthSq() > 0) {
+      target.add(panCorrection);
+      camera.position.add(panCorrection);
+    }
+    invalidate();
+  }, [camera, invalidate, panCorrection]);
   useEffect(() => {
     if (!(camera instanceof OrthographicCamera) || !controls.current) return;
     if (!initialized.current) {
@@ -89,7 +107,11 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
       controls.current.target.set(0, 0, 0);
       camera.zoom = fit;
       initialized.current = true;
-    } else camera.zoom = Math.max(fit * 0.65, Math.min(fit * 5, camera.zoom));
+    } else {
+      const relativeZoom = previousFit.current > 0 ? camera.zoom / previousFit.current : 1;
+      camera.zoom = Math.max(fit, Math.min(fit * 5, fit * relativeZoom));
+    }
+    previousFit.current = fit;
     camera.updateProjectionMatrix();
     controls.current.update();
     invalidate();
@@ -111,14 +133,14 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
       if (!target) return;
       const id = typeof target === "string" ? target : target.id;
       const districtOnly = typeof target === "object" && target.kind === "district";
-      const districtId = overviewDistrictId(id);
+      const districtId = districtOnly ? overviewDistrictId(id) : overviewDistrictId(id, id);
       const p = (districtOnly ? undefined : overviewPlacePosition(id)) ?? layout.districts.find(d => d.districtId === districtId)?.center;
       if (!p) return;
       const next = new Vector3(...world(p));
       camera.position.add(next.clone().sub(controls.current.target));
       controls.current.target.copy(next);
       camera.zoom = fit * 2.5;
-      setFocusedDistrict(districtOnly ? districtId ?? null : layout.places.find(p => p.placeId === id)?.districtId ?? null);
+      setFocusedDistrict(districtId ?? layout.places.find(p => p.placeId === id)?.districtId ?? null);
     }
     camera.updateProjectionMatrix();
     controls.current.update();
@@ -127,7 +149,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
   useEffect(() => {
     if (!zoomRequest || zoomRequest.version === lastZoom.current || !(camera instanceof OrthographicCamera)) return;
     lastZoom.current = zoomRequest.version;
-    camera.zoom = Math.max(fit * 0.65, Math.min(fit * 5, camera.zoom * Math.pow(1.25, zoomRequest.step)));
+    camera.zoom = Math.max(fit, Math.min(fit * 5, camera.zoom * Math.pow(1.25, zoomRequest.step)));
     camera.updateProjectionMatrix();
     controls.current?.update();
     invalidate();
@@ -137,7 +159,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
   return (
     <>
       <OrbitControls ref={controls} makeDefault enableRotate enablePan enableZoom minPolarAngle={0.25}
-        maxPolarAngle={Math.PI / 2.25} minZoom={fit * 0.65} maxZoom={fit * 5} />
+        maxPolarAngle={Math.PI / 2.25} minZoom={fit} maxZoom={fit * 5} onChange={constrainCamera} />
       <hemisphereLight args={["#fff7e8", "#657554", 2]} />
       <directionalLight position={[35, 65, 25]} intensity={2} />
       <OverviewTerrain />
@@ -163,7 +185,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
           <group key={entry.placeId} name={`overview-landmark:${entry.placeId}`} position={world(entry.position)} rotation={[0, entry.rotationY, 0]}
             onPointerOver={event => { event.stopPropagation(); setHoveredPlace(entry.placeId); }}
             onPointerOut={() => setHoveredPlace(old => old === entry.placeId ? null : old)}
-            onClick={event => { event.stopPropagation(); if (!gesture.current.moved && event.delta < 6 && entry.status === "existing-reference" && available.has(entry.placeId)) onSelectLandmark(entry.placeId); }}>
+            onClick={event => { event.stopPropagation(); if (gesture.current.moved || event.delta >= 6) return; if (entry.status === "existing-reference" && available.has(entry.placeId)) onSelectLandmark(entry.placeId); else onSelectUnavailable?.(entry.placeId, entry.status === "reserved" ? "reserved" : "locked"); }}>
             <OverviewLandmarkModel profile={entry.profile} {...entry.footprint} color={palette[district?.identity ?? ""] ?? "#d4c7af"} />
             {place && (hoveredPlace === entry.placeId || selectedLandmarkId === entry.placeId) && (
               <SceneHtml position={[0, Math.min(entry.footprint.width, entry.footprint.depth) * 0.85, 0]} center pointerEvents="none" zIndexRange={[20, 11]}>
