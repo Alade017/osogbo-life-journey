@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": 4,
+    "version": 5,
     "coordinateSystem": "Normalized fictional overview units, x eastward and z southward; not GIS or navigation coordinates",
     "status": "draft-footprints",
     "width": 100,
@@ -168,7 +168,7 @@
         "depth": 6.66
       },
       "rotationY": 0,
-      "profile": "service-building",
+      "profile": "bank",
       "status": "existing-reference"
     },
     {
@@ -288,7 +288,7 @@
         "depth": 4.9333
       },
       "rotationY": 0,
-      "profile": "worship-building",
+      "profile": "mosque",
       "status": "existing-reference"
     },
     {
@@ -363,7 +363,7 @@
         "depth": 4.9333
       },
       "rotationY": 0,
-      "profile": "transit-pavilion",
+      "profile": "filling-station",
       "status": "existing-reference"
     },
     {
@@ -438,7 +438,7 @@
         "depth": 8.14
       },
       "rotationY": 0,
-      "profile": "service-building",
+      "profile": "bank",
       "status": "existing-reference"
     },
     {
@@ -513,7 +513,7 @@
         "depth": 5.18
       },
       "rotationY": 0,
-      "profile": "transit-pavilion",
+      "profile": "filling-station",
       "status": "existing-reference"
     },
     {
@@ -528,7 +528,7 @@
         "depth": 5.18
       },
       "rotationY": 0,
-      "profile": "service-building",
+      "profile": "hotel",
       "status": "existing-reference"
     },
     {
@@ -558,7 +558,7 @@
         "depth": 5.18
       },
       "rotationY": 0,
-      "profile": "junction-sculpture",
+      "profile": "flyover",
       "status": "existing-reference"
     },
     {
@@ -663,7 +663,7 @@
         "depth": 5.92
       },
       "rotationY": 0,
-      "profile": "service-building",
+      "profile": "courthouse",
       "status": "existing-reference"
     },
     {
@@ -753,7 +753,7 @@
         "depth": 5.365
       },
       "rotationY": 0,
-      "profile": "service-building",
+      "profile": "art-gallery",
       "status": "existing-reference"
     },
     {
@@ -768,7 +768,7 @@
         "depth": 5.365
       },
       "rotationY": 0,
-      "profile": "worship-building",
+      "profile": "church",
       "status": "existing-reference"
     },
     {
@@ -813,7 +813,7 @@
         "depth": 5.365
       },
       "rotationY": 0,
-      "profile": "clinic",
+      "profile": "hospital",
       "status": "existing-reference"
     },
     {
