@@ -17,7 +17,7 @@
 .player-hub-close:focus-visible,.player-hub-tab:focus-visible{outline:2px solid var(--ring);outline-offset:2px}
 .player-hub-tabs{display:flex;gap:6px;padding:10px 12px;border-bottom:1px solid var(--border);overflow-x:auto;overscroll-behavior-x:contain;scrollbar-width:none;background:var(--card)}
 .player-hub-tabs::-webkit-scrollbar{display:none}
-.player-hub-tab{display:flex;align-items:center;justify-content:center;gap:7px;min-height:39px;flex:0 0 auto;padding:0 13px;border:1px solid transparent;border-radius:13px;background:transparent;color:var(--muted-foreground);font-size:12px;font-weight:750;white-space:nowrap}
+ .player-hub-tab{display:flex;align-items:center;justify-content:center;gap:7px;min-height:39px;flex:0 0 auto;padding:0 13px;border:1px solid transparent;border-radius:999px;background:transparent;color:var(--muted-foreground);font-size:12px;font-weight:750;white-space:nowrap}
 .player-hub-tab[aria-pressed=true]{border-color:color-mix(in srgb,var(--brand-royal,#0755ad) 20%,transparent);background:var(--brand-royal,#0755ad);color:#fff;box-shadow:0 4px 12px rgb(7 65 133 / 18%)}
 .player-hub-content{flex:1;min-height:0;padding:clamp(13px,3vw,22px);overflow-y:auto;overscroll-behavior:contain;scrollbar-gutter:stable}
 .player-hub-profile{display:grid;gap:14px}
@@ -61,3 +61,11 @@
 .player-hub-settings .sx-hero{display:none}
 .player-hub-settings .sx-tabs{position:sticky;top:-1px;z-index:2;margin:0;border-radius:13px;background:var(--card)}
 .player-hub-settings .sx-card{box-shadow:none}
+
+/* Inventory is embedded in the Player Hub and inherits its single scroll container. */
+.player-hub-inventory,.player-hub-inventory .pi-page{min-width:0;width:100%;}
+.player-hub-inventory .pi-page{gap:12px;}
+.player-hub-inventory .pi-inventory .pi-hero{grid-template-columns:minmax(0,1fr);}
+.player-hub-inventory .pi-inventory-masthead{grid-template-columns:auto minmax(0,1fr) auto;}
+.player-hub-inventory .pi-inventory-total{white-space:nowrap;}
+@media(max-width:480px){.player-hub-inventory .pi-inventory-masthead{grid-template-columns:auto minmax(0,1fr);}.player-hub-inventory .pi-inventory-total{grid-column:2;justify-self:start;}}
