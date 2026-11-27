@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import postgres from "postgres";
 import { auditSupabaseLedger } from "./migration-ledger-audit.mjs";
 import { auditDrizzleLedger } from "./drizzle-migration-ledger-audit.mjs";
+import { getVerifiedLegacyChecksumHashes } from "./drizzle-legacy-checksum-aliases.mjs";
 
 if (existsSync(".env")) process.loadEnvFile(".env");
 const url = process.env.DATABASE_URL;
@@ -44,13 +45,15 @@ try {
       const content = rawContent.replace(/\r\n?/g, "\n");
       const rawHash = createHash("sha256").update(rawContent, "utf8").digest("hex");
       const hash = createHash("sha256").update(content, "utf8").digest("hex");
+      const legacyHashes = getVerifiedLegacyChecksumHashes(entry.tag, hash);
       return {
         ...entry,
         content,
         hash,
         rawHash,
         checksumHashes: { raw: rawHash, lfNormalized: hash },
-        acceptedHashes: [...new Set([rawHash, hash])],
+        legacyHashes,
+        acceptedHashes: [...new Set([rawHash, hash, ...legacyHashes])],
       };
     });
     const drizzleAudit = auditDrizzleLedger(journalMigrations, ledger);
