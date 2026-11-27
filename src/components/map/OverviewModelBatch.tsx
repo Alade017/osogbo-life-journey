@@ -5,7 +5,8 @@ import { useThree } from "@react-three/fiber";
 /**
  * Batch repeated shared primitives inside a single model. Never combine different
  * destinations: each batch remains under its original interactive landmark group.
- * Source meshes are hidden and their raycasts disabled while their batches exist.
+ * Source meshes remain raycastable but are hidden from rendering. Batches are
+ * render-only, preserving the original R3F intersection targets.
  */
 export function OverviewModelBatch({ children }: { children: ReactNode }) {
   const root = useRef<Group>(null);
@@ -31,17 +32,17 @@ export function OverviewModelBatch({ children }: { children: ReactNode }) {
       materials.set(object.material, meshes);
     });
     const batches: InstancedMesh[] = [];
-    const originals: { mesh: Mesh; visible: boolean; raycast: Mesh["raycast"] }[] = [];
+    const originals: { mesh: Mesh; visible: boolean }[] = [];
     for (const [geometry, materials] of buckets) {
       for (const [material, meshes] of materials) {
-        if (meshes.length < 2) continue;
+        if (meshes.length < 2 || material.transparent || material.opacity !== 1) continue;
         const batch = new InstancedMesh(geometry, material, meshes.length);
         meshes.forEach((mesh, index) => {
           batch.setMatrixAt(index, matrix.multiplyMatrices(inverse, mesh.matrixWorld));
-          originals.push({ mesh, visible: mesh.visible, raycast: mesh.raycast });
+          originals.push({ mesh, visible: mesh.visible });
           mesh.visible = false;
-          mesh.raycast = () => {};
         });
+        batch.raycast = () => {};
         batch.instanceMatrix.needsUpdate = true;
         batch.computeBoundingSphere();
         group.add(batch);
@@ -54,9 +55,8 @@ export function OverviewModelBatch({ children }: { children: ReactNode }) {
         group.remove(batch);
         batch.dispose();
       }
-      for (const { mesh, visible, raycast } of originals) {
+      for (const { mesh, visible } of originals) {
         mesh.visible = visible;
-        mesh.raycast = raycast;
       }
       invalidate();
     };
