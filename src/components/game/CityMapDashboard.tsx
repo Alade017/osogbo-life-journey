@@ -11,12 +11,6 @@ import {
   type MapSearchTarget,
   type MapEventChip,
 } from "@/components/map/MapCanvas";
-import type { NeighborhoodLandmarkSpec } from "@/data/neighborhoodLocations";
-import {
-  enqueueNeighborhoodNavigation,
-  resolvePlayerMapPosition,
-  useLivePlayerPose,
-} from "@/store/neighborhoodNavSync";
 import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { useMapTravelController } from "@/components/map/use-map-travel-controller";
@@ -96,7 +90,6 @@ export function CityMapDashboard(
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
-  const livePlayerPose = useLivePlayerPose();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const mapHref = useLocation({ select: (location) => location.href });
@@ -150,11 +143,6 @@ export function CityMapDashboard(
     : null;
   const selectedDestination = selectedDestinationSlug
     ? (locations.data?.find((row) => row.slug === selectedDestinationSlug) ?? null)
-    : null;
-  const currentMapPlace = currentLocation
-    ? townData.landmarks.find(
-        (place) => MAP_LANDMARK_LOCATION_SLUG[place.id] === currentLocation.slug,
-      )
     : null;
   const billboards = useQuery(q.billboards());
   const advertisements = useQuery(q.advertisements());
@@ -222,11 +210,11 @@ export function CityMapDashboard(
     advertisements.data,
     playerAdvertisements.data,
   ]);
-  const activeEvents = cityEvents.isError
-    ? []
-    : (cityEvents.data?.events ?? []).filter(event => event.status === "active" && selectedDistrict && overviewDistrictId(event.districtId, event.landmarkId) === selectedDistrict.id);
-  const eventChips: MapEventChip[] = (cityEvents.data?.events ?? [])
-    .filter((event) => event.status === "active")
+  const accessibleEvents = cityEvents.isError ? [] : (cityEvents.data?.events ?? []).filter(event =>
+    event.status === "active" && overviewHasPlace(event.landmarkId) && availableLandmarks.data?.includes(event.landmarkId),
+  );
+  const activeEvents = accessibleEvents.filter(event => selectedDistrict && overviewDistrictId(event.districtId, event.landmarkId) === selectedDistrict.id);
+  const eventChips: MapEventChip[] = accessibleEvents
     .flatMap((event) => {
       const landmark = townData.landmarks.find((place) => place.id === event.landmarkId && overviewHasPlace(place.id));
       return landmark
@@ -346,10 +334,6 @@ export function CityMapDashboard(
       query ? "?" + query : window.location.pathname,
     );
   }, [availableLandmarks.data, onLandmark, setDestinationTab]);
-  const playerMapPosition = useMemo(
-    () => resolvePlayerMapPosition(character.data, livePlayerPose),
-    [character.data, livePlayerPose],
-  );
 
   const effectivePocketBalance = useMemo(() => {
     if (typeof wallet.data?.balance === "number") return wallet.data.balance;
@@ -392,7 +376,7 @@ export function CityMapDashboard(
             <div className="ncm-3d-companion-bar">
               <div>
                 <strong>Places &amp; districts</strong>{" "}
-                <span>Pick a place, then walk its streets</span>
+                <span>Explore districts and select a destination</span>
               </div>
               <button
                 type="button"
@@ -406,27 +390,10 @@ export function CityMapDashboard(
               selectedLandmarkId={selectedLandmark?.id ?? null}
               travelMode={travelController.state.mode}
               travelPending={travelController.state.phase === "submitting"}
-              playerLocation={
-                currentMapPlace
-                  ? {
-                      x:
-                        currentLocation?.slug === "city-centre"
-                          ? currentMapPlace.grid.x + (playerMapPosition.mapCoords.x - 0.5) * 2.2
-                          : currentMapPlace.grid.x,
-                      y:
-                        currentLocation?.slug === "city-centre"
-                          ? currentMapPlace.grid.z + (playerMapPosition.mapCoords.y - 0.5) * 1.4
-                          : currentMapPlace.grid.z,
-                      label: "You are here",
-                    }
-                  : null
-              }
               properties={housingMarkers.data ?? []}
               eventChips={eventChips}
               onSelectEvent={(landmarkId) => {
-                const event = (cityEvents.data?.events ?? []).find(
-                  (item) => item.status === "active" && item.landmarkId === landmarkId,
-                );
+                const event = accessibleEvents.find((item) => item.landmarkId === landmarkId);
                 const found =
                   landmarks.find((item) => item.id === landmarkId) ??
                   getQuickTravelLandmark(landmarkId);
@@ -437,6 +404,7 @@ export function CityMapDashboard(
                 setPlaceActionResult(null);
               }}
               availableLandmarkIds={availableLandmarks.data ?? []}
+              availabilityPending={availableLandmarks.isPending && !offline && !availableLandmarks.isError}
               onSelectDistrict={onDistrict}
               onSelectLandmark={onLandmark}
               searchTarget={searchTarget}
