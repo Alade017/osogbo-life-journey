@@ -100,9 +100,10 @@
 }
 @media (max-width: 640px) {
   .destination-services {
-    top: calc(var(--destination-top, 0px) + max(12px, env(safe-area-inset-top)) + 72px);
+    top: calc(var(--destination-top, 0px) + max(12px, env(safe-area-inset-top)) + 124px);
     bottom: auto;
-    max-height: 32dvh;
+    max-height: min(30dvh, 240px);
+    overscroll-behavior: contain;
   }
 }
 
@@ -212,6 +213,14 @@
   pointer-events: none;
   font-size: 0.8rem;
 }
+@media (max-width: 640px) {
+  .bank-services-drawer {
+    top: calc(var(--destination-top, 0px) + max(12px, env(safe-area-inset-top)) + 64px);
+    bottom: calc(var(--destination-bottom) + 65px);
+    max-height: none;
+  }
+}
+
 @media (max-width: 480px) {
   .bank-world-controls {
     max-width: calc(100% - 24px);
