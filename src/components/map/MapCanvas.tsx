@@ -36,6 +36,7 @@ export type MapProperty = {
   position: [number, number, number];
   rotation?: number | undefined;
   ownerName?: string | undefined;
+  houseTypeId?: string | undefined;
 };
 
 export interface MapCanvasProps {
@@ -137,6 +138,8 @@ export function MapCanvas({
             eventChips={_eventChips}
             onSelectEvent={onSelectEvent}
             billboardMarkers={billboardMarkers}
+            properties={properties}
+            onSelectProperty={onSelectProperty}
             onReady={handleReady}
             onUnavailable={handleUnavailable}
           />
@@ -165,8 +168,8 @@ export function MapCanvas({
       )}
       {!!properties?.length && (
         <details style={{ position: "absolute", top: 12, left: 12, zIndex: 4, maxWidth: "min(18rem, 90%)", maxHeight: "60%", overflow: "auto", background: "var(--card)", color: "var(--foreground)", padding: "0.5rem", borderRadius: 8 }}>
-          <summary>Properties · locations pending</summary>
-          <p>Property positions are not yet mapped to the new city layout.</p>
+          <summary>Properties</summary>
+          <p>Listings with a known housing type appear on the map; other properties remain available here.</p>
           <ul aria-label="Existing properties">
         {properties.map((property) => (
           <li key={property.id}>
