@@ -42,10 +42,6 @@
 }
 
 /* Static map icons and labels (no animation, no movement) */
-.town-map-svg-district-pill,
-.town-map-svg-place,
-.town-map-svg-place *,
-.town-map-svg-district-pill *,
 .district-label,
 .map-landmark,
 .map-landmark-marker,
@@ -85,8 +81,8 @@
 
 .town-map-zoom-controls button {
   display: grid;
-  width: 2.5rem;
-  height: 2.5rem;
+  width: 2.75rem;
+  height: 2.75rem;
   place-items: center;
   border: 1px solid color-mix(in srgb, var(--border) 80%, transparent);
   border-radius: 0.65rem;
@@ -101,89 +97,6 @@
 .town-map-zoom-controls button:focus-visible {
   outline: 3px solid var(--ring);
   outline-offset: 2px;
-}
-
-.town-map-svg-district,
-.town-map-svg-place,
-.town-map-svg-billboard {
-  cursor: pointer;
-}
-
-.town-map-svg-district:focus-visible,
-.town-map-svg-place:focus-visible,
-.town-map-svg-billboard:focus-visible {
-  outline: none;
-  filter: drop-shadow(0 0 4px #fff);
-}
-
-.town-map-svg-district text {
-  fill: #35513a;
-  font:
-    700 12px/1 system-ui,
-    sans-serif;
-  pointer-events: none;
-}
-
-.town-map-svg-place circle {
-  fill: #397d83;
-  stroke: #fff;
-  stroke-width: 4px;
-}
-
-.town-map-svg-place text {
-  fill: #25382a;
-  font:
-    700 11px/1 system-ui,
-    sans-serif;
-  paint-order: stroke;
-  stroke: #f7f8f2;
-  stroke-width: 4px;
-  stroke-linejoin: round;
-  pointer-events: none;
-}
-
-.town-map-svg-home circle {
-  fill: #76513a;
-  stroke: #fff;
-  stroke-width: 3px;
-}
-
-.town-map-svg-home text {
-  fill: #304030;
-  font:
-    600 10px/1 system-ui,
-    sans-serif;
-  paint-order: stroke;
-  stroke: #f7f8f2;
-  stroke-width: 4px;
-  stroke-linejoin: round;
-}
-
-.town-map-svg-billboard circle {
-  fill: #283b31;
-  stroke: white;
-  stroke-width: 1.5px;
-}
-
-.town-map-svg-billboard text {
-  fill: white;
-  font:
-    700 9px/1 system-ui,
-    sans-serif;
-  pointer-events: none;
-}
-
-.town-map-svg-player circle {
-  fill: #2858a2;
-  stroke: white;
-  stroke-width: 4px;
-}
-
-.town-map-svg-player text {
-  fill: white;
-  font:
-    700 12px/1 system-ui,
-    sans-serif;
 }
 
 .map-housing-message {
@@ -322,29 +235,6 @@
     right: 0.55rem;
     bottom: 0.55rem;
   }
-}
-
-.town-map-svg-event {
-  cursor: pointer;
-}
-
-.town-map-svg-event circle {
-  fill: #c35c3d;
-  stroke: #fff;
-  stroke-width: 3px;
-}
-
-.town-map-svg-event text {
-  fill: #fff;
-  font:
-    800 12px/1 system-ui,
-    sans-serif;
-  pointer-events: none;
-}
-
-.town-map-svg-event:focus-visible {
-  outline: none;
-  filter: drop-shadow(0 0 4px #fff);
 }
 
 .town-route-status {
