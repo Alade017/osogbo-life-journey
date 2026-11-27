@@ -1,6 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { Check, Shirt } from "lucide-react";
+import { CharacterPreview } from "@/components/3d/CharacterPreview";
+import type { Appearance } from "@/game/avatar-appearance";
 import { toast } from "sonner";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { Button } from "@/components/ui/button";
@@ -14,6 +16,7 @@ export function CharacterWardrobePanel() {
   const characterQuery = useQuery(q.character());
   const equipmentQuery = useQuery(q.equipment());
   const [activeSlot, setActiveSlot] = useState<EquipmentSlot>("top");
+  const [previewId, setPreviewId] = useState<string | null>(null);
   const equip = useGameAction(({ id, slot }: { id: string; slot: string }) => rpc.equipInventoryItem(id, slot), {
     onSuccess: () => { announceEquipmentRefresh(); toast.success("Your look has been updated."); },
   });
@@ -25,9 +28,22 @@ export function CharacterWardrobePanel() {
   const equipped = normalizeEquippedItems(equipmentQuery.data);
   const current = equipped.find((entry) => entry.slot === activeSlot);
   const options = filterEquippableInventoryForSlot(inventoryQuery.data, activeSlot);
+  const previewItem = options.find((entry) => entry.id === previewId);
+  const previewEquipment = previewItem
+    ? [...equipped.filter((entry) => entry.slot !== activeSlot), { slot: activeSlot, item: previewItem.item }]
+    : equipped;
   return (
     <section className="pi-wardrobe-editor" aria-label="Character appearance editor">
       <header><div><p className="pi-eyebrow">Character studio</p><h2>Change your look</h2><p>Choose owned clothing and accessories to update your saved outfit. Changes appear on your character throughout Osogbo.</p></div><span><Shirt size={22} /></span></header>
+      <div className="pi-wardrobe-preview">
+        <CharacterPreview
+          appearance={(characterQuery.data.appearance ?? {}) as unknown as Appearance}
+          gender={characterQuery.data.gender ?? "nonbinary"}
+          equipment={previewEquipment}
+          label={previewItem ? "Character try-on preview" : "Your saved character appearance"}
+        />
+        <span>{previewItem ? "Preview only — wear to save this look" : "Your current saved look"}</span>
+      </div>
       <nav className="pi-wardrobe-slots" aria-label="Clothing and accessory slots">
         {EQUIPMENT_SLOTS.map((slot) => <button key={slot} type="button" aria-pressed={activeSlot === slot} onClick={() => setActiveSlot(slot)}>{slot}</button>)}
       </nav>
@@ -36,7 +52,7 @@ export function CharacterWardrobePanel() {
         {options.length ? options.map((entry) => {
           const isCurrent = current?.item?.id === entry.item?.id;
           const validation = validatePlayerAction({ action: "equip", characterId: characterQuery.data.id, inventoryEntry: entry, slot: activeSlot });
-          return <article key={entry.id} className="pi-wardrobe-option"><div><strong>{entry.item?.name ?? "Owned item"}</strong><small>Owned ×{entry.quantity}</small></div>{isCurrent ? <span className="pi-wardrobe-worn"><Check size={14} /> Wearing</span> : <Button size="sm" disabled={!!validation || equip.isPending} onClick={() => equip.mutate({ id: entry.id, slot: activeSlot })}>Wear</Button>}</article>;
+          return <article key={entry.id} className={"pi-wardrobe-option" + (previewId === entry.id ? " is-preview" : "")}><div><strong>{entry.item?.name ?? "Owned item"}</strong><small>Owned ×{entry.quantity}</small></div>{isCurrent ? <span className="pi-wardrobe-worn"><Check size={14} /> Wearing</span> : <div className="pi-wardrobe-option-actions"><Button size="sm" variant="outline" onClick={() => setPreviewId(entry.id)}>Preview</Button><Button size="sm" disabled={!!validation || equip.isPending} onClick={() => equip.mutate({ id: entry.id, slot: activeSlot })}>{equip.isPending ? "Saving…" : "Wear"}</Button></div>}</article>;
         }) : <p className="pi-bag-empty">No owned items fit this slot yet. Items you acquire will appear here.</p>}
       </div>
     </section>
