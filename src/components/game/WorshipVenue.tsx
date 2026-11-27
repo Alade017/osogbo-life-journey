@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -7,6 +7,7 @@ import { WorshipInterior3D } from "@/components/3d/WorshipInterior3D";
 import { Button } from "@/components/ui/button";
 import type { Appearance } from "@/game/avatar-appearance";
 import { gameTimeFromCharacter } from "@/lib/game-time";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { getWorshipLayout } from "@/game/worship-layouts";
 import {
   isPrayerDue,
@@ -31,6 +32,8 @@ export function WorshipVenue({ slug, locationName }: { slug: string; locationNam
   const prayers = prayersFor(slug);
   const client = useQueryClient();
   const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery(q.equipment());
+  const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
   const liveClock = useOptionalGameTime();
   const [phase, setPhase] = useState<Phase>("idle");
   const [activePrayer, setActivePrayer] = useState<WorshipPrayer | null>(null);
@@ -119,6 +122,7 @@ export function WorshipVenue({ slug, locationName }: { slug: string; locationNam
             praying={praying}
             playerAppearance={playerAppearance}
             playerGender={character?.gender ?? "nonbinary"}
+            playerEquipment={playerEquipment}
           />
         </Canvas>
         <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-background/90 px-3 py-1 text-xs font-semibold">
