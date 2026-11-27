@@ -44,8 +44,10 @@ export function DistrictOverviewSurface({ onReady, onUnavailable, ...props }: Di
         gl={{ antialias: true, powerPreference: "low-power" }}
         fallback={<Unavailable onUnavailable={onUnavailable} />}>
         <color attach="background" args={["#dce7dc"]}/>
-        <OverviewModelResources><DistrictOverviewWorld {...props}/></OverviewModelResources>
-        <RendererLifecycle onReady={onReady} onUnavailable={onUnavailable}/>
+        <OverviewModelResources>
+          <DistrictOverviewWorld {...props}/>
+          <RendererLifecycle onReady={onReady} onUnavailable={onUnavailable}/>
+        </OverviewModelResources>
       </Canvas>
     </OverviewBoundary>
   );
