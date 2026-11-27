@@ -206,4 +206,16 @@ describe("Drizzle migration ledger audit", () => {
     expect(result.checksumMatches[0]?.checksumType).toBe("unspecified");
   });
 
+
+  it("labels identical raw and LF-normalized hashes without guessing", () => {
+    const result = auditDrizzleLedger(
+      [migration({
+        acceptedHashes: [hashA],
+        checksumHashes: { raw: hashA, lfNormalized: hashA },
+      })],
+      [row({ hash: hashA })],
+    );
+    expect(result.checksumMatches[0]?.checksumType).toBe("identical");
+  });
+
 });
