@@ -19,12 +19,20 @@ Selecting an available landmark opens its existing destination flow. District se
 
 No database migration is required by the overview redesign itself. Existing server migration requirements and authoritative travel contracts are unchanged.
 
+## Architectural coverage
+
+The authored overview contains 53 landmark footprints (45 existing references and eight reserved models), 20 residential parcels, nine commercial parcels and two decorative river bridges. Thirteen retained Olaiya subvenues remain neighborhood-only. The catalog records all 29 required anchor categories with their existing, reserved, decorative or neighborhood-only representation. These assignments are fictional design choices, not a surveyed inventory of the real city.
+
+## Billboard placement
+
+ALADTECH WEB SOLUTIONS and ELEGANCE TECH HUB are configured in the layout billboard policy. The deterministic placement generator evaluates all ten districts, capacity, building and bridge clearances, river clearance and billboard spacing. The current policy allows up to three default brand billboards per district with 12 overview units of separation. Billboard locations are not manually assigned to specific districts. Vegetation avoids generated billboard sites, artwork appears on both faces, and each renderer shares artwork textures by brand. Existing player advertising campaign contracts are unchanged.
+
 ## Camera and rendering
 
-The overview uses an orthographic camera, orbit rotation, pan, pinch/wheel zoom and reset controls. Camera gestures do not move the player. Drag and multi-pointer gesture cancellation protects destination selection. Geometry and materials are shared within the overview Canvas; vegetation is instanced and rendering is demand-based.
+The overview uses an orthographic camera, orbit rotation, pan, pinch/wheel zoom and reset controls. Camera gestures do not move the player. Drag and multi-pointer gesture cancellation protects destination selection. Geometry and materials are shared within the overview Canvas; repeated compatible primitives are batched within individual models, vegetation is instanced and rendering is demand-based. Camera pan targets are constrained to the authored city extent, zoom is fit-relative, and mobile district labels are prioritized by footprint size or selected district. Renderer errors and WebGL context loss have a renderer-only retry path; a failed lazy module download may still need a page refresh.
 
 ## Verification checklist
 
-Run repository typechecking, linting, regression tests, and the production build. Run `scripts/world-restyle-browser-check.mjs` with a supported browser executable. Verify ten district objects, landmark callbacks, drag cancellation, mobile and desktop camera framing, housing access, available and locked destination behavior, and the absence of legacy road/traffic scenery. Verify neighborhood and house scenes independently. Check existing authenticated travel and saved property behavior in a safe staging environment before deployment.
+Use Node.js 24, as required by package.json. Run npm ci, npm run typecheck, npm run lint, npm run test, and npm run build. The dedicated overview routing/layout, interactions, and billboard/camera suites currently contain 20 authored cases; execution is pending. Run `scripts/world-restyle-browser-check.mjs` with a supported browser executable. Verify ten district objects, landmark callbacks, drag cancellation, mobile and desktop camera framing, housing access, available and locked destination behavior, billboard distribution and spacing, texture disposal, batched mesh picking, renderer recovery, and the absence of legacy road/traffic scenery. Verify neighborhood and house scenes independently. Check existing authenticated travel and saved property behavior in a safe staging environment before deployment.
 
 This document describes the intended implementation contract; it does not certify that runtime or staging verification has passed.
