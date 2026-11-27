@@ -286,7 +286,15 @@ export function CityMapDashboard(
       }
     },
   });
+  const selectedLandmarkAvailable = !!selectedLandmark && !!availableLandmarks.data?.includes(selectedLandmark.id);
   const closeTravelSelector = travelController.close;
+  useEffect(() => {
+    if (!selectedLandmark || !availableLandmarks.isSuccess || selectedLandmarkAvailable ||
+        travelController.busy || travelController.arrivalConfirmed || apply.isPending || runPlaceAction.isPending) return;
+    closeTravelSelector();
+    toast.error("This destination is no longer available.", { id: "map-destination-unavailable" });
+  }, [selectedLandmark, availableLandmarks.isSuccess, selectedLandmarkAvailable, travelController.busy,
+    travelController.arrivalConfirmed, apply.isPending, runPlaceAction.isPending, closeTravelSelector]);
   const selectDestination = travelController.select;
   const selectPreferredMode = travelController.selectMode;
   const setDestinationTab = travelController.setTab;
@@ -300,7 +308,7 @@ export function CityMapDashboard(
   };
   const onLandmark = useCallback(
     (id: string) => {
-      if (!availableLandmarks.data?.includes(id)) return;
+      if (travelController.busy || travelController.arrivalConfirmed || !availableLandmarks.data?.includes(id)) return;
 
       const found = landmarks.find((item) => item.id === id) ?? getQuickTravelLandmark(id);
 
@@ -312,7 +320,7 @@ export function CityMapDashboard(
         setPlaceActionResult(null);
       }
     },
-    [availableLandmarks.data, selectDestination, preferredTransport, selectPreferredMode],
+    [availableLandmarks.data, selectDestination, preferredTransport, selectPreferredMode, travelController.busy, travelController.arrivalConfirmed],
   );
   const deepLinkedLandmark = useRef<string | null>(null);
   useEffect(() => {
@@ -480,7 +488,7 @@ export function CityMapDashboard(
           onTabChange={travelController.setTab}
           onModeChange={travelController.selectMode}
           onConfirm={(mode) => {
-            if (selectedDestination) void travelController.confirm(selectedDestination.id, mode);
+            if (selectedDestination && selectedLandmarkAvailable) void travelController.confirm(selectedDestination.id, mode);
           }}
           onCancel={closeTravelSelector}
           onRetryArrival={() => void travelController.retryArrival()}
@@ -493,10 +501,14 @@ export function CityMapDashboard(
             event: landmarkEvent
               ? { label: landmarkEvent.title, endsAt: landmarkEvent.endsAt }
               : null,
-            onApply: (id) => apply.mutate(id),
+            onApply: (id) => { if (selectedLandmarkAvailable) apply.mutate(id); },
             pending: apply.isPending,
             error: actionError,
             onRunPlaceAction: (actionId) => {
+              if (!selectedLandmarkAvailable) {
+                setActionError("This destination is no longer available.");
+                return;
+              }
               const accountId = character.data?.user_id,
                 characterId = character.data?.id;
               if (!accountId || !characterId) {
