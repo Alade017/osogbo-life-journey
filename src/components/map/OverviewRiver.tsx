@@ -41,5 +41,16 @@ export function OverviewRiver() {
   return <>
     <mesh geometry={banks}><meshStandardMaterial color="#819166" side={DoubleSide}/></mesh>
     <mesh geometry={water}><meshStandardMaterial color="#568b9b" roughness={0.32} side={DoubleSide}/></mesh>
+    {layout.terrain.river.bridges.map(bridge => {
+      const { width, depth } = bridge.footprint;
+      return <group key={bridge.id} position={[bridge.position.x - layout.meta.width / 2, 0, bridge.position.z - layout.meta.depth / 2]}>
+        <mesh position={[0,0.35,0]}><boxGeometry args={[width,0.12,depth]}/><meshStandardMaterial color="#b4a58f"/></mesh>
+        {[-1,1].map(side => <group key={side}>
+          <mesh position={[0,0.58,side * depth * 0.44]}><boxGeometry args={[width,0.07,0.06]}/><meshStandardMaterial color="#766c5e"/></mesh>
+          {[-0.4,0,0.4].map(f => <mesh key={f} position={[width*f,0.47,side*depth*0.44]}><boxGeometry args={[0.07,0.25,0.07]}/><meshStandardMaterial color="#766c5e"/></mesh>)}
+          <mesh position={[side * width * 0.36,0.15,0]}><boxGeometry args={[0.22,0.3,depth]}/><meshStandardMaterial color="#a49b8c"/></mesh>
+        </group>)}
+      </group>;
+    })}
   </>;
 }
