@@ -28,6 +28,7 @@ import {
   restrictedZoneAt,
 } from "@/game/osun-mall-layout";
 import { q } from "@/lib/game";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { useOptionalGameTime } from "./GameTimeProvider";
 import { gameTimeFromCharacter, INITIAL_GAME_TIME } from "@/lib/game-time";
 import { weatherForDay } from "@/lib/world-simulation";
@@ -58,7 +59,7 @@ export function OsunMallVenue({
   const gameTime = gameClock?.simulation.gameTime ?? (character ? gameTimeFromCharacter(character) : INITIAL_GAME_TIME);
   const crowdTarget = mallCrowdTarget(gameTime, weatherForDay(gameTime.day));
   const { data: equipment } = useQuery(q.equipment());
-  const playerEquipment = (equipment ?? []).map((row) => ({ slot: row.slot }));
+  const playerEquipment = normalizeEquippedItems(equipment);
   const [status, setStatus] = useState<"joining" | "ready" | "offline">("joining");
   const [message, setMessage] = useState<string | null>(null);
   // Outside, the visitor is on the street; the mall room is only joined while inside.
