@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
 import { HomeLink } from "@/components/game/HomeLink";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -1281,33 +1282,6 @@ export function PlayableNeighborhood() {
         </div>
       ) : (
         <div className="neighborhood-world-card">
-          {connectionState === "connected" && (
-            <div className="neighborhood-touch-controls" role="group" aria-label="Movement controls">
-              <button type="button" aria-label="Move forward"
-                onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setManualDirection("north", true); }}
-                onPointerUp={() => setManualDirection("north", false)}
-                onPointerCancel={() => setManualDirection("north", false)}
-                onLostPointerCapture={() => setManualDirection("north", false)}>↑</button>
-              <div className="neighborhood-touch-controls-row">
-                <button type="button" aria-label="Move left"
-                  onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setManualDirection("west", true); }}
-                  onPointerUp={() => setManualDirection("west", false)}
-                  onPointerCancel={() => setManualDirection("west", false)}
-                  onLostPointerCapture={() => setManualDirection("west", false)}>←</button>
-                <button type="button" aria-label="Move backward"
-                  onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setManualDirection("south", true); }}
-                  onPointerUp={() => setManualDirection("south", false)}
-                  onPointerCancel={() => setManualDirection("south", false)}
-                  onLostPointerCapture={() => setManualDirection("south", false)}>↓</button>
-                <button type="button" aria-label="Move right"
-                  onPointerDown={(event) => { event.preventDefault(); event.currentTarget.setPointerCapture(event.pointerId); setManualDirection("east", true); }}
-                  onPointerUp={() => setManualDirection("east", false)}
-                  onPointerCancel={() => setManualDirection("east", false)}
-                  onLostPointerCapture={() => setManualDirection("east", false)}>→</button>
-              </div>
-            </div>
-          )}
-
           {connectionState === "connected" && !hasWalked && (
             <div className="neighborhood-walk-hint" aria-label="Movement instruction">
               Tap the ground or a zone to walk
