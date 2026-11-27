@@ -49,9 +49,6 @@ vi.mock("@/lib/game", () => ({
 vi.mock("@/components/3d/CharacterPreview", () => ({
   CharacterPreview: () => <div data-testid="character-preview" />,
 }));
-vi.mock("@/routes/_authenticated/_game/settings", () => ({
-  SettingsPage: () => <div>Embedded settings content</div>,
-}));
 
 import { PlayerLifeHub } from "@/components/game/PlayerLifeHub";
 
@@ -89,12 +86,10 @@ it("renders saved mission, skill, relationship, and current employment records",
   expect(screen.getByText("Career level 3")).toBeInTheDocument();
 });
 
-it("opens directly on Settings without rendering the Profile panel", () => {
-  render(<PlayerLifeHub player={player} open initialTab="settings" onClose={vi.fn()} />);
-
-  expect(screen.getByRole("button", { name: "Settings" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByText("Embedded settings content")).toBeInTheDocument();
-  expect(screen.queryByText("Your equipped appearance is shared with your in-world character.")).not.toBeInTheDocument();
+it("does not expose Settings inside the player hub", () => {
+  render(<PlayerLifeHub player={player} open onClose={vi.fn()} />);
+  expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
+  expect(screen.getByText("Your equipped appearance is shared with your in-world character.")).toBeInTheDocument();
 });
 
 it("does not let the synthetic click after a downward drag undo sheet collapse", () => {
@@ -121,7 +116,7 @@ it("moves keyboard focus into the hub and keeps Tab navigation inside it", () =>
 
   const close = screen.getByRole("button", { name: "Close player hub" });
   const handle = screen.getByRole("button", { name: "Expand player hub" });
-  const lastTab = screen.getByRole("button", { name: "Settings" });
+  const lastTab = screen.getByRole("button", { name: "Career" });
   expect(document.activeElement).toBe(close);
 
   lastTab.focus();
