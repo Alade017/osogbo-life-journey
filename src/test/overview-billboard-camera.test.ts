@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import layout from "@/data/osogbo-overview-layout.json";
 import { generateBillboards, overviewBillboards } from "@/components/map/overview-billboard-placement";
+import { overviewRiverDistance, overviewRiverBankWidth, overviewRiverSamples } from "@/components/map/overview-river-layout";
 import { overviewFit, overviewClampZoom, overviewPanCorrection } from "@/components/map/overview-camera";
 
 describe("overview billboard placement", () => {
@@ -23,6 +24,15 @@ describe("overview billboard placement", () => {
         expect(z-depth/2).toBeGreaterThanOrEqual(b.z);
         expect(z+depth/2).toBeLessThanOrEqual(b.z+b.depth);
       }
+    }
+  });
+  it("maintains clearance from the rendered riverbank", () => {
+    for (const board of overviewBillboards) {
+      const radius = Math.hypot(board.footprint.width, board.footprint.depth) / 2;
+      expect(overviewRiverDistance(board.position.x, board.position.z)).toBeGreaterThanOrEqual(overviewRiverBankWidth / 2 + radius + policy.clearance);
+    }
+    for (const sample of overviewRiverSamples) {
+      expect(overviewRiverDistance(sample.x, sample.z)).toBeCloseTo(0);
     }
   });
   it("avoids buildings, bridges and neighboring billboards", () => {
