@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { SceneHtml } from "@/components/3d/SceneHtml";
 import { Vector3, OrthographicCamera } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { overviewDistrictId, overviewPlacePosition } from "./overview-district-routing";
@@ -38,6 +39,7 @@ export type DistrictOverviewProps = {
 
 /** Static overview geometry only. Navigation coordinates never enter this scene. */
 export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, onSelectLandmark, searchTarget, selectedLandmarkId, eventChips = [], billboardMarkers = [], onSelectEvent, onSelectBillboard }: DistrictOverviewProps) {
+  const [hoveredPlace, setHoveredPlace] = useState<string | null>(null);
   const available = useMemo(() => new Set(availableLandmarkIds), [availableLandmarkIds]);
   const { size, camera, invalidate } = useThree();
   const controls = useRef<OrbitControlsImpl>(null);
@@ -84,19 +86,32 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
       {layout.districts.map(d => {
         const district = catalog.districts.find(item => item.id === d.districtId);
         return (
-          <mesh key={d.districtId} position={[...world(d.center)]} rotation={[-Math.PI / 2, 0, 0]}
+          <group key={d.districtId}>
+          <mesh position={[...world(d.center)]} rotation={[-Math.PI / 2, 0, 0]}
             onClick={event => { event.stopPropagation(); if (event.delta < 6) onSelectDistrict(d.districtId); }}>
             <planeGeometry args={[d.bounds.width, d.bounds.depth]} />
             <meshStandardMaterial color={palette[district?.identity ?? ""] ?? "#b4ac92"} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
           </mesh>
+          <SceneHtml position={[d.center.x - layout.meta.width / 2, 0.35, d.bounds.z + 0.5 - layout.meta.depth / 2]} center pointerEvents="none" zIndexRange={[10, 0]}>
+            <span className="district-label">{district?.name}</span>
+          </SceneHtml>
+          </group>
         );
       })}
       {layout.places.map(entry => {
         const district = catalog.districts.find(d => d.id === entry.districtId);
+        const place = catalog.places.find(p => p.id === entry.placeId) ?? catalog.pendingLandmarks.find(p => p.id === entry.placeId);
         return (
           <group key={entry.placeId} position={world(entry.position)} rotation={[0, entry.rotationY, 0]}
+            onPointerOver={event => { event.stopPropagation(); setHoveredPlace(entry.placeId); }}
+            onPointerOut={() => setHoveredPlace(old => old === entry.placeId ? null : old)}
             onClick={event => { event.stopPropagation(); if (event.delta < 6 && entry.status === "existing-reference" && available.has(entry.placeId)) onSelectLandmark(entry.placeId); }}>
             <OverviewLandmarkModel profile={entry.profile} {...entry.footprint} color={palette[district?.identity ?? ""] ?? "#d4c7af"} />
+            {place && (hoveredPlace === entry.placeId || selectedLandmarkId === entry.placeId) && (
+              <SceneHtml position={[0, Math.min(entry.footprint.width, entry.footprint.depth) * 0.85, 0]} center pointerEvents="none" zIndexRange={[20, 11]}>
+                <span className="district-label">{place.label}{entry.status === "reserved" ? " · Not yet open" : !available.has(entry.placeId) ? " · Locked" : ""}</span>
+              </SceneHtml>
+            )}
           </group>
         );
       })}
