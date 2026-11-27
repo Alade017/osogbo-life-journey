@@ -226,8 +226,8 @@
 
 @media (max-width: 640px) {
   .town-map-renderer-status {
-    top: 0.5rem;
-    max-width: calc(100% - 5.5rem);
+    top: auto;
+    max-width: calc(100% - 1.5rem);
     font-size: 0.7rem;
   }
 
