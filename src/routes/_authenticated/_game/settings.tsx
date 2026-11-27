@@ -4,6 +4,10 @@ import { useEffect, useId, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   Check,
+  Clock3,
+  Gauge,
+  Pause,
+  Play,
   KeyRound,
   Lock,
   LogOut,
@@ -30,7 +34,6 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { ProfilePage } from "./profile";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -49,6 +52,7 @@ import {
   setGameAudioLevels,
 } from "@/lib/game-audio";
 import type { Appearance } from "@/game/avatar-appearance";
+import { useOptionalGameTime } from "@/components/game/GameTimeProvider";
 import "@/components/game/settings-hub.css";
 
 export const Route = createFileRoute("/_authenticated/_game/settings")({
@@ -101,7 +105,7 @@ function useSavedFlash() {
   return { saved, flash };
 }
 
-export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) {
+export function SettingsPage() {
   const fieldId = useId();
   const qc = useQueryClient();
   const { data: profile, isPending, isError, error, isFetching, refetch } = useQuery(q.profile());
@@ -110,7 +114,6 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
   const { saved, flash } = useSavedFlash();
 
   const [nameDraft, setNameDraft] = useState("");
-  const [settingsTab, setSettingsTab] = useState<"display" | "sound" | "privacy" | "account">("display");
 
   const { data: summaryData } = useQuery(q.accountSummary());
   const summary = summaryData as
@@ -202,7 +205,7 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
 
   return (
     <div className="sx-page" data-reduced={profile.reduced_motion ? "true" : "false"}>
-      {!embedded && <header className="sx-hero">
+      <header className="sx-hero">
         <div className="sx-hero-avatar" aria-hidden="true">
           <CharacterPreview
             appearance={appearance}
@@ -213,34 +216,16 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
           />
         </div>
         <div className="sx-hero-copy">
-          <p className="sx-eyebrow">OSOGBO LIFE · GAME SETTINGS</p>
-          <h1>{profile.display_name || "Your character"}</h1>
+          <p className="sx-eyebrow">OSOGBO LIFE · PLAYER SETTINGS</p>
+          <h1>Settings</h1>
+          <p className="sx-hero-player">{profile.display_name || "Your character"}</p>
           <span className={`sx-badge${account.isGuest ? " is-guest" : ""}`}>
             <ShieldCheck aria-hidden="true" /> {accountLabel}
           </span>
         </div>
       </header>}
 
-      <nav className="sx-tabs" aria-label="Settings categories">
-        {([
-          ["display", "Display"],
-          ["sound", "Sound & play"],
-          ["privacy", "Privacy"],
-          ["account", "Account"],
-        ] as const).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            className="sx-tab"
-            aria-pressed={settingsTab === value}
-            onClick={() => setSettingsTab(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
-
-      {settingsTab === "display" && <>
+      <>
       <Section
         id="sx-name"
         icon={UserRound}
@@ -283,9 +268,9 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
         </form>
       </Section>
 
-      </>}
+      </>
 
-      {settingsTab === "sound" && <>
+      <>
       <Section
         id="sx-sound"
         icon={Volume2}
@@ -296,9 +281,9 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
         <AudioControls profile={profile} onSave={(patch) => savePreferences.mutate(patch)} />
       </Section>
 
-      </>}
+      </>
 
-      {settingsTab === "display" && <>
+      <>
       <Section
         id="sx-tiles"
         icon={LayoutGrid}
@@ -370,9 +355,18 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
         </div>
       </Section>
 
-      </>}
+      </>
 
-      {settingsTab === "privacy" && <>
+      <>
+      <Section
+        id="sx-simulation"
+        icon={Clock3}
+        title="Life simulation"
+        description="Control the pace of your character's personal life simulation."
+      >
+        <SimulationSettings />
+      </Section>
+
       <Section
         id="sx-privacy"
         icon={Eye}
@@ -409,9 +403,9 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
         </ul>
       </Section>
 
-      </>}
+      </>
 
-      {settingsTab === "account" && <>
+      <>
       <AccountSection
         fieldId={fieldId}
         email={account.email}
@@ -422,7 +416,7 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
       />
 
       <SessionSection isGuest={account.isGuest} />
-      </>}
+      </>
     </div>
   );
 }
@@ -600,6 +594,56 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
           Tap the page once to allow audio, then try again.
         </p>
       )}
+    </>
+  );
+}
+
+function SimulationSettings() {
+  const gameTime = useOptionalGameTime();
+
+  if (!gameTime) {
+    return <p className="sx-row-hint">Life simulation controls are available while you are in the game.</p>;
+  }
+
+  const { simulation, busy, ready, pause, resume, setSpeed } = gameTime;
+  return (
+    <>
+      <div className="sx-row">
+        <div className="sx-row-copy">
+          <span className="sx-row-title">Pause life simulation</span>
+          <p className="sx-row-hint">Pause your character's needs and personal activities while you step away.</p>
+        </div>
+        <Switch
+          checked={simulation.paused}
+          disabled={!ready || busy}
+          onCheckedChange={(paused) => (paused ? pause() : resume())}
+          aria-label="Pause life simulation"
+        />
+      </div>
+      <div className="sx-speed-setting">
+        <div className="sx-row-copy">
+          <span className="sx-row-title">Simulation speed</span>
+          <p className="sx-row-hint">Choose how quickly your personal life simulation advances.</p>
+        </div>
+        <div className="sx-speed-options" role="group" aria-label="Simulation speed">
+          {([0.5, 1, 2] as const).map((speed) => (
+            <Button
+              key={speed}
+              type="button"
+              variant={simulation.timeSpeed === speed ? "default" : "outline"}
+              className="sx-speed-option"
+              aria-pressed={simulation.timeSpeed === speed}
+              disabled={!ready || busy || simulation.paused}
+              onClick={() => setSpeed(speed)}
+            >
+              {speed}×
+            </Button>
+          ))}
+        </div>
+      </div>
+      {!ready && <p className="sx-row-hint" role="status">Connecting to your life simulation…</p>}
+      {simulation.paused && <p className="sx-paused-note"><Pause size={15} aria-hidden="true" /> Your personal simulation is paused.</p>}
+      {!simulation.paused && ready && <p className="sx-paused-note"><Play size={15} aria-hidden="true" /> Your personal simulation is running.</p>}
     </>
   );
 }
