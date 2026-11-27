@@ -127,7 +127,7 @@ try {
     }
     for (const migration of drizzleAudit.pending) {
       await tx.unsafe(migration.content);
-      await tx`insert into drizzle.__drizzle_migrations(hash,created_at) values(${migration.hash},${migration.when})`;
+      await tx`insert into drizzle.__drizzle_migrations(hash,created_at) values(${migration.rawHash},${migration.when})`;
       console.log(`Applied ${migration.tag} within transaction`);
     }
     await tx`notify pgrst, 'reload schema'`;

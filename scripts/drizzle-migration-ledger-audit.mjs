@@ -43,12 +43,14 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
   };
 
   for (const entry of journalEntries) {
-    const acceptedHashes = Array.isArray(entry?.acceptedHashes)
-      ? entry.acceptedHashes
-      : [];
-    const hashes = [...new Set([entry?.hash, ...acceptedHashes].map((value) =>
-      String(value ?? "").toLowerCase(),
-    ).filter((value) => /^[a-f0-9]{64}$/.test(value)))];
+    const acceptedHashes = Array.isArray(entry?.acceptedHashes) ? entry.acceptedHashes : [];
+    const hashes = [
+      ...new Set(
+        [entry?.hash, ...acceptedHashes]
+          .map((value) => String(value ?? "").toLowerCase())
+          .filter((value) => /^[a-f0-9]{64}$/.test(value)),
+      ),
+    ];
     const legacyHashes = Array.isArray(entry?.legacyHashes)
       ? entry.legacyHashes.map((value) => String(value ?? "").toLowerCase())
       : [];
@@ -56,10 +58,8 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
     const rawHash = String(entry?.checksumHashes?.raw ?? "").toLowerCase();
     const lfNormalizedHash = String(entry?.checksumHashes?.lfNormalized ?? "").toLowerCase();
     const checksumMetadataValid =
-      (!entry?.checksumHashes || (
-        /^[a-f0-9]{64}$/.test(rawHash) &&
-        /^[a-f0-9]{64}$/.test(lfNormalizedHash)
-      ));
+      !entry?.checksumHashes ||
+      (/^[a-f0-9]{64}$/.test(rawHash) && /^[a-f0-9]{64}$/.test(lfNormalizedHash));
 
     if (
       !entry ||
@@ -168,6 +168,10 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
     }
     if (candidateRows.size === 0) {
       pending.push(entry);
+      continue;
+    }
+    if (candidateRows.size > 1) {
+      issues.push(`Ambiguous Drizzle checksum match for ${entry.tag}: multiple database rows`);
       continue;
     }
     if (candidateRows.size !== 1) continue;

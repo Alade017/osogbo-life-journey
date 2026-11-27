@@ -146,10 +146,12 @@ describe("Drizzle migration ledger audit", () => {
 
   it("reports an explicit raw checksum match at the exact timestamp", () => {
     const result = auditDrizzleLedger(
-      [migration({
-        acceptedHashes: [hashA, hashB],
-        checksumHashes: { raw: hashB, lfNormalized: hashA },
-      })],
+      [
+        migration({
+          acceptedHashes: [hashA, hashB],
+          checksumHashes: { raw: hashB, lfNormalized: hashA },
+        }),
+      ],
       [row({ hash: hashB })],
     );
     expect(result.checksumMatches).toEqual([
@@ -164,10 +166,12 @@ describe("Drizzle migration ledger audit", () => {
 
   it("reports an explicit LF-normalized checksum match at the exact timestamp", () => {
     const result = auditDrizzleLedger(
-      [migration({
-        acceptedHashes: [hashA, hashB],
-        checksumHashes: { raw: hashB, lfNormalized: hashA },
-      })],
+      [
+        migration({
+          acceptedHashes: [hashA, hashB],
+          checksumHashes: { raw: hashB, lfNormalized: hashA },
+        }),
+      ],
       [row({ hash: hashA })],
     );
     expect(result.checksumMatches).toEqual([
@@ -182,10 +186,12 @@ describe("Drizzle migration ledger audit", () => {
 
   it("reports checksum representation separately from timestamp fallback", () => {
     const result = auditDrizzleLedger(
-      [migration({
-        acceptedHashes: [hashA, hashB],
-        checksumHashes: { raw: hashB, lfNormalized: hashA },
-      })],
+      [
+        migration({
+          acceptedHashes: [hashA, hashB],
+          checksumHashes: { raw: hashB, lfNormalized: hashA },
+        }),
+      ],
       [row({ created_at: 1794463200001, hash: hashB })],
     );
     expect(result.checksumMatches).toEqual([
@@ -207,13 +213,14 @@ describe("Drizzle migration ledger audit", () => {
     expect(result.checksumMatches[0]?.checksumType).toBe("unspecified");
   });
 
-
   it("labels identical raw and LF-normalized hashes without guessing", () => {
     const result = auditDrizzleLedger(
-      [migration({
-        acceptedHashes: [hashA],
-        checksumHashes: { raw: hashA, lfNormalized: hashA },
-      })],
+      [
+        migration({
+          acceptedHashes: [hashA],
+          checksumHashes: { raw: hashA, lfNormalized: hashA },
+        }),
+      ],
       [row({ hash: hashA })],
     );
     expect(result.checksumMatches[0]?.checksumType).toBe("identical");
@@ -227,13 +234,15 @@ describe("Drizzle migration ledger audit", () => {
       canonicalHash,
     );
     const result = auditDrizzleLedger(
-      [migration({
-        tag: "0017_milestone8_career_recurring_economy",
-        hash: canonicalHash,
-        acceptedHashes: [canonicalHash, legacyHash],
-        legacyHashes,
-        checksumHashes: { raw: hashA, lfNormalized: canonicalHash },
-      })],
+      [
+        migration({
+          tag: "0017_milestone8_career_recurring_economy",
+          hash: canonicalHash,
+          acceptedHashes: [canonicalHash, legacyHash],
+          legacyHashes,
+          checksumHashes: { raw: hashA, lfNormalized: canonicalHash },
+        }),
+      ],
       [row({ hash: legacyHash })],
     );
 
@@ -245,10 +254,7 @@ describe("Drizzle migration ledger audit", () => {
 
   it("does not grant a legacy checksum alias when normalized migration content changes", () => {
     expect(
-      getVerifiedLegacyChecksumHashes(
-        "0017_milestone8_career_recurring_economy",
-        "d".repeat(64),
-      ),
+      getVerifiedLegacyChecksumHashes("0017_milestone8_career_recurring_economy", "d".repeat(64)),
     ).toEqual([]);
   });
 
@@ -256,4 +262,14 @@ describe("Drizzle migration ledger audit", () => {
     expect(getVerifiedLegacyChecksumHashes("0091_mini_game_hardening", hashA)).toEqual([]);
   });
 
+  it("names the migration when a checksum matches more than one database row", () => {
+    const result = auditDrizzleLedger(
+      [migration({ acceptedHashes: [hashA, hashB] })],
+      [row({ created_at: 5000, hash: hashA }), row({ created_at: 6000, hash: hashB })],
+    );
+    expect(result.applied).toBe(0);
+    expect(result.issues).toContain(
+      "Ambiguous Drizzle checksum match for 0091_mini_game_hardening: multiple database rows",
+    );
+  });
 });
