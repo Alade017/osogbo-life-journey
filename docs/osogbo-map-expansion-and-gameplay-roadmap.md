@@ -122,7 +122,7 @@ No database migration, SQL execution, economy change, production server rollout,
 
 ## Transport gameplay review — boarding is not yet server-backed
 
-The current town renderer has interactive traffic vehicles, bus-stop shelters and visual waiting-passenger meshes. The waiting passengers are generated from bus-stop positions in `MovingPedestrians3D`; they are presentation-only and their click callback opens the shared Transit Park travel selector. They do not represent persistent passenger records, stop-specific queues, reserved seats or a boarded state. Moving traffic is also client-rendered ambient traffic, not a transport vehicle entity with a server-owned trip lifecycle.
+The retired town overview renderer had interactive traffic vehicles, bus-stop shelters and visual waiting-passenger meshes. The waiting passengers were generated from bus-stop positions in `MovingPedestrians3D`; they are presentation-only and their click callback opens the shared Transit Park travel selector. They do not represent persistent passenger records, stop-specific queues, reserved seats or a boarded state. That moving traffic was client-rendered ambient traffic, not a transport vehicle entity with a server-owned trip lifecycle.
 
 Do not implement boarding by locally hiding a passenger, moving a player into a vehicle, decrementing a client-side seat count or starting a client-only departure timer. Those approaches would diverge between multiplayer clients and could bypass fare, location, capacity and travel validation.
 
