@@ -100,6 +100,39 @@ export function OverviewLandmarkModel({ profile, width, depth, color }: ModelPro
         <Box p={[0,0.24,0.40]} s={[0.86,0.045,0.19]} color={roof}/>
         {[-0.35,0.35].map(x => <Box key={x} p={[x,0.11,0.45]} s={[0.035,0.22,0.035]} color={stone}/>)}
         <Box p={[0,0.06,0.43]} s={[0.28,0.05,0.10]} color={cream}/></>; break;
+    case "bank":
+      model = <><Facade color={cream} height={0.48}/>
+        <Box p={[0,0.28,0.355]} s={[0.73,0.17,0.025]} color={glass}/>
+        <Box p={[0,0.48,0.36]} s={[0.82,0.08,0.07]} color={color}/>
+        {[-0.31,0.31].map(x => <Box key={x} p={[x,0.17,0.40]} s={[0.065,0.34,0.07]} color={stone}/>)}</>; break;
+    case "hospital":
+      model = <><Facade color={cream} height={0.48}/>
+        {[-0.27,0.27].map(x => <Box key={x} p={[x,0.35,0.35]} s={[0.14,0.09,0.025]} color={glass}/>)}
+        <Box p={[0,0.20,0.41]} s={[0.44,0.045,0.17]} color={stone}/>
+        <Box p={[0,0.51,0]} s={[0.42,0.07,0.34]} color={color}/>
+        <Box p={[0,0.37,0.37]} s={[0.16,0.045,0.025]} color={green}/>
+        <Box p={[0,0.37,0.38]} s={[0.045,0.16,0.025]} color={green}/></>; break;
+    case "hotel":
+      model = <><Facade color={cream} height={0.70}/>
+        {[0.29,0.48,0.61].flatMap(y => [-0.27,0,0.27].map(x =>
+          <Box key={`${x}:${y}`} p={[x,y,0.35]} s={[0.13,0.085,0.022]} color={glass}/>))}
+        <Box p={[0,0.22,0.42]} s={[0.54,0.045,0.18]} color={color}/></>; break;
+    case "filling-station":
+      model = <><Box p={[0,0.025,0]} s={[0.94,0.05,0.94]} color={stone}/>
+        <Box p={[0,0.14,-0.32]} s={[0.64,0.24,0.25]} color={cream}/>
+        {[-0.30,0.30].map(x => <group key={x}>
+          <Box p={[x,0.17,0.12]} s={[0.045,0.30,0.045]} color={stone}/>
+          <Box p={[x*0.55,0.11,0.16]} s={[0.09,0.16,0.08]} color={color}/>
+        </group>)}
+        <Box p={[0,0.34,0.12]} s={[0.84,0.06,0.48]} color={color}/></>; break;
+    case "church":
+      model = <><Box p={[0,0.18,-0.04]} s={[0.65,0.36,0.76]} color={cream}/>
+        {[-1,1].map(side => <mesh key={side} position={[side*0.17,0.43,-0.04]} rotation={[0,0,-side*0.38]}>
+          <boxGeometry args={[0.38,0.04,0.80]}/><meshStandardMaterial color={roof}/></mesh>)}
+        <Box p={[0,0.29,0.33]} s={[0.20,0.58,0.20]} color={cream}/>
+        <mesh position={[0,0.68,0.33]} rotation={[0,Math.PI/4,0]}><coneGeometry args={[0.15,0.22,4]}/><meshStandardMaterial color={roof}/></mesh>
+        <Box p={[0,0.83,0.33]} s={[0.025,0.15,0.025]} color={stone}/>
+        <Box p={[0,0.85,0.33]} s={[0.11,0.025,0.025]} color={stone}/></>; break;
     case "service-building":
       model = <><Facade color={color} height={0.35}/>
         <Box p={[0,0.36,0.37]} s={[0.70,0.065,0.025]} color={cream}/>
