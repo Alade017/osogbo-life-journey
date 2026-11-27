@@ -41,7 +41,6 @@ function fixture(initial: string) {
         <GameMobileNav
           onHudOpen={hud.openHud}
           onNavigate={() => hud.setPhoneOpen(false)}
-          onInventoryOpen={() => hud.setInventoryOpen(true)}
         />
         <button onClick={() => hud.setPhoneOpen(false)}>Close phone</button>
         <Outlet />
