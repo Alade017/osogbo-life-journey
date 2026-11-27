@@ -47,6 +47,7 @@ export const overviewDistricts: MapDistrict[] = catalog.districts.map(district =
     id: district.id, name: district.name,
     theme: themes[district.identity] ?? "residential",
     traffic: district.density as Traffic,
+    density: district.density as Traffic,
     description: district.architecture,
     shape: [[x,z],[x+width,z],[x+width,z+depth],[x,z+depth]],
     landmarks: town.landmarks.filter(place => places.get(place.id)?.districtId === district.id)
