@@ -65,6 +65,9 @@ export interface MapCanvasProps {
   onSelectEvent?: (landmarkId: string) => void | undefined;
 }
 
+const EMPTY_EVENTS: MapEventChip[] = [];
+const EMPTY_BILLBOARDS: MapBillboardMarker[] = [];
+
 const propertyStatusText: Record<MapProperty["status"], string> = {
   owned: "Owned",
   current: "Your home",
@@ -83,8 +86,8 @@ export function MapCanvas({
   onSelectLandmark,
   searchTarget,
   selectedLandmarkId,
-  eventChips: _eventChips = [],
-  billboardMarkers = [],
+  eventChips: _eventChips = EMPTY_EVENTS,
+  billboardMarkers = EMPTY_BILLBOARDS,
   availableLandmarkIds,
   availabilityPending = false,
   onSelectBillboard,
@@ -97,10 +100,10 @@ export function MapCanvas({
   const [cameraFocus, setCameraFocus] = useState<MapSearchTarget | null>(null);
   const [resetVersion, setResetVersion] = useState(0);
   const [zoomRequest, setZoomRequest] = useState({ step: 0, version: 0 });
-  const selectDistrict = (id: string) => {
+  const selectDistrict = useCallback((id: string) => {
     setCameraFocus({ id, kind: "district" });
     onSelectDistrict(id);
-  };
+  }, [onSelectDistrict]);
   const [rendererState, setRendererState] = useState<"loading" | "ready" | "unavailable">(
     "loading",
   );
@@ -142,16 +145,17 @@ export function MapCanvas({
   );
   const availableIds = useMemo(() => availablePlaces.map(place => place.id), [availablePlaces]);
   const availableSet = useMemo(() => new Set(availableIds), [availableIds]);
-  const selectableEvents = _eventChips.filter(event => availableSet.has(event.id));
-  const selectLandmark = (id: string) => {
-    if (!availableSet.has(id) || availabilityPending) return;
+  const selectableEvents = useMemo(() => availabilityPending ? EMPTY_EVENTS : _eventChips.filter(event => availableSet.has(event.id)), [_eventChips, availableSet, availabilityPending]);
+  const selectLandmark = useCallback((id: string) => {
+    if (availabilityPending) { setNotice("Checking destination access…"); return; }
+    if (!availableSet.has(id)) return;
     setNotice(null);
     onSelectLandmark(id);
-  };
-  const selectUnavailable = (id: string, reason: "locked" | "reserved") => {
+  }, [availableSet, availabilityPending, onSelectLandmark]);
+  const selectUnavailable = useCallback((id: string, reason: "locked" | "reserved") => {
     setCameraFocus({ id, kind: "landmark" });
     setNotice(reason === "reserved" ? "This landmark is not open for travel yet." : availabilityPending ? "Checking destination access…" : "This destination is currently unavailable.");
-  };
+  }, [availabilityPending]);
   const handleReady = useCallback(() => setRendererState("ready"), []);
   const handleUnavailable = useCallback(() => setRendererState("unavailable"), []);
 
