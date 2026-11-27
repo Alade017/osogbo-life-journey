@@ -3,18 +3,7 @@ import { CanvasTexture, SRGBColorSpace } from "three";
 import layout from "@/data/osogbo-overview-layout.json";
 import { WorldMaterial } from "@/components/3d/WorldScene";
 
-function BrandBoard({
-  name,
-  subtitle,
-  position,
-  cell,
-}: {
-  name: string;
-  subtitle: string;
-  position: readonly [number, number];
-  cell: number;
-}) {
-  const texture = useMemo(() => {
+function createBrandTexture(name: string, subtitle: string) {
     if (typeof document === "undefined") return null;
     const canvas = document.createElement("canvas");
     canvas.width = 768;
@@ -35,8 +24,13 @@ function BrandBoard({
     const result = new CanvasTexture(canvas);
     result.colorSpace = SRGBColorSpace;
     return result;
-  }, [name, subtitle]);
-  useEffect(() => () => texture?.dispose(), [texture]);
+}
+
+function BrandBoard({ position, cell, texture }: {
+  position: readonly [number, number];
+  cell: number;
+  texture: CanvasTexture | null;
+}) {
   return (
     <group position={[position[0], 0, position[1]]}>
       {[-1, 1].map((side) => (
@@ -65,6 +59,8 @@ export function TownBrandBillboards3D({
   cell: number;
 }) {
   const brands = layout.billboardPolicy.brands;
+  const textures = useMemo(() => new Map(brands.map(brand => [brand.id, createBrandTexture(brand.name, brand.subtitle)])), [brands]);
+  useEffect(() => () => { for (const texture of textures.values()) texture?.dispose(); }, [textures]);
   return (
     <group>
       {positions.map((sign, index) => {
@@ -73,8 +69,7 @@ export function TownBrandBillboards3D({
         return (
           <BrandBoard
             key={sign.id ?? index}
-            name={brand.name}
-            subtitle={brand.subtitle}
+            texture={textures.get(brand.id) ?? null}
             position={sign.position}
             cell={cell}
           />
