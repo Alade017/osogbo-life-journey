@@ -49,6 +49,10 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
     const hashes = [...new Set([entry?.hash, ...acceptedHashes].map((value) =>
       String(value ?? "").toLowerCase(),
     ).filter((value) => /^[a-f0-9]{64}$/.test(value)))];
+    const legacyHashes = Array.isArray(entry?.legacyHashes)
+      ? entry.legacyHashes.map((value) => String(value ?? "").toLowerCase())
+      : [];
+    const legacyHashesValid = legacyHashes.every((value) => /^[a-f0-9]{64}$/.test(value));
     const rawHash = String(entry?.checksumHashes?.raw ?? "").toLowerCase();
     const lfNormalizedHash = String(entry?.checksumHashes?.lfNormalized ?? "").toLowerCase();
     const checksumMetadataValid =
@@ -63,6 +67,7 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
       !Number.isSafeInteger(Number(entry.when)) ||
       !/^[a-f0-9]{64}$/i.test(String(entry.hash ?? "")) ||
       hashes.length === 0 ||
+      !legacyHashesValid ||
       !checksumMetadataValid
     ) {
       issues.push(`Invalid Drizzle journal migration entry: ${entry?.tag ?? "unknown"}`);
@@ -74,6 +79,7 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
       when: Number(entry.when),
       hash: String(entry.hash).toLowerCase(),
       acceptedHashes: hashes,
+      legacyHashes,
       checksumHashes: entry.checksumHashes
         ? { raw: rawHash, lfNormalized: lfNormalizedHash }
         : null,
@@ -112,6 +118,7 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
   }
 
   const getChecksumType = (entry, hash) => {
+    if (entry.legacyHashes.includes(hash)) return "legacy-verified";
     if (!entry.checksumHashes) return "unspecified";
     if (entry.checksumHashes.raw === entry.checksumHashes.lfNormalized) {
       return hash === entry.checksumHashes.raw ? "identical" : "unrecognized";
