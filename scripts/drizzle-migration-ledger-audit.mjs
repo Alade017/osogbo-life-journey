@@ -113,6 +113,9 @@ export function auditDrizzleLedger(journalEntries, databaseRows) {
 
   const getChecksumType = (entry, hash) => {
     if (!entry.checksumHashes) return "unspecified";
+    if (entry.checksumHashes.raw === entry.checksumHashes.lfNormalized) {
+      return hash === entry.checksumHashes.raw ? "identical" : "unrecognized";
+    }
     if (hash === entry.checksumHashes.raw) return "raw";
     if (hash === entry.checksumHashes.lfNormalized) return "lf-normalized";
     return "unrecognized";
