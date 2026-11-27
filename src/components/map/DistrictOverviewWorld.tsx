@@ -5,9 +5,9 @@ import catalog from "@/data/osogbo-district-catalog.json";
 import layout from "@/data/osogbo-overview-layout.json";
 import { TownBrandBillboards3D } from "./TownBrandBillboards3D";
 import { OverviewLandmarkModel } from "./OverviewLandmarkModel";
+import { OverviewPropertyModel } from "./OverviewPropertyModel";
 
 type Position = { x: number; z: number };
-type Footprint = { width: number; depth: number };
 
 const world = ({ x, z }: Position): [number, number, number] => [
   x - layout.meta.width / 2, 0, z - layout.meta.depth / 2,
@@ -19,29 +19,6 @@ const palette: Record<string, string> = {
   administrative: "#c5c7ba", "industrial-education": "#b7b49b",
   "cultural-nature": "#789366", "residential-education": "#b5ac88",
 };
-
-function Block({ width, depth, height, color }: Footprint & { height: number; color: string }) {
-  return (
-    <mesh position={[0, height / 2, 0]}>
-      <boxGeometry args={[width, height, depth]} />
-      <meshStandardMaterial color={color} />
-    </mesh>
-  );
-}
-
-function House({ footprint }: { footprint: Footprint }) {
-  const width = footprint.width * 0.68, depth = footprint.depth * 0.68;
-  const height = Math.min(width, depth) * 0.48;
-  return (
-    <group>
-      <Block width={width} depth={depth} height={height} color="#d9c4a5" />
-      <mesh position={[0, height + width * 0.18, 0]} rotation={[0, Math.PI / 4, 0]}>
-        <coneGeometry args={[width * 0.76, width * 0.46, 4]} />
-        <meshStandardMaterial color="#855b45" />
-      </mesh>
-    </group>
-  );
-}
 
 export type DistrictOverviewProps = {
   availableLandmarkIds: readonly string[];
@@ -85,9 +62,9 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
           </group>
         );
       })}
-      {layout.residentialParcels.map(parcel => (
+      {[...layout.residentialParcels, ...layout.commercialParcels].map(parcel => (
         <group key={parcel.id} position={world(parcel.position)}>
-          <House footprint={parcel.footprint} />
+          <OverviewPropertyModel profile={parcel.profile} {...parcel.footprint} />
         </group>
       ))}
       {layout.terrain.river.centerline.slice(1).map((end, index) => {
