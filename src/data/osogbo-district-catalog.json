@@ -1,9 +1,9 @@
 {
   "meta": {
-    "version": 3,
+    "version": 4,
     "source": "Osogbo Districts and Landmarks.md; user amendment retaining Oke-Baale and removing Aleku-Wodo",
     "status": "proposed-overview-layout",
-    "coordinateSystem": "Existing navigation grid unchanged; overview coordinates not authored",
+    "coordinateSystem": "Legacy navigation grid retained; independent overview coordinates authored in osogbo-overview-layout.json",
     "assignmentNote": "Legacy district grouping and individual venue overrides are game-design proposals, not verified geographic positions.",
     "reconciliationNote": "Reviewed against osogbo-town.json landmark actions and map-location-links.ts. Distinct gameplay references remain intact; real-world identity equivalence is not established."
   },
@@ -599,7 +599,8 @@
       "category": "junction",
       "status": "pending-asset-and-route-review",
       "source": "Osogbo Districts and Landmarks.md",
-      "overviewVisible": false
+      "overviewVisible": true,
+      "playable": false
     },
     {
       "id": "oke-fia-roundabout",
@@ -608,7 +609,8 @@
       "category": "junction",
       "status": "pending-asset-and-route-review",
       "source": "Osogbo Districts and Landmarks.md",
-      "overviewVisible": false
+      "overviewVisible": true,
+      "playable": false
     },
     {
       "id": "freedom-park",
@@ -617,7 +619,8 @@
       "category": "sport",
       "status": "pending-asset-and-route-review",
       "source": "Osogbo Districts and Landmarks.md",
-      "overviewVisible": false
+      "overviewVisible": true,
+      "playable": false
     },
     {
       "id": "osun-state-government-secretariat",
@@ -626,7 +629,8 @@
       "category": "services",
       "status": "pending-asset-and-route-review",
       "source": "Osogbo Districts and Landmarks.md",
-      "overviewVisible": false
+      "overviewVisible": true,
+      "playable": false
     },
     {
       "id": "osun-house-of-assembly",
@@ -635,7 +639,8 @@
       "category": "services",
       "status": "pending-asset-and-route-review",
       "source": "Osogbo Districts and Landmarks.md",
-      "overviewVisible": false
+      "overviewVisible": true,
+      "playable": false
     },
     {
       "id": "osun-high-court",
@@ -644,7 +649,8 @@
       "category": "services",
       "status": "pending-asset-and-route-review",
       "source": "Osogbo Districts and Landmarks.md",
-      "overviewVisible": false
+      "overviewVisible": true,
+      "playable": false
     },
     {
       "id": "osun-osogbo-sacred-grove",
@@ -653,7 +659,8 @@
       "category": "services",
       "status": "pending-asset-and-route-review",
       "source": "Osogbo Districts and Landmarks.md",
-      "overviewVisible": false
+      "overviewVisible": true,
+      "playable": false
     },
     {
       "id": "suzanne-wenger-art-gallery",
@@ -662,7 +669,8 @@
       "category": "services",
       "status": "pending-asset-and-route-review",
       "source": "Osogbo Districts and Landmarks.md",
-      "overviewVisible": false
+      "overviewVisible": true,
+      "playable": false
     }
   ],
   "reconciliation": [
@@ -716,6 +724,203 @@
       "requiredAnchor": "Olaiya Flyover Bridge",
       "status": "retain-distinct-map-objects",
       "reason": "Olaiya Central routes to city-centre; the flyover is a reserved architectural object, not a verified playable destination."
+    }
+  ],
+  "anchorCoverage": [
+    {
+      "districtId": "olaiya",
+      "anchors": [
+        {
+          "label": "Olaiya Flyover Bridge",
+          "status": "reserved",
+          "referenceId": "olaiya-flyover-bridge"
+        },
+        {
+          "label": "Major banks",
+          "status": "existing",
+          "referenceId": "meridian-bank"
+        },
+        {
+          "label": "Korope parks",
+          "status": "neighborhood-only",
+          "referenceId": "olaiya-transit"
+        }
+      ]
+    },
+    {
+      "districtId": "oja-oba",
+      "anchors": [
+        {
+          "label": "Ataoja’s Palace",
+          "status": "existing",
+          "referenceId": "ataoja-palace"
+        },
+        {
+          "label": "Oja-Oba Central Market",
+          "status": "existing",
+          "referenceId": "oja-oba-market"
+        },
+        {
+          "label": "Central Mosque",
+          "status": "existing",
+          "referenceId": "central-mosque"
+        }
+      ]
+    },
+    {
+      "districtId": "isale-aro",
+      "anchors": [
+        {
+          "label": "Local street markets",
+          "status": "existing",
+          "referenceId": "fish-market"
+        },
+        {
+          "label": "Neighborhood clinics",
+          "status": "existing",
+          "referenceId": "community-clinic"
+        },
+        {
+          "label": "Historic family compounds",
+          "status": "decorative",
+          "referenceId": "isale-aro-residential-1"
+        }
+      ]
+    },
+    {
+      "districtId": "ogo-oluwa",
+      "anchors": [
+        {
+          "label": "Osun Mall",
+          "status": "existing",
+          "referenceId": "osun-mall"
+        },
+        {
+          "label": "Major bank branches",
+          "status": "existing",
+          "referenceId": "cedar-bank"
+        },
+        {
+          "label": "Flagship filling stations",
+          "status": "missing",
+          "referenceId": null
+        }
+      ]
+    },
+    {
+      "districtId": "oke-fia",
+      "anchors": [
+        {
+          "label": "Oke-Fia Roundabout",
+          "status": "reserved",
+          "referenceId": "oke-fia-roundabout"
+        },
+        {
+          "label": "Motor parks",
+          "status": "missing",
+          "referenceId": null
+        },
+        {
+          "label": "Roadside shops",
+          "status": "missing",
+          "referenceId": null
+        }
+      ]
+    },
+    {
+      "districtId": "old-garage",
+      "anchors": [
+        {
+          "label": "Old Garage Motor Park",
+          "status": "existing",
+          "referenceId": "transit-park"
+        },
+        {
+          "label": "Freedom Park",
+          "status": "reserved",
+          "referenceId": "freedom-park"
+        },
+        {
+          "label": "Auto repair clusters",
+          "status": "decorative",
+          "referenceId": "old-garage-workshop-1"
+        }
+      ]
+    },
+    {
+      "districtId": "abere-ring-road",
+      "anchors": [
+        {
+          "label": "Osun State Government Secretariat",
+          "status": "reserved",
+          "referenceId": "osun-state-government-secretariat"
+        },
+        {
+          "label": "House of Assembly",
+          "status": "reserved",
+          "referenceId": "osun-house-of-assembly"
+        },
+        {
+          "label": "High Court",
+          "status": "reserved",
+          "referenceId": "osun-high-court"
+        }
+      ]
+    },
+    {
+      "districtId": "ota-efun-testing-ground",
+      "anchors": [
+        {
+          "label": "Osogbo Township Stadium",
+          "status": "existing",
+          "referenceId": "osogbo-township-stadium"
+        },
+        {
+          "label": "Technical/training centers",
+          "status": "missing",
+          "referenceId": null
+        },
+        {
+          "label": "Mechanic villages",
+          "status": "partial",
+          "referenceId": "ota-efun-industrial-1"
+        }
+      ]
+    },
+    {
+      "districtId": "riverside",
+      "anchors": [
+        {
+          "label": "Osun-Osogbo Sacred Grove",
+          "status": "reserved",
+          "referenceId": "osun-osogbo-sacred-grove"
+        },
+        {
+          "label": "Suzanne Wenger’s Art Gallery",
+          "status": "reserved",
+          "referenceId": "suzanne-wenger-art-gallery"
+        },
+        {
+          "label": "River bridges",
+          "status": "missing",
+          "referenceId": null
+        }
+      ]
+    },
+    {
+      "districtId": "oke-baale",
+      "anchors": [
+        {
+          "label": "Oke-Baale Local Government HQ",
+          "status": "existing",
+          "referenceId": "oke-baale-local-government-hq"
+        },
+        {
+          "label": "Osogbo School of Art",
+          "status": "existing",
+          "referenceId": "osogbo-school-of-art"
+        }
+      ]
     }
   ]
 }
