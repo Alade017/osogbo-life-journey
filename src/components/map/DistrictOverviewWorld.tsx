@@ -98,6 +98,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
     if (panCorrection.lengthSq() > 0) {
       target.add(panCorrection);
       camera.position.add(panCorrection);
+      camera.updateMatrixWorld();
     }
     invalidate();
   }, [camera, invalidate, panCorrection]);
@@ -130,7 +131,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
       camera.zoom = fit;
       setFocusedDistrict(null);
     } else {
-      const target = changedTarget ? searchTarget : changedLandmark && selectedLandmarkId ? {id:selectedLandmarkId,kind:"landmark"} : null;
+      const target = changedTarget && searchTarget ? searchTarget : changedLandmark && selectedLandmarkId ? {id:selectedLandmarkId,kind:"landmark"} : null;
       if (!target) return;
       const id = typeof target === "string" ? target : target.id;
       const districtOnly = typeof target === "object" && target.kind === "district";
