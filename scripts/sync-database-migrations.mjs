@@ -49,6 +49,7 @@ try {
         content,
         hash,
         rawHash,
+        checksumHashes: { raw: rawHash, lfNormalized: hash },
         acceptedHashes: [...new Set([rawHash, hash])],
       };
     });
@@ -59,6 +60,11 @@ try {
       `Drizzle ledger: ${drizzleAudit.applied} applied migrations. Pending: ${drizzleAudit.pending.map((entry) => entry.tag).join(", ") || "none"}`,
     );
     console.log(`Historical checksum differences: ${mismatchTags.join(", ") || "none"}`);
+    for (const match of drizzleAudit.checksumMatches) {
+      console.log(
+        `Drizzle checksum match for ${match.tag}: ${match.checksumType}; timestamp=${match.timestampMatch}; hash=${match.hash}`,
+      );
+    }
     for (const warning of drizzleAudit.timestampWarnings) {
       console.warn(
         `Drizzle timestamp discrepancy for ${warning.tag}: journal=${warning.expectedTimestamp}, database=${warning.actualTimestamp}. Unique checksum confirms this migration is already applied; no ledger rewrite is performed.`,
