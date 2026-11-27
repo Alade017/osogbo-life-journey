@@ -12,6 +12,7 @@ import { TownBrandBillboards3D } from "./TownBrandBillboards3D";
 import { OverviewLandmarkModel } from "./OverviewLandmarkModel";
 import { OverviewPropertyModel } from "./OverviewPropertyModel";
 import { OverviewLandscape } from "./OverviewLandscape";
+import { OverviewRiver } from "./OverviewRiver";
 
 type Position = { x: number; z: number };
 
@@ -140,17 +141,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
           </group>
         );
       })}
-      {layout.terrain.river.centerline.slice(1).map((end, index) => {
-        const start = layout.terrain.river.centerline[index]!;
-        const a = world(start), b = world(end);
-        const dx = b[0] - a[0], dz = b[2] - a[2];
-        return (
-          <mesh key={index} position={[(a[0]+b[0])/2, 0.035, (a[2]+b[2])/2]} rotation={[0, Math.atan2(dx, dz), 0]}>
-            <boxGeometry args={[layout.terrain.river.width, 0.04, Math.hypot(dx, dz) + layout.terrain.river.width / 2]} />
-            <meshStandardMaterial color="#568b9b" roughness={0.35} />
-          </mesh>
-        );
-      })}
+      <OverviewRiver />
       {eventChips.map(event => {
         const p = overviewPlacePosition(event.id);
         if (!p) return null;
