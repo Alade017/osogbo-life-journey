@@ -21,7 +21,7 @@ export function auditDrizzleLedger(
   checksumMatches: Array<{
     tag: string;
     hash: string;
-    checksumType: "raw" | "lf-normalized" | "identical" | "unspecified" | "unrecognized";
+    checksumType: "raw" | "lf-normalized" | "legacy-verified" | "identical" | "unspecified" | "unrecognized";
     timestampMatch: "exact" | "fallback";
   }>;
   unknown: any[];
