@@ -1,7 +1,7 @@
 const LEGACY_DRIZZLE_CHECKSUMS = Object.freeze({
   "0017_milestone8_career_recurring_economy": {
     canonicalHash: "6559a00369a91aab28726ded8ec0580d012324c0d46d74d671d550a40a34d1f8",
-    legacyHashes: ["7304141d0897cb4ac6f932e79cbf5e5329017ce80d524400d48bff3d5d9a366"],
+    legacyHashes: ["7304141d0897cb4ac6f932e79cbbe5f5329017ce80d524400d48bff3d5d9a366"],
   },
   "0060_phone_community_apps": {
     canonicalHash: "6f8cf746efe70b338aabd24fc96652096e43c34aa7702f9c9e872099c9be26f1",

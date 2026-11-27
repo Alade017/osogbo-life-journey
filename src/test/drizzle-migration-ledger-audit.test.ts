@@ -220,7 +220,7 @@ describe("Drizzle migration ledger audit", () => {
   });
 
   it("accepts and labels a pinned legacy production checksum", () => {
-    const legacyHash = "7304141d0897cb4ac6f932e79cbf5e5329017ce80d524400d48bff3d5d9a366";
+    const legacyHash = "7304141d0897cb4ac6f932e79cbbe5f5329017ce80d524400d48bff3d5d9a366";
     const canonicalHash = "6559a00369a91aab28726ded8ec0580d012324c0d46d74d671d550a40a34d1f8";
     const legacyHashes = getVerifiedLegacyChecksumHashes(
       "0017_milestone8_career_recurring_economy",
