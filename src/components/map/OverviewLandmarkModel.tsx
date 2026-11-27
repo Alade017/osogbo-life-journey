@@ -1,3 +1,4 @@
+import { OverviewModelBatch } from "./OverviewModelBatch";
 import { memo, type ReactNode } from "react";
 import { OverviewBox, OverviewPrimitive } from "./OverviewModelResources";
 
@@ -140,5 +141,5 @@ export const OverviewLandmarkModel = memo(function OverviewLandmarkModel({ profi
     default:
       model = <Facade color={color}/>;
   }
-  return <group scale={[width, Math.min(width,depth), depth]}>{model}</group>;
+  return <group scale={[width, Math.min(width,depth), depth]}><OverviewModelBatch>{model}</OverviewModelBatch></group>;
 });
