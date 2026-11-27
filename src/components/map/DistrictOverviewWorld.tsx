@@ -5,6 +5,7 @@ import { overviewDistrictId, overviewPlacePosition } from "./overview-district-r
 import type { MapSearchTarget, MapEventChip, MapBillboardMarker, MapProperty } from "./MapCanvas";
 import { OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
+import { overviewFit, overviewClampZoom, overviewPanCorrection } from "./overview-camera";
 import { MapPointerGesture } from "./map-pointer-gesture";
 import catalog from "@/data/osogbo-district-catalog.json";
 import layout from "@/data/osogbo-overview-layout.json";
@@ -88,16 +89,12 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
   const lastZoom = useRef(0);
   const lastFocus = useRef<{ target: typeof searchTarget; landmark: typeof selectedLandmarkId }>({ target: undefined, landmark: undefined });
   const [focusedDistrict, setFocusedDistrict] = useState<string | null>(null);
-  const fit = Math.max(0.01, Math.min(size.width, size.height) / (Math.hypot(layout.meta.width, layout.meta.depth) * 1.12));
+  const fit = overviewFit(size.width, size.height, layout.meta.width, layout.meta.depth);
   const constrainCamera = useCallback(() => {
     const orbit = controls.current;
     if (!orbit) return;
     const target = orbit.target;
-    panCorrection.set(
-      Math.max(-layout.meta.width / 2, Math.min(layout.meta.width / 2, target.x)) - target.x,
-      -target.y,
-      Math.max(-layout.meta.depth / 2, Math.min(layout.meta.depth / 2, target.z)) - target.z,
-    );
+    panCorrection.set(...overviewPanCorrection(target.x, target.y, target.z, layout.meta.width, layout.meta.depth));
     if (panCorrection.lengthSq() > 0) {
       target.add(panCorrection);
       camera.position.add(panCorrection);
@@ -113,7 +110,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
       initialized.current = true;
     } else {
       const relativeZoom = previousFit.current > 0 ? camera.zoom / previousFit.current : 1;
-      camera.zoom = Math.max(fit, Math.min(fit * 5, fit * relativeZoom));
+      camera.zoom = overviewClampZoom(fit * relativeZoom, fit);
     }
     previousFit.current = fit;
     camera.updateProjectionMatrix();
@@ -153,7 +150,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
   useEffect(() => {
     if (!zoomRequest || zoomRequest.version === lastZoom.current || !(camera instanceof OrthographicCamera)) return;
     lastZoom.current = zoomRequest.version;
-    camera.zoom = Math.max(fit, Math.min(fit * 5, camera.zoom * Math.pow(1.25, zoomRequest.step)));
+    camera.zoom = overviewClampZoom(camera.zoom * Math.pow(1.25, zoomRequest.step), fit);
     camera.updateProjectionMatrix();
     controls.current?.update();
     invalidate();
