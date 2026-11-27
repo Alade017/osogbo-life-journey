@@ -31,7 +31,8 @@ export function DistrictSheet({
     }
     start.current = null;
   };
-  const trafficLabel = `${district.traffic[0]!.toUpperCase()}${district.traffic.slice(1)} traffic`;
+  const level = district.density ?? district.traffic;
+  const trafficLabel = `${level[0]!.toUpperCase()}${level.slice(1)} ${district.density ? "building density" : "traffic"}`;
   if (typeof document === "undefined") return null;
 
   return createPortal(
@@ -60,7 +61,7 @@ export function DistrictSheet({
       </header>
       <p>{district.description}</p>
       <div className="map-traffic" aria-label={trafficLabel}>
-        <span className={`traffic-bars traffic-${district.traffic}`}>
+        <span className={`traffic-bars traffic-${level}`}>
           <i />
           <i />
           <i />
