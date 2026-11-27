@@ -17,7 +17,6 @@ import {
   Users,
   Volume2,
   Waves,
-  SlidersHorizontal,
   type LucideIcon,
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -46,6 +45,7 @@ import {
   enableGameAudio,
   readGameAudioLevels,
   setGameAudioLevels,
+  isGameAudioActive,
   readMuteOnTabSwitch,
   setMuteOnTabSwitch,
 } from "@/lib/game-audio";
@@ -105,7 +105,6 @@ export function SettingsPage() {
   const fieldId = useId();
   const qc = useQueryClient();
   const { data: profile, isPending, isError, error, isFetching, refetch } = useQuery(q.profile());
-  const { data: character } = useQuery(q.character());
   const homeVisit = useQuery(q.homeVisitPolicy());
   const { saved, flash } = useSavedFlash();
 
