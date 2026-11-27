@@ -4,13 +4,22 @@ import layout from "@/data/osogbo-overview-layout.json";
 
 type Tree = { x: number; z: number; height: number };
 const trees: Tree[] = [];
-const occupied = [...layout.places, ...layout.residentialParcels, ...layout.commercialParcels];
+const occupied = [...layout.places, ...layout.residentialParcels, ...layout.commercialParcels, ...layout.terrain.river.bridges];
+function nearRiver(x: number, z: number) {
+  const { centerline, width } = layout.terrain.river;
+  return centerline.slice(1).some((b, i) => {
+    const a = centerline[i]!;
+    const dx = b.x - a.x, dz = b.z - a.z;
+    const t = Math.max(0, Math.min(1, ((x-a.x)*dx+(z-a.z)*dz)/(dx*dx+dz*dz || 1)));
+    return Math.hypot(x-a.x-t*dx,z-a.z-t*dz) < width/2+1.2;
+  });
+}
 for (const district of layout.districts) {
   const b = district.bounds;
   const step = district.districtId === "riverside" ? 2 : 4;
   for (let x = b.x + 0.6; x < b.x + b.width - 0.6; x += step) {
     for (let z = b.z + 0.6; z < b.z + b.depth - 0.6; z += step) {
-      if (occupied.some(p => Math.abs(p.position.x - x) < p.footprint.width / 2 + 0.65 &&
+      if (nearRiver(x,z) || occupied.some(p => Math.abs(p.position.x - x) < p.footprint.width / 2 + 0.65 &&
           Math.abs(p.position.z - z) < p.footprint.depth / 2 + 0.65)) continue;
       trees.push({ x: x - layout.meta.width / 2, z: z - layout.meta.depth / 2,
         height: 0.95 + (Math.sin(x * 7 + z * 13) + 1) * 0.35 });
