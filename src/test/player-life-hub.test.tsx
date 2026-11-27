@@ -46,6 +46,9 @@ vi.mock("@/lib/game", () => ({
     myJobs: () => ({ queryKey: ["myJobs"] }),
   },
 }));
+vi.mock("@/components/game/GameInventoryPanel", () => ({
+  GameInventoryPanel: () => <div data-testid="inventory-panel">Saved inventory content</div>,
+}));
 vi.mock("@/components/3d/CharacterPreview", () => ({
   CharacterPreview: () => <div data-testid="character-preview" />,
 }));
@@ -122,4 +125,11 @@ it("moves keyboard focus into the hub and keeps Tab navigation inside it", () =>
   lastTab.focus();
   fireEvent.keyDown(lastTab, { key: "Tab" });
   expect(document.activeElement).toBe(handle);
+});
+
+it("opens Inventory as a tab inside the player hub", async () => {
+  render(<PlayerLifeHub player={player} open initialTab="profile" onClose={vi.fn()} />);
+  fireEvent.click(screen.getByRole("button", { name: "Inventory" }));
+  expect(await screen.findByTestId("inventory-panel")).toHaveTextContent("Saved inventory content");
+  expect(screen.getByRole("dialog", { name: "Player life hub" })).toBeInTheDocument();
 });
