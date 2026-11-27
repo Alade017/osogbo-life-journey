@@ -196,6 +196,35 @@ function CurrentCampaign({
   );
 }
 
+export function MapBrandBillboardDialog({
+  brand,
+  onClose,
+}: {
+  brand: { name: string; subtitle: string } | undefined;
+  onClose: () => void;
+}) {
+  if (!brand) return null;
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Map billboard</DialogTitle>
+          <DialogDescription>Featured brand in Osogbo</DialogDescription>
+        </DialogHeader>
+        <div className="rounded-lg border-l-4 border-[#e7c77f] bg-[#233e68] px-5 py-8 text-center text-white">
+          <p className="text-2xl font-bold">{brand.name}</p>
+          <p className="mt-1 text-sm tracking-wider">{brand.subtitle}</p>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export function MapBillboardCampaignDialog({
   campaign,
   onClose,

@@ -1,3 +1,4 @@
+import overviewLayout from "@/data/osogbo-overview-layout.json";
 import { transportPreference } from "@/lib/transport-park";
 import "@/components/map/map-compact.css";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -15,7 +16,10 @@ import { mapHousingMarkers } from "@/components/map/map-housing-markers";
 import { DistrictSheet } from "@/components/map/DistrictSheet";
 import { useMapTravelController } from "@/components/map/use-map-travel-controller";
 import { MapTravelSelector } from "@/components/map/MapTravelSelector";
-import { MapBillboardCampaignDialog } from "@/components/game/CityBillboards";
+import {
+  MapBillboardCampaignDialog,
+  MapBrandBillboardDialog,
+} from "@/components/game/CityBillboards";
 import { OsunStateOverview } from "@/components/map/OsunStateOverview";
 import { MAP_LANDMARK_LOCATION_SLUG } from "@/components/map/map-location-links";
 import townData from "@/data/osogbo-town.json";
@@ -92,6 +96,7 @@ export function CityMapDashboard(
   const [actionError, setActionError] = useState("");
   const [placeActionResult, setPlaceActionResult] = useState<PlaceActionResult | null>(null);
   const [selectedBillboard, setSelectedBillboard] = useState<CurrentMapBillboard | null>(null);
+  const [selectedBrand, setSelectedBrand] = useState<string | null>(null);
   const [billboardNow, setBillboardNow] = useState(() => Date.now());
   const [mapLevel, setMapLevel] = useState<"town" | "state">("town");
   const [selectedTownId, setSelectedTownId] = useState("osogbo");
@@ -463,6 +468,7 @@ export function CityMapDashboard(
               onSelectLandmark={onLandmark}
               searchTarget={searchTarget}
               billboardMarkers={billboardMarkers}
+              onSelectBrandBillboard={setSelectedBrand}
               onSelectBillboard={(campaignId) => {
                 setSelectedBillboard(
                   activeMapBillboards.find(
@@ -487,6 +493,10 @@ export function CityMapDashboard(
           onOpenOsogbo={() => setMapLevel("town")}
         />
       )}
+      <MapBrandBillboardDialog
+        brand={overviewLayout.billboardPolicy.brands.find((brand) => brand.id === selectedBrand)}
+        onClose={() => setSelectedBrand(null)}
+      />
       <MapBillboardCampaignDialog
         campaign={selectedBillboard}
         onClose={() => setSelectedBillboard(null)}

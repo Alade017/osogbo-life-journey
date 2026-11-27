@@ -1,3 +1,4 @@
+import layout from "@/data/osogbo-overview-layout.json";
 import {
   Component,
   type ReactNode,
@@ -81,6 +82,7 @@ export interface MapCanvasProps {
   playerLocation?: MapPlayerLocation | null | undefined;
   eventChips?: MapEventChip[] | undefined;
   billboardMarkers?: MapBillboardMarker[] | undefined;
+  onSelectBrandBillboard?: ((id: string) => void) | undefined;
   onSelectBillboard?: (campaignId: string) => void | undefined;
   availableLandmarkIds?: readonly string[] | undefined;
   availabilityPending?: boolean | undefined;
@@ -116,6 +118,7 @@ export function MapCanvas({
   availableLandmarkIds,
   availabilityPending = false,
   onSelectBillboard,
+  onSelectBrandBillboard,
   properties,
   onSelectProperty,
   onSelectEvent,
@@ -229,6 +232,7 @@ export function MapCanvas({
               onSelectUnavailable={selectUnavailable}
               onSelectDistrict={selectDistrict}
               onSelectBillboard={onSelectBillboard}
+              onSelectBrandBillboard={onSelectBrandBillboard}
               eventChips={selectableEvents}
               onSelectEvent={onSelectEvent}
               billboardMarkers={billboardMarkers}
@@ -346,6 +350,14 @@ export function MapCanvas({
             </button>
           </li>
         ))}
+        {onSelectBrandBillboard &&
+          layout.billboardPolicy.brands.map((brand) => (
+            <li key={brand.id}>
+              <button type="button" onClick={() => onSelectBrandBillboard(brand.id)}>
+                Billboard for {brand.name} {brand.subtitle}
+              </button>
+            </li>
+          ))}
         {billboardMarkers.map((billboard) => (
           <li key={billboard.campaignId}>
             <button type="button" onClick={() => onSelectBillboard?.(billboard.campaignId)}>

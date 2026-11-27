@@ -26,41 +26,59 @@ function createBrandTexture(name: string, subtitle: string) {
   return result;
 }
 
-function BrandBoard({
-  position,
+export function MapBillboardModel({
   cell,
   texture,
 }: {
-  position: readonly [number, number];
   cell: number;
-  texture: CanvasTexture | null;
+  texture?: CanvasTexture | null;
 }) {
   return (
-    <group position={[position[0], 0, position[1]]}>
+    <>
       {[-1, 1].map((side) => (
-        <mesh key={side} position={[side * cell * 0.35, cell * 0.35, 0]} castShadow>
-          <boxGeometry args={[0.1, cell * 0.7, 0.1]} />
-          <WorldMaterial tone="metal" />
-        </mesh>
+        <group key={side} position={[side * cell * 0.38, 0, 0.16 * cell]}>
+          <mesh position={[0, 0.035, 0]}>
+            <boxGeometry args={[cell * 0.19, 0.07, cell * 0.18]} />
+            <WorldMaterial tone="concrete" />
+          </mesh>
+          <mesh position={[0, cell * 0.44, 0]}>
+            <boxGeometry args={[cell * 0.07, cell * 0.86, cell * 0.07]} />
+            <WorldMaterial tone="slate" />
+          </mesh>
+        </group>
       ))}
-      <group position={[0, cell * 0.91, 0]} rotation={[-Math.PI * 0.39, 0, 0]}>
-        <mesh castShadow>
-          <boxGeometry args={[cell * 1.12, cell * 0.52, 0.12]} />
+      <mesh position={[0, cell * 0.85, cell * 0.06]}>
+        <boxGeometry args={[cell * 0.9, cell * 0.06, cell * 0.26]} />
+        <WorldMaterial tone="metal" />
+      </mesh>
+      <group
+        name="billboard-face"
+        position={[0, cell * 0.99, -cell * 0.08]}
+        rotation={[-Math.PI * 0.3, 0, 0]}
+      >
+        <mesh>
+          <boxGeometry args={[cell * 1.12, cell * 0.51, 0.12]} />
           <WorldMaterial tone="indigo" />
         </mesh>
         <mesh position={[0, 0, 0.065]}>
-          <planeGeometry args={[cell * 1.08, cell * 0.48]} />
-          <meshBasicMaterial map={texture} toneMapped={false} />
+          <planeGeometry args={[cell * 1.08, cell * 0.47]} />
+          <meshBasicMaterial
+            map={texture ?? null}
+            color={texture ? "#ffffff" : "#38577d"}
+            toneMapped={false}
+          />
         </mesh>
       </group>
-    </group>
+    </>
   );
 }
 
 export function TownBrandBillboards3D({
   positions,
   cell,
+  onSelect,
 }: {
+  onSelect?: ((id: string, delta: number) => void) | undefined;
   positions: readonly { id?: string; brandId?: string; position: readonly [number, number] }[];
   cell: number;
 }) {
@@ -85,12 +103,18 @@ export function TownBrandBillboards3D({
           : brands[index % brands.length];
         if (!brand) return null;
         return (
-          <BrandBoard
+          <group
             key={sign.id ?? index}
-            texture={textures.get(brand.id) ?? null}
-            position={sign.position}
-            cell={cell}
-          />
+            name={`overview-billboard:${sign.id ?? index}`}
+            position={[sign.position[0], 0, sign.position[1]]}
+            onClick={(event) => {
+              if (!onSelect) return;
+              event.stopPropagation();
+              onSelect(brand.id, event.delta);
+            }}
+          >
+            <MapBillboardModel cell={cell} texture={textures.get(brand.id) ?? null} />
+          </group>
         );
       })}
     </group>

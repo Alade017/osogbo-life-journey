@@ -200,6 +200,16 @@ function renderDashboard(currentSlug?: string, insideHome = false) {
   );
 }
 
+it("opens the featured billboard creative from the map directory", async () => {
+  renderDashboard("city-centre");
+  fireEvent.click(await screen.findByRole("button", { name: "Billboard for ELEGANCE TECH HUB" }));
+  const dialog = await screen.findByRole("dialog", { name: "Map billboard" });
+  expect(within(dialog).getByText("ELEGANCE")).toBeVisible();
+  expect(within(dialog).getByText("TECH HUB")).toBeVisible();
+  fireEvent.click(within(dialog).getByRole("button", { name: "Close" }));
+  expect(dialog).not.toBeInTheDocument();
+});
+
 describe("isometric town map", () => {
   it("opens the walking route from the town map", () => {
     renderDashboard("oja-oba");

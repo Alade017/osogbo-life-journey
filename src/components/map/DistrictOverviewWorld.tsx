@@ -27,7 +27,7 @@ import { MapPointerGesture } from "./map-pointer-gesture";
 import catalog from "@/data/osogbo-district-catalog.json";
 import layout from "@/data/osogbo-overview-layout.json";
 import { overviewBillboards } from "./overview-billboard-placement";
-import { TownBrandBillboards3D } from "./TownBrandBillboards3D";
+import { MapBillboardModel, TownBrandBillboards3D } from "./TownBrandBillboards3D";
 import { OverviewLandmarkModel } from "./OverviewLandmarkModel";
 import { OverviewPropertyModel } from "./OverviewPropertyModel";
 import { OverviewLandscape } from "./OverviewLandscape";
@@ -92,6 +92,7 @@ export type DistrictOverviewProps = {
   eventChips?: readonly MapEventChip[] | undefined;
   billboardMarkers?: readonly MapBillboardMarker[] | undefined;
   onSelectEvent?: ((id: string) => void) | undefined;
+  onSelectBrandBillboard?: ((id: string) => void) | undefined;
   onSelectBillboard?: ((id: string) => void) | undefined;
   properties?: readonly MapProperty[] | undefined;
   onSelectProperty?: ((property: MapProperty) => void) | undefined;
@@ -111,6 +112,7 @@ export function DistrictOverviewWorld({
   billboardMarkers = EMPTY_BILLBOARDS,
   onSelectEvent,
   onSelectBillboard,
+  onSelectBrandBillboard,
   properties = EMPTY_PROPERTIES,
   onSelectProperty,
 }: DistrictOverviewProps) {
@@ -442,10 +444,7 @@ export function DistrictOverviewWorld({
               if (!gesture.current.moved && event.delta < 6) onSelectBillboard?.(marker.campaignId);
             }}
           >
-            <mesh>
-              <boxGeometry args={[0.8, 0.5, 0.15]} />
-              <meshStandardMaterial color="#38577d" />
-            </mesh>
+            <MapBillboardModel cell={0.85} />
             {detailLabels && (
               <SceneHtml position={[0, 0.45, 0]} center pointerEvents="none" zIndexRange={[20, 11]}>
                 <span className="overview-billboard-label" data-atlas-label="1">
@@ -458,7 +457,17 @@ export function DistrictOverviewWorld({
       })}
       <OverviewLandscape />
       <OverviewLabelLayout />
-      <TownBrandBillboards3D positions={brands} cell={layout.billboardPolicy.cell} />
+      <TownBrandBillboards3D
+        positions={brands}
+        cell={layout.billboardPolicy.cell}
+        onSelect={
+          onSelectBrandBillboard
+            ? (id, delta) => {
+                if (!gesture.current.moved && delta < 6) onSelectBrandBillboard(id);
+              }
+            : undefined
+        }
+      />
     </>
   );
 }
