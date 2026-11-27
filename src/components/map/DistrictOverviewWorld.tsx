@@ -20,6 +20,9 @@ type Position = { x: number; z: number };
 const world = ({ x, z }: Position): [number, number, number] => [
   x - layout.meta.width / 2, 0, z - layout.meta.depth / 2,
 ];
+const districtById = new Map(catalog.districts.map(d => [d.id, d]));
+const placeById = new Map([...catalog.places, ...catalog.pendingLandmarks].map(p => [p.id, p]));
+const mobileDistricts = [...layout.districts].sort((a, b) => b.bounds.width * b.bounds.depth - a.bounds.width * a.bounds.depth).map(d => d.districtId);
 const palette: Record<string, string> = {
   "commercial-transit": "#c5a478", "royal-heritage": "#b68c62",
   "traditional-residential": "#b9a17e", "modern-commercial": "#b4b9ae",
@@ -164,7 +167,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
       <directionalLight position={[35, 65, 25]} intensity={2} />
       <OverviewTerrain />
       {layout.districts.map(d => {
-        const district = catalog.districts.find(item => item.id === d.districtId);
+        const district = districtById.get(d.districtId);
         return (
           <group key={d.districtId} name={`overview-district:${d.districtId}`}>
           <mesh position={[...world(d.center)]} rotation={[-Math.PI / 2, 0, 0]}
@@ -172,15 +175,15 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
             <planeGeometry args={[d.bounds.width, d.bounds.depth]} />
             <meshStandardMaterial color={palette[district?.identity ?? ""] ?? "#b4ac92"} polygonOffset polygonOffsetFactor={-1} polygonOffsetUnits={-1} />
           </mesh>
-          {(size.width >= 640 || (focusedDistrict ? focusedDistrict === d.districtId : d.districtId === "olaiya" || d.districtId === "oja-oba" || d.districtId === "ogo-oluwa")) && <SceneHtml position={[d.center.x - layout.meta.width / 2, 0.35, d.bounds.z + 0.5 - layout.meta.depth / 2]} center pointerEvents="none" zIndexRange={[10, 0]}>
-            <span className="district-label">{district?.name}</span>
+          {(size.width >= 640 || (focusedDistrict ? focusedDistrict === d.districtId : mobileDistricts.slice(0, Math.max(1, Math.floor(size.width / 120))).includes(d.districtId))) && <SceneHtml position={[d.center.x - layout.meta.width / 2, 0.35, d.bounds.z + 0.5 - layout.meta.depth / 2]} center pointerEvents="none" zIndexRange={[10, 0]}>
+            <span className="district-label overview-district-label">{district?.name}</span>
           </SceneHtml>}
           </group>
         );
       })}
       {layout.places.map(entry => {
-        const district = catalog.districts.find(d => d.id === entry.districtId);
-        const place = catalog.places.find(p => p.id === entry.placeId) ?? catalog.pendingLandmarks.find(p => p.id === entry.placeId);
+        const district = districtById.get(entry.districtId);
+        const place = placeById.get(entry.placeId);
         return (
           <group key={entry.placeId} name={`overview-landmark:${entry.placeId}`} position={world(entry.position)} rotation={[0, entry.rotationY, 0]}
             onPointerOver={event => { event.stopPropagation(); setHoveredPlace(entry.placeId); }}
@@ -189,7 +192,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
             <OverviewLandmarkModel profile={entry.profile} {...entry.footprint} color={palette[district?.identity ?? ""] ?? "#d4c7af"} />
             {place && (hoveredPlace === entry.placeId || selectedLandmarkId === entry.placeId) && (
               <SceneHtml position={[0, Math.min(entry.footprint.width, entry.footprint.depth) * 0.85, 0]} center pointerEvents="none" zIndexRange={[20, 11]}>
-                <span className="district-label">{place.label}{entry.status === "reserved" ? " · Not yet open" : !available.has(entry.placeId) ? " · Locked" : ""}</span>
+                <span className="district-label overview-landmark-label">{place.label}{entry.status === "reserved" ? " · Not yet open" : !available.has(entry.placeId) ? " · Locked" : ""}</span>
               </SceneHtml>
             )}
           </group>
