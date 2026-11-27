@@ -1,6 +1,6 @@
 {
   "meta": {
-    "version": 7,
+    "version": 8,
     "coordinateSystem": "Normalized fictional overview units, x eastward and z southward; not GIS or navigation coordinates",
     "status": "draft-footprints",
     "width": 100,
@@ -1526,6 +1526,36 @@
     {
       "houseTypeId": "duplex",
       "parcelId": "ogo-oluwa-residential-1"
+    }
+  ],
+  "brandBillboards": [
+    {
+      "id": "brand-aladtech",
+      "brandId": "aladtech",
+      "districtId": "olaiya",
+      "position": {
+        "x": 48.05,
+        "z": 46.1
+      },
+      "footprint": {
+        "width": 2.6,
+        "depth": 1.2
+      },
+      "rotationY": 0
+    },
+    {
+      "id": "brand-wlegance",
+      "brandId": "wlegance",
+      "districtId": "ogo-oluwa",
+      "position": {
+        "x": 19.05,
+        "z": 74.1
+      },
+      "footprint": {
+        "width": 2.6,
+        "depth": 1.2
+      },
+      "rotationY": 0
     }
   ]
 }
