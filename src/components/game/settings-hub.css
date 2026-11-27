@@ -1094,15 +1094,15 @@
 }
 .sx-page .sx-icon {
   color: var(--brand-royal);
-  background: color-mix(in srgb, var(--brand-sky) 20%, white);
+  background: color-mix(in srgb, var(--brand-mist) 72%, white);
   box-shadow: none;
 }
 .sx-page .sx-channel {
   border: 1px solid color-mix(in srgb, var(--brand-royal) 12%, var(--border));
-  background: color-mix(in srgb, var(--brand-sky) 12%, white);
+  background: color-mix(in srgb, var(--brand-mist) 55%, white);
 }
 .sx-page .sx-channel.is-on {
-  background: color-mix(in srgb, var(--brand-sky) 19%, white);
+  background: color-mix(in srgb, var(--brand-mist) 80%, white);
 }
 .sx-page .sx-btn-primary:not(:disabled) {
   background: var(--brand-royal);
