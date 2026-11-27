@@ -1,4 +1,5 @@
 import layout from "@/data/osogbo-overview-layout.json";
+import { overviewRiverDistance, overviewRiverBankWidth } from "./overview-river-layout";
 
 const policy = layout.billboardPolicy;
 type Position = { x: number; z: number };
@@ -11,13 +12,7 @@ function clear(a: Footprint, b: Footprint) {
     Math.abs(a.position.z-b.position.z) >= (a.footprint.depth+b.footprint.depth)/2+policy.clearance;
 }
 function riverClear(position: Position) {
-  const { centerline, width } = layout.terrain.river;
-  return centerline.slice(1).every((b,i) => {
-    const a = centerline[i]!;
-    const dx=b.x-a.x, dz=b.z-a.z;
-    const t=Math.max(0,Math.min(1,((position.x-a.x)*dx+(position.z-a.z)*dz)/(dx*dx+dz*dz || 1)));
-    return Math.hypot(position.x-a.x-t*dx,position.z-a.z-t*dz) >= width/2 + Math.hypot(policy.footprint.width,policy.footprint.depth)/2 + policy.clearance;
-  });
+  return overviewRiverDistance(position.x, position.z) >= overviewRiverBankWidth/2 + Math.hypot(policy.footprint.width,policy.footprint.depth)/2 + policy.clearance;
 }
 export function generateBillboards(): Billboard[] {
   const result: Billboard[] = [];
