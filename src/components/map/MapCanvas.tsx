@@ -1,18 +1,43 @@
-import { Component, type ReactNode, Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  Component,
+  type ReactNode,
+  Suspense,
+  lazy,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import townData from "@/data/osogbo-town.json";
-import { overviewDistrictId, overviewDistricts, overviewHasPlace } from "./overview-district-routing";
+import {
+  overviewDistrictId,
+  overviewDistricts,
+  overviewHasPlace,
+} from "./overview-district-routing";
 import { WORLD_PALETTE } from "@/components/3d/world-theme";
 import { WorldLoadingIndicator } from "@/components/game/WorldLoadingIndicator";
 
 const TownSurface3D = lazy(() =>
-  import("./DistrictOverviewSurface").then((module) => ({ default: module.DistrictOverviewSurface })),
+  import("./DistrictOverviewSurface").then((module) => ({
+    default: module.DistrictOverviewSurface,
+  })),
 );
 
-class MapLoadBoundary extends Component<{ children: ReactNode; onUnavailable: () => void }, { failed: boolean }> {
+class MapLoadBoundary extends Component<
+  { children: ReactNode; onUnavailable: () => void },
+  { failed: boolean }
+> {
   override state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
-  override componentDidCatch() { this.props.onUnavailable(); }
-  override render() { return this.state.failed ? null : this.props.children; }
+  static getDerivedStateFromError() {
+    return { failed: true };
+  }
+  override componentDidCatch() {
+    this.props.onUnavailable();
+  }
+  override render() {
+    return this.state.failed ? null : this.props.children;
+  }
 }
 
 export type MapSearchTarget = string | { id: string; kind?: "district" | "landmark" };
@@ -100,10 +125,13 @@ export function MapCanvas({
   const [cameraFocus, setCameraFocus] = useState<MapSearchTarget | null>(null);
   const [resetVersion, setResetVersion] = useState(0);
   const [zoomRequest, setZoomRequest] = useState({ step: 0, version: 0 });
-  const selectDistrict = useCallback((id: string) => {
-    setCameraFocus({ id, kind: "district" });
-    onSelectDistrict(id);
-  }, [onSelectDistrict]);
+  const selectDistrict = useCallback(
+    (id: string) => {
+      setCameraFocus({ id, kind: "district" });
+      onSelectDistrict(id);
+    },
+    [onSelectDistrict],
+  );
   const [rendererState, setRendererState] = useState<"loading" | "ready" | "unavailable">(
     "loading",
   );
@@ -139,23 +167,46 @@ export function MapCanvas({
   const availablePlaces = useMemo(
     () =>
       townData.landmarks.filter(
-        (place) => overviewHasPlace(place.id) && (availableLandmarkIds === undefined || availableLandmarkIds.includes(place.id)),
+        (place) =>
+          overviewHasPlace(place.id) &&
+          (availableLandmarkIds === undefined || availableLandmarkIds.includes(place.id)),
       ),
     [availableLandmarkIds],
   );
-  const availableIds = useMemo(() => availablePlaces.map(place => place.id), [availablePlaces]);
+  const availableIds = useMemo(() => availablePlaces.map((place) => place.id), [availablePlaces]);
   const availableSet = useMemo(() => new Set(availableIds), [availableIds]);
-  const selectableEvents = useMemo(() => availabilityPending ? EMPTY_EVENTS : _eventChips.filter(event => availableSet.has(event.id)), [_eventChips, availableSet, availabilityPending]);
-  const selectLandmark = useCallback((id: string) => {
-    if (availabilityPending) { setNotice("Checking destination access…"); return; }
-    if (!availableSet.has(id)) return;
-    setNotice(null);
-    onSelectLandmark(id);
-  }, [availableSet, availabilityPending, onSelectLandmark]);
-  const selectUnavailable = useCallback((id: string, reason: "locked" | "reserved") => {
-    setCameraFocus({ id, kind: "landmark" });
-    setNotice(reason === "reserved" ? "This landmark is not open for travel yet." : availabilityPending ? "Checking destination access…" : "This destination is currently unavailable.");
-  }, [availabilityPending]);
+  const selectableEvents = useMemo(
+    () =>
+      availabilityPending
+        ? EMPTY_EVENTS
+        : _eventChips.filter((event) => availableSet.has(event.id)),
+    [_eventChips, availableSet, availabilityPending],
+  );
+  const selectLandmark = useCallback(
+    (id: string) => {
+      if (availabilityPending) {
+        setNotice("Checking destination access…");
+        return;
+      }
+      if (!availableSet.has(id)) return;
+      setNotice(null);
+      onSelectLandmark(id);
+    },
+    [availableSet, availabilityPending, onSelectLandmark],
+  );
+  const selectUnavailable = useCallback(
+    (id: string, reason: "locked" | "reserved") => {
+      setCameraFocus({ id, kind: "landmark" });
+      setNotice(
+        reason === "reserved"
+          ? "This landmark is not open for travel yet."
+          : availabilityPending
+            ? "Checking destination access…"
+            : "This destination is currently unavailable.",
+      );
+    },
+    [availabilityPending],
+  );
   const handleReady = useCallback(() => setRendererState("ready"), []);
   const handleUnavailable = useCallback(() => setRendererState("unavailable"), []);
 
@@ -166,34 +217,56 @@ export function MapCanvas({
       aria-label="Interactive 3D town map with open camera exploration"
     >
       <MapLoadBoundary key={rendererAttempt} onUnavailable={handleUnavailable}>
-      <Suspense fallback={null}>
-        {rendererState !== "unavailable" && (
-          <TownSurface3D
-            availableLandmarkIds={availableIds}
-            searchTarget={cameraFocus}
-            resetVersion={resetVersion}
-            zoomRequest={zoomRequest}
-            selectedLandmarkId={selectedLandmarkId}
-            onSelectLandmark={selectLandmark}
-            onSelectUnavailable={selectUnavailable}
-            onSelectDistrict={selectDistrict}
-            onSelectBillboard={onSelectBillboard}
-            eventChips={selectableEvents}
-            onSelectEvent={onSelectEvent}
-            billboardMarkers={billboardMarkers}
-            properties={properties}
-            onSelectProperty={onSelectProperty}
-            onReady={handleReady}
-            onUnavailable={handleUnavailable}
-          />
-        )}
-      </Suspense>
+        <Suspense fallback={null}>
+          {rendererState !== "unavailable" && (
+            <TownSurface3D
+              availableLandmarkIds={availableIds}
+              searchTarget={cameraFocus}
+              resetVersion={resetVersion}
+              zoomRequest={zoomRequest}
+              selectedLandmarkId={selectedLandmarkId}
+              onSelectLandmark={selectLandmark}
+              onSelectUnavailable={selectUnavailable}
+              onSelectDistrict={selectDistrict}
+              onSelectBillboard={onSelectBillboard}
+              eventChips={selectableEvents}
+              onSelectEvent={onSelectEvent}
+              billboardMarkers={billboardMarkers}
+              properties={properties}
+              onSelectProperty={onSelectProperty}
+              onReady={handleReady}
+              onUnavailable={handleUnavailable}
+            />
+          )}
+        </Suspense>
       </MapLoadBoundary>
       {rendererState === "ready" && (
         <div className="town-map-zoom-controls" aria-label="Map camera controls">
-          <button type="button" aria-label="Zoom in" onClick={() => setZoomRequest(old => ({step: 1, version: old.version + 1}))}>+</button>
-          <button type="button" aria-label="Zoom out" onClick={() => setZoomRequest(old => ({step: -1, version: old.version + 1}))}>−</button>
-          <button type="button" aria-label="Reset map camera" onClick={() => { setCameraFocus(null); setZoomRequest({ step: 0, version: 0 }); setResetVersion(old => old + 1); }}>↺</button>
+          <button
+            type="button"
+            aria-label="Zoom in"
+            onClick={() => setZoomRequest((old) => ({ step: 1, version: old.version + 1 }))}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            aria-label="Zoom out"
+            onClick={() => setZoomRequest((old) => ({ step: -1, version: old.version + 1 }))}
+          >
+            −
+          </button>
+          <button
+            type="button"
+            aria-label="Reset map camera"
+            onClick={() => {
+              setCameraFocus(null);
+              setZoomRequest({ step: 0, version: 0 });
+              setResetVersion((old) => old + 1);
+            }}
+          >
+            ↺
+          </button>
         </div>
       )}
       {rendererState === "loading" && (
@@ -211,29 +284,50 @@ export function MapCanvas({
           <button
             type="button"
             className="phone-btn-primary"
-            onClick={() => { setResetVersion(0); setZoomRequest({ step: 0, version: 0 }); setRendererState("loading"); setRendererAttempt(n => n + 1); }}
+            onClick={() => {
+              setResetVersion(0);
+              setZoomRequest({ step: 0, version: 0 });
+              setRendererState("loading");
+              setRendererAttempt((n) => n + 1);
+            }}
           >
             Try again
           </button>
         </div>
       )}
-      {notice && <div className="overview-access-notice" role="status">{notice}<button type="button" onClick={() => setNotice(null)} aria-label="Dismiss destination notice">×</button></div>}
+      {notice && (
+        <div className="overview-access-notice" role="status">
+          {notice}
+          <button
+            type="button"
+            onClick={() => setNotice(null)}
+            aria-label="Dismiss destination notice"
+          >
+            ×
+          </button>
+        </div>
+      )}
       {!!properties?.length && (
         <details className="overview-property-panel">
           <summary>Properties</summary>
-          <p>Listings with a known housing type appear on the map; other properties remain available here.</p>
+          <p>
+            Listings with a known housing type appear on the map; other properties remain available
+            here.
+          </p>
           <ul aria-label="Existing properties">
-        {properties.map((property) => (
-          <li key={property.id}>
-            <button
-              type="button"
-              onClick={() => onSelectProperty?.(property)}
-              aria-label={"Open " + (property.label ?? "house") + ": " + houseBadgeText(property)}
-            >
-              {property.label ?? "House"}, {houseBadgeText(property)} · View property
-            </button>
-          </li>
-        ))}
+            {properties.map((property) => (
+              <li key={property.id}>
+                <button
+                  type="button"
+                  onClick={() => onSelectProperty?.(property)}
+                  aria-label={
+                    "Open " + (property.label ?? "house") + ": " + houseBadgeText(property)
+                  }
+                >
+                  {property.label ?? "House"}, {houseBadgeText(property)} · View property
+                </button>
+              </li>
+            ))}
           </ul>
         </details>
       )}

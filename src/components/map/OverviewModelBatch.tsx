@@ -10,7 +10,7 @@ import { useThree } from "@react-three/fiber";
  */
 export function OverviewModelBatch({ children }: { children: ReactNode }) {
   const root = useRef<Group>(null);
-  const invalidate = useThree(state => state.invalidate);
+  const invalidate = useThree((state) => state.invalidate);
 
   useLayoutEffect(() => {
     const group = root.current;
@@ -19,9 +19,14 @@ export function OverviewModelBatch({ children }: { children: ReactNode }) {
     const inverse = new Matrix4().copy(group.matrixWorld).invert();
     const matrix = new Matrix4();
     const buckets = new Map<BufferGeometry, Map<Material, Mesh[]>>();
-    group.traverse(object => {
-      if (!(object instanceof Mesh) || object instanceof InstancedMesh ||
-          !object.visible || Array.isArray(object.material)) return;
+    group.traverse((object) => {
+      if (
+        !(object instanceof Mesh) ||
+        object instanceof InstancedMesh ||
+        !object.visible ||
+        Array.isArray(object.material)
+      )
+        return;
       let materials = buckets.get(object.geometry);
       if (!materials) {
         materials = new Map();

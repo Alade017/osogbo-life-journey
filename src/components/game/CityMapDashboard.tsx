@@ -31,7 +31,12 @@ import {
 } from "@/lib/map-api";
 import type { PlaceActionResult } from "@/components/map/PlaceActionMenu";
 import { useCityEvents } from "@/hooks/use-city-events";
-import { overviewDistrictId, overviewDistricts as districts, overviewLandmarks as landmarks, overviewHasPlace } from "@/components/map/overview-district-routing";
+import {
+  overviewDistrictId,
+  overviewDistricts as districts,
+  overviewLandmarks as landmarks,
+  overviewHasPlace,
+} from "@/components/map/overview-district-routing";
 import {
   getBillboardLandmarkId,
   getCurrentMapBillboards,
@@ -210,13 +215,24 @@ export function CityMapDashboard(
     advertisements.data,
     playerAdvertisements.data,
   ]);
-  const accessibleEvents = cityEvents.isError ? [] : (cityEvents.data?.events ?? []).filter(event =>
-    event.status === "active" && overviewHasPlace(event.landmarkId) && availableLandmarks.data?.includes(event.landmarkId),
+  const accessibleEvents = cityEvents.isError
+    ? []
+    : (cityEvents.data?.events ?? []).filter(
+        (event) =>
+          event.status === "active" &&
+          overviewHasPlace(event.landmarkId) &&
+          availableLandmarks.data?.includes(event.landmarkId),
+      );
+  const activeEvents = accessibleEvents.filter(
+    (event) =>
+      selectedDistrict &&
+      overviewDistrictId(event.districtId, event.landmarkId) === selectedDistrict.id,
   );
-  const activeEvents = accessibleEvents.filter(event => selectedDistrict && overviewDistrictId(event.districtId, event.landmarkId) === selectedDistrict.id);
   const eventChips: MapEventChip[] = accessibleEvents
     .flatMap((event) => {
-      const landmark = townData.landmarks.find((place) => place.id === event.landmarkId && overviewHasPlace(place.id));
+      const landmark = townData.landmarks.find(
+        (place) => place.id === event.landmarkId && overviewHasPlace(place.id),
+      );
       return landmark
         ? [{ id: event.landmarkId, label: event.title, x: landmark.grid.x, y: landmark.grid.z }]
         : [];
@@ -286,15 +302,32 @@ export function CityMapDashboard(
       }
     },
   });
-  const selectedLandmarkAvailable = !!selectedLandmark && !!availableLandmarks.data?.includes(selectedLandmark.id);
+  const selectedLandmarkAvailable =
+    !!selectedLandmark && !!availableLandmarks.data?.includes(selectedLandmark.id);
   const closeTravelSelector = travelController.close;
   useEffect(() => {
-    if (!selectedLandmark || !availableLandmarks.isSuccess || selectedLandmarkAvailable ||
-        travelController.busy || travelController.arrivalConfirmed || apply.isPending || runPlaceAction.isPending) return;
+    if (
+      !selectedLandmark ||
+      !availableLandmarks.isSuccess ||
+      selectedLandmarkAvailable ||
+      travelController.busy ||
+      travelController.arrivalConfirmed ||
+      apply.isPending ||
+      runPlaceAction.isPending
+    )
+      return;
     closeTravelSelector();
     toast.error("This destination is no longer available.", { id: "map-destination-unavailable" });
-  }, [selectedLandmark, availableLandmarks.isSuccess, selectedLandmarkAvailable, travelController.busy,
-    travelController.arrivalConfirmed, apply.isPending, runPlaceAction.isPending, closeTravelSelector]);
+  }, [
+    selectedLandmark,
+    availableLandmarks.isSuccess,
+    selectedLandmarkAvailable,
+    travelController.busy,
+    travelController.arrivalConfirmed,
+    apply.isPending,
+    runPlaceAction.isPending,
+    closeTravelSelector,
+  ]);
   const selectDestination = travelController.select;
   const selectPreferredMode = travelController.selectMode;
   const setDestinationTab = travelController.setTab;
@@ -308,7 +341,12 @@ export function CityMapDashboard(
   };
   const onLandmark = useCallback(
     (id: string) => {
-      if (travelController.busy || travelController.arrivalConfirmed || !availableLandmarks.data?.includes(id)) return;
+      if (
+        travelController.busy ||
+        travelController.arrivalConfirmed ||
+        !availableLandmarks.data?.includes(id)
+      )
+        return;
 
       const found = landmarks.find((item) => item.id === id) ?? getQuickTravelLandmark(id);
 
@@ -320,7 +358,14 @@ export function CityMapDashboard(
         setPlaceActionResult(null);
       }
     },
-    [availableLandmarks.data, selectDestination, preferredTransport, selectPreferredMode, travelController.busy, travelController.arrivalConfirmed],
+    [
+      availableLandmarks.data,
+      selectDestination,
+      preferredTransport,
+      selectPreferredMode,
+      travelController.busy,
+      travelController.arrivalConfirmed,
+    ],
   );
   const deepLinkedLandmark = useRef<string | null>(null);
   useEffect(() => {
@@ -412,7 +457,9 @@ export function CityMapDashboard(
                 setPlaceActionResult(null);
               }}
               availableLandmarkIds={availableLandmarks.data ?? []}
-              availabilityPending={availableLandmarks.isPending && !offline && !availableLandmarks.isError}
+              availabilityPending={
+                availableLandmarks.isPending && !offline && !availableLandmarks.isError
+              }
               onSelectDistrict={onDistrict}
               onSelectLandmark={onLandmark}
               searchTarget={searchTarget}
@@ -488,7 +535,8 @@ export function CityMapDashboard(
           onTabChange={travelController.setTab}
           onModeChange={travelController.selectMode}
           onConfirm={(mode) => {
-            if (selectedDestination && selectedLandmarkAvailable) void travelController.confirm(selectedDestination.id, mode);
+            if (selectedDestination && selectedLandmarkAvailable)
+              void travelController.confirm(selectedDestination.id, mode);
           }}
           onCancel={closeTravelSelector}
           onRetryArrival={() => void travelController.retryArrival()}
@@ -501,7 +549,9 @@ export function CityMapDashboard(
             event: landmarkEvent
               ? { label: landmarkEvent.title, endsAt: landmarkEvent.endsAt }
               : null,
-            onApply: (id) => { if (selectedLandmarkAvailable) apply.mutate(id); },
+            onApply: (id) => {
+              if (selectedLandmarkAvailable) apply.mutate(id);
+            },
             pending: apply.isPending,
             error: actionError,
             onRunPlaceAction: (actionId) => {

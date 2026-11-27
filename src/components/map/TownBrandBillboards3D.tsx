@@ -4,29 +4,33 @@ import layout from "@/data/osogbo-overview-layout.json";
 import { WorldMaterial } from "@/components/3d/WorldScene";
 
 function createBrandTexture(name: string, subtitle: string) {
-    if (typeof document === "undefined") return null;
-    const canvas = document.createElement("canvas");
-    canvas.width = 768;
-    canvas.height = 288;
-    const context = canvas.getContext("2d");
-    if (!context) return null;
-    context.fillStyle = "#233e68";
-    context.fillRect(0, 0, 768, 288);
-    context.fillStyle = "#e7c77f";
-    context.fillRect(0, 0, 18, 288);
-    context.textAlign = "center";
-    context.fillStyle = "#faf7f0";
-    context.font = "bold 60px system-ui";
-    context.fillText(name, 396, 135, 690);
-    context.font = "28px system-ui";
-    context.fillStyle = "#d9e3ea";
-    context.fillText(subtitle, 396, 198, 680);
-    const result = new CanvasTexture(canvas);
-    result.colorSpace = SRGBColorSpace;
-    return result;
+  if (typeof document === "undefined") return null;
+  const canvas = document.createElement("canvas");
+  canvas.width = 768;
+  canvas.height = 288;
+  const context = canvas.getContext("2d");
+  if (!context) return null;
+  context.fillStyle = "#233e68";
+  context.fillRect(0, 0, 768, 288);
+  context.fillStyle = "#e7c77f";
+  context.fillRect(0, 0, 18, 288);
+  context.textAlign = "center";
+  context.fillStyle = "#faf7f0";
+  context.font = "bold 60px system-ui";
+  context.fillText(name, 396, 135, 690);
+  context.font = "28px system-ui";
+  context.fillStyle = "#d9e3ea";
+  context.fillText(subtitle, 396, 198, 680);
+  const result = new CanvasTexture(canvas);
+  result.colorSpace = SRGBColorSpace;
+  return result;
 }
 
-function BrandBoard({ position, cell, texture }: {
+function BrandBoard({
+  position,
+  cell,
+  texture,
+}: {
   position: readonly [number, number];
   cell: number;
   texture: CanvasTexture | null;
@@ -43,10 +47,16 @@ function BrandBoard({ position, cell, texture }: {
         <boxGeometry args={[cell * 1.12, cell * 0.44, 0.12]} />
         <WorldMaterial tone="indigo" />
       </mesh>
-      {[-1, 1].map(side => <mesh key={side} position={[0, cell * 0.91, side * 0.065]} rotation={[0, side === -1 ? Math.PI : 0, 0]}>
-        <planeGeometry args={[cell * 1.08, cell * 0.405]} />
-        <meshBasicMaterial map={texture} toneMapped={false} />
-      </mesh>)}
+      {[-1, 1].map((side) => (
+        <mesh
+          key={side}
+          position={[0, cell * 0.91, side * 0.065]}
+          rotation={[0, side === -1 ? Math.PI : 0, 0]}
+        >
+          <planeGeometry args={[cell * 1.08, cell * 0.405]} />
+          <meshBasicMaterial map={texture} toneMapped={false} />
+        </mesh>
+      ))}
     </group>
   );
 }
@@ -59,9 +69,13 @@ export function TownBrandBillboards3D({
   cell: number;
 }) {
   const brands = layout.billboardPolicy.brands;
-  const [textures, setTextures] = useState<ReadonlyMap<string, CanvasTexture | null>>(() => new Map());
+  const [textures, setTextures] = useState<ReadonlyMap<string, CanvasTexture | null>>(
+    () => new Map(),
+  );
   useLayoutEffect(() => {
-    const owned = new Map(brands.map(brand => [brand.id, createBrandTexture(brand.name, brand.subtitle)]));
+    const owned = new Map(
+      brands.map((brand) => [brand.id, createBrandTexture(brand.name, brand.subtitle)]),
+    );
     setTextures(owned);
     return () => {
       for (const texture of owned.values()) texture?.dispose();
@@ -70,7 +84,9 @@ export function TownBrandBillboards3D({
   return (
     <group>
       {positions.map((sign, index) => {
-        const brand = sign.brandId ? brands.find(b => b.id === sign.brandId) : brands[index % brands.length];
+        const brand = sign.brandId
+          ? brands.find((b) => b.id === sign.brandId)
+          : brands[index % brands.length];
         if (!brand) return null;
         return (
           <BrandBoard

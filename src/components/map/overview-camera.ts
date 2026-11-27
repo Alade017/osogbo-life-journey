@@ -5,7 +5,13 @@ export function overviewFit(width: number, height: number, mapWidth: number, map
 export function overviewClampZoom(zoom: number, fit: number) {
   return Math.max(fit, Math.min(fit * 5, zoom));
 }
-export function overviewPanCorrection(x: number, y: number, z: number, width: number, depth: number): [number, number, number] {
+export function overviewPanCorrection(
+  x: number,
+  y: number,
+  z: number,
+  width: number,
+  depth: number,
+): [number, number, number] {
   return [
     Math.max(-width / 2, Math.min(width / 2, x)) - x,
     -y,

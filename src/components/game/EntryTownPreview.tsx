@@ -45,8 +45,7 @@ export function EntryTownPreview({
 }: Props) {
   const [status, setStatus] = useState<"loading" | "ready" | "unavailable">("loading");
   const availableLandmarkIds = useMemo(
-    () =>
-      previewLandmarks(activeSlugs).map((place) => place.id),
+    () => previewLandmarks(activeSlugs).map((place) => place.id),
     [activeSlugs],
   );
   const handleReady = useCallback(() => setStatus("ready"), []);
@@ -64,7 +63,11 @@ export function EntryTownPreview({
           <PreviewErrorBoundary onUnavailable={handleUnavailable}>
             <Suspense
               fallback={
-                <div className="entry-world-loading" role="status" aria-label="Loading the town preview">
+                <div
+                  className="entry-world-loading"
+                  role="status"
+                  aria-label="Loading the town preview"
+                >
                   <span className="entry-world-loading-sun" />
                   <span className="entry-world-loading-hill entry-world-loading-hill-back" />
                   <span className="entry-world-loading-hill entry-world-loading-hill-front" />
@@ -85,9 +88,13 @@ export function EntryTownPreview({
         )}
         {status === "unavailable" && (
           <div className="entry-world-unavailable" role="status">
-            <span className="entry-world-unavailable-mark" aria-hidden="true">OSUN</span>
+            <span className="entry-world-unavailable-mark" aria-hidden="true">
+              OSUN
+            </span>
             <strong>Your town is waiting.</strong>
-            <span>The 3D preview isn't available in this browser, but you can still enter the game.</span>
+            <span>
+              The 3D preview isn't available in this browser, but you can still enter the game.
+            </span>
           </div>
         )}
       </div>

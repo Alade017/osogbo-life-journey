@@ -6,19 +6,35 @@ import { overviewBillboards } from "./overview-billboard-placement";
 
 type Tree = { x: number; z: number; height: number };
 const trees: Tree[] = [];
-const occupied = [...layout.places, ...layout.residentialParcels, ...layout.commercialParcels, ...layout.terrain.river.bridges, ...overviewBillboards];
+const occupied = [
+  ...layout.places,
+  ...layout.residentialParcels,
+  ...layout.commercialParcels,
+  ...layout.terrain.river.bridges,
+  ...overviewBillboards,
+];
 function nearRiver(x: number, z: number) {
-  return overviewRiverDistance(x,z) < overviewRiverBankWidth/2 + 0.85;
+  return overviewRiverDistance(x, z) < overviewRiverBankWidth / 2 + 0.85;
 }
 for (const district of layout.districts) {
   const b = district.bounds;
   const step = district.districtId === "riverside" ? 2 : 4;
   for (let x = b.x + 0.6; x < b.x + b.width - 0.6; x += step) {
     for (let z = b.z + 0.6; z < b.z + b.depth - 0.6; z += step) {
-      if (nearRiver(x,z) || occupied.some(p => Math.abs(p.position.x - x) < p.footprint.width / 2 + 0.65 &&
-          Math.abs(p.position.z - z) < p.footprint.depth / 2 + 0.65)) continue;
-      trees.push({ x: x - layout.meta.width / 2, z: z - layout.meta.depth / 2,
-        height: 0.95 + (Math.sin(x * 7 + z * 13) + 1) * 0.35 });
+      if (
+        nearRiver(x, z) ||
+        occupied.some(
+          (p) =>
+            Math.abs(p.position.x - x) < p.footprint.width / 2 + 0.65 &&
+            Math.abs(p.position.z - z) < p.footprint.depth / 2 + 0.65,
+        )
+      )
+        continue;
+      trees.push({
+        x: x - layout.meta.width / 2,
+        z: z - layout.meta.depth / 2,
+        height: 0.95 + (Math.sin(x * 7 + z * 13) + 1) * 0.35,
+      });
     }
   }
 }
@@ -45,14 +61,16 @@ export function OverviewLandscape() {
       mesh.computeBoundingSphere();
     }
   }, [object]);
-  return <>
-    <instancedMesh ref={trunks} args={[undefined, undefined, trees.length]}>
-      <cylinderGeometry args={[0.5, 0.5, 1, 6]} />
-      <meshStandardMaterial color="#80634a" />
-    </instancedMesh>
-    <instancedMesh ref={crowns} args={[undefined, undefined, trees.length]}>
-      <icosahedronGeometry args={[1, 0]} />
-      <meshStandardMaterial color="#557848" />
-    </instancedMesh>
-  </>;
+  return (
+    <>
+      <instancedMesh ref={trunks} args={[undefined, undefined, trees.length]}>
+        <cylinderGeometry args={[0.5, 0.5, 1, 6]} />
+        <meshStandardMaterial color="#80634a" />
+      </instancedMesh>
+      <instancedMesh ref={crowns} args={[undefined, undefined, trees.length]}>
+        <icosahedronGeometry args={[1, 0]} />
+        <meshStandardMaterial color="#557848" />
+      </instancedMesh>
+    </>
+  );
 }

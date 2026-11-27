@@ -697,9 +697,9 @@ export function R3FNeighborhoodSurface({
     [district.origin, players, point],
   );
   const npcPoints = useMemo(() => npcs.map((npc) => point(npc.x, npc.y)), [npcs, point]);
-  const ambientPlan = useMemo(() => buildAmbientPlan(area), [area]);
+  const ambientPlan = useMemo(() => (area.environment ? buildAmbientPlan(area) : null), [area]);
   const ambientRoster = useMemo(
-    () => ambientResidentRoster(area, ambientPlan),
+    () => (ambientPlan?.stops.length ? ambientResidentRoster(area, ambientPlan) : []),
     [area, ambientPlan],
   );
   const actorPositions = useRef(new Map<string, NpcPoint>());
@@ -1103,6 +1103,7 @@ export function R3FNeighborhoodSurface({
           ))}
           {/* Ambient residents live in the district and walk its streets all day. */}
           {!overview &&
+            ambientPlan &&
             ambientRoster.map((resident) => (
               <AmbientResidentActor
                 key={resident.id}
