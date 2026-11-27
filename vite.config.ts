@@ -67,6 +67,9 @@ export default defineConfig(({ command, mode }) => {
       // The map/house 3D runtime is route-split and currently ~912 kB raw (~242 kB gzip).
       // Keep a meaningful ceiling above it while still warning on future 3D bundle growth.
       chunkSizeWarningLimit: 1_000,
+      // Source maps are for profiling only: set OSOGBO_SOURCEMAP=1 for a profiling build. Production
+      // builds never publish source maps, so the game's source is not exposed.
+      sourcemap: process.env.OSOGBO_SOURCEMAP === "1",
     },
     server: { host: "127.0.0.1", port: 3000, strictPort: true },
   };
