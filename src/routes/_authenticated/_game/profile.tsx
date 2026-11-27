@@ -1,4 +1,5 @@
 import { useMissions } from "@/hooks/use-missions";
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -8,7 +9,6 @@ import {
   Medal,
   Route as RouteIcon,
   Settings2,
-  Shirt,
   Star,
   Users,
   type LucideIcon,
@@ -22,6 +22,7 @@ import { playerStateFromRows } from "@/lib/player-state";
 import { EQUIPMENT_SLOTS, normalizeEquippedItems } from "@/lib/equipment-service";
 import { moodLabel } from "@/lib/profile-service";
 import { profileBadges, type BadgeId } from "@/lib/profile-badges";
+import { GameInventoryPanel } from "@/components/game/GameInventoryPanel";
 import "@/components/game/profile-inventory.css";
 
 export const Route = createFileRoute("/_authenticated/_game/profile")({
@@ -45,6 +46,7 @@ export function ProfilePage() {
   const { data: locations } = useQuery(q.locations());
   const { data: equipment } = useQuery(q.equipment());
   const { data: missions } = useMissions();
+  const [activeSection, setActiveSection] = useState<"profile" | "inventory">("profile");
 
   if (characterQuery.isError)
     return (
@@ -98,6 +100,17 @@ export function ProfilePage() {
         </Link>
       </header>
 
+      <nav className="pi-player-tabs" aria-label="Player sections">
+        <button type="button" aria-pressed={activeSection === "profile"} onClick={() => setActiveSection("profile")}>
+          <Users size={16} aria-hidden="true" /> Profile
+        </button>
+        <button type="button" aria-pressed={activeSection === "inventory"} onClick={() => setActiveSection("inventory")}>
+          <Backpack size={16} aria-hidden="true" /> Inventory
+        </button>
+      </nav>
+
+      {activeSection === "profile" ? (
+        <>
       <div className="pi-hero">
         <section className="pi-stage" aria-label="Your character">
           <span className="pi-level">LV {player.level}</span>
@@ -131,9 +144,7 @@ export function ProfilePage() {
                 {mood} · {c.personality}
               </span>
             </div>
-            <Link to="/inventory" className="pi-pill pi-pill-primary">
-              <Shirt size={16} aria-hidden="true" /> Wardrobe
-            </Link>
+
           </div>
         </section>
 
@@ -236,6 +247,10 @@ export function ProfilePage() {
       </nav>
 
       {walletQuery.isError && <p className="pi-note">Your wallet is temporarily unavailable.</p>}
+        </>
+      ) : (
+        <GameInventoryPanel />
+      )}
     </div>
   );
 }
