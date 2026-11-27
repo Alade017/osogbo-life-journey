@@ -1014,3 +1014,8 @@ body:has(.neighborhood-page) {
 @media (max-width: 768px) and (pointer: coarse) {
   .neighborhood-touch-controls { display: grid; }
 }
+
+
+@media (pointer: fine) {
+  .neighborhood-controls-row .player-movement-controls { display: none; }
+}
