@@ -29,6 +29,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
+import { Textarea } from "@/components/ui/textarea";
+import { SUPPORT_CATEGORIES, submitSupportFeedback, type SupportCategory } from "@/lib/support-service";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -386,6 +388,7 @@ export function SettingsPage() {
         onChanged={() => void qc.invalidateQueries({ queryKey: q.accountSummary().queryKey })}
       />
 
+      <SupportSection />
       <SessionSection isGuest={account.isGuest} />
       </>
     </div>
@@ -751,6 +754,73 @@ function AccountSection({
           {error}
         </p>
       )}
+    </Section>
+  );
+}
+
+function SupportSection() {
+  const [kind, setKind] = useState<"suggestion" | "complaint">("complaint");
+  const [category, setCategory] = useState<SupportCategory>("bug");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (subject.trim().length < 3 || message.trim().length < 10) {
+      toast.error("Add a subject and at least 10 characters of detail.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await submitSupportFeedback({ kind, category, subject: subject.trim(), message: message.trim() });
+      setSubject("");
+      setMessage("");
+      toast.success("Your feedback was sent to the OSOGBO LIFE team.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Feedback could not be sent.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Section
+      id="sx-support"
+      icon={ShieldCheck}
+      title="About & support"
+      description="Send a bug report or suggest a life event or improvement."
+    >
+      <div className="sx-status">
+        <span className="sx-status-icon" aria-hidden="true"><ShieldCheck /></span>
+        <div>
+          <strong>OSOGBO LIFE</strong>
+          <small>Player feedback goes through the game's support system.</small>
+        </div>
+      </div>
+      <form className="sx-field" onSubmit={(event) => void submit(event)}>
+        <Label htmlFor="sx-feedback-kind">Feedback type</Label>
+        <select id="sx-feedback-kind" className="sx-input" value={kind}
+          onChange={(event) => setKind(event.target.value as "suggestion" | "complaint")}>
+          <option value="complaint">Report a bug</option>
+          <option value="suggestion">Suggest an improvement</option>
+        </select>
+        <Label htmlFor="sx-feedback-category">Category</Label>
+        <select id="sx-feedback-category" className="sx-input" value={category}
+          onChange={(event) => setCategory(event.target.value as SupportCategory)}>
+          {SUPPORT_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
+        <Label htmlFor="sx-feedback-subject">Subject</Label>
+        <Input id="sx-feedback-subject" className="sx-input" minLength={3} maxLength={120}
+          value={subject} onChange={(event) => setSubject(event.target.value)} />
+        <Label htmlFor="sx-feedback-message">Details</Label>
+        <Textarea id="sx-feedback-message" className="sx-input" minLength={10} maxLength={1000}
+          rows={4} value={message} onChange={(event) => setMessage(event.target.value)}
+          placeholder="Describe what happened or what you would like to see…" />
+        <Button type="submit" className="sx-btn-primary" disabled={busy}>
+          {busy ? "Sending…" : "Send feedback"}
+        </Button>
+      </form>
     </Section>
   );
 }
