@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, type ReactNode } from "react";
+import { createContext, useContext, useLayoutEffect, useState, type ReactNode } from "react";
 import { BoxGeometry, CylinderGeometry, ConeGeometry, SphereGeometry, IcosahedronGeometry, MeshStandardMaterial, type BufferGeometry } from "three";
 
 type Shape = "box" | "cylinder6" | "cylinder16" | "cone" | "dome" | "icosahedron";
@@ -17,11 +17,18 @@ function createResources(): Resources {
 }
 /** Shared GPU resources are scoped to this overview canvas. */
 export function OverviewModelResources({ children }: { children: ReactNode }) {
-  const resources = useMemo(createResources, []);
-  useEffect(() => () => {
-    for (const geometry of Object.values(resources.geometries)) geometry.dispose();
-    for (const material of resources.materials.values()) material.dispose();
-  }, [resources]);
+  const [resources, setResources] = useState<Resources | null>(null);
+  useLayoutEffect(() => {
+    // Allocate only after commit. Strict Mode effect replay creates a fresh owner.
+    const owned = createResources();
+    setResources(owned);
+    return () => {
+      for (const geometry of Object.values(owned.geometries)) geometry.dispose();
+      for (const material of owned.materials.values()) material.dispose();
+      owned.materials.clear();
+    };
+  }, []);
+  if (!resources) return null;
   return <Context.Provider value={resources}>{children}</Context.Provider>;
 }
 
