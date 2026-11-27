@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/game";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
+import { parseSavedAppearance } from "@/game/character-animation";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
@@ -30,6 +31,7 @@ export function ClinicVenue({
   const { data: character } = useQuery(q.character());
   const { data: equipment } = useQuery(q.equipment());
   const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
+  const appearance = useMemo(() => parseSavedAppearance(character?.appearance), [character?.appearance]);
   const venue = getLocationVenueDesign(slug, locationName);
   const heading = useId();
   const [exterior, setExterior] = useState(false);
@@ -135,7 +137,7 @@ export function ClinicVenue({
                   <WorldCharacter
                     name={character.name}
                     gender={character.gender}
-                    appearance={character.appearance ?? {}}
+                    appearance={appearance}
                     equipment={playerEquipment}
                     position={walk.position}
                     facing={walk.facing}
