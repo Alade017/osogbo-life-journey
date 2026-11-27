@@ -6,7 +6,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it("opens Settings in the existing player hub without navigating away", () => {
+it("keeps home tools available without exposing a Settings action", () => {
   const dispatch = vi.spyOn(window, "dispatchEvent");
   render(
     <HomeToolsMenu>
@@ -16,13 +16,10 @@ it("opens Settings in the existing player hub without navigating away", () => {
     </HomeToolsMenu>,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: /Settings/ }));
+  expect(screen.queryByRole("button", { name: /Settings/ })).not.toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "Shop" }));
 
-  const event = dispatch.mock.calls
-    .map(([value]) => value)
-    .find((value) => value.type === "osogbo-open-player-hub") as CustomEvent<{ tab: string }> | undefined;
-  expect(event?.detail).toEqual({ tab: "settings" });
-  expect(screen.getByRole("button", { name: "Shop" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Lights" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Rearrange" })).toBeInTheDocument();
+  expect(dispatch).not.toHaveBeenCalledWith(expect.objectContaining({ type: "osogbo-open-player-hub" }));
 });
