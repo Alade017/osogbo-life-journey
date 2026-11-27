@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { formatNaira, q } from "@/lib/game";
@@ -35,7 +36,7 @@ function dateLabel(value: string | null) {
       }).format(date);
 }
 
-export function HousingReliefPanel({
+function HousingReliefPanelView({
   characterId,
   rentStatus,
   graceEndsAt,
@@ -223,3 +224,6 @@ export function HousingReliefPanel({
     </section>
   );
 }
+
+/** Memoised: the house re-renders on every walk step, and the panel does not change with it. */
+export const HousingReliefPanel = memo(HousingReliefPanelView);
