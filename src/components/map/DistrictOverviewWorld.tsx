@@ -3,7 +3,7 @@ import { SceneHtml } from "@/components/3d/SceneHtml";
 import { Vector3, OrthographicCamera } from "three";
 import type { OrbitControls as OrbitControlsImpl } from "three-stdlib";
 import { overviewDistrictId, overviewPlacePosition } from "./overview-district-routing";
-import type { MapSearchTarget, MapEventChip, MapBillboardMarker } from "./MapCanvas";
+import type { MapSearchTarget, MapEventChip, MapBillboardMarker, MapProperty } from "./MapCanvas";
 import { OrbitControls } from "@react-three/drei";
 import { useThree } from "@react-three/fiber";
 import catalog from "@/data/osogbo-district-catalog.json";
@@ -36,12 +36,22 @@ export type DistrictOverviewProps = {
   billboardMarkers?: readonly MapBillboardMarker[] | undefined;
   onSelectEvent?: ((id: string) => void) | undefined;
   onSelectBillboard?: ((id: string) => void) | undefined;
+  properties?: readonly MapProperty[] | undefined;
+  onSelectProperty?: ((property: MapProperty) => void) | undefined;
 };
 
 /** Static overview geometry only. Navigation coordinates never enter this scene. */
-export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, onSelectLandmark, searchTarget, selectedLandmarkId, eventChips = [], billboardMarkers = [], onSelectEvent, onSelectBillboard }: DistrictOverviewProps) {
+export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, onSelectLandmark, searchTarget, selectedLandmarkId, eventChips = [], billboardMarkers = [], onSelectEvent, onSelectBillboard, properties = [], onSelectProperty }: DistrictOverviewProps) {
   const [hoveredPlace, setHoveredPlace] = useState<string | null>(null);
   const available = useMemo(() => new Set(availableLandmarkIds), [availableLandmarkIds]);
+  const propertyByParcel = useMemo(() => {
+    const result = new Map<string, MapProperty>();
+    for (const anchor of layout.housingListingAnchors) {
+      const matches = properties.filter(p => p.houseTypeId === anchor.houseTypeId);
+      if (matches.length === 1 && matches[0]) result.set(anchor.parcelId, matches[0]);
+    }
+    return result;
+  }, [properties]);
   const { size, camera, invalidate } = useThree();
   const controls = useRef<OrbitControlsImpl>(null);
   const initialized = useRef(false);
@@ -116,11 +126,20 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
           </group>
         );
       })}
-      {[...layout.residentialParcels, ...layout.commercialParcels].map(parcel => (
-        <group key={parcel.id} position={world(parcel.position)}>
-          <OverviewPropertyModel profile={parcel.profile} {...parcel.footprint} />
-        </group>
-      ))}
+      {[...layout.residentialParcels, ...layout.commercialParcels].map(parcel => {
+        const property = propertyByParcel.get(parcel.id);
+        const color = property?.status === "overdue" || property?.status === "rent_due" ? "#b96840" : property?.status === "vacant" ? "#8c9692" : "#327c59";
+        return (
+          <group key={parcel.id} position={world(parcel.position)}
+            onClick={event => { if (property) { event.stopPropagation(); if (event.delta < 6) onSelectProperty?.(property); } }}>
+            <OverviewPropertyModel profile={parcel.profile} {...parcel.footprint} />
+            {property && <mesh position={[0, Math.min(parcel.footprint.width, parcel.footprint.depth) * 0.85, 0]}>
+              <sphereGeometry args={[0.32, 12, 8]} />
+              <meshStandardMaterial color={color} />
+            </mesh>}
+          </group>
+        );
+      })}
       {layout.terrain.river.centerline.slice(1).map((end, index) => {
         const start = layout.terrain.river.centerline[index]!;
         const a = world(start), b = world(end);
