@@ -377,7 +377,7 @@ describe("town pedestrian routes", () => {
     const waypointCount = routes.reduce((total, route) => total + route.length, 0);
     const routeLengths = routes.map((route) => route.length);
 
-    // Baseline for the authored grid, before roadside prop clearance is applied in R3FTownSurface.
+    // Baseline for the retained legacy navigation grid, independent of the new overview renderer.
     expect(routes.length).toBeGreaterThan(0);
     expect(waypointCount).toBeGreaterThanOrEqual(routes.length * 3);
     expect(Math.min(...routeLengths)).toBeGreaterThanOrEqual(3);
