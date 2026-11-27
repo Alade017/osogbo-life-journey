@@ -4,6 +4,7 @@ import { q } from "@/lib/game";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { parseSavedAppearance } from "@/game/character-animation";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
+import type { Appearance } from "@/game/avatar-appearance";
 import { Link } from "@tanstack/react-router";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
@@ -28,7 +29,14 @@ export function SchoolCampusVenue({
   const { data: character } = useQuery(q.character());
   const { data: equipment } = useQuery(q.equipment());
   const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
-  const appearance = useMemo(() => parseSavedAppearance(character?.appearance), [character?.appearance]);
+  const rawAppearance = character?.appearance;
+  const appearance = useMemo(
+    () =>
+      rawAppearance && typeof rawAppearance === "object" && !Array.isArray(rawAppearance)
+        ? (rawAppearance as Appearance)
+        : parseSavedAppearance(rawAppearance),
+    [rawAppearance],
+  );
   const area = campusArea(walk.area);
   const heading = useId();
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
