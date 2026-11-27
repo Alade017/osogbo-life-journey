@@ -35,10 +35,32 @@ describe("overview map interactions", () => {
     render(<MapCanvas onSelectLandmark={onSelectLandmark} onSelectDistrict={vi.fn()}
       searchTarget={{ id: "cedar-bank", kind: "landmark" }} availableLandmarkIds={["meridian-bank"]} />);
     expect(onSelectLandmark).not.toHaveBeenCalled();
+    expect(screen.getByText("This destination is currently unavailable.")).toBeTruthy();
     const list = screen.getByRole("list", { name: "Places on the map" });
     expect(within(list).queryByRole("button", { name: /Cedar Bank/i })).toBeNull();
     fireEvent.click(within(list).getByRole("button", { name: /Meridian Bank/i }));
     expect(onSelectLandmark).toHaveBeenCalledExactlyOnceWith("meridian-bank");
+  });
+
+  it("does not activate cached event destinations while access is pending", () => {
+    const onSelectLandmark = vi.fn();
+    const onSelectEvent = vi.fn();
+    const props = {
+      onSelectDistrict: vi.fn(),
+      onSelectLandmark,
+      onSelectEvent,
+      availableLandmarkIds: ["cedar-bank"],
+      eventChips: [{ id: "cedar-bank", label: "Bank event", x: 0, y: 0 }],
+    };
+    const { rerender } = render(<MapCanvas {...props} availabilityPending />);
+    const list = screen.getByRole("list", { name: "Places on the map" });
+    expect(within(list).queryByRole("button", { name: "Live event: Bank event" })).toBeNull();
+    fireEvent.click(within(list).getByRole("button", { name: /Cedar Bank/i }));
+    expect(onSelectLandmark).not.toHaveBeenCalled();
+    expect(onSelectEvent).not.toHaveBeenCalled();
+    rerender(<MapCanvas {...props} availabilityPending={false} />);
+    fireEvent.click(within(list).getByRole("button", { name: "Live event: Bank event" }));
+    expect(onSelectEvent).toHaveBeenCalledExactlyOnceWith("cedar-bank");
   });
 
   it("resolves legacy district searches independently of availability", () => {
