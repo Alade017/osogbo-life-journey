@@ -51,6 +51,7 @@ export interface MapCanvasProps {
   billboardMarkers?: MapBillboardMarker[] | undefined;
   onSelectBillboard?: (campaignId: string) => void | undefined;
   availableLandmarkIds?: readonly string[] | undefined;
+  availabilityPending?: boolean | undefined;
   /** Pass undefined while the existing property source is loading. */
   properties?: readonly MapProperty[] | undefined;
   onSelectProperty?: (property: MapProperty) => void | undefined;
@@ -78,6 +79,7 @@ export function MapCanvas({
   eventChips: _eventChips = [],
   billboardMarkers = [],
   availableLandmarkIds,
+  availabilityPending = false,
   onSelectBillboard,
   properties,
   onSelectProperty,
@@ -98,20 +100,26 @@ export function MapCanvas({
   useEffect(() => {
     // A search is a navigation request, not a command to replay on each parent render.
     if (handledSearchTarget.current === searchTarget) return;
-    handledSearchTarget.current = searchTarget;
-    if (!searchTarget) return;
-    setCameraFocus(searchTarget);
+    if (!searchTarget) {
+      handledSearchTarget.current = searchTarget;
+      return;
+    }
     const id = typeof searchTarget === "string" ? searchTarget : searchTarget.id;
     const kind = typeof searchTarget === "string" ? undefined : searchTarget.kind;
     if (kind !== "district" && overviewHasPlace(id)) {
-      onSelectLandmark(id);
+      if (availabilityPending) return;
+      handledSearchTarget.current = searchTarget;
+      setCameraFocus(searchTarget);
+      if (availableLandmarkIds === undefined || availableLandmarkIds.includes(id)) onSelectLandmark(id);
       return;
     }
+    handledSearchTarget.current = searchTarget;
+    setCameraFocus(searchTarget);
     if (kind !== "landmark") {
       const districtId = overviewDistrictId(id);
       if (districtId) onSelectDistrict(districtId);
     }
-  }, [onSelectDistrict, onSelectLandmark, searchTarget]);
+  }, [onSelectDistrict, onSelectLandmark, searchTarget, availabilityPending, availableLandmarkIds]);
 
   const availablePlaces = useMemo(
     () =>
@@ -180,7 +188,7 @@ export function MapCanvas({
         </div>
       )}
       {!!properties?.length && (
-        <details style={{ position: "absolute", top: 12, left: 12, zIndex: 4, maxWidth: "min(18rem, 90%)", maxHeight: "60%", overflow: "auto", background: "var(--card)", color: "var(--foreground)", padding: "0.5rem", borderRadius: 8 }}>
+        <details className="overview-property-panel">
           <summary>Properties</summary>
           <p>Listings with a known housing type appear on the map; other properties remain available here.</p>
           <ul aria-label="Existing properties">
