@@ -1048,3 +1048,71 @@
 @media (prefers-reduced-motion: reduce) {
   .sx-page *, .sx-page *::before, .sx-page *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+
+/* OSOGBO LIFE settings: compact porcelain surface, no avatar hero. */
+.sx-page {
+  max-width: 1080px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(12px, 1.8vw, 18px);
+  color: var(--brand-ink);
+}
+.sx-page > .sx-page-heading,
+.sx-page > .sx-card-danger {
+  grid-column: 1 / -1;
+}
+.sx-page-heading {
+  display: grid;
+  gap: 4px;
+  padding: 8px 2px 4px;
+}
+.sx-page-heading p {
+  margin: 0;
+  color: var(--brand-royal);
+  font-size: .68rem;
+  font-weight: 850;
+  letter-spacing: .13em;
+}
+.sx-page-heading h1 {
+  margin: 0;
+  color: var(--brand-ink);
+  font-size: clamp(1.5rem, 3.2vw, 2rem);
+  font-weight: 900;
+  letter-spacing: -.035em;
+}
+.sx-page-heading span {
+  color: var(--muted-foreground);
+  font-size: .88rem;
+}
+.sx-page .sx-card {
+  min-width: 0;
+  height: auto;
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 13%, var(--border));
+  border-radius: 18px;
+  background: var(--brand-porcelain, var(--card));
+  box-shadow: 0 8px 22px rgb(16 44 82 / 5%);
+}
+.sx-page .sx-icon {
+  color: var(--brand-royal);
+  background: color-mix(in srgb, var(--brand-sky) 20%, white);
+  box-shadow: none;
+}
+.sx-page .sx-channel {
+  border: 1px solid color-mix(in srgb, var(--brand-royal) 12%, var(--border));
+  background: color-mix(in srgb, var(--brand-sky) 12%, white);
+}
+.sx-page .sx-channel.is-on {
+  background: color-mix(in srgb, var(--brand-sky) 19%, white);
+}
+.sx-page .sx-btn-primary:not(:disabled) {
+  background: var(--brand-royal);
+  color: white;
+}
+.sx-page .sx-card-danger {
+  grid-column: 1 / -1;
+}
+@media (max-width: 760px) {
+  .sx-page { grid-template-columns: minmax(0, 1fr); }
+  .sx-page > .sx-page-heading,
+  .sx-page > .sx-card-danger { grid-column: auto; }
+}
