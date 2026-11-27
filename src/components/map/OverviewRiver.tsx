@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useLayoutEffect, useState } from "react";
 import { BufferGeometry, Float32BufferAttribute, Vector3, CatmullRomCurve3, DoubleSide } from "three";
 import layout from "@/data/osogbo-overview-layout.json";
 
@@ -27,17 +27,21 @@ function ribbon(points: Vector3[], width: number, elevation: number) {
 
 /** Connected static water and bank surfaces, independent of the navigation grid. */
 export function OverviewRiver() {
-  const { water, banks } = useMemo(() => {
+  const [geometry, setGeometry] = useState<{ water: BufferGeometry; banks: BufferGeometry } | null>(null);
+  useLayoutEffect(() => {
     const river = layout.terrain.river;
     const points = river.centerline.map(p => new Vector3(
       p.x - layout.meta.width / 2, 0, p.z - layout.meta.depth / 2,
     ));
     const curve = new CatmullRomCurve3(points);
     const sampled = curve.getPoints(Math.max(24, (points.length - 1) * 12));
-    return { water: ribbon(sampled, river.width, 0.045),
+    const owned = { water: ribbon(sampled, river.width, 0.045),
       banks: ribbon(sampled, river.width + 0.65, 0.025) };
+    setGeometry(owned);
+    return () => { owned.water.dispose(); owned.banks.dispose(); };
   }, []);
-  useEffect(() => () => { water.dispose(); banks.dispose(); }, [water, banks]);
+  if (!geometry) return null;
+  const { water, banks } = geometry;
   return <>
     <mesh geometry={banks}><meshStandardMaterial color="#819166" side={DoubleSide}/></mesh>
     <mesh geometry={water}><meshStandardMaterial color="#568b9b" roughness={0.32} side={DoubleSide}/></mesh>
