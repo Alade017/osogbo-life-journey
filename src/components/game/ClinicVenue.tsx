@@ -4,6 +4,7 @@ import { q } from "@/lib/game";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { parseSavedAppearance } from "@/game/character-animation";
 import { WorldCharacter } from "@/components/3d/WorldCharacter";
+import type { Appearance } from "@/game/avatar-appearance";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
 import { TierOneClinicScene } from "@/components/3d/TierOneClinicScene";
@@ -31,7 +32,14 @@ export function ClinicVenue({
   const { data: character } = useQuery(q.character());
   const { data: equipment } = useQuery(q.equipment());
   const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
-  const appearance = useMemo(() => parseSavedAppearance(character?.appearance), [character?.appearance]);
+  const rawAppearance = character?.appearance;
+  const appearance = useMemo(
+    () =>
+      rawAppearance && typeof rawAppearance === "object" && !Array.isArray(rawAppearance)
+        ? (rawAppearance as Appearance)
+        : parseSavedAppearance(rawAppearance),
+    [rawAppearance],
+  );
   const venue = getLocationVenueDesign(slug, locationName);
   const heading = useId();
   const [exterior, setExterior] = useState(false);
