@@ -1,10 +1,11 @@
 {
   "meta": {
-    "version": 2,
+    "version": 3,
     "source": "Osogbo Districts and Landmarks.md; user amendment retaining Oke-Baale and removing Aleku-Wodo",
     "status": "proposed-overview-layout",
     "coordinateSystem": "Existing navigation grid unchanged; overview coordinates not authored",
-    "assignmentNote": "Legacy district grouping and individual venue overrides are game-design proposals, not verified geographic positions."
+    "assignmentNote": "Legacy district grouping and individual venue overrides are game-design proposals, not verified geographic positions.",
+    "reconciliationNote": "Reviewed against osogbo-town.json landmark actions and map-location-links.ts. Distinct gameplay references remain intact; real-world identity equivalence is not established."
   },
   "districts": [
     {
@@ -670,42 +671,51 @@
         "town-market",
         "oja-oba-market"
       ],
-      "status": "review-distinct-venues"
+      "status": "retain-distinct-gameplay",
+      "reason": "Separate destination slugs; town-market has four dedicated actions."
     },
     {
       "ids": [
         "mosque-square",
         "central-mosque"
       ],
-      "status": "review-possible-duplicate"
+      "status": "retain-distinct-gameplay",
+      "reason": "Separate destination slugs (oja-oba and central-mosque); mosque-square has its own visit action."
     },
     {
       "ids": [
         "transit-park"
       ],
       "requiredAnchor": "Old Garage Motor Park",
-      "status": "review-reuse-before-adding"
+      "status": "retain-existing-anchor",
+      "reason": "Existing transit-park is assigned to Old Garage and has four transit actions. Treat it as the game-design representation of the required motor park; no second destination or new slug."
     },
     {
       "ids": [
-        "civic-court"
+        "civic-court",
+        "osun-high-court"
       ],
       "requiredAnchor": "High Court",
-      "status": "review-reuse-before-adding"
+      "status": "retain-existing-and-reserved",
+      "reason": "Civic court has four dedicated actions and its own destination slug; High Court is reserved with no verified destination link. Do not merge without scene and identity verification."
     },
     {
       "ids": [
-        "art-craft-gallery"
+        "art-craft-gallery",
+        "suzanne-wenger-art-gallery"
       ],
       "requiredAnchor": "Suzanne Wenger’s Art Gallery",
-      "status": "review-reuse-before-adding"
+      "status": "retain-existing-and-reserved",
+      "reason": "Existing gallery has a destination slug; named gallery is reserved with no verified destination link. No evidence of identity equivalence."
     },
     {
       "ids": [
-        "olaiya-central"
+        "olaiya-central",
+        "olaiya-flyover-bridge"
       ],
       "requiredAnchor": "Olaiya Flyover Bridge",
-      "status": "review-distinct-map-object"
+      "status": "retain-distinct-map-objects",
+      "reason": "Olaiya Central routes to city-centre; the flyover is a reserved architectural object, not a verified playable destination."
     }
   ]
 }
