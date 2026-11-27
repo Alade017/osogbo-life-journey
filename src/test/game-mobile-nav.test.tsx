@@ -38,9 +38,7 @@ it.each([
   ["Career Life", "/jobs"],
 ])("%s keeps its full-page route and closes the phone", (label, route) => {
   const closePhone = vi.fn();
-  render(
-    <GameMobileNav hidden={false} onNavigate={closePhone} />,
-  );
+  render(<GameMobileNav hidden={false} onNavigate={closePhone} />);
   const link = screen.getByRole("link", { name: label });
   expect(link).toHaveAttribute("href", route);
 
@@ -52,12 +50,7 @@ it.each([
 it("navigates Career to its full page instead of opening the Career Life phone app", () => {
   const closePhone = vi.fn();
   const openHud = vi.fn();
-  render(
-    <GameMobileNav
-      onNavigate={closePhone}
-      onHudOpen={openHud}
-    />,
-  );
+  render(<GameMobileNav onNavigate={closePhone} onHudOpen={openHud} />);
 
   fireEvent.click(screen.getByRole("link", { name: "Career Life" }));
 
@@ -78,11 +71,10 @@ it("keeps the phone launcher in the same navigation landmark", () => {
 });
 
 it("removes the background dock from keyboard navigation while its modal copy is active", () => {
-  const { container } = render(<GameMobileNav hidden onNavigate={vi.fn()} onInventoryOpen={vi.fn()} />);
+  const { container } = render(<GameMobileNav hidden onNavigate={vi.fn()} />);
   expect(container.querySelector("nav")).toHaveAttribute("inert");
   expect(screen.queryByRole("navigation")).not.toBeInTheDocument();
 });
-
 
 it("does not expose Inventory in the bottom navigation", () => {
   render(<GameMobileNav onNavigate={vi.fn()} />);

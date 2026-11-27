@@ -7,7 +7,12 @@ import { toast } from "sonner";
 import { q, rpc, useGameAction } from "@/lib/game";
 import { Button } from "@/components/ui/button";
 import { validatePlayerAction } from "@/lib/player-action-service";
-import { announceEquipmentRefresh, EQUIPMENT_SLOTS, filterEquippableInventoryForSlot, normalizeEquippedItems } from "@/lib/equipment-service";
+import {
+  announceEquipmentRefresh,
+  EQUIPMENT_SLOTS,
+  filterEquippableInventoryForSlot,
+  normalizeEquippedItems,
+} from "@/lib/equipment-service";
 import type { EquipmentSlot } from "@/lib/player-state";
 import "@/components/game/profile-inventory.css";
 
@@ -17,24 +22,55 @@ export function CharacterWardrobePanel() {
   const equipmentQuery = useQuery(q.equipment());
   const [activeSlot, setActiveSlot] = useState<EquipmentSlot>("top");
   const [previewId, setPreviewId] = useState<string | null>(null);
-  const equip = useGameAction(({ id, slot }: { id: string; slot: string }) => rpc.equipInventoryItem(id, slot), {
-    onSuccess: () => { announceEquipmentRefresh(); toast.success("Your look has been updated."); },
-  });
+  const equip = useGameAction(
+    ({ id, slot }: { id: string; slot: string }) => rpc.equipInventoryItem(id, slot),
+    {
+      onSuccess: () => {
+        announceEquipmentRefresh();
+        toast.success("Your look has been updated.");
+      },
+    },
+  );
   const unequip = useGameAction(rpc.unequipItem, {
-    onSuccess: () => { announceEquipmentRefresh(); toast.success("Item removed from your outfit."); },
+    onSuccess: () => {
+      announceEquipmentRefresh();
+      toast.success("Item removed from your outfit.");
+    },
   });
-  if (inventoryQuery.isLoading || characterQuery.isLoading || equipmentQuery.isLoading) return <p className="pi-note">Loading your wardrobe…</p>;
-  if (!inventoryQuery.data || !characterQuery.data || !equipmentQuery.data) return <p className="pi-note" role="alert">Your wardrobe could not be loaded. Try reopening Profile.</p>;
+  if (inventoryQuery.isLoading || characterQuery.isLoading || equipmentQuery.isLoading)
+    return <p className="pi-note">Loading your wardrobe…</p>;
+  if (!inventoryQuery.data || !characterQuery.data || !equipmentQuery.data)
+    return (
+      <p className="pi-note" role="alert">
+        Your wardrobe could not be loaded. Try reopening Profile.
+      </p>
+    );
+  const character = characterQuery.data;
   const equipped = normalizeEquippedItems(equipmentQuery.data);
   const current = equipped.find((entry) => entry.slot === activeSlot);
   const options = filterEquippableInventoryForSlot(inventoryQuery.data, activeSlot);
   const previewItem = options.find((entry) => entry.id === previewId);
   const previewEquipment = previewItem
-    ? [...equipped.filter((entry) => entry.slot !== activeSlot), { slot: activeSlot, item: previewItem.item }]
+    ? [
+        ...equipped.filter((entry) => entry.slot !== activeSlot),
+        { slot: activeSlot, item: previewItem.item },
+      ]
     : equipped;
   return (
     <section className="pi-wardrobe-editor" aria-label="Character appearance editor">
-      <header><div><p className="pi-eyebrow">Character studio</p><h2>Change your look</h2><p>Choose owned clothing and accessories to update your saved outfit. Changes appear on your character throughout Osogbo.</p></div><span><Shirt size={22} /></span></header>
+      <header>
+        <div>
+          <p className="pi-eyebrow">Character studio</p>
+          <h2>Change your look</h2>
+          <p>
+            Choose owned clothing and accessories to update your saved outfit. Changes appear on
+            your character throughout Osogbo.
+          </p>
+        </div>
+        <span>
+          <Shirt size={22} />
+        </span>
+      </header>
       <div className="pi-wardrobe-preview">
         <CharacterPreview
           appearance={(characterQuery.data.appearance ?? {}) as unknown as Appearance}
@@ -42,18 +78,89 @@ export function CharacterWardrobePanel() {
           equipment={previewEquipment}
           label={previewItem ? "Character try-on preview" : "Your saved character appearance"}
         />
-        <span>{previewItem ? "Preview only — wear to save this look" : "Your current saved look"}</span>
+        <span>
+          {previewItem ? "Preview only — wear to save this look" : "Your current saved look"}
+        </span>
       </div>
       <nav className="pi-wardrobe-slots" aria-label="Clothing and accessory slots">
-        {EQUIPMENT_SLOTS.map((slot) => <button key={slot} type="button" aria-pressed={activeSlot === slot} onClick={() => setActiveSlot(slot)}>{slot}</button>)}
+        {EQUIPMENT_SLOTS.map((slot) => (
+          <button
+            key={slot}
+            type="button"
+            aria-pressed={activeSlot === slot}
+            onClick={() => setActiveSlot(slot)}
+          >
+            {slot}
+          </button>
+        ))}
       </nav>
-      <div className="pi-wardrobe-current"><span>Currently equipped</span><strong>{current?.item?.name ?? "Nothing equipped"}</strong>{current && <Button size="sm" variant="outline" disabled={unequip.isPending || !!validatePlayerAction({ action: "unequip", characterId: characterQuery.data.id, equippedItem: current, slot: activeSlot })} onClick={() => unequip.mutate(activeSlot)}>Remove</Button>}</div>
+      <div className="pi-wardrobe-current">
+        <span>Currently equipped</span>
+        <strong>{current?.item?.name ?? "Nothing equipped"}</strong>
+        {current && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={
+              unequip.isPending ||
+              !!validatePlayerAction({
+                action: "unequip",
+                characterId: character.id,
+                equippedItem: current,
+                slot: activeSlot,
+              })
+            }
+            onClick={() => unequip.mutate(activeSlot)}
+          >
+            Remove
+          </Button>
+        )}
+      </div>
       <div className="pi-wardrobe-options">
-        {options.length ? options.map((entry) => {
-          const isCurrent = current?.item?.id === entry.item?.id;
-          const validation = validatePlayerAction({ action: "equip", characterId: characterQuery.data.id, inventoryEntry: entry, slot: activeSlot });
-          return <article key={entry.id} className={"pi-wardrobe-option" + (previewId === entry.id ? " is-preview" : "")}><div><strong>{entry.item?.name ?? "Owned item"}</strong><small>Owned ×{entry.quantity}</small></div>{isCurrent ? <span className="pi-wardrobe-worn"><Check size={14} /> Wearing</span> : <div className="pi-wardrobe-option-actions"><Button size="sm" variant="outline" onClick={() => setPreviewId(entry.id)}>Preview</Button><Button size="sm" disabled={!!validation || equip.isPending} onClick={() => equip.mutate({ id: entry.id, slot: activeSlot })}>{equip.isPending ? "Saving…" : "Wear"}</Button></div>}</article>;
-        }) : <p className="pi-bag-empty">No owned items fit this slot yet. Items you acquire will appear here.</p>}
+        {options.length ? (
+          options.map((entry) => {
+            const isCurrent = current?.item?.id === entry.item?.id;
+            const validation = validatePlayerAction({
+              action: "equip",
+              characterId: character.id,
+              inventoryEntry: entry,
+              slot: activeSlot,
+            });
+            return (
+              <article
+                key={entry.id}
+                className={"pi-wardrobe-option" + (previewId === entry.id ? " is-preview" : "")}
+              >
+                <div>
+                  <strong>{entry.item?.name ?? "Owned item"}</strong>
+                  <small>Owned ×{entry.quantity}</small>
+                </div>
+                {isCurrent ? (
+                  <span className="pi-wardrobe-worn">
+                    <Check size={14} /> Wearing
+                  </span>
+                ) : (
+                  <div className="pi-wardrobe-option-actions">
+                    <Button size="sm" variant="outline" onClick={() => setPreviewId(entry.id)}>
+                      Preview
+                    </Button>
+                    <Button
+                      size="sm"
+                      disabled={!!validation || equip.isPending}
+                      onClick={() => equip.mutate({ id: entry.id, slot: activeSlot })}
+                    >
+                      {equip.isPending ? "Saving…" : "Wear"}
+                    </Button>
+                  </div>
+                )}
+              </article>
+            );
+          })
+        ) : (
+          <p className="pi-bag-empty">
+            No owned items fit this slot yet. Items you acquire will appear here.
+          </p>
+        )}
       </div>
     </section>
   );
