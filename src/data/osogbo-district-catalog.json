@@ -1,8 +1,8 @@
 {
   "meta": {
-    "version": 4,
+    "version": 5,
     "source": "Osogbo Districts and Landmarks.md; user amendment retaining Oke-Baale and removing Aleku-Wodo",
-    "status": "proposed-overview-layout",
+    "status": "overview-implemented-pending-verification",
     "coordinateSystem": "Legacy navigation grid retained; independent overview coordinates authored in osogbo-overview-layout.json",
     "assignmentNote": "Legacy district grouping and individual venue overrides are game-design proposals, not verified geographic positions.",
     "reconciliationNote": "Reviewed against osogbo-town.json landmark actions and map-location-links.ts. Distinct gameplay references remain intact; real-world identity equivalence is not established."
@@ -802,8 +802,11 @@
         },
         {
           "label": "Flagship filling stations",
-          "status": "missing",
-          "referenceId": null
+          "status": "decorative",
+          "referenceId": "ogo-oluwa-filling-station-1",
+          "referenceIds": [
+            "ogo-oluwa-filling-station-1"
+          ]
         }
       ]
     },
@@ -817,13 +820,19 @@
         },
         {
           "label": "Motor parks",
-          "status": "missing",
-          "referenceId": null
+          "status": "decorative",
+          "referenceId": "oke-fia-motor-park-1",
+          "referenceIds": [
+            "oke-fia-motor-park-1"
+          ]
         },
         {
           "label": "Roadside shops",
-          "status": "missing",
-          "referenceId": null
+          "status": "decorative",
+          "referenceId": "oke-fia-shop-row-1",
+          "referenceIds": [
+            "oke-fia-shop-row-1"
+          ]
         }
       ]
     },
@@ -843,7 +852,11 @@
         {
           "label": "Auto repair clusters",
           "status": "decorative",
-          "referenceId": "old-garage-workshop-1"
+          "referenceId": "old-garage-workshop-1",
+          "referenceIds": [
+            "old-garage-workshop-1",
+            "old-garage-workshop-2"
+          ]
         }
       ]
     },
@@ -877,13 +890,20 @@
         },
         {
           "label": "Technical/training centers",
-          "status": "missing",
-          "referenceId": null
+          "status": "decorative",
+          "referenceId": "ota-efun-training-centre-1",
+          "referenceIds": [
+            "ota-efun-training-centre-1"
+          ]
         },
         {
           "label": "Mechanic villages",
-          "status": "partial",
-          "referenceId": "ota-efun-industrial-1"
+          "status": "decorative",
+          "referenceId": "ota-efun-industrial-1",
+          "referenceIds": [
+            "ota-efun-industrial-1",
+            "ota-efun-workshop-1"
+          ]
         }
       ]
     },
@@ -902,8 +922,12 @@
         },
         {
           "label": "River bridges",
-          "status": "missing",
-          "referenceId": null
+          "status": "decorative",
+          "referenceId": "riverside-bridge-1",
+          "referenceIds": [
+            "riverside-bridge-1",
+            "riverside-bridge-2"
+          ]
         }
       ]
     },
