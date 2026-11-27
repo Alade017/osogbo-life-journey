@@ -253,3 +253,23 @@
     sans-serif;
   pointer-events: none;
 }
+
+.overview-property-panel {
+  position: absolute;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 22;
+  max-width: min(18rem, calc(100% - 5rem));
+  max-height: 60%;
+  overflow: auto;
+  padding: 0.65rem;
+  border: 1px solid var(--border);
+  border-radius: 0.65rem;
+  background: var(--card);
+  color: var(--foreground);
+  font-size: 0.8rem;
+}
+.overview-property-panel summary { cursor: pointer; font-weight: 650; }
+.overview-property-panel ul { display: grid; gap: 0.25rem; padding: 0; list-style: none; }
+.overview-property-panel button { min-height: 2.75rem; width: 100%; text-align: left; padding: 0.35rem; }
+.overview-property-panel button:focus-visible, .overview-property-panel summary:focus-visible { outline: 2px solid var(--ring); outline-offset: 2px; }
