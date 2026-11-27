@@ -67,7 +67,7 @@ it("navigates Career to its full page instead of opening the Career Life phone a
 
 it("keeps the phone launcher in the same navigation landmark", () => {
   render(
-    <GameMobileNav onNavigate={vi.fn()} onInventoryOpen={vi.fn()}>
+    <GameMobileNav onNavigate={vi.fn()}>
       <button>Phone</button>
     </GameMobileNav>,
   );
@@ -84,14 +84,8 @@ it("removes the background dock from keyboard navigation while its modal copy is
 });
 
 
-it("opens inventory from its own HUD control instead of navigating to a route", () => {
-  const openInventory = vi.fn();
-  render(<GameMobileNav onNavigate={vi.fn()} onInventoryOpen={openInventory} />);
-  const button = screen.getByRole("button", { name: "Open inventory" });
-  expect(button).toBeInTheDocument();
-  expect(button).not.toHaveAttribute("href");
-
-  fireEvent.click(button);
-
-  expect(openInventory).toHaveBeenCalledOnce();
+it("does not expose Inventory in the bottom navigation", () => {
+  render(<GameMobileNav onNavigate={vi.fn()} />);
+  expect(screen.queryByRole("button", { name: "Open inventory" })).not.toBeInTheDocument();
+  expect(screen.getAllByRole("link")).toHaveLength(3);
 });
