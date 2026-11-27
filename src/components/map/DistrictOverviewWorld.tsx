@@ -13,6 +13,7 @@ import { OverviewLandmarkModel } from "./OverviewLandmarkModel";
 import { OverviewPropertyModel } from "./OverviewPropertyModel";
 import { OverviewLandscape } from "./OverviewLandscape";
 import { OverviewRiver } from "./OverviewRiver";
+import { OverviewTerrain } from "./OverviewTerrain";
 
 type Position = { x: number; z: number };
 
@@ -91,10 +92,7 @@ export function DistrictOverviewWorld({ availableLandmarkIds, onSelectDistrict, 
         maxPolarAngle={Math.PI / 2.25} minZoom={fit * 0.65} maxZoom={fit * 5} />
       <hemisphereLight args={["#fff7e8", "#657554", 2]} />
       <directionalLight position={[35, 65, 25]} intensity={2} />
-      <mesh rotation={[-Math.PI / 2, 0, 0]}>
-        <planeGeometry args={[layout.meta.width, layout.meta.depth]} />
-        <meshStandardMaterial color="#9aa77c" />
-      </mesh>
+      <OverviewTerrain />
       {layout.districts.map(d => {
         const district = catalog.districts.find(item => item.id === d.districtId);
         return (
