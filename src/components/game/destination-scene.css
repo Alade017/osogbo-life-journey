@@ -102,8 +102,12 @@
   .destination-services {
     top: calc(var(--destination-top, 0px) + max(12px, env(safe-area-inset-top)) + 124px);
     bottom: auto;
-    max-height: min(30dvh, 240px);
+    max-height: min(18dvh, 150px);
     overscroll-behavior: contain;
+  }
+
+  .destination-scene [data-venue-controls] {
+    max-height: min(28dvh, 220px);
   }
 }
 
