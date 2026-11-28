@@ -594,12 +594,12 @@ function BasicLocationVenueScene({
                 {selected?.detail}
               </p>
               {selectedAction ? (
-                <Link
-                  to={selectedAction.href}
+                <a
+                  href={selectedAction.href}
                   className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                 >
                   {selectedAction.label}
-                </Link>
+                </a>
               ) : sceneKind === "transport" ? (
                 <a
                   href={transportMapHref(preferredMode)}
