@@ -243,6 +243,10 @@ function BasicLocationVenueScene({
     () => sceneKind === "environment" ? environmentNavigation(venue.fixtures) : null,
     [sceneKind, venue.fixtures],
   );
+  const genericNav = useMemo(
+    () => sceneKind === "generic" ? venueNavigation(venue.fixtures, venueWidth, venueDepth) : null,
+    [sceneKind, venue.fixtures, venueWidth, venueDepth],
+  );
   const playerSpawn = useMemo(
     () =>
       sceneKind === "food" && foodNavigation
@@ -659,7 +663,30 @@ function BasicLocationVenueScene({
                   />
                 ) : (
                   <>
-                    <mesh position={[0, -0.08, 0]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+                    <mesh
+                      position={[0, -0.08, 0]}
+                      rotation={[-Math.PI / 2, 0, 0]}
+                      receiveShadow
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        if (event.delta > 5 || !genericNav) return;
+                        const target = genericNav.nearest([event.point.x, event.point.z]);
+                        const current: [number, number] = [walker.positionRef.current[0], walker.positionRef.current[2]];
+                        const path = target ? genericNav.route(current, target) : null;
+                        const ticket = ++movementRequest.current;
+                        walker.cancel();
+                        setArrivedFixture(null);
+                        if (!path) {
+                          setMovementMessage("That area is blocked. Choose a clear point.");
+                          return;
+                        }
+                        setMovementMessage("Walking to selected point…");
+                        void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                          if (ticket !== movementRequest.current) return;
+                          setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                        });
+                      }}
+                    >
                       <planeGeometry args={[11, 8]} />
                       <WorldMaterial tone="tileLight" color={venue.floorColor} />
                     </mesh>
