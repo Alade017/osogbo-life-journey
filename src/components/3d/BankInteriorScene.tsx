@@ -36,7 +36,7 @@ export function BankInteriorScene({
       <ProceduralBankArchitecture
         branch={branch}
         layout={world}
-        onWalk={(point) => onWalk([point[0] * (bounds.width / world.width), point[2] * (bounds.depth / world.depth)])}
+        onWalk={(point) => onWalk([point[0], point[2]])}
         onSelect={(id) => {
           const target = world.fixtures.find((item) => item.id === id);
           const fixture = fixtures.find(
