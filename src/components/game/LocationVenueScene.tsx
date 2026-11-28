@@ -208,12 +208,14 @@ function BasicLocationVenueScene({
   const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
   const playerSpawn = useMemo(
     () =>
-      getVenuePlayerSpawn(
-        bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11,
-        bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8,
-        venue.fixtures,
-      ),
-    [bankLayout, venue.sceneBounds, venue.sceneSize, venue.fixtures],
+      sceneKind === "market"
+        ? ([0, 0.06, 3.25] as [number, number, number])
+        : getVenuePlayerSpawn(
+            bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11,
+            bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8,
+            venue.fixtures,
+          ),
+    [sceneKind, bankLayout, venue.sceneBounds, venue.sceneSize, venue.fixtures],
   );
   const venueWidth =
     bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11;
