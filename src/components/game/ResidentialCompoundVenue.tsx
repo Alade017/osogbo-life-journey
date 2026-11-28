@@ -172,7 +172,7 @@ export function ResidentialCompoundVenue({
                 key={item.id}
                 type="button"
                 aria-pressed={feature.id === item.id}
-                onClick={() => setSelected(item.id)}
+                onClick={() => handleFeatureSelect(item.id)}
                 className="rounded-lg border border-edge bg-card px-3 py-3 text-sm aria-pressed:bg-primary aria-pressed:text-primary-foreground"
               >
                 {item.label}
