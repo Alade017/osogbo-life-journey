@@ -646,15 +646,15 @@
 }
 
 /* Whot: hand */
+/* Every card stays on screen: the hand wraps onto more rows instead of scrolling sideways. */
 .mg-hand {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 10px 6px;
   width: 100%;
-  overflow-x: auto;
   padding: 16px 6px 10px;
   box-sizing: border-box;
-  scroll-snap-type: x proximity;
-  justify-content: safe center;
+  justify-content: center;
 }
 .mg-hand-card {
   flex-shrink: 0;
@@ -687,7 +687,13 @@
   cursor: default;
 }
 
+/* The pickers are portalled to the body, outside .mg-app, so they need the same colour tokens. */
 .mg-shape-overlay {
+  --mg-ink: var(--foreground, #1f2937);
+  --mg-paper: var(--card, #fffdf7);
+  --mg-line: color-mix(in srgb, var(--border, #d6d3c8) 85%, transparent);
+  --mg-accent: var(--primary, #1e6b52);
+  --mg-gold: var(--color-warm-gold, #d89b2b);
   position: fixed;
   inset: 0;
   /* Above the game dock, bottom bar and needs rail (80) so the picker and the draw sheet stay tappable. */
