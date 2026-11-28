@@ -80,6 +80,32 @@ export function ResidentialCompoundVenue({
       if (ticket === movementRequest.current) setMovementMessage(arrived ? "You reached the selected facility." : "Movement stopped.");
     });
   }, [navigation, walker]);
+  const [approachingHome, setApproachingHome] = useState(false);
+  const enterHomeFromCompound = useCallback(() => {
+    if (!home || !onEnterHome || approachingHome || enteringHome) return;
+    const path = navigation.approach(
+      [walker.positionRef.current[0], walker.positionRef.current[2]],
+      "home-entry",
+    );
+    const ticket = ++movementRequest.current;
+    walker.cancel();
+    if (!path) {
+      setMovementMessage("The entrance is blocked. Move to the courtyard and try again.");
+      return;
+    }
+    setApproachingHome(true);
+    setMovementMessage("Walking to your private entrance…");
+    void walker.walk(path.map(([x, z]) => [x, 0.06, z] as [number, number, number])).then((arrived) => {
+      if (ticket !== movementRequest.current) return;
+      setApproachingHome(false);
+      if (!arrived) {
+        setMovementMessage("Movement stopped before reaching your entrance.");
+        return;
+      }
+      setMovementMessage("At your entrance. Opening your home…");
+      onEnterHome();
+    });
+  }, [approachingHome, enteringHome, home, navigation, onEnterHome, walker]);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const heading = useId();
   const unavailable = useCallback(() => setStatus("fallback"), []);
@@ -189,12 +215,12 @@ export function ResidentialCompoundVenue({
         {canEnter ? (
           <button
             type="button"
-            disabled={enteringHome}
-            aria-busy={enteringHome}
-            onClick={onEnterHome}
+            disabled={enteringHome || approachingHome}
+            aria-busy={enteringHome || approachingHome}
+            onClick={enterHomeFromCompound}
             className="rounded-lg border border-edge bg-primary px-4 py-3 text-sm font-semibold text-primary-foreground disabled:opacity-50"
           >
-            {enteringHome ? "Heading home…" : "Enter my home"}
+            {enteringHome ? "Entering home…" : approachingHome ? "Walking to entrance…" : "Enter my home"}
           </button>
         ) : (
           <p className="text-sm text-muted-foreground">
