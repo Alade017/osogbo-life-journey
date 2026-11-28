@@ -59,7 +59,7 @@ describe("host party results", () => {
     setup();
     expect(await screen.findByText("Fictional gathering")).toBeInTheDocument();
     expect(screen.getByText("Ended")).toBeInTheDocument();
-    expect(screen.getByText(/1 of 2 requirements filled/)).toBeInTheDocument();
+    expect(screen.getByText("2 guest accounts")).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /claim/i })).not.toBeInTheDocument();
     expect(screen.getByText(/Nothing is paid out yet/)).toBeInTheDocument();
   });

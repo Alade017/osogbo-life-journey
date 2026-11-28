@@ -22,7 +22,6 @@ import {
   eventWindow,
   partyMoodLabel,
   clampPartyMood,
-  requirementRemaining,
   validEventStart,
   PARTY_MOOD_START,
   localInputValue,
@@ -214,7 +213,6 @@ function EventsTab({
   venues: Awaited<ReturnType<typeof listPartyVenues>>;
 }) {
   const events = useQuery({ queryKey: ["partyEvents"], queryFn: listPartyEvents });
-  const respond = useInvalidatingMutation(partyRpc.respondToEvent, "Thanks for joining the event!");
   const [now, setNow] = useState(() => new Date());
   useEffect(() => {
     const update = () => setNow(new Date());
@@ -290,31 +288,6 @@ function EventsTab({
             {event.host_character_id === characterId && (
               <HostPartyInvitations accountId={accountId} eventId={event.id} />
             )}
-            {event.requirements
-              .filter((req) => req.kind === "guest")
-              .map((req) => {
-                const remaining = requirementRemaining(req);
-                const mine = event.host_character_id === characterId;
-                return (
-                  <div key={req.id} className="flex items-center justify-between gap-3 text-sm">
-                    <span>
-                      Need {req.item_or_role} guests: {req.fulfilled_count}/{req.quantity}
-                    </span>
-                    {!mine && remaining > 0 && phase === "live" && (
-                      <button
-                        type="button"
-                        className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50"
-                        disabled={respond.isPending}
-                        onClick={() =>
-                          respond.mutate({ requirementId: req.id, requestId: newPartyRequestId() })
-                        }
-                      >
-                        Take part
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
           </article>
         );
       })}
@@ -340,9 +313,10 @@ function HostForm({
   const [asoEbiColour, setAsoEbiColour] = useState("");
   const [startsAt, setStartsAt] = useState("");
   const [endsAt, setEndsAt] = useState("");
-  const [requirements, setRequirements] = useState<HostRequirementInput[]>([
+  // The database needs at least one requirement. Every event sends this default; no UI for it.
+  const requirements: HostRequirementInput[] = [
     { kind: "guest", item_or_role: "friends", quantity: 2 },
-  ]);
+  ];
 
   const submit = () => {
     const start = new Date(startsAt);
@@ -492,45 +466,10 @@ function HostForm({
           onChange={(e) => setEndsAt(e.target.value)}
         />
       </label>
-      <p className="text-sm font-semibold">Requirements</p>
-      {requirements.map((req, index) => (
-        <div key={index} className="grid grid-cols-[1fr_auto] gap-2 text-sm">
-          <span>{req.quantity} guests</span>
-          <button
-            type="button"
-            className="min-h-11 px-3 text-destructive"
-            onClick={() => setRequirements(requirements.filter((_, i) => i !== index))}
-          >
-            Remove
-          </button>
-        </div>
-      ))}
-      <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          className="min-h-11 rounded-full border border-border px-4 text-sm font-semibold disabled:opacity-50"
-          disabled={requirements.length >= 5}
-          onClick={() =>
-            setRequirements([
-              ...requirements,
-              { kind: "guest", item_or_role: "friends", quantity: 2 },
-            ])
-          }
-        >
-          Add guest requirement
-        </button>
-      </div>
       <button
         type="submit"
         className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50"
-        disabled={
-          host.isPending ||
-          !title ||
-          !startsAt ||
-          !endsAt ||
-          !asoEbiColour.trim() ||
-          requirements.length === 0
-        }
+        disabled={host.isPending || !title || !startsAt || !endsAt || !asoEbiColour.trim()}
       >
         Schedule event
       </button>

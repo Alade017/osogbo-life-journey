@@ -55,10 +55,7 @@ export function PartyHostResults({ userId }: { userId: string }) {
           <p className="text-xs font-semibold uppercase tracking-wide text-[#8A4B1F]">
             {phaseLabel(event.reason)}
           </p>
-          <p className="text-sm">
-            {event.completed} of {event.requirements} requirements filled · {event.guests} guest
-            accounts
-          </p>
+          <p className="text-sm">{event.guests} guest accounts</p>
         </article>
       ))}
     </section>
