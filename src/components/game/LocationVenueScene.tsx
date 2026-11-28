@@ -207,6 +207,10 @@ function BasicLocationVenueScene({
   );
   const sceneKind = resolveVenueScene(slug, venue);
   const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
+  const venueWidth =
+    bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11;
+  const venueDepth =
+    bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8;
   const bankNavigation = useMemo(
     () => (venue.bankInterior ? createEmbeddedBankNavigation(venue.bankInterior) : null),
     [venue.bankInterior],
@@ -217,17 +221,9 @@ function BasicLocationVenueScene({
         ? ([0, 0.06, 3.25] as [number, number, number])
         : sceneKind === "bank" && venue.bankInterior
           ? bankNavigation?.spawn ?? getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures)
-          : getVenuePlayerSpawn(
-            bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11,
-            bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8,
-            venue.fixtures,
-          ),
-    [sceneKind, bankLayout, venue.sceneBounds, venue.sceneSize, venue.fixtures],
+          : getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures),
+    [sceneKind, bankNavigation, venueWidth, venueDepth, venue.fixtures],
   );
-  const venueWidth =
-    bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11;
-  const venueDepth =
-    bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8;
   const walker = useHouseMovement(slug, playerSpawn);
   const navigation = useMemo(
     () =>
