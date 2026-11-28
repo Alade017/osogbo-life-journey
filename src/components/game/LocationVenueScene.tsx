@@ -77,6 +77,7 @@ import { createEmbeddedBankNavigation } from "@/game/embedded-bank-navigation";
 import { workplaceNavigation, workplaceSpawn } from "@/game/workplace-navigation";
 import { civicServiceNavigation, CIVIC_SERVICE_SPAWN } from "@/game/civic-service-navigation";
 import { transitParkNavigation, TRANSIT_PARK_SPAWN } from "@/game/transit-park-navigation";
+import { foodVenueNavigation } from "@/game/food-venue-navigation";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -226,9 +227,17 @@ function BasicLocationVenueScene({
     () => (sceneKind === "transport" ? transitParkNavigation(venue.fixtures) : null),
     [sceneKind, venue.fixtures],
   );
+  const foodNavigation = useMemo(
+    () => sceneKind === "food" && venue.foodInterior
+      ? foodVenueNavigation(venue.foodInterior, venue.fixtures)
+      : null,
+    [sceneKind, venue.foodInterior, venue.fixtures],
+  );
   const playerSpawn = useMemo(
     () =>
-      sceneKind === "market"
+      sceneKind === "food" && foodNavigation
+        ? foodNavigation.spawn
+        : sceneKind === "market"
         ? ([0, 0.06, 3.25] as [number, number, number])
         : sceneKind === "bank" && venue.bankInterior
           ? bankNavigation?.spawn ?? getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures)
@@ -244,7 +253,9 @@ function BasicLocationVenueScene({
   const walker = useHouseMovement(slug, playerSpawn);
   const navigation = useMemo(
     () =>
-      sceneKind === "market"
+      sceneKind === "food" && foodNavigation
+        ? foodNavigation
+        : sceneKind === "market"
         ? marketNavigation(venue.fixtures)
         : sceneKind === "bank" && venue.bankInterior
           ? bankNavigation!
@@ -255,7 +266,7 @@ function BasicLocationVenueScene({
               : sceneKind === "transport"
                 ? transitNavigation!
                 : venueNavigation(venue.fixtures, venueWidth, venueDepth),
-    [sceneKind, bankNavigation, civicNavigation, transitNavigation, venue.fixtures, venueWidth, venueDepth],
+    [sceneKind, bankNavigation, civicNavigation, transitNavigation, foodNavigation, venue.fixtures, venueWidth, venueDepth],
   );
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -308,7 +319,8 @@ function BasicLocationVenueScene({
         sceneKind !== "workplace" &&
         sceneKind !== "civic" &&
         sceneKind !== "transport" &&
-        sceneKind !== "healthcare"
+        sceneKind !== "healthcare" &&
+        sceneKind !== "food"
       ) return;
       const fixture = venue.fixtures.find((item) => item.id === fixtureId);
       if (!fixture) return;
@@ -555,7 +567,24 @@ function BasicLocationVenueScene({
                     variant={venue.foodInterior}
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const target = foodNavigation?.nearest(point);
+                      const [x, , z] = walker.positionRef.current;
+                      const path = target ? foodNavigation?.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a clear dining aisle.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
                     floorColor={venue.floorColor}
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
@@ -603,9 +632,9 @@ function BasicLocationVenueScene({
                     gender={character.gender}
                     appearance={playerAppearance}
                     equipment={playerEquipment}
-                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" ? walker.position : playerSpawn}
-                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" ? walker.facing : "north"}
-                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare") && walker.walking ? "walk" : "idle"}
+                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" ? walker.position : playerSpawn}
+                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" ? walker.facing : "north"}
+                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food") && walker.walking ? "walk" : "idle"}
                   />
                 )}
                 <WorldSceneReady onReady={handleSceneReady} />
