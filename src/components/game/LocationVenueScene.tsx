@@ -207,12 +207,16 @@ function BasicLocationVenueScene({
   );
   const sceneKind = resolveVenueScene(slug, venue);
   const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
+  const bankNavigation = useMemo(
+    () => (venue.bankInterior ? createEmbeddedBankNavigation(venue.bankInterior) : null),
+    [venue.bankInterior],
+  );
   const playerSpawn = useMemo(
     () =>
       sceneKind === "market"
         ? ([0, 0.06, 3.25] as [number, number, number])
         : sceneKind === "bank" && venue.bankInterior
-          ? createEmbeddedBankNavigation(venue.bankInterior).spawn
+          ? bankNavigation?.spawn ?? getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures)
           : getVenuePlayerSpawn(
             bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11,
             bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8,
@@ -230,9 +234,9 @@ function BasicLocationVenueScene({
       sceneKind === "market"
         ? marketNavigation(venue.fixtures)
         : sceneKind === "bank" && venue.bankInterior
-          ? createEmbeddedBankNavigation(venue.bankInterior)
+          ? bankNavigation!
           : venueNavigation(venue.fixtures, venueWidth, venueDepth),
-    [sceneKind, venue.bankInterior, venue.fixtures, venueWidth, venueDepth],
+    [sceneKind, bankNavigation, venue.fixtures, venueWidth, venueDepth],
   );
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -396,8 +400,8 @@ function BasicLocationVenueScene({
                       walker.cancel();
                       setArrivedFixture(null);
                       const [x, , z] = walker.positionRef.current;
-                      const target = navigation.navigation.nearest(point);
-                      const path = target ? navigation.navigation.route([x, z], target) : null;
+                      const target = bankNavigation?.navigation.nearest(point);
+                      const path = target ? bankNavigation?.navigation.route([x, z], target) : null;
                       if (!path) {
                         setMovementMessage("That area is blocked. Choose another point.");
                         return;
