@@ -76,6 +76,7 @@ import { marketNavigation } from "@/game/market-navigation";
 import { createEmbeddedBankNavigation } from "@/game/embedded-bank-navigation";
 import { workplaceNavigation, workplaceSpawn } from "@/game/workplace-navigation";
 import { civicServiceNavigation, CIVIC_SERVICE_SPAWN } from "@/game/civic-service-navigation";
+import { transitParkNavigation, TRANSIT_PARK_SPAWN } from "@/game/transit-park-navigation";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -221,6 +222,10 @@ function BasicLocationVenueScene({
     () => (sceneKind === "civic" ? civicServiceNavigation(venue.fixtures) : null),
     [sceneKind, venue.fixtures],
   );
+  const transitNavigation = useMemo(
+    () => (sceneKind === "transport" ? transitParkNavigation(venue.fixtures) : null),
+    [sceneKind, venue.fixtures],
+  );
   const playerSpawn = useMemo(
     () =>
       sceneKind === "market"
@@ -231,7 +236,9 @@ function BasicLocationVenueScene({
             ? ([workplaceSpawn[0], 0.06, workplaceSpawn[1]] as [number, number, number])
             : sceneKind === "civic"
               ? ([CIVIC_SERVICE_SPAWN[0], 0.06, CIVIC_SERVICE_SPAWN[1]] as [number, number, number])
-              : getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures),
+              : sceneKind === "transport"
+                ? ([TRANSIT_PARK_SPAWN[0], 0.06, TRANSIT_PARK_SPAWN[1]] as [number, number, number])
+                : getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures),
     [sceneKind, bankNavigation, venueWidth, venueDepth, venue.fixtures],
   );
   const walker = useHouseMovement(slug, playerSpawn);
@@ -245,8 +252,10 @@ function BasicLocationVenueScene({
             ? workplaceNavigation(venue.fixtures)
             : sceneKind === "civic"
               ? civicNavigation!
-              : venueNavigation(venue.fixtures, venueWidth, venueDepth),
-    [sceneKind, bankNavigation, civicNavigation, venue.fixtures, venueWidth, venueDepth],
+              : sceneKind === "transport"
+                ? transitNavigation!
+                : venueNavigation(venue.fixtures, venueWidth, venueDepth),
+    [sceneKind, bankNavigation, civicNavigation, transitNavigation, venue.fixtures, venueWidth, venueDepth],
   );
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -297,7 +306,8 @@ function BasicLocationVenueScene({
         sceneKind !== "market" &&
         sceneKind !== "bank" &&
         sceneKind !== "workplace" &&
-        sceneKind !== "civic"
+        sceneKind !== "civic" &&
+        sceneKind !== "transport"
       ) return;
       const fixture = venue.fixtures.find((item) => item.id === fixtureId);
       if (!fixture) return;
@@ -453,8 +463,25 @@ function BasicLocationVenueScene({
                   <TransitParkScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
                     onSelectMode={setPreferredMode}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const target = transitNavigation?.nearest(point);
+                      const [x, , z] = walker.positionRef.current;
+                      const path = target ? transitNavigation?.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a passenger area.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
                   />
                 ) : sceneKind === "healthcare" ? (
                   <HealthcareScene
@@ -557,9 +584,9 @@ function BasicLocationVenueScene({
                     gender={character.gender}
                     appearance={playerAppearance}
                     equipment={playerEquipment}
-                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" ? walker.position : playerSpawn}
-                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" ? walker.facing : "north"}
-                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic") && walker.walking ? "walk" : "idle"}
+                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" ? walker.position : playerSpawn}
+                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" ? walker.facing : "north"}
+                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport") && walker.walking ? "walk" : "idle"}
                   />
                 )}
                 <WorldSceneReady onReady={handleSceneReady} />
@@ -711,7 +738,7 @@ function BasicLocationVenueScene({
               </div>
             </div>
             <div className="space-y-2">
-              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic") && (
+              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport") && (
                 <p className="text-xs text-muted-foreground" role="status">
                   {movementMessage}
                 </p>
