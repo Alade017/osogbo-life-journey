@@ -10,11 +10,13 @@ export function BankInteriorScene({
   fixtures,
   selected,
   onSelect,
+  onWalk,
 }: {
   variant: BankInteriorVariant;
   fixtures: readonly VenueFixture[];
   selected: string;
   onSelect: (id: string) => void;
+  onWalk: (point: [number, number]) => void;
   floorColor: string;
   wallColor: string;
   accentColor: string;
@@ -34,6 +36,7 @@ export function BankInteriorScene({
       <ProceduralBankArchitecture
         branch={branch}
         layout={world}
+        onWalk={(point) => onWalk([point[0] * (bounds.width / world.width), point[2] * (bounds.depth / world.depth)])}
         onSelect={(id) => {
           const target = world.fixtures.find((item) => item.id === id);
           const fixture = fixtures.find(
