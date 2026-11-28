@@ -1,4 +1,10 @@
 import { useRenderQuality } from "@/hooks/use-render-quality";
+import { useQuery } from "@tanstack/react-query";
+import { q } from "@/lib/game";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
+import { parseSavedAppearance } from "@/game/character-animation";
+import type { Appearance } from "@/game/avatar-appearance";
+import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
 import { Link } from "@tanstack/react-router";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
@@ -154,6 +160,17 @@ function BasicLocationVenueScene({
   immersive?: boolean;
 }) {
   const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
+  const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery(q.equipment());
+  const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
+  const rawAppearance = character?.appearance;
+  const playerAppearance = useMemo(
+    () =>
+      rawAppearance && typeof rawAppearance === "object" && !Array.isArray(rawAppearance)
+        ? (rawAppearance as Appearance)
+        : parseSavedAppearance(rawAppearance),
+    [rawAppearance],
+  );
   const venue = useMemo(
     () => design ?? getLocationVenueDesign(slug, locationName),
     [design, slug, locationName],
@@ -367,6 +384,17 @@ function BasicLocationVenueScene({
                       />
                     ))}
                   </>
+                )}
+                {character && (
+                  <WorldCharacter
+                    name={character.name}
+                    gender={character.gender}
+                    appearance={playerAppearance}
+                    equipment={playerEquipment}
+                    position={[0, 0.06, 2.6]}
+                    facing="north"
+                    animation="idle"
+                  />
                 )}
                 <WorldSceneReady onReady={handleSceneReady} />
               </Suspense>
