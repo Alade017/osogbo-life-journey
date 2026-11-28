@@ -20,7 +20,6 @@ import {
   completeNoLegalMoves,
   createLudoGame,
   currentPlayerId,
-  declineFreeDeploy,
   getLegalMoves,
   moveToken,
   rollDice,
@@ -53,8 +52,10 @@ const ONLINE_OPTIONS: readonly { label: string; blurb: string }[] = [
 const NO_MOVES_DELAY_MS = 1200;
 /** How long the "Tap to roll" hint stays before it disappears. */
 const ROLL_HINT_MS = 3500;
-/** After this long without a move, the your-turn card comes back. */
+/** After this long without a move, the your-turn banner comes back as a reminder. */
 const TURN_REMINDER_MS = 20000;
+/** How long the your-turn banner stays before it fades out. */
+const TURN_BANNER_MS = 2200;
 const TOAST_MS = 2_400;
 
 function randomFace() {
@@ -87,26 +88,19 @@ export function seatsFor(players: number, humanColour: Colour): Seat[] {
 }
 
 /**
- * The move a tap on one pawn makes, given the die the player picked (or null for none).
- * A free yard deploy is preferred: it spends no die, so the die stays for another pawn.
- * Returns null when the pawn needs a die picked first.
+ * The legal moves for one pawn. With a die chosen, only that die counts. A pawn that can use both
+ * dice is not played until the player picks which die to use.
  */
-export function moveForTap(
+export function movesForPawn(
   moves: readonly LegalMove[],
   colour: Colour,
   token: number,
   selected: 0 | 1 | null,
-): LegalMove | null {
-  const here = moves.filter(
+): LegalMove[] {
+  return moves.filter(
     (move) =>
-      move.colour === colour &&
-      move.token === token &&
-      (selected === null || move.die === selected || move.die === null),
+      move.colour === colour && move.token === token && (selected === null || move.die === selected),
   );
-  const free = here.find((move) => move.die === null);
-  if (free) return free;
-  if (new Set(here.map((move) => move.die)).size === 1) return here[0] ?? null;
-  return null;
 }
 
 /** Which face of the cube turns to the viewer for each value (CSS rotations in degrees). */
@@ -285,12 +279,8 @@ function describeEvents(events: LudoEvent[], name: (playerId: string) => string)
   for (const event of events) {
     if (event.type === "CAPTURED")
       out.push(`${name(event.playerId)} captured a ${event.victimColour.toLowerCase()} token`);
-    if (event.type === "TRIPLE_DOUBLE_SIX_FORFEIT")
-      out.push(`${name(event.playerId)} rolled three double sixes. Turn lost`);
     if (event.type === "BONUS_ROLL")
       out.push(`${name(event.playerId)} rolled a double six. Roll again`);
-    if (event.type === "FREE_DEPLOY_OFFERED" && event.playerId === HUMAN)
-      out.push("Capture! Bring a pawn out of the yard free, or skip");
     if (event.type === "NO_LEGAL_MOVES") out.push(`No legal move for ${name(event.playerId)}`);
   }
   return out;
@@ -368,6 +358,8 @@ function LudoTable({
     setMovementPending(animating);
   }, []);
   const [selectedDie, setSelectedDie] = useState<0 | 1 | null>(null);
+  /** A pawn that can use either die, waiting for the player to choose the die. */
+  const [pendingPawn, setPendingPawn] = useState<{ colour: Colour; token: number } | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [idle, setIdle] = useState<readonly [number, number]>(() => [randomFace(), randomFace()]);
   const [rolls, setRolls] = useState(0);
@@ -401,6 +393,10 @@ function LudoTable({
     if (game.dice) setIdle(game.dice);
     setSelectedDie(null);
   }, [game.dice, game.turnIndex]);
+
+  useEffect(() => {
+    setPendingPawn(null);
+  }, [game]);
 
   useEffect(() => {
     if (toasts.length === 0) return;
@@ -462,32 +458,53 @@ function LudoTable({
     setRolls((count) => count + 1);
     apply(rollDice(game, HUMAN, [randomFace(), randomFace()]));
   };
-  // The your-turn card opens when a human turn starts, and returns after a long pause.
   const humanReady =
-    humanTurn && !movementPending && (game.phase === "WAITING_FOR_ROLL" || game.phase === "WAITING_FOR_MOVE");
-  const [promptOpen, setPromptOpen] = useState(false);
+    humanTurn &&
+    !movementPending &&
+    (game.phase === "WAITING_FOR_ROLL" || game.phase === "WAITING_FOR_MOVE");
+  // The your-turn banner fades in once when a human turn starts, and comes back only as a reminder
+  // after a long pause without a move. It never blocks the board.
+  const [bannerOpen, setBannerOpen] = useState(false);
   useEffect(() => {
-    if (!humanReady) {
-      setPromptOpen(false);
+    if (!humanTurn) {
+      setBannerOpen(false);
       return;
     }
-    setPromptOpen(true);
-  }, [humanReady, game]);
+    setBannerOpen(true);
+    const hide = window.setTimeout(() => setBannerOpen(false), TURN_BANNER_MS);
+    return () => window.clearTimeout(hide);
+  }, [humanTurn, game.turnIndex]);
   useEffect(() => {
-    if (!humanReady || promptOpen) return;
-    const timer = window.setTimeout(() => setPromptOpen(true), TURN_REMINDER_MS);
-    return () => window.clearTimeout(timer);
-  }, [humanReady, promptOpen, game]);
+    if (!humanReady) return;
+    let hide: number | undefined;
+    const show = window.setTimeout(() => {
+      setBannerOpen(true);
+      hide = window.setTimeout(() => setBannerOpen(false), TURN_BANNER_MS);
+    }, TURN_REMINDER_MS);
+    return () => {
+      window.clearTimeout(show);
+      window.clearTimeout(hide);
+    };
+  }, [humanReady, game]);
   const pick = (colour: Colour, token: number) => {
     if (movementPending || !humanTurn) return;
-    const move = moveForTap(moves, colour, token, selectedDie);
-    if (!move) {
-      setNotice("Choose a die first, then the pawn.");
+    const options = movesForPawn(moves, colour, token, selectedDie);
+    if (options.length === 0) {
+      setNotice("That pawn cannot move with this die.");
       return;
     }
-    apply(moveToken(game, HUMAN, move.colour, move.token, move.die));
+    if (new Set(options.map((move) => move.die)).size > 1) {
+      setPendingPawn({ colour, token });
+      return;
+    }
+    apply(moveToken(game, HUMAN, colour, token, options[0]?.die));
   };
-  const skipDeploy = () => apply(declineFreeDeploy(game, HUMAN));
+  const playWithDie = (die: 0 | 1) => {
+    if (!pendingPawn) return;
+    const { colour, token } = pendingPawn;
+    setPendingPawn(null);
+    apply(moveToken(game, HUMAN, colour, token, die));
+  };
 
   const humanWon = game.winnerId === HUMAN;
   const status = notice
@@ -503,11 +520,11 @@ function LudoTable({
             ? ""
             : game.phase === "NO_LEGAL_MOVES"
               ? "No legal move for either die."
-              : game.freeDeploy
-                ? "Captured! Tap a yard pawn to bring it out free, or skip."
+              : pendingPawn
+                ? "Pick the die to move this pawn with."
                 : selectedDie !== null
                   ? `Choose a highlighted pawn to move ${game.dice?.[selectedDie]}.`
-                  : `You rolled ${game.dice?.[0]} and ${game.dice?.[1]}. Tap a die to choose it.`
+                  : `You rolled ${game.dice?.[0]} and ${game.dice?.[1]}. Tap any highlighted pawn.`
           : `${nameOf(turnPlayer ?? "")} is playing…`;
 
   const finishedFor = (colour: Colour) =>
@@ -520,43 +537,20 @@ function LudoTable({
           {status}
         </p>
       )}
-      {humanReady && (
-        <Dialog
-          open={promptOpen}
-          onOpenChange={(next) => {
-            if (!next) setPromptOpen(false);
-          }}
-        >
-          <DialogContent className="lb-results lb-turn-prompt">
-            <DialogHeader className="lb-results-head">
-              <span className="lb-prompt-icon" aria-hidden="true">
-                <User size={22} />
-              </span>
-              <div>
-                <DialogTitle>Your turn</DialogTitle>
-                <DialogDescription>
-                  {game.phase === "WAITING_FOR_ROLL"
-                    ? "Tap the dice to roll."
-                    : "Choose a highlighted pawn to move."}
-                </DialogDescription>
-              </div>
-            </DialogHeader>
-            <DialogFooter className="lb-results-actions">
-              {game.phase === "WAITING_FOR_ROLL" ? (
-                <Button
-                  onClick={() => {
-                    setPromptOpen(false);
-                    roll();
-                  }}
-                >
-                  Roll the dice
-                </Button>
-              ) : (
-                <Button onClick={() => setPromptOpen(false)}>Got it</Button>
-              )}
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+      {humanReady && bannerOpen && (
+        <div className="lb-turn-banner" role="status" aria-live="polite">
+          <span className="lb-prompt-icon" aria-hidden="true">
+            <User size={18} />
+          </span>
+          <span className="lb-turn-banner-text">
+            <strong>Your turn</strong>
+            <span>
+              {game.phase === "WAITING_FOR_ROLL"
+                ? "Tap the dice to roll."
+                : "Tap any highlighted pawn."}
+            </span>
+          </span>
+        </div>
       )}
       <div className="lb-hud" aria-label="Players">
         {seats.map((seat, index) => {
@@ -658,16 +652,21 @@ function LudoTable({
           <p className="lb-dice-note" aria-live="polite">
             {canRoll
               ? "Tap the dice to roll."
-              : humanTurn && game.phase === "WAITING_FOR_MOVE" && !game.freeDeploy
-                ? selectedDie === null
-                  ? "Tap a die, then a highlighted pawn."
-                  : "Now tap a highlighted pawn."
+              : humanTurn && game.phase === "WAITING_FOR_MOVE" && !pendingPawn
+                ? "Tap any highlighted pawn."
                 : ""}
           </p>
-          {humanTurn && game.freeDeploy && !movementPending && (
-            <Button variant="plain" onClick={skipDeploy}>
-              Skip the free deploy
-            </Button>
+          {pendingPawn && humanTurn && game.dice && (
+            <div className="lb-die-choice" role="group" aria-label="Choose the die for this pawn">
+              {movesForPawn(moves, pendingPawn.colour, pendingPawn.token, null).map((move) => (
+                <Button key={move.die} onClick={() => playWithDie(move.die)}>
+                  Move with {game.dice?.[move.die]}
+                </Button>
+              ))}
+              <Button variant="plain" onClick={() => setPendingPawn(null)}>
+                Cancel
+              </Button>
+            </div>
           )}
         </div>
       )}
