@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { getLocationVenueDesign } from "@/lib/location-venue-designs";
-import { environmentNavigation } from "@/game/environment-navigation";
+import {
+  environmentModelToStage,
+  environmentNavigation,
+  environmentStageToModel,
+} from "@/game/environment-navigation";
 
 const slugs = ["town-market", "lantern-club", "fish-market", "fuel-and-go"] as const;
 
@@ -33,7 +37,9 @@ describe("environment navigation coordinate conversion", () => {
   it("maps model-local floor coordinates back to the authored 9×7 stage", () => {
     const scaleX = 0.72;
     const scaleZ = 0.81;
-    const modelPoint = [1.44, -1.62] as const;
-    expect([modelPoint[0] / scaleX, modelPoint[1] / scaleZ]).toEqual([2, -2]);
+    const stagePoint = [2, -2] as const;
+    const modelPoint = environmentStageToModel(stagePoint, scaleX, scaleZ);
+    expect(modelPoint).toEqual([1.44, -1.62]);
+    expect(environmentModelToStage(modelPoint, scaleX, scaleZ)).toEqual(stagePoint);
   });
 });
