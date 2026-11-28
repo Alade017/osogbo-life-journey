@@ -32,7 +32,7 @@ describe("civic service navigation", () => {
   it("blocks the rear/side walls, staff partition and fixture footprints", () => {
     const fixtures = getLocationVenueDesign("civic-court", "Civic service hall").fixtures;
     const navigation = civicServiceNavigation(fixtures);
-    for (const point of [[-6.8, 0], [0, -5.3], [0.8, -4], [3, -2.2], [-3.2, -1.5]] as const)
+    for (const point of [[-6.8, 0], [0, -5.3], [0.8, -4], [3, -2.2], [-3.2, -1.5], [0, 5.1], [-6.1, 4.4]] as const)
       expect(navigation.canWalk(point)).toBe(false);
     expect(navigation.route(CIVIC_SERVICE_SPAWN, [20, 20])).toBeNull();
   });
