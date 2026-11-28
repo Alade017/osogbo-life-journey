@@ -1,4 +1,6 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render as renderUi, screen } from "@testing-library/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import type { ReactElement } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { LocationVenueScene } from "@/components/game/LocationVenueScene";
 import { getLocationVenueDesign } from "@/lib/location-venue-designs";
@@ -58,8 +60,10 @@ describe("location venue scene", () => {
     vi.useFakeTimers();
     render(<LocationVenueScene slug="town-market" locationName="Town Market" />);
 
-    expect(screen.getAllByRole("status")).toHaveLength(1);
     expect(screen.getByText("Opening the venue")).toBeInTheDocument();
+    expect(
+      screen.getAllByRole("status").filter((node) => node.textContent?.includes("Opening the venue")),
+    ).toHaveLength(1);
 
     act(() => {
       vi.advanceTimersByTime(5_000);
@@ -487,3 +491,11 @@ describe("venue scene transitions", () => {
     }
   });
 });
+
+// The venues read the character and equipment through React Query, so each render gets its own client.
+function render(ui: ReactElement) {
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return renderUi(ui, {
+    wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+  });
+}

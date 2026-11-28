@@ -278,7 +278,7 @@ function BasicLocationVenueScene({
             : sceneKind === "market"
         ? marketNavigation(venue.fixtures)
         : sceneKind === "bank" && venue.bankInterior
-          ? bankNavigation!
+          ? { ...bankNavigation!.navigation, approach: bankNavigation!.approach }
           : sceneKind === "workplace"
             ? workplaceNavigation(venue.fixtures)
             : sceneKind === "civic"
@@ -368,7 +368,7 @@ function BasicLocationVenueScene({
         setMovementMessage(arrived ? `You reached ${fixture.label}.` : "Movement stopped.");
       });
     },
-    [sceneKind, venue.fixtures, walker, navigation],
+    [sceneKind, venue.fixtures, walker.cancel, walker.positionRef, walker.walk, navigation],
   );
   const selectedAction =
     sceneKind === "bank" && venue.bankInterior

@@ -1,5 +1,5 @@
 import { useEffect, type ReactNode } from "react";
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { WorldSceneProvider, WorldSceneViewport } from "@/components/3d/WorldSceneHost";
 import { ResidentialCompoundVenue } from "@/components/game/ResidentialCompoundVenue";
@@ -13,7 +13,7 @@ const state = vi.hoisted(() => ({
   walkTo: vi.fn(),
   cancel: vi.fn(),
   character: { name: "Malik", gender: "male", appearance: {} },
-  equipment: [],
+  equipment: [] as Array<{ id: string; slot: string }>,
 }));
 vi.mock("@tanstack/react-query", async (original) => ({
   ...(await original<typeof import("@tanstack/react-query")>()),
@@ -72,6 +72,13 @@ vi.mock("@/hooks/use-clinic-walkthrough", () => ({
     message: "Ready",
     cancel: state.cancel,
     walkTo: state.walkTo,
+  }),
+}));
+vi.mock("@/hooks/use-house-movement", () => ({
+  useHouseMovement: () => ({
+    positionRef: { current: [0, 0.06, 0] },
+    walk: () => Promise.resolve(true),
+    cancel: () => {},
   }),
 }));
 vi.mock("@/components/3d/ResidentialCompoundScene", () => ({
@@ -161,7 +168,7 @@ it.each(["compound", "campus", "clinic"])(
     expect(await screen.findByText(/The 3D scene is unavailable/)).toBeVisible();
     if (venue === "compound") {
       fireEvent.click(screen.getByRole("button", { name: "Enter my home" }));
-      expect(enter).toHaveBeenCalledOnce();
+      await waitFor(() => expect(enter).toHaveBeenCalledOnce());
     } else if (venue === "campus") {
       expect(screen.getByRole("link", { name: "View courses" })).toHaveAttribute(
         "href",
