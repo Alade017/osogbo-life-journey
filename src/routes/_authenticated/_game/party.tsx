@@ -25,6 +25,9 @@ import {
   requirementRemaining,
   validEventStart,
   PARTY_MOOD_START,
+  localInputValue,
+  quickStartOptions,
+  DEFAULT_EVENT_HOURS,
 } from "@/lib/party-mood";
 import { PaletteSelect } from "@/components/ui/palette-select";
 
@@ -433,15 +436,53 @@ function HostForm({
           onChange={(e) => setAsoEbiColour(e.target.value)}
         />
       </label>
-      <label className="grid gap-1 text-sm">
-        Start (within 24 hours)
-        <input
-          type="datetime-local"
-          className="min-h-11 rounded-lg border border-border bg-card px-3"
-          value={startsAt}
-          onChange={(e) => setStartsAt(e.target.value)}
-        />
-      </label>
+      <fieldset className="grid gap-2 text-sm">
+        <legend className="mb-1 font-semibold">When does it start?</legend>
+        <div className="flex flex-wrap gap-2">
+          {quickStartOptions(new Date()).map((option) => {
+            const value = localInputValue(option.start);
+            const picked = startsAt === value;
+            return (
+              <button
+                key={option.id}
+                type="button"
+                aria-pressed={picked}
+                className={`min-h-11 rounded-full border px-4 font-semibold ${
+                  picked
+                    ? "border-[#1B2A4A] bg-[#1B2A4A] text-[#F4EBDD]"
+                    : "border-border bg-card text-foreground"
+                }`}
+                onClick={() => {
+                  setStartsAt(value);
+                  setEndsAt(
+                    localInputValue(
+                      new Date(option.start.getTime() + DEFAULT_EVENT_HOURS * 3600_000),
+                    ),
+                  );
+                }}
+              >
+                {option.label}
+              </button>
+            );
+          })}
+        </div>
+        <label className="grid gap-1 text-sm">
+          Or pick a date and time (within 24 hours)
+          <input
+            type="datetime-local"
+            className="min-h-11 rounded-lg border border-border bg-card px-3"
+            value={startsAt}
+            onChange={(e) => {
+              setStartsAt(e.target.value);
+              const start = new Date(e.target.value);
+              if (!Number.isNaN(start.getTime()))
+                setEndsAt(
+                  localInputValue(new Date(start.getTime() + DEFAULT_EVENT_HOURS * 3600_000)),
+                );
+            }}
+          />
+        </label>
+      </fieldset>
       <label className="grid gap-1 text-sm">
         Closes (up to 8 hours after the start)
         <input
