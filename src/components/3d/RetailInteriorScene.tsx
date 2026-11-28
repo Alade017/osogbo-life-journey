@@ -79,7 +79,7 @@ export function RetailInteriorScene({
     <group name="mall-gallery-and-supermarket">
       <Block at={[0, -0.1, 0]} size={[16, 0.2, 14]} tone="tileLight" color={floorColor} />
       <mesh
-        position={[0, 0.012, 0]}
+        position={[0, 0.04, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
         onClick={(event) => {
           event.stopPropagation();
