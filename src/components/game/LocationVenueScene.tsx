@@ -73,6 +73,7 @@ import { getVenueSceneIdentity } from "@/lib/venue-scene-identity";
 import { useHouseMovement } from "@/hooks/use-house-movement";
 import { venueNavigation } from "@/game/venue-navigation";
 import { marketNavigation } from "@/game/market-navigation";
+import { createEmbeddedBankNavigation } from "@/game/embedded-bank-navigation";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -210,7 +211,9 @@ function BasicLocationVenueScene({
     () =>
       sceneKind === "market"
         ? ([0, 0.06, 3.25] as [number, number, number])
-        : getVenuePlayerSpawn(
+        : sceneKind === "bank" && venue.bankInterior
+          ? createEmbeddedBankNavigation(venue.bankInterior).spawn
+          : getVenuePlayerSpawn(
             bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11,
             bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8,
             venue.fixtures,
@@ -226,8 +229,10 @@ function BasicLocationVenueScene({
     () =>
       sceneKind === "market"
         ? marketNavigation(venue.fixtures)
-        : venueNavigation(venue.fixtures, venueWidth, venueDepth),
-    [sceneKind, venue.fixtures, venueWidth, venueDepth],
+        : sceneKind === "bank" && venue.bankInterior
+          ? createEmbeddedBankNavigation(venue.bankInterior)
+          : venueNavigation(venue.fixtures, venueWidth, venueDepth),
+    [sceneKind, venue.bankInterior, venue.fixtures, venueWidth, venueDepth],
   );
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -273,7 +278,7 @@ function BasicLocationVenueScene({
   const handleFixtureSelect = useCallback(
     (fixtureId: string) => {
       setSelectedFixture(fixtureId);
-      if (sceneKind !== "generic" && sceneKind !== "market") return;
+      if (sceneKind !== "generic" && sceneKind !== "market" && sceneKind !== "bank") return;
       const fixture = venue.fixtures.find((item) => item.id === fixtureId);
       if (!fixture) return;
       const ticket = ++movementRequest.current;
@@ -480,9 +485,9 @@ function BasicLocationVenueScene({
                     gender={character.gender}
                     appearance={playerAppearance}
                     equipment={playerEquipment}
-                    position={sceneKind === "generic" || sceneKind === "market" ? walker.position : playerSpawn}
-                    facing={sceneKind === "generic" || sceneKind === "market" ? walker.facing : "north"}
-                    animation={(sceneKind === "generic" || sceneKind === "market") && walker.walking ? "walk" : "idle"}
+                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" ? walker.position : playerSpawn}
+                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" ? walker.facing : "north"}
+                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank") && walker.walking ? "walk" : "idle"}
                   />
                 )}
                 <WorldSceneReady onReady={handleSceneReady} />
@@ -634,7 +639,7 @@ function BasicLocationVenueScene({
               </div>
             </div>
             <div className="space-y-2">
-              {(sceneKind === "generic" || sceneKind === "market") && (
+              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank") && (
                 <p className="text-xs text-muted-foreground" role="status">
                   {movementMessage}
                 </p>
