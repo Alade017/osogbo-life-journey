@@ -11,7 +11,7 @@ export function PhonePartyApp() {
         </span>
         <div>
           <h2>Party</h2>
-          <p>Clubs, drinks, dancing and events in town.</p>
+          <p>Host events and join invitations in town.</p>
         </div>
       </section>
       <PartyExperience compact />
