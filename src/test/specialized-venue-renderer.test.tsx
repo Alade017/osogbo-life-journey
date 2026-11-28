@@ -22,8 +22,8 @@ vi.mock("@tanstack/react-query", async (original) => ({
   }),
 }));
 vi.mock("@/components/3d/WorldCharacter", () => ({
-  WorldCharacter: ({ name }: { name?: string }) => (
-    <div data-testid="saved-player-character" data-name={name ?? ""} />
+  WorldCharacter: ({ name, equipment }: { name?: string; equipment?: unknown[] }) => (
+    <div data-testid="saved-player-character" data-name={name ?? ""} data-equipment-count={equipment?.length ?? 0} />
   ),
 }));
 vi.mock("@react-three/fiber", async (original) => ({
@@ -114,7 +114,7 @@ beforeEach(() => {
   state.walkTo.mockClear();
   state.cancel.mockClear();
   state.character = { name: "Malik", gender: "male", appearance: {} };
-  state.equipment = [];
+  state.equipment = [{ id: "owned-cap", slot: "head" }];
 });
 afterEach(() => {
   cleanup();
@@ -126,6 +126,7 @@ it("marks each venue ready without recreating Canvas and isolates its camera", a
   const view = render(<Game venue="compound" />);
   const renderer = await screen.findByTestId("renderer");
   expect(screen.getByText("Compound content")).toBeVisible();
+  expect(screen.getByTestId("saved-player-character")).toHaveAttribute("data-name", "Malik");
   expect(screen.queryByText("Opening the compound")).toBeNull();
   const compoundCamera = state.cameras.at(-1);
   view.rerender(<Game venue="campus" />);
