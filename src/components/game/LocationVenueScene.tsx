@@ -704,7 +704,7 @@ function BasicLocationVenueScene({
                         fixture={fixture}
                         active={fixture.id === selectedFixture}
                         accentColor={venue.accentColor}
-                        onSelect={setSelectedFixture}
+                        onSelect={handleFixtureSelect}
                         onRegister={handleFurnitureRegister}
                         onResult={handleFurnitureResult}
                         onUnregister={handleFurnitureUnregister}
