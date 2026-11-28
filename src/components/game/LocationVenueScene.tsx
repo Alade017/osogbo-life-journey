@@ -390,7 +390,24 @@ function BasicLocationVenueScene({
                     variant={venue.bankInterior}
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const [x, , z] = walker.positionRef.current;
+                      const target = navigation.navigation.nearest(point);
+                      const path = target ? navigation.navigation.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose another point.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
                     floorColor={venue.floorColor}
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
