@@ -102,7 +102,7 @@ export function ResidentialCompoundVenue({
                   gender={character.gender}
                   appearance={playerAppearance}
                   equipment={playerEquipment}
-                  position={[0, 0.06, 7.2]}
+                  position={[0, 0.06, 4.4]}
                   facing="north"
                   animation="idle"
                 />
