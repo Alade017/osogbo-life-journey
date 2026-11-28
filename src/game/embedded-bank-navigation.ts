@@ -16,7 +16,8 @@ export function createEmbeddedBankNavigation(variant: BankInteriorVariant) {
   const transform = ([x, z]: WalkPoint): WalkPoint => [x * scaleX, z * scaleZ];
   const polygons = bankObstaclePolygons(world).map((polygon) => polygon.map(transform));
   const navigation = createBankNavigation(polygons, EMBEDDED_BOUNDS);
-  const spawn = transform(world.spawn);
+  const rawSpawn = transform(world.spawn);
+  const spawn = navigation.nearest(rawSpawn) ?? rawSpawn;
   const targetFor = (fixture: VenueFixture): WalkPoint | null => {
     const action = fixture.kind === "seat" ? "seat" : "teller";
     const preferred = fixture.id.includes("info") || fixture.id.includes("kiosk")
