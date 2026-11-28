@@ -217,6 +217,10 @@ function BasicLocationVenueScene({
     () => (venue.bankInterior ? createEmbeddedBankNavigation(venue.bankInterior) : null),
     [venue.bankInterior],
   );
+  const civicNavigation = useMemo(
+    () => (sceneKind === "civic" ? civicServiceNavigation(venue.fixtures) : null),
+    [sceneKind, venue.fixtures],
+  );
   const playerSpawn = useMemo(
     () =>
       sceneKind === "market"
@@ -240,7 +244,7 @@ function BasicLocationVenueScene({
           : sceneKind === "workplace"
             ? workplaceNavigation(venue.fixtures)
             : sceneKind === "civic"
-              ? civicServiceNavigation(venue.fixtures)
+              ? civicNavigation!
               : venueNavigation(venue.fixtures, venueWidth, venueDepth),
     [sceneKind, bankNavigation, venue.fixtures, venueWidth, venueDepth],
   );
@@ -402,8 +406,8 @@ function BasicLocationVenueScene({
                       walker.cancel();
                       setArrivedFixture(null);
                       const [x, , z] = walker.positionRef.current;
-                      const target = navigation.nearest(point);
-                      const path = target ? navigation.route([x, z], target) : null;
+                      const target = civicNavigation?.nearest(point);
+                      const path = target ? civicNavigation?.route([x, z], target) : null;
                       if (!path) {
                         setMovementMessage("That area is blocked. Choose a public area.");
                         return;
