@@ -81,9 +81,9 @@ export function RetailInteriorScene({
       <mesh
         position={[0, 0.012, 0]}
         rotation={[-Math.PI / 2, 0, 0]}
-        onPointerDown={(event) => {
+        onClick={(event) => {
           event.stopPropagation();
-          if (event.button === 0 && event.delta <= 5) onWalk([event.point.x, event.point.z]);
+          if (event.delta <= 5) onWalk([event.point.x, event.point.z]);
         }}
       >
         <planeGeometry args={[15.6, 13.6]} />
