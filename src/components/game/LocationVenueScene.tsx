@@ -79,7 +79,7 @@ import { civicServiceNavigation, CIVIC_SERVICE_SPAWN } from "@/game/civic-servic
 import { transitParkNavigation, TRANSIT_PARK_SPAWN } from "@/game/transit-park-navigation";
 import { foodVenueNavigation } from "@/game/food-venue-navigation";
 import { retailNavigation } from "@/game/retail-navigation";
-import { environmentNavigation } from "@/game/environment-navigation";
+import { environmentNavigation, environmentStageToModel } from "@/game/environment-navigation";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -260,7 +260,7 @@ function BasicLocationVenueScene({
               : sceneKind === "transport"
                 ? ([TRANSIT_PARK_SPAWN[0], 0.06, TRANSIT_PARK_SPAWN[1]] as [number, number, number])
                 : getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures),
-    [sceneKind, bankNavigation, venueWidth, venueDepth, venue.fixtures],
+    [sceneKind, bankNavigation, environmentNav, venueWidth, venueDepth, venue.fixtures],
   );
   const walker = useHouseMovement(slug, playerSpawn);
   const navigation = useMemo(
@@ -692,8 +692,15 @@ function BasicLocationVenueScene({
                     appearance={playerAppearance}
                     equipment={playerEquipment}
                     position={sceneKind === "environment"
-                      ? [walker.position[0] * environmentScale[0], walker.position[1], walker.position[2] * environmentScale[1]]
-                      : sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment" ? walker.position : playerSpawn}
+                      ? (() => {
+                          const [x, z] = environmentStageToModel(
+                            [walker.position[0], walker.position[2]],
+                            environmentScale[0],
+                            environmentScale[1],
+                          );
+                          return [x, walker.position[1], z] as [number, number, number];
+                        })()
+                      : sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" ? walker.position : playerSpawn}
                     facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment" ? walker.facing : "north"}
                     animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment") && walker.walking ? "walk" : "idle"}
                   />
