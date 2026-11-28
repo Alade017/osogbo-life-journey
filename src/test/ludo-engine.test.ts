@@ -112,7 +112,7 @@ describe("LudoEngine two dice", () => {
     expect(state.phase).toBe("WAITING_FOR_ROLL");
   });
 
-  it("a capture offers a free yard deploy, without a six and without a bonus roll", () => {
+  it("a capture sends the victim back to the yard with no re-entry offer", () => {
     // RED step 14 is absolute tile 14. GREEN step 1 is also tile 14: the lone GREEN token is captured.
     const state = rolled(
       { RED: [12, YARD_STEP, YARD_STEP, YARD_STEP], GREEN: [1, YARD_STEP, YARD_STEP, YARD_STEP] },
@@ -121,38 +121,28 @@ describe("LudoEngine two dice", () => {
     const hit = ok(moveToken(state, "alice", "RED", 0, 0));
     expect(hit.game.pieces.GREEN[0]).toBe(YARD_STEP);
     expect(hit.events.map((event) => event.type)).toContain("CAPTURED");
-    expect(hit.events.map((event) => event.type)).toContain("FREE_DEPLOY_OFFERED");
+    expect(hit.events.map((event) => event.type)).not.toContain("FREE_DEPLOY_OFFERED");
+    // The six is still playable, but only as a normal six from the yard: no yard token is free.
+    expect(getLegalMoves(hit.game, "alice").every((move) => move.die === 1)).toBe(true);
     expect(hit.game.bonus).toBe(null);
-    expect(hit.game.freeDeploy).toBe(true);
-    // The unused 6 is still playable, and the free deploy is listed beside it.
-    expect(getLegalMoves(hit.game, "alice").some((move) => move.die === null)).toBe(true);
-
-    const deployed = ok(moveToken(hit.game, "alice", "RED", 1, null));
-    expect(deployed.game.pieces.RED[1]).toBe(0);
-    expect(deployed.game.freeDeploy).toBe(false);
-    expect(deployed.game.phase).toBe("WAITING_FOR_MOVE");
   });
 
-  it("a roll that is not a double six earns no bonus roll", () => {
+  it("a single six earns no bonus roll", () => {
     const state = ok(rollDice(createLudoGame(seats2), "alice", [6, 5])).game;
     expect(state.bonus).toBe(null);
   });
 
-  it("forfeits the turn on the third double six in a row, without moving", () => {
+  it("a double six earns a bonus roll, with no triple-six forfeit", () => {
     let state = createLudoGame(seats2);
-    // Two double sixes. Each roll deploys a token from the yard, then moves token 0 by the other six.
-    for (let round = 0; round < 2; round += 1) {
+    // Three double sixes in a row. Each one deploys a token and moves another by the second six.
+    for (let round = 0; round < 3; round += 1) {
       state = ok(rollDice(state, "alice", [6, 6])).game;
       state = ok(moveToken(state, "alice", "RED", round, 0)).game;
       state = ok(moveToken(state, "alice", "RED", 0, 1)).game;
+      expect(state.turnIndex).toBe(0);
       expect(state.phase).toBe("WAITING_FOR_ROLL");
     }
-    expect(state.consecutiveDoubleSixes).toBe(2);
-    const forfeit = ok(rollDice(state, "alice", [6, 6]));
-    expect(forfeit.events.map((event) => event.type)).toContain("TRIPLE_DOUBLE_SIX_FORFEIT");
-    expect(forfeit.game.pieces.RED).toEqual(state.pieces.RED);
-    expect(forfeit.game.turnIndex).toBe(1);
-    expect(forfeit.game.consecutiveDoubleSixes).toBe(0);
+    expect(state.pieces.RED.filter((step) => step >= 0)).toHaveLength(3);
   });
 });
 
@@ -168,18 +158,17 @@ describe("LudoEngine captures, stacks and finishing", () => {
     expect(result.events.map((event) => event.type)).not.toContain("CAPTURED");
   });
 
-  it("a stack of two tokens blocks both landing on it and passing over it", () => {
-    // GREEN steps 1 on two tokens stack on tile 14. RED at step 12 lands on tile 14 with a 2: blocked.
+  it("has no blockades: two tokens of another colour do not stop a move", () => {
+    // GREEN steps 1 on two tokens stack on tile 14. RED at step 12 can land on it with a 2 and pass it with a 3.
     const state = rolled(
       { RED: [12, YARD_STEP, YARD_STEP, YARD_STEP], GREEN: [1, 1, YARD_STEP, YARD_STEP] },
       [2, 3],
     );
     expect(getLegalMoves(state, "alice").some((move) => move.token === 0 && move.die === 0)).toBe(
-      false,
+      true,
     );
-    // A 3 from step 12 would jump over tile 14 to tile 15: traditional rules stop it at the blockade.
     expect(getLegalMoves(state, "alice").some((move) => move.token === 0 && move.die === 1)).toBe(
-      false,
+      true,
     );
   });
 
