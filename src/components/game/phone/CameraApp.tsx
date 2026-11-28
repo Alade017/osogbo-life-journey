@@ -185,7 +185,7 @@ export function CameraApp() {
                 )}
               </>
             )}
-            <span className="phone-camera-focus" />
+            {live === "live" && <span className="phone-camera-focus" />}
           </div>
 
           <div className="phone-camera-viewfinder-bottom">
