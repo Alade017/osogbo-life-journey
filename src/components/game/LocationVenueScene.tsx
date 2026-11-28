@@ -407,7 +407,7 @@ function BasicLocationVenueScene({
                   <MarketTradingHall
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
                   />
                 ) : sceneKind === "workplace" ? (
                   <WorkplaceScene
