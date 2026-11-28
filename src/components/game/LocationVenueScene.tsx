@@ -73,6 +73,32 @@ import { getVenueSceneIdentity } from "@/lib/venue-scene-identity";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
+function getVenuePlayerSpawn(
+  width: number,
+  depth: number,
+  fixtures: readonly VenueFixture[],
+): [number, number, number] {
+  const xLimit = Math.max(0.8, width / 2 - 0.85);
+  const zLimit = Math.max(0.8, depth / 2 - 0.85);
+  const candidates: Array<[number, number]> = [];
+  for (const z of [zLimit, zLimit - 0.9, zLimit - 1.8, 0.4, -0.4]) {
+    for (const x of [0, -0.9, 0.9, -1.8, 1.8]) {
+      if (Math.abs(x) <= xLimit) candidates.push([x, Math.max(-zLimit, z)]);
+    }
+  }
+  const clearance = (point: [number, number]) =>
+    fixtures.reduce((nearest, fixture) => {
+      const dx = point[0] - fixture.position[0];
+      const dz = point[1] - fixture.position[1];
+      return Math.min(nearest, Math.hypot(dx, dz));
+    }, Number.POSITIVE_INFINITY);
+  const preferred = candidates.find((point) => clearance(point) >= 1.35);
+  const selected = preferred ?? candidates.reduce((best, point) =>
+    clearance(point) > clearance(best) ? point : best,
+  );
+  return [selected[0], 0.06, selected[1]];
+}
+
 const FixtureModel = memo(function FixtureModel({
   fixture,
   active,
@@ -177,6 +203,15 @@ function BasicLocationVenueScene({
   );
   const sceneKind = resolveVenueScene(slug, venue);
   const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
+  const playerSpawn = useMemo(
+    () =>
+      getVenuePlayerSpawn(
+        bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11,
+        bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8,
+        venue.fixtures,
+      ),
+    [bankLayout, venue.sceneBounds, venue.sceneSize, venue.fixtures],
+  );
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
   const shutterOpen = venue.environment?.trading
@@ -391,7 +426,7 @@ function BasicLocationVenueScene({
                     gender={character.gender}
                     appearance={playerAppearance}
                     equipment={playerEquipment}
-                    position={[0, 0.06, 2.6]}
+                    position={playerSpawn}
                     facing="north"
                     animation="idle"
                   />
