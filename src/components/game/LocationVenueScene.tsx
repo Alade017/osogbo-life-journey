@@ -79,6 +79,7 @@ import { civicServiceNavigation, CIVIC_SERVICE_SPAWN } from "@/game/civic-servic
 import { transitParkNavigation, TRANSIT_PARK_SPAWN } from "@/game/transit-park-navigation";
 import { foodVenueNavigation } from "@/game/food-venue-navigation";
 import { retailNavigation } from "@/game/retail-navigation";
+import { environmentNavigation } from "@/game/environment-navigation";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -238,11 +239,17 @@ function BasicLocationVenueScene({
     () => sceneKind === "retail" ? retailNavigation(venue.fixtures) : null,
     [sceneKind, venue.fixtures],
   );
+  const environmentNav = useMemo(
+    () => sceneKind === "environment" ? environmentNavigation(venue.fixtures) : null,
+    [sceneKind, venue.fixtures],
+  );
   const playerSpawn = useMemo(
     () =>
       sceneKind === "food" && foodNavigation
         ? foodNavigation.spawn
-        : sceneKind === "market"
+        : sceneKind === "environment" && environmentNav
+          ? [environmentNav.spawn[0], 0.06, environmentNav.spawn[1]] as [number, number, number]
+          : sceneKind === "market"
         ? ([0, 0.06, 3.25] as [number, number, number])
         : sceneKind === "bank" && venue.bankInterior
           ? bankNavigation?.spawn ?? getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures)
@@ -262,7 +269,9 @@ function BasicLocationVenueScene({
         ? foodNavigation
         : sceneKind === "retail" && retailNav
           ? retailNav
-          : sceneKind === "market"
+          : sceneKind === "environment" && environmentNav
+            ? environmentNav
+            : sceneKind === "market"
         ? marketNavigation(venue.fixtures)
         : sceneKind === "bank" && venue.bankInterior
           ? bankNavigation!
@@ -273,7 +282,7 @@ function BasicLocationVenueScene({
               : sceneKind === "transport"
                 ? transitNavigation!
                 : venueNavigation(venue.fixtures, venueWidth, venueDepth),
-    [sceneKind, bankNavigation, civicNavigation, transitNavigation, foodNavigation, retailNav, venue.fixtures, venueWidth, venueDepth],
+    [sceneKind, bankNavigation, civicNavigation, transitNavigation, foodNavigation, retailNav, environmentNav, venue.fixtures, venueWidth, venueDepth],
   );
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
@@ -288,6 +297,12 @@ function BasicLocationVenueScene({
   const [sceneStatus, setSceneStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const [slowLoading, setSlowLoading] = useState(false);
   const [furnitureRegistry, setFurnitureRegistry] = useState<FurnitureRegistry>(() => new Map());
+  const [environmentScale, setEnvironmentScale] = useState<[number, number]>([1, 1]);
+  const handleEnvironmentTransform = useCallback((scaleX: number, scaleZ: number) => {
+    setEnvironmentScale((current) =>
+      current[0] === scaleX && current[1] === scaleZ ? current : [scaleX, scaleZ],
+    );
+  }, []);
 
   const furnitureReadiness = useMemo(() => {
     if (sceneKind !== "generic" || sceneStatus !== "ready") return null;
@@ -328,7 +343,8 @@ function BasicLocationVenueScene({
         sceneKind !== "transport" &&
         sceneKind !== "healthcare" &&
         sceneKind !== "food" &&
-        sceneKind !== "retail"
+        sceneKind !== "retail" &&
+        sceneKind !== "environment"
       ) return;
       const fixture = venue.fixtures.find((item) => item.id === fixtureId);
       if (!fixture) return;
@@ -621,7 +637,25 @@ function BasicLocationVenueScene({
                     fixtures={venue.fixtures}
                     activeId={selectedFixture}
                     accentColor={venue.accentColor}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const target = environmentNav?.nearest(point);
+                      const [x, , z] = walker.positionRef.current;
+                      const path = target ? environmentNav?.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a clear path.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
+                    onTransform={handleEnvironmentTransform}
                   />
                 ) : (
                   <>
@@ -657,9 +691,11 @@ function BasicLocationVenueScene({
                     gender={character.gender}
                     appearance={playerAppearance}
                     equipment={playerEquipment}
-                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" ? walker.position : playerSpawn}
-                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" ? walker.facing : "north"}
-                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail") && walker.walking ? "walk" : "idle"}
+                    position={sceneKind === "environment"
+                      ? [walker.position[0] * environmentScale[0], walker.position[1], walker.position[2] * environmentScale[1]]
+                      : sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment" ? walker.position : playerSpawn}
+                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment" ? walker.facing : "north"}
+                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment") && walker.walking ? "walk" : "idle"}
                   />
                 )}
                 <WorldSceneReady onReady={handleSceneReady} />
@@ -811,7 +847,7 @@ function BasicLocationVenueScene({
               </div>
             </div>
             <div className="space-y-2">
-              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail") && (
+              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment") && (
                 <p className="text-xs text-muted-foreground" role="status">
                   {movementMessage}
                 </p>
