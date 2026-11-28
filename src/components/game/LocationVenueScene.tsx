@@ -75,6 +75,7 @@ import { venueNavigation } from "@/game/venue-navigation";
 import { marketNavigation } from "@/game/market-navigation";
 import { createEmbeddedBankNavigation } from "@/game/embedded-bank-navigation";
 import { workplaceNavigation, workplaceSpawn } from "@/game/workplace-navigation";
+import { civicServiceNavigation, CIVIC_SERVICE_SPAWN } from "@/game/civic-service-navigation";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -224,7 +225,9 @@ function BasicLocationVenueScene({
           ? bankNavigation?.spawn ?? getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures)
           : sceneKind === "workplace"
             ? ([workplaceSpawn[0], 0.06, workplaceSpawn[1]] as [number, number, number])
-            : getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures),
+            : sceneKind === "civic"
+              ? ([CIVIC_SERVICE_SPAWN[0], 0.06, CIVIC_SERVICE_SPAWN[1]] as [number, number, number])
+              : getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures),
     [sceneKind, bankNavigation, venueWidth, venueDepth, venue.fixtures],
   );
   const walker = useHouseMovement(slug, playerSpawn);
@@ -236,7 +239,9 @@ function BasicLocationVenueScene({
           ? bankNavigation!
           : sceneKind === "workplace"
             ? workplaceNavigation(venue.fixtures)
-            : venueNavigation(venue.fixtures, venueWidth, venueDepth),
+            : sceneKind === "civic"
+              ? civicServiceNavigation(venue.fixtures)
+              : venueNavigation(venue.fixtures, venueWidth, venueDepth),
     [sceneKind, bankNavigation, venue.fixtures, venueWidth, venueDepth],
   );
   const gameTime = useOptionalGameTime();
@@ -287,7 +292,8 @@ function BasicLocationVenueScene({
         sceneKind !== "generic" &&
         sceneKind !== "market" &&
         sceneKind !== "bank" &&
-        sceneKind !== "workplace"
+        sceneKind !== "workplace" &&
+        sceneKind !== "civic"
       ) return;
       const fixture = venue.fixtures.find((item) => item.id === fixtureId);
       if (!fixture) return;
@@ -391,6 +397,23 @@ function BasicLocationVenueScene({
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
                     onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const [x, , z] = walker.positionRef.current;
+                      const target = navigation.nearest(point);
+                      const path = target ? navigation.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a public area.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
                     floorColor={venue.floorColor}
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
@@ -530,9 +553,9 @@ function BasicLocationVenueScene({
                     gender={character.gender}
                     appearance={playerAppearance}
                     equipment={playerEquipment}
-                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" ? walker.position : playerSpawn}
-                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" ? walker.facing : "north"}
-                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace") && walker.walking ? "walk" : "idle"}
+                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" ? walker.position : playerSpawn}
+                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" ? walker.facing : "north"}
+                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic") && walker.walking ? "walk" : "idle"}
                   />
                 )}
                 <WorldSceneReady onReady={handleSceneReady} />
