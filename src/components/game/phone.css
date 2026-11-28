@@ -3281,8 +3281,31 @@
 .phone-app-body .pi-inventory .pi-stage-foot {
   background: color-mix(in srgb, var(--card) 80%, transparent);
 }
+/* Keep wardrobe filters pill-shaped in the compact phone dialog as well. */
+.phone-app-body .pi-inventory .pi-filters {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.45rem;
+  overflow-x: auto;
+  padding: 0.15rem 0 0.35rem;
+  scrollbar-width: none;
+}
+.phone-app-body .pi-inventory .pi-filters::-webkit-scrollbar {
+  display: none;
+}
+.phone-app-body .pi-inventory .pi-filters button {
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 0.35rem 0.9rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--foreground);
+  white-space: nowrap;
+}
 .phone-app-body .pi-inventory .pi-filters button[aria-pressed="true"] {
   background: var(--primary);
+  border-color: var(--primary);
   color: var(--primary-foreground);
 }
 .phone-app-body .pi-inventory .pi-bag {

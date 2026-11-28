@@ -41,7 +41,6 @@ function fixture(initial: string) {
         <GameMobileNav
           onHudOpen={hud.openHud}
           onNavigate={() => hud.setPhoneOpen(false)}
-          onInventoryOpen={() => hud.setInventoryOpen(true)}
         />
         <button onClick={() => hud.setPhoneOpen(false)}>Close phone</button>
         <Outlet />
@@ -94,8 +93,7 @@ it("opens HUDs and follows Back/Forward without remounting the world route", asy
   await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("closed"));
   await act(async () => router.history.forward());
   await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("Map"));
-  fireEvent.click(screen.getByRole("button", { name: "Open inventory" }));
-  await waitFor(() => expect(screen.getByTestId("panel")).toHaveTextContent("inventory"));
+  expect(screen.queryByRole("button", { name: "Open inventory" })).not.toBeInTheDocument();
   expect(mounted).toHaveBeenCalledOnce();
   expect(departed).not.toHaveBeenCalled();
 });

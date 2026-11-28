@@ -1,673 +1,108 @@
-import { useQuery } from "@tanstack/react-query";
 import { useRef, useState } from "react";
-import {
-  Backpack,
-  GlassWater,
-  Package,
-  Search,
-  Shirt,
-  Smartphone,
-  type LucideIcon,
-} from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { Backpack, Gift, Laptop, Package, Search, Shirt, Utensils, X } from "lucide-react";
 import { toast } from "sonner";
-import { q, rpc, useGameAction } from "@/lib/game";
+import * as AlertDialog from "@radix-ui/react-alert-dialog";
+import { q, rpc, useGameAction, formatNaira } from "@/lib/game";
+import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/game/ui";
 import { CardListSkeleton } from "@/components/game/loading-skeletons";
-import { Button } from "@/components/ui/button";
-import * as AlertDialog from "@radix-ui/react-alert-dialog";
-import {
-  countInventoryUnits,
-  filterInventory,
-  INVENTORY_CATEGORIES,
-  INVENTORY_CATEGORY_LABELS,
-  normalizeInventoryCategory,
-  type InventoryCategory,
-} from "@/lib/inventory-service";
+import { countInventoryUnits, normalizeInventoryCategory } from "@/lib/inventory-service";
 import { itemUseEffect } from "@/lib/item-service";
 import { validatePlayerAction } from "@/lib/player-action-service";
-import type { EquipmentSlot } from "@/lib/player-state";
-import {
-  announceEquipmentRefresh,
-  EQUIPMENT_SLOTS,
-  filterEquippableInventoryForSlot,
-  normalizeEquippedItems,
-} from "@/lib/equipment-service";
 import { getItemArt } from "@/lib/item-art";
-import type { Appearance } from "@/game/avatar-appearance";
-import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import { ItemPreview3D, hasItemModel } from "@/components/3d/ItemPreview3D";
 import { ItemThumbnailQueue } from "@/components/3d/ItemThumbnailQueue";
 import { useItemThumbnail } from "@/components/3d/item-thumbnails";
 import "@/components/game/profile-inventory.css";
 
-const ICONS: Record<string, LucideIcon> = {
-  smartphone: Smartphone,
-  backpack: Backpack,
-  shirt: Shirt,
-  "glass-water": GlassWater,
-};
-
-function InventoryTileArt({ slug, Icon }: { slug: string | null | undefined; Icon: LucideIcon }) {
-  const thumbnail = useItemThumbnail(slug);
-  const artwork = thumbnail ?? getItemArt(slug);
-  return artwork ? (
-    <img src={artwork} alt="" loading="lazy" width={64} height={64} />
-  ) : (
-    <Icon size={26} />
-  );
+type InventoryGroup = "all" | "consumables" | "clothing" | "tools" | "keepsakes";
+const GROUPS: { id: InventoryGroup; label: string; icon: typeof Package }[] = [
+  { id: "all", label: "All", icon: Package },
+  { id: "consumables", label: "Consumables", icon: Utensils },
+  { id: "clothing", label: "Clothing & Style", icon: Shirt },
+  { id: "tools", label: "Tools & Tech", icon: Laptop },
+  { id: "keepsakes", label: "Keepsakes", icon: Gift },
+];
+function groupFor(item: Parameters<typeof normalizeInventoryCategory>[0]): InventoryGroup {
+  const category = normalizeInventoryCategory(item);
+  if (category === "food" || category === "drinks") return "consumables";
+  if (category === "clothing") return "clothing";
+  if (category === "tools" || category === "electronics") return "tools";
+  return "keepsakes";
 }
-
+function InventoryArt({ slug }: { slug: string | null | undefined }) {
+  const thumb = useItemThumbnail(slug);
+  const src = thumb ?? getItemArt(slug);
+  return src ? <img src={src} alt="" loading="lazy" /> : <Package size={32} aria-hidden="true" />;
+}
 export function GameInventoryPanel() {
-  const { data: items, isLoading, isError, error, refetch, isRefetching } = useQuery(q.inventory());
-  const {
-    data: character,
-    isLoading: characterLoading,
-    isError: characterError,
-    refetch: refetchCharacter,
-    isRefetching: characterRefetching,
-  } = useQuery(q.character());
-  const {
-    data: equipment,
-    isLoading: equipmentLoading,
-    isError: equipmentError,
-    refetch: refetchEquipment,
-    isRefetching: isRefetchingEquipment,
-  } = useQuery(q.equipment());
-  const [activeCategory, setActiveCategory] = useState<InventoryCategory | "all">("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const inventoryQuery = useQuery(q.inventory());
+  const walletQuery = useQuery(q.wallet());
+  const characterQuery = useQuery(q.character());
+  const [group, setGroup] = useState<InventoryGroup>("all");
   const [search, setSearch] = useState("");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [discardId, setDiscardId] = useState<string | null>(null);
   const detailRef = useRef<HTMLElement>(null);
-  const [requestedSlot, setRequestedSlot] = useState<EquipmentSlot | null>(null);
-  const useItem = useGameAction(rpc.useInventoryItem, {
-    onSuccess: () => toast.success("Item used. Your needs and game time were updated."),
+  const useItem = useGameAction(rpc.useInventoryItem, { onSuccess: () => toast.success("Item used. Your needs and game time were updated.") });
+  const discardItem = useGameAction(({ id, quantity }: { id: string; quantity: number }) => rpc.discardInventoryItem(id, quantity), {
+    onSuccess: () => { toast.success("Item discarded."); setDiscardId(null); setSelectedId(null); },
   });
-  const equipItem = useGameAction(
-    ({ id, slot }: { id: string; slot: string }) => rpc.equipInventoryItem(id, slot),
-    {
-      onSuccess: () => {
-        announceEquipmentRefresh();
-        toast.success("Equipment updated.");
-      },
-    },
-  );
-  const unequipItem = useGameAction(rpc.unequipItem, {
-    onSuccess: () => {
-      announceEquipmentRefresh();
-      toast.success("Item returned to your bag.");
-    },
-  });
-  const discardItem = useGameAction(
-    ({ id, quantity }: { id: string; quantity: number }) => rpc.discardInventoryItem(id, quantity),
-    {
-      onSuccess: () => toast.success("Item discarded."),
-    },
-  );
-
-  if (isLoading) return <CardListSkeleton label="Loading inventory" cards={4} />;
-  if (isError && !items)
-    return (
-      <section className="pi-panel" role="alert">
-        <h1 className="text-lg font-bold text-ink">Unable to load your inventory</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {error?.message ?? "Please try loading your inventory again."}
-        </p>
-        <Button
-          className="mt-4"
-          variant="outline"
-          disabled={isRefetching}
-          onClick={() => void refetch()}
-        >
-          {isRefetching ? "Trying again…" : "Try again"}
-        </Button>
-      </section>
-    );
-
-  const inventory = items ?? [];
-  const visibleItems = filterInventory(inventory, activeCategory);
-  const slotItems = requestedSlot
-    ? filterEquippableInventoryForSlot(visibleItems, requestedSlot)
-    : visibleItems;
+  if (inventoryQuery.isLoading) return <CardListSkeleton label="Loading inventory" cards={4} />;
+  if (inventoryQuery.isError && !inventoryQuery.data) return <section className="pi-panel" role="alert"><h1>Unable to load your inventory</h1><p>{inventoryQuery.error?.message ?? "Please try again."}</p><Button variant="outline" onClick={() => void inventoryQuery.refetch()} disabled={inventoryQuery.isRefetching}>Try again</Button></section>;
+  const inventory = inventoryQuery.data ?? [];
   const query = search.trim().toLocaleLowerCase();
-  const compatibleItems = query
-    ? slotItems.filter((entry) =>
-        [entry.item?.name, entry.item?.description, entry.item?.slug].some((value) =>
-          value?.toLocaleLowerCase().includes(query),
-        ),
-      )
-    : slotItems;
-  const selectedItem = compatibleItems.find((item) => item.id === selectedId);
-  const selectedUse = selectedItem ? itemUseEffect(selectedItem.item) : null;
-  const selectedSlot = selectedItem?.item?.equipment_slot as EquipmentSlot | null | undefined;
-  const useError =
-    selectedItem && character
-      ? validatePlayerAction({
-          action: "use",
-          characterId: character.id,
-          inventoryEntry: selectedItem,
-        })
-      : "Player data is not available.";
-  const equipError =
-    selectedItem && character && selectedSlot
-      ? validatePlayerAction({
-          action: "equip",
-          characterId: character.id,
-          inventoryEntry: selectedItem,
-          slot: selectedSlot,
-        })
-      : "This item cannot be equipped.";
-  const discardError =
-    selectedItem && character
-      ? validatePlayerAction({
-          action: "discard",
-          characterId: character.id,
-          inventoryEntry: selectedItem,
-          quantity: 1,
-        })
-      : "Player data is not available.";
+  const filtered = inventory.filter((entry) => (group === "all" || groupFor(entry.item) === group) && (!query || [entry.item?.name, entry.item?.description, entry.item?.slug].some((value) => value?.toLocaleLowerCase().includes(query))));
+  const selected = inventory.find((entry) => entry.id === selectedId);
+  const selectedUse = selected ? itemUseEffect(selected.item) : null;
+  const useError = selected && characterQuery.data ? validatePlayerAction({ action: "use", characterId: characterQuery.data.id, inventoryEntry: selected }) : "Player data is not available.";
+  const discardError = selected && characterQuery.data ? validatePlayerAction({ action: "discard", characterId: characterQuery.data.id, inventoryEntry: selected, quantity: 1 }) : "Player data is not available.";
   const discardTarget = inventory.find((entry) => entry.id === discardId);
-  const confirmationError = character
-    ? validatePlayerAction({
-        action: "discard",
-        characterId: character.id,
-        inventoryEntry: discardTarget,
-        quantity: 1,
-      })
-    : "Player data is not available.";
-  const inventoryMutationPending =
-    isError ||
-    characterError ||
-    characterLoading ||
-    useItem.isPending ||
-    equipItem.isPending ||
-    unequipItem.isPending ||
-    discardItem.isPending;
-  const categoryFilters: (InventoryCategory | "all")[] = ["all", ...INVENTORY_CATEGORIES];
-  const normalizedEquipment = normalizeEquippedItems(equipment);
-  const wornNow = normalizedEquipment.map((entry) => ({ slot: entry.slot, item: entry.item }));
-  // Trying an item on: the stage shows the selected item in its slot, so 3D models appear live.
-  const canTryOn = !equipmentLoading && !equipmentError && !!selectedSlot && !equipError;
-  const isAlreadyWorn =
-    !!selectedSlot &&
-    wornNow.some(
-      (entry) => entry.slot === selectedSlot && entry.item?.id === selectedItem?.item?.id,
-    );
-  const hasUnsavedPreview = canTryOn && !isAlreadyWorn;
-  const previewEquipment =
-    hasUnsavedPreview && selectedSlot && selectedItem
-      ? [
-          ...wornNow.filter((entry) => entry.slot !== selectedSlot),
-          { slot: selectedSlot, item: selectedItem.item },
-        ]
-      : wornNow;
-
+  const discardValidation = discardTarget && characterQuery.data ? validatePlayerAction({ action: "discard", characterId: characterQuery.data.id, inventoryEntry: discardTarget, quantity: 1 }) : "Player data is not available.";
+  const pending = useItem.isPending || discardItem.isPending || inventoryQuery.isError || characterQuery.isLoading || characterQuery.isError;
+  const groupLabel = selected ? (groupFor(selected.item) === "consumables" ? "Consumable" : groupFor(selected.item) === "clothing" ? "Clothing & style" : groupFor(selected.item) === "tools" ? "Tools & tech" : "Keepsake") : "";
   return (
-    <div className="pi-page pi-inventory">
-      <ItemThumbnailQueue
-        slugs={(items ?? []).map((entry) => entry.item?.slug ?? "").filter(Boolean)}
-      />
-      <header className="pi-masthead pi-inventory-masthead">
-        <span className="pi-inventory-mark" aria-hidden="true">
-          <Backpack size={22} />
-        </span>
-        <div className="pi-inventory-heading">
-          <p className="pi-eyebrow">Player inventory</p>
-          <h1>Inventory</h1>
-          <p className="pi-sub">Manage what you carry, use, and equip around Osogbo.</p>
-        </div>
-        <span className="pi-inventory-total">
-          <strong>{countInventoryUnits(inventory)}</strong>
-          <small>Items carried</small>
-        </span>
+    <div className="pi-page pi-inventory pi-inventory-collection">
+      <ItemThumbnailQueue slugs={inventory.map((entry) => entry.item?.slug ?? "").filter(Boolean)} />
+      <header className="pi-inventory-topbar">
+        <div className="pi-inventory-topbrand"><span className="pi-inventory-mark"><Backpack size={22} /></span><div><p className="pi-eyebrow">Your belongings</p><h1>Inventory</h1></div></div>
+        <div className="pi-inventory-metrics"><span className="pi-wallet-chip"><strong>{walletQuery.data ? formatNaira(walletQuery.data.balance) : "—"}</strong><small>Wallet</small></span><span className="pi-capacity-chip"><strong>{countInventoryUnits(inventory)}</strong><small>Items owned</small></span></div>
       </header>
-
-      {isError && (
-        <p className="pi-banner" role="alert">
-          Your inventory could not be refreshed. Showing the last loaded items. Actions are paused.{" "}
-          <button type="button" disabled={isRefetching} onClick={() => void refetch()}>
-            {isRefetching ? "Retrying…" : "Retry"}
-          </button>
-        </p>
-      )}
-      <div className="pi-hero">
-        <section className="pi-stage" aria-label="Your character">
-          {characterLoading || characterError || !character ? (
-            <div className="pi-detail-placeholder" role="status">
-              <strong>{characterLoading ? "Loading character…" : "Character unavailable"}</strong>
-              {!characterLoading && (
-                <Button
-                  variant="outline"
-                  disabled={characterRefetching}
-                  onClick={() => void refetchCharacter()}
-                >
-                  {characterRefetching ? "Retrying…" : "Retry character"}
-                </Button>
-              )}
-            </div>
-          ) : (
-            <CharacterPreview
-              appearance={(character?.appearance ?? {}) as unknown as Appearance}
-              gender={character?.gender ?? "nonbinary"}
-              interactive
-              equipment={previewEquipment}
-              label={
-                hasUnsavedPreview
-                  ? "Outfit try-on preview; choose Wear to save"
-                  : "Your character wearing the saved outfit"
-              }
-            />
-          )}
-          <div className="pi-stage-foot">
-            <div>
-              <strong>
-                {hasUnsavedPreview
-                  ? `Trying on: ${selectedItem?.item?.name ?? "Item"}`
-                  : "Saved outfit"}
-              </strong>
-              <span>
-                {selectedItem && hasUnsavedPreview
-                  ? "Try-on preview — choose Wear to save"
-                  : equipmentLoading
-                    ? "Loading your saved equipment…"
-                    : equipmentError
-                      ? "Saved equipment is unavailable; retry to preview outfits"
-                      : "Select a wearable item to preview changes"}
-              </span>
-            </div>
-            <span
-              className={`pi-outfit-state ${hasUnsavedPreview ? "is-preview" : ""}`}
-              role="status"
-            >
-              {equipmentError
-                ? "Equipment unavailable"
-                : equipmentLoading
-                  ? "Loading equipment"
-                  : hasUnsavedPreview
-                    ? "Unsaved preview"
-                    : "Saved appearance"}
-            </span>
-          </div>
-        </section>
-
-        {equipmentLoading ? (
-          <p className="pi-note" role="status">
-            Loading equipment…
-          </p>
-        ) : equipmentError ? (
-          <div className="pi-slot-actions">
-            <p className="pi-note">Equipment couldn't be loaded.</p>
-            <Button
-              size="sm"
-              variant="outline"
-              disabled={isRefetchingEquipment}
-              onClick={() => void refetchEquipment()}
-            >
-              {isRefetchingEquipment ? "Retrying…" : "Retry"}
-            </Button>
-          </div>
-        ) : (
-          <section className="pi-section" aria-label="Equipment">
-            <div className="pi-section-heading">
-              <div>
-                <p className="pi-eyebrow">Your wardrobe</p>
-                <h2>Equipped</h2>
-              </div>
-              <span>
-                {normalizedEquipment.length} / {EQUIPMENT_SLOTS.length}
-              </span>
-            </div>
-            <ul className="pi-slots" aria-label="Equipment slots">
-              {EQUIPMENT_SLOTS.map((slot) => {
-                const equipped = normalizedEquipment.find((entry) => entry.slot === slot);
-                return (
-                  <li
-                    key={slot}
-                    className={`pi-slot ${requestedSlot === slot ? "is-selected" : ""}`}
-                  >
-                    <span className="pi-slot-name">{slot}</span>
-                    {equipped ? (
-                      <strong className="pi-slot-item">{equipped.item?.name ?? "Equipped"}</strong>
-                    ) : (
-                      <span className="pi-slot-empty">No inventory item</span>
-                    )}
-                    <div className="pi-slot-actions">
-                      <button
-                        type="button"
-                        className="pi-chip-btn pi-chip-btn-primary"
-                        aria-pressed={requestedSlot === slot}
-                        onClick={() => {
-                          setRequestedSlot(slot);
-                          setActiveCategory("all");
-                          setSearch("");
-                          setSelectedId(null);
-                          window.requestAnimationFrame(() =>
-                            document.getElementById("inventory-items")?.scrollIntoView({
-                              behavior: "smooth",
-                              block: "nearest",
-                            }),
-                          );
-                        }}
-                      >
-                        {equipped ? "Change" : "Choose"}
-                      </button>
-                      {equipped && (
-                        <button
-                          type="button"
-                          className="pi-chip-btn"
-                          disabled={
-                            inventoryMutationPending ||
-                            !character ||
-                            !equipped ||
-                            !!(
-                              character &&
-                              equipped &&
-                              validatePlayerAction({
-                                action: "unequip",
-                                characterId: character.id,
-                                equippedItem: equipped,
-                                slot,
-                              })
-                            )
-                          }
-                          onClick={() => {
-                            if (!character || !equipped) return;
-                            const validationError = validatePlayerAction({
-                              action: "unequip",
-                              characterId: character.id,
-                              equippedItem: equipped,
-                              slot,
-                            });
-                            if (validationError) {
-                              toast.error(validationError);
-                              return;
-                            }
-                            unequipItem.mutate(slot);
-                          }}
-                        >
-                          Remove
-                        </button>
-                      )}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
-        )}
+      <div className="pi-inventory-toolbar">
+        <nav className="pi-collection-tabs" aria-label="Inventory categories">{GROUPS.map(({ id, label, icon: Icon }) => <button key={id} type="button" aria-pressed={group === id} onClick={() => { setGroup(id); setSelectedId(null); }}><Icon size={16} aria-hidden="true" /><span>{label}</span></button>)}</nav>
+        <label className="pi-inventory-search"><Search size={18} aria-hidden="true" /><span className="sr-only">Search inventory</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search your items…" aria-label="Search inventory" />{search && <button type="button" aria-label="Clear search" onClick={() => setSearch("")}><X size={15} /></button>}</label>
       </div>
-
-      {!items?.length ? (
-        <EmptyState
-          title="Your inventory is empty"
-          body="Items you collect or purchase will appear here."
-        />
-      ) : (
-        <>
-          <div className="pi-section-heading">
-            <div>
-              <p className="pi-eyebrow">Your collection</p>
-              <h2>Inventory items</h2>
-            </div>
-            <span>{compatibleItems.length} shown</span>
-          </div>
-          <div className="pi-bag-toolbar">
-            <label className="pi-inventory-search">
-              <Search size={18} aria-hidden="true" />
-              <span className="sr-only">Search inventory</span>
-              <input
-                type="search"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-                placeholder="Search your items"
-                aria-label="Search inventory"
-              />
-            </label>
-            <span className="pi-bag-count">
-              {compatibleItems.length} of {inventory.length} stacks
-            </span>
-          </div>
-          <div className="pi-filters" role="group" aria-label="Filter bag by category">
-            {categoryFilters.map((category) => (
-              <button
-                key={category}
-                type="button"
-                aria-pressed={activeCategory === category}
-                aria-label={`${category === "all" ? "All items" : INVENTORY_CATEGORY_LABELS[category]} filter${activeCategory === category ? ", active" : ""}`}
-                onClick={() => setActiveCategory(category)}
-              >
-                {category === "all" ? "All items" : INVENTORY_CATEGORY_LABELS[category]}
-              </button>
-            ))}
-          </div>
-
-          {requestedSlot && (
-            <p className="pi-banner" role="status">
-              Choose an item for the {requestedSlot} slot. Only owned, compatible equipment is
-              shown.{" "}
-              <button type="button" onClick={() => setRequestedSlot(null)}>
-                Show all items
-              </button>
-            </p>
-          )}
-          {requestedSlot && slotItems.length === 0 && (
-            <p className="pi-banner" role="status">
-              You do not have any {requestedSlot} equipment in your bag yet. Visit the market to
-              look for some.
-            </p>
-          )}
-
-          {!requestedSlot && compatibleItems.length > 0 && !selectedItem && (
-            <p className="pi-interaction-tip">Select an item to see what you can do with it.</p>
-          )}
-          <div className="pi-bag-layout">
-            <div className="pi-bag" id="inventory-items">
-              {compatibleItems.length === 0 && (
-                <p className="pi-bag-empty" role="status">
-                  {query
-                    ? "No items match your search. Try another name or clear the search."
-                    : "No items in this category. Try All items to browse your bag."}
-                </p>
-              )}
-              {compatibleItems.map((item) => {
-                const Icon = ICONS[item.item?.icon ?? ""] ?? Package;
-                return (
-                  <button
-                    key={item.id}
-                    type="button"
-                    className="pi-tile"
-                    aria-pressed={selectedId === item.id}
-                    aria-controls="inventory-selected-item-details"
-                    aria-label={`${item.item?.name ?? "Item"}, ${INVENTORY_CATEGORY_LABELS[normalizeInventoryCategory(item.item)]}, quantity ${item.quantity}${selectedId === item.id ? ", selected" : ""}`}
-                    onClick={() => {
-                      setSelectedId(item.id);
-                      if (window.matchMedia("(max-width: 760px)").matches) {
-                        window.requestAnimationFrame(() =>
-                          detailRef.current?.scrollIntoView({
-                            behavior: "smooth",
-                            block: "nearest",
-                          }),
-                        );
-                      }
-                    }}
-                  >
-                    <span className="pi-tile-art" aria-hidden="true">
-                      <InventoryTileArt slug={item.item?.slug} Icon={Icon} />
-                    </span>
-                    <strong>{item.item?.name}</strong>
-                    {selectedId === item.id && <span className="pi-tile-selected">Selected</span>}
-                    <small>
-                      {INVENTORY_CATEGORY_LABELS[normalizeInventoryCategory(item.item)]} · ×
-                      {item.quantity}
-                    </small>
-                  </button>
-                );
-              })}
-            </div>
-
-            <aside
-              ref={detailRef}
-              id="inventory-selected-item-details"
-              className="pi-detail"
-              aria-live="polite"
-              aria-label="Selected item details"
-            >
-              {selectedItem ? (
-                <>
-                  {hasItemModel(selectedItem.item?.slug) && (
-                    <ItemPreview3D
-                      key={selectedItem.item?.slug}
-                      slug={selectedItem.item?.slug ?? ""}
-                      label={selectedItem.item?.name ?? "Item"}
-                    />
-                  )}
-                  <div className="pi-detail-heading">
-                    <p className="pi-eyebrow">Item details</p>
-                    <button
-                      type="button"
-                      className="pi-detail-clear"
-                      onClick={() => setSelectedId(null)}
-                    >
-                      Clear selection
-                    </button>
-                  </div>
-                  <h2>{selectedItem.item?.name}</h2>
-                  <p className="pi-sub">{selectedItem.item?.description}</p>
-                  <dl className="pi-detail-facts">
-                    <div>
-                      <dt>Category</dt>
-                      <dd>
-                        {INVENTORY_CATEGORY_LABELS[normalizeInventoryCategory(selectedItem.item)]}
-                      </dd>
-                    </div>
-                    <div>
-                      <dt>Quantity</dt>
-                      <dd>×{selectedItem.quantity}</dd>
-                    </div>
-                  </dl>
-                  {selectedItem.item ? (
-                    <div
-                      className="pi-detail-actions"
-                      role="group"
-                      aria-label="Selected item actions"
-                    >
-                      {selectedUse && (
-                        <Button
-                          className="pi-action-primary"
-                          disabled={!!useError || inventoryMutationPending}
-                          onClick={() => useItem.mutate(selectedItem.id)}
-                        >
-                          {useItem.isPending
-                            ? "Using…"
-                            : selectedUse.action === "eat"
-                              ? "Eat"
-                              : selectedUse.action === "drink"
-                                ? "Drink"
-                                : "Use"}
-                        </Button>
-                      )}
-                      {selectedSlot && (
-                        <Button
-                          variant="secondary"
-                          className={selectedUse ? "pi-action-secondary" : "pi-action-primary"}
-                          disabled={
-                            equipmentLoading ||
-                            equipmentError ||
-                            !!equipError ||
-                            inventoryMutationPending ||
-                            (!!requestedSlot && selectedSlot !== requestedSlot)
-                          }
-                          onClick={() =>
-                            equipItem.mutate({ id: selectedItem.id, slot: selectedSlot })
-                          }
-                        >
-                          {equipItem.isPending ? "Putting on…" : `Wear (${selectedSlot})`}
-                        </Button>
-                      )}
-                      <Button
-                        variant="outline"
-                        className="pi-action-destructive"
-                        disabled={!!discardError || inventoryMutationPending}
-                        onClick={() => setDiscardId(selectedItem.id)}
-                      >
-                        Discard one
-                      </Button>
-                    </div>
-                  ) : (
-                    <p className="pi-note">Item actions aren't available right now.</p>
-                  )}
-                  {((!!useError && !!selectedUse) ||
-                    (!!equipError && !!selectedSlot) ||
-                    !!discardError) && (
-                    <div
-                      className="pi-action-guidance"
-                      role="status"
-                      aria-label="Item action restrictions"
-                    >
-                      {selectedUse && useError && <p>Use: {useError}</p>}
-                      {selectedSlot && equipError && <p>Wear: {equipError}</p>}
-                      {discardError && <p>Discard: {discardError}</p>}
-                    </div>
-                  )}
-                </>
-              ) : (
-                <div className="pi-detail-placeholder">
-                  <Package size={32} aria-hidden="true" />
-                  <strong>Choose an item</strong>
-                  <p className="pi-note">
-                    Choose an item from your bag to see its details and available actions.
-                  </p>
-                </div>
-              )}
-            </aside>
-          </div>
-        </>
+      {inventoryQuery.isError && <p className="pi-banner" role="alert">Your inventory refresh failed. Actions are paused until the connection recovers.</p>}
+      {!inventory.length ? <EmptyState title="Your inventory is empty" body="Items you collect or purchase will appear here." /> : (
+        <div className="pi-collection-layout">
+          <section className="pi-collection-results" aria-label="Owned items">
+            <div className="pi-collection-count"><strong>{filtered.length}</strong> items found <span>{countInventoryUnits(inventory)} total owned</span></div>
+            {filtered.length ? <div className="pi-collection-grid">{filtered.map((entry) => <button key={entry.id} type="button" className="pi-collection-card" aria-pressed={selectedId === entry.id} onClick={() => { setSelectedId(entry.id); if (window.matchMedia("(max-width: 760px)").matches) window.requestAnimationFrame(() => detailRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" })); }}>
+              <span className="pi-collection-quantity">×{entry.quantity}</span><span className="pi-collection-art"><InventoryArt slug={entry.item?.slug} /></span><strong>{entry.item?.name ?? "Unknown item"}</strong><small>{groupFor(entry.item) === "consumables" ? "Consumable" : groupFor(entry.item) === "clothing" ? "Clothing & style" : groupFor(entry.item) === "tools" ? "Tools & tech" : "Keepsake"}</small>
+            </button>)}</div> : <p className="pi-bag-empty" role="status">No items match this category or search.</p>}
+          </section>
+          <aside ref={detailRef} className="pi-collection-detail" aria-label="Selected item details" aria-live="polite">
+            {selected ? <>
+              <div className="pi-collection-detail-art">{hasItemModel(selected.item?.slug) ? <ItemPreview3D key={selected.item?.slug} slug={selected.item?.slug ?? ""} label={selected.item?.name ?? "Item"} /> : <InventoryArt slug={selected.item?.slug} />}</div>
+              <div className="pi-detail-heading"><p className="pi-eyebrow">Item details</p><button type="button" className="pi-detail-clear" onClick={() => setSelectedId(null)}>Clear selection</button></div>
+              <h2>{selected.item?.name ?? "Unknown item"}</h2><p className="pi-sub">{selected.item?.description ?? "No description is available for this item."}</p>
+              <div className="pi-collection-badges"><span>{groupLabel}</span><strong>×{selected.quantity} owned</strong></div>
+              {selectedUse && <Button className="pi-action-primary" disabled={!!useError || pending} onClick={() => useItem.mutate(selected.id)}>{useItem.isPending ? "Using…" : selectedUse.action === "eat" ? "Eat" : selectedUse.action === "drink" ? "Drink" : "Use item"}</Button>}
+              {groupFor(selected.item) === "clothing" && <Link className="pi-action-profile-link" to="/profile">Change appearance in Profile</Link>}
+              {selected.item && <Button variant="outline" className="pi-action-destructive" disabled={!!discardError || pending} onClick={() => setDiscardId(selected.id)}>Discard one</Button>}
+              {((!!useError && !!selectedUse) || !!discardError) && <p className="pi-action-guidance" role="status">{selectedUse && useError ? useError : discardError}</p>}
+            </> : <div className="pi-collection-empty-detail"><Package size={38} /><strong>Select an item</strong><p>Choose an item from your collection to inspect its details and available actions.</p></div>}
+          </aside>
+        </div>
       )}
-      <AlertDialog.Root
-        open={discardId !== null}
-        onOpenChange={(open) => {
-          if (!open) setDiscardId(null);
-        }}
-      >
-        <AlertDialog.Portal>
-          <AlertDialog.Overlay
-            className="fixed inset-0 bg-foreground/40"
-            style={{ zIndex: "calc(var(--game-dialog-layer) + 1)" }}
-          />
-          <AlertDialog.Content
-            className="fixed left-1/2 top-1/2 grid w-[calc(100%_-_2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-lg"
-            style={{ zIndex: "calc(var(--game-dialog-layer) + 2)" }}
-          >
-            <AlertDialog.Title className="text-lg font-bold">Discard item?</AlertDialog.Title>
-            <AlertDialog.Description className="text-sm text-muted-foreground">
-              {discardTarget
-                ? `Remove one ${discardTarget.item?.name ?? "item"} from your inventory? This cannot be undone.`
-                : "This item is no longer available."}
-            </AlertDialog.Description>
-            {confirmationError && (
-              <p className="text-sm text-destructive" role="status">
-                {confirmationError}
-              </p>
-            )}
-            <div className="flex flex-wrap justify-end gap-2">
-              <AlertDialog.Cancel asChild>
-                <Button variant="outline">Keep item</Button>
-              </AlertDialog.Cancel>
-              <AlertDialog.Action asChild>
-                <Button
-                  variant="destructive"
-                  disabled={!!confirmationError || inventoryMutationPending || !discardTarget}
-                  onClick={() => {
-                    if (!confirmationError && !inventoryMutationPending && discardTarget) {
-                      discardItem.mutate({ id: discardTarget.id, quantity: 1 });
-                    }
-                  }}
-                >
-                  Discard one
-                </Button>
-              </AlertDialog.Action>
-            </div>
-          </AlertDialog.Content>
-        </AlertDialog.Portal>
+      <AlertDialog.Root open={discardId !== null} onOpenChange={(open) => { if (!open) setDiscardId(null); }}>
+        <AlertDialog.Portal><AlertDialog.Overlay className="fixed inset-0 bg-foreground/40" style={{ zIndex: "calc(var(--game-dialog-layer) + 1)" }} /><AlertDialog.Content className="fixed left-1/2 top-1/2 grid w-[calc(100%_-_2rem)] max-w-sm -translate-x-1/2 -translate-y-1/2 gap-4 rounded-2xl border border-border bg-card p-5 text-card-foreground shadow-lg" style={{ zIndex: "calc(var(--game-dialog-layer) + 2)" }}>
+          <AlertDialog.Title className="text-lg font-bold">Discard item?</AlertDialog.Title><AlertDialog.Description className="text-sm text-muted-foreground">{discardTarget ? "Remove one " + (discardTarget.item?.name ?? "item") + " from your inventory? This cannot be undone." : "This item is no longer available."}</AlertDialog.Description>
+          {discardValidation && <p className="text-sm text-destructive" role="alert">{discardValidation}</p>}
+          <div className="flex justify-end gap-2"><AlertDialog.Cancel asChild><Button variant="outline">Cancel</Button></AlertDialog.Cancel><AlertDialog.Action asChild><Button variant="destructive" disabled={!!discardValidation || pending} onClick={(event) => { event.preventDefault(); if (discardId && !discardValidation) discardItem.mutate({ id: discardId, quantity: 1 }); }}>Discard one</Button></AlertDialog.Action></div>
+        </AlertDialog.Content></AlertDialog.Portal>
       </AlertDialog.Root>
     </div>
   );

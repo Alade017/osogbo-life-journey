@@ -1,7 +1,10 @@
 import { useMissions } from "@/hooks/use-missions";
+import { CharacterWardrobePanel } from "@/components/game/CharacterWardrobePanel";
+import { lazy, Suspense, useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
+  Backpack,
   Footprints,
   Handshake,
   House,
@@ -22,6 +25,9 @@ import { playerStateFromRows } from "@/lib/player-state";
 import { EQUIPMENT_SLOTS, normalizeEquippedItems } from "@/lib/equipment-service";
 import { moodLabel } from "@/lib/profile-service";
 import { profileBadges, type BadgeId } from "@/lib/profile-badges";
+const GameInventoryPanel = lazy(() =>
+  import("@/components/game/GameInventoryPanel").then((module) => ({ default: module.GameInventoryPanel })),
+);
 import "@/components/game/profile-inventory.css";
 
 export const Route = createFileRoute("/_authenticated/_game/profile")({
@@ -45,6 +51,7 @@ export function ProfilePage() {
   const { data: locations } = useQuery(q.locations());
   const { data: equipment } = useQuery(q.equipment());
   const { data: missions } = useMissions();
+  const [activeSection, setActiveSection] = useState<"profile" | "inventory">("profile");
 
   if (characterQuery.isError)
     return (
@@ -85,14 +92,30 @@ export function ProfilePage() {
 
   return (
     <div className="pi-page pi-profile">
-      <header className="pi-masthead">
-        <p className="pi-eyebrow">Your journey</p>
+      <header className="pi-masthead pi-masthead-profile">
+        <div className="pi-profile-heading-copy">
+          <p className="pi-eyebrow">Your journey</p>
         <h1>{player.name}</h1>
         <p className="pi-sub">
           {occupation} · {player.location?.name ?? "Osogbo"}
         </p>
+        </div>
+        <Link to="/settings" className="pi-pill pi-pill-primary pi-profile-settings-link">
+          <Settings2 size={17} aria-hidden="true" /> Settings
+        </Link>
       </header>
 
+      <nav className="pi-player-tabs" aria-label="Player sections">
+        <button type="button" aria-pressed={activeSection === "profile"} onClick={() => setActiveSection("profile")}>
+          <Users size={16} aria-hidden="true" /> Profile
+        </button>
+        <button type="button" aria-pressed={activeSection === "inventory"} onClick={() => setActiveSection("inventory")}>
+          <Backpack size={16} aria-hidden="true" /> Inventory
+        </button>
+      </nav>
+
+      {activeSection === "profile" ? (
+        <>
       <div className="pi-hero">
         <section className="pi-stage" aria-label="Your character">
           <span className="pi-level">LV {player.level}</span>
@@ -126,9 +149,7 @@ export function ProfilePage() {
                 {mood} · {c.personality}
               </span>
             </div>
-            <Link to="/inventory" className="pi-pill pi-pill-primary">
-              <Shirt size={16} aria-hidden="true" /> Wardrobe
-            </Link>
+
           </div>
         </section>
 
@@ -165,6 +186,8 @@ export function ProfilePage() {
           </section>
         </div>
       </div>
+
+      <CharacterWardrobePanel />
 
       <details className="pi-section pi-badges-disclosure" aria-labelledby="profile-badges-title">
         <summary className="pi-section-heading">
@@ -228,12 +251,15 @@ export function ProfilePage() {
         <Link to="/social" search={{ playerId: undefined }}>
           <Users size={20} aria-hidden="true" /> Friends
         </Link>
-        <Link to="/settings">
-          <Settings2 size={20} aria-hidden="true" /> Settings
-        </Link>
       </nav>
 
       {walletQuery.isError && <p className="pi-note">Your wallet is temporarily unavailable.</p>}
+        </>
+      ) : (
+        <Suspense fallback={<LoadingState />}>
+          <GameInventoryPanel />
+        </Suspense>
+      )}
     </div>
   );
 }
