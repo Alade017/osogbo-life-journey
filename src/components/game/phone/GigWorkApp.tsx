@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BriefcaseBusiness } from "lucide-react";
 import { toast } from "sonner";
@@ -25,7 +25,14 @@ function dueLabel(value: string) {
       }).format(date);
 }
 
+/** A fixed price shows once; a range shows as "₦min – ₦max". */
+function priceRange(min: number, max?: number | null) {
+  const top = max ?? min;
+  return top === min ? formatNaira(min) : `${formatNaira(min)} – ${formatNaira(top)}`;
+}
+
 const ERROR_TEXT: Record<string, string> = {
+  OFFER_OUT_OF_RANGE: "Your offer must be within the pay range the poster set.",
   GIG_UNAVAILABLE: "This job is no longer open.",
   OWN_GIG: "You can't apply for your own job.",
   INSUFFICIENT_FUNDS: "You don't have enough cash to pay for this job.",
@@ -41,7 +48,17 @@ export function GigWorkApp() {
     queryFn: getGigBoard,
     enabled: !!characterId,
     retry: false,
+    // Keep the poster's view current: picks, confirmations and expiries change without any action here.
+    refetchInterval: 30_000,
   });
+  // A posting past its expiry is closed on screen even before the server records it.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  const isExpired = (gig: { status: string; expiresAt: string }) =>
+    gig.status === "open" && new Date(gig.expiresAt).getTime() <= now;
   const act = useMutation({
     mutationFn: (input: GigAction) => submitGigAction(input),
     onSuccess: async (_result, input) => {
@@ -128,11 +145,18 @@ export function GigWorkApp() {
             <div className="nesta-card" key={gig.id}>
               <h3>{gig.title}</h3>
               <p className="nesta-muted">
-                {formatNaira(gig.pay)} · {gig.status}
-                {gig.status === "open" ? ` · expires ${dueLabel(gig.expiresAt)}` : ""}
+                {priceRange(gig.pay, gig.payMax)} · {isExpired(gig) ? "expired" : gig.status}
+                {gig.status === "open" && !isExpired(gig)
+                  ? ` · expires ${dueLabel(gig.expiresAt)}`
+                  : ""}
               </p>
               <p>{gig.description}</p>
-              {gig.status === "open" ? (
+              {isExpired(gig) ? (
+                <p className="nesta-muted">
+                  This job passed its 24-hour window. Post it again to find a worker.
+                </p>
+              ) : null}
+              {gig.status === "open" && !isExpired(gig) ? (
                 <>
                   <p className="nesta-muted">
                     {gig.applicants.length === 0
@@ -183,8 +207,8 @@ export function GigWorkApp() {
               {gig.status === "accepted" ? (
                 <>
                   <p>
-                    Working with {gig.workerName ?? "your worker"}. Pays {formatNaira(gig.pay)} when
-                    you confirm.
+                    Working with {gig.workerName ?? "your worker"}. Pays{" "}
+                    {formatNaira(gig.agreedPay ?? gig.pay)} when you confirm.
                   </p>
                   {gig.workerId ? (
                     <button
@@ -251,17 +275,31 @@ function PostForm({ busy, onPost }: { busy: boolean; onPost: (input: GigAction) 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [pay, setPay] = useState("");
+  const [payMax, setPayMax] = useState("");
   const submit = (event: FormEvent) => {
     event.preventDefault();
-    const amount = Math.round(Number(pay) * 100);
+    const amount = Math.round(Number(pay));
+    // A blank maximum means a fixed price.
+    const top = payMax.trim() ? Math.round(Number(payMax)) : amount;
     if (!title.trim() || description.trim().length < 10 || !Number.isFinite(amount) || amount < 1) {
-      toast.error("Add a title, a description of at least 10 characters, and a pay amount.");
+      toast.error("Add a title, a description of at least 10 characters, and a minimum pay.");
       return;
     }
-    onPost({ action: "post", title: title.trim(), description: description.trim(), pay: amount });
+    if (!Number.isFinite(top) || top < amount) {
+      toast.error("The maximum pay can't be lower than the minimum.");
+      return;
+    }
+    onPost({
+      action: "post",
+      title: title.trim(),
+      description: description.trim(),
+      pay: amount,
+      payMax: top,
+    });
     setTitle("");
     setDescription("");
     setPay("");
+    setPayMax("");
   };
   return (
     <form className="nesta-card gig-form" onSubmit={submit}>
@@ -278,10 +316,22 @@ function PostForm({ busy, onPost }: { busy: boolean; onPost: (input: GigAction) 
           onChange={(e) => setDescription(e.target.value)}
         />
       </label>
-      <label>
-        Pay (₦)
-        <input inputMode="numeric" value={pay} onChange={(e) => setPay(e.target.value)} />
-      </label>
+      <div className="gig-pay-range">
+        <label>
+          Minimum pay (₦)
+          <input inputMode="numeric" value={pay} onChange={(e) => setPay(e.target.value)} />
+        </label>
+        <label>
+          Maximum pay (₦)
+          <input
+            inputMode="numeric"
+            value={payMax}
+            placeholder="Same as minimum"
+            onChange={(e) => setPayMax(e.target.value)}
+          />
+        </label>
+      </div>
+      <p className="nesta-muted">Leave the maximum blank for a fixed price.</p>
       <button type="submit" className="nesta-button" disabled={busy}>
         Post job
       </button>
@@ -299,6 +349,7 @@ function OfferCard({
     title: string;
     description: string;
     pay: number;
+    payMax?: number;
     posterName: string;
     applied: boolean;
     expiresAt: string;
@@ -307,11 +358,13 @@ function OfferCard({
   onApply: (input: GigAction) => void;
 }) {
   const [offer, setOffer] = useState("");
+  const top = gig.payMax ?? gig.pay;
   return (
     <div className="nesta-card">
       <h3>{gig.title}</h3>
       <p className="nesta-muted">
-        Posted by {gig.posterName} · {formatNaira(gig.pay)} · expires {dueLabel(gig.expiresAt)}
+        Posted by {gig.posterName} · {priceRange(gig.pay, gig.payMax)} · expires{" "}
+        {dueLabel(gig.expiresAt)}
       </p>
       <p>{gig.description}</p>
       {gig.applied ? (
@@ -319,7 +372,7 @@ function OfferCard({
       ) : (
         <>
           <label>
-            Counter-offer (optional, ₦)
+            {`Your offer (optional, ${priceRange(gig.pay, top)})`}
             <input inputMode="numeric" value={offer} onChange={(e) => setOffer(e.target.value)} />
           </label>
           <button
@@ -327,7 +380,16 @@ function OfferCard({
             className="nesta-button"
             disabled={busy}
             onClick={() => {
-              const amount = offer.trim() ? Math.round(Number(offer) * 100) : null;
+              const amount = offer.trim() ? Math.round(Number(offer)) : null;
+              if (
+                amount !== null &&
+                (!Number.isFinite(amount) || amount < gig.pay || amount > top)
+              ) {
+                toast.error(
+                  `Your offer must be between ${formatNaira(gig.pay)} and ${formatNaira(top)}.`,
+                );
+                return;
+              }
               onApply({ action: "apply", gigId: gig.id, offer: amount });
             }}
           >

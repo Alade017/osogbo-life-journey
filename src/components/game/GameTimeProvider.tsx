@@ -53,6 +53,47 @@ type ContextValue = {
 };
 const GameTimeContext = createContext<ContextValue | null>(null);
 
+const SESSION_KEY = "osogbo:simulation-session";
+
+/**
+ * This tab's simulation session. A reload keeps the same id, so the server does not treat the
+ * reloaded page as a second tab and make it wait out the 15-second lock. A new tab, including one
+ * duplicated from this tab, gets a new id, so the server still refuses two live tabs.
+ */
+export function simulationSessionForThisTab(): string {
+  try {
+    const navigation = performance.getEntriesByType("navigation")[0] as
+      PerformanceNavigationTiming | undefined;
+    const saved = sessionStorage.getItem(SESSION_KEY);
+    if (saved && navigation?.type === "reload") return saved;
+    const id = crypto.randomUUID();
+    sessionStorage.setItem(SESSION_KEY, id);
+    return id;
+  } catch {
+    return crypto.randomUUID();
+  }
+}
+
+/** A sync that never answers must not hold the sync lock forever; the next tick retries it. */
+const SYNC_TIMEOUT_MS = 15_000;
+/** The client checks in with the server every five seconds, inside the recommended 5 to 10 second range. */
+const SYNC_INTERVAL_MS = 5_000;
+const SIMULATION_CHANNEL = "osogbo-simulation";
+const SUPERSEDED_MESSAGE =
+  "Your game opened in another tab, so this tab has stopped. Reload this tab to take over.";
+function withSyncTimeout<T>(work: Promise<T>): Promise<T> {
+  let timer: number | undefined;
+  return Promise.race([
+    work,
+    new Promise<never>((_, reject) => {
+      timer = window.setTimeout(
+        () => reject(new Error("Syncing your simulation took too long. It will retry.")),
+        SYNC_TIMEOUT_MS,
+      );
+    }),
+  ]).finally(() => window.clearTimeout(timer));
+}
+
 export function GameTimeProvider({
   children,
   gameTime,
@@ -96,6 +137,7 @@ export function GameTimeProvider({
     duration: number;
   } | null>(null);
   const session = useRef<string>("");
+  const superseded = useRef(false);
   const revision = useRef(0);
   const inFlight = useRef(false);
   const mounted = useRef(true);
@@ -158,6 +200,7 @@ export function GameTimeProvider({
         queuedActions?: readonly LifeActionId[];
       } = {},
     ): Promise<string | null> => {
+      if (superseded.current) return SUPERSEDED_MESSAGE;
       if (inFlight.current) return "Wait for the current activity to sync.";
       if (document.hidden || !navigator.onLine) {
         const message = "Reconnect and return to this tab to continue.";
@@ -170,13 +213,15 @@ export function GameTimeProvider({
       inFlight.current = true;
       setBusy(true);
       try {
-        if (!session.current) session.current = crypto.randomUUID();
-        const result = await simulationCommand({
-          session: session.current,
-          revision: revision.current,
-          command,
-          ...extra,
-        });
+        if (!session.current) session.current = simulationSessionForThisTab();
+        const result = await withSyncTimeout(
+          simulationCommand({
+            session: session.current,
+            revision: revision.current,
+            command,
+            ...extra,
+          }),
+        );
         if (command === "complete") {
           void qc.invalidateQueries({ queryKey: ["dailyTasks", character.user_id] });
         }
@@ -203,6 +248,19 @@ export function GameTimeProvider({
 
   useEffect(() => {
     mounted.current = true;
+    // Only one tab may run the simulation. A newly opened tab claims it and the older tab stops.
+    const tabId = crypto.randomUUID();
+    const channel =
+      typeof BroadcastChannel === "undefined" ? null : new BroadcastChannel(SIMULATION_CHANNEL);
+    if (channel) {
+      channel.onmessage = (event: MessageEvent<{ type?: string; tabId?: string }>) => {
+        if (event.data?.type !== "claim" || event.data.tabId === tabId) return;
+        superseded.current = true;
+        setReady(false);
+        setSyncError(SUPERSEDED_MESSAGE);
+      };
+      channel.postMessage({ type: "claim", tabId });
+    }
     void send("open");
     let needsOpen = false;
     const onVisibility = () => {
@@ -222,6 +280,7 @@ export function GameTimeProvider({
       });
     };
     const tick = window.setInterval(() => {
+      if (superseded.current) return;
       if (document.hidden || !navigator.onLine || inFlight.current) {
         needsOpen = true;
         return;
@@ -231,13 +290,14 @@ export function GameTimeProvider({
       void send(command).then((error) => {
         if (error) needsOpen = true;
       });
-    }, 6000);
+    }, SYNC_INTERVAL_MS);
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("osogbo:server-state-changed", onServerStateChanged);
     window.addEventListener("online", onVisibility);
     window.addEventListener("offline", onVisibility);
     return () => {
       mounted.current = false;
+      channel?.close();
       window.clearInterval(tick);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("osogbo:server-state-changed", onServerStateChanged);

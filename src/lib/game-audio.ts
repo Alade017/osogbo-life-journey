@@ -493,6 +493,9 @@ function applyLevels(current: AudioGraph, levels: AudioLevels) {
 function createAudioGraph(levels: AudioLevels): AudioGraph | null {
   const AudioContextType = window.AudioContext;
   if (!AudioContextType) return null;
+  // Browsers refuse to start an AudioContext created before any user gesture. Wait for one; the
+  // gesture listeners call enableGameAudio again.
+  if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return null;
   const context = new AudioContextType();
   const master = context.createGain();
   const ambience = context.createGain();

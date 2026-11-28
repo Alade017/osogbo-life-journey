@@ -1,4 +1,5 @@
 const statusByCode: Record<string, number> = {
+  SERVICE_UNAVAILABLE: 503,
   UNAUTHORIZED: 401,
   INVALID_REQUEST: 400,
   NO_CHARACTER: 404,
@@ -6,6 +7,7 @@ const statusByCode: Record<string, number> = {
   APPLICANT_NOT_FOUND: 404,
   GIG_UNAVAILABLE: 409,
   OWN_GIG: 409,
+  OFFER_OUT_OF_RANGE: 400,
 };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -41,13 +43,25 @@ function rpcCaller() {
   };
 }
 
+/** The server cannot reach its database, usually because an environment variable is missing. */
+function unavailable(error: unknown) {
+  console.error("Gig Work server unavailable:", error instanceof Error ? error.message : error);
+  return response({ error: { code: "SERVICE_UNAVAILABLE" } }, 503);
+}
+
 export async function handleGigBoardRequest(request: Request) {
-  const userId = await authenticatedUserId(request);
+  let userId: string | null;
+  try {
+    userId = await authenticatedUserId(request);
+  } catch (error) {
+    return unavailable(error);
+  }
   if (!userId) return response({ error: { code: "UNAUTHORIZED" } }, 401);
   try {
     return response(await rpcCaller()("gig_board", { p_user_id: userId }));
   } catch (error) {
     const code = errorCode(error);
+    if (code === "INTERNAL_ERROR") console.error("Gig Work request failed:", error);
     return response({ error: { code } }, statusByCode[code] ?? 500);
   }
 }
@@ -58,12 +72,18 @@ type GigBody = {
   title?: unknown;
   description?: unknown;
   pay?: unknown;
+  payMax?: unknown;
   offer?: unknown;
   applicantId?: unknown;
 };
 
 export async function handleGigActionRequest(request: Request) {
-  const userId = await authenticatedUserId(request);
+  let userId: string | null;
+  try {
+    userId = await authenticatedUserId(request);
+  } catch (error) {
+    return unavailable(error);
+  }
   const key = request.headers.get("idempotency-key")?.trim() ?? "";
   if (!userId) return response({ error: { code: "UNAUTHORIZED" } }, 401);
   const body = (await request.json().catch(() => null)) as GigBody | null;
@@ -75,10 +95,13 @@ export async function handleGigActionRequest(request: Request) {
   const call = rpcCaller();
   try {
     if (body.action === "post") {
+      const payMax = body.payMax ?? body.pay;
       if (
         typeof body.title !== "string" ||
         typeof body.description !== "string" ||
-        !isPositiveInt(body.pay)
+        !isPositiveInt(body.pay) ||
+        !isPositiveInt(payMax) ||
+        payMax < body.pay
       )
         return response({ error: { code: "INVALID_REQUEST" } }, 400);
       return response(
@@ -88,6 +111,7 @@ export async function handleGigActionRequest(request: Request) {
           p_title: body.title,
           p_description: body.description,
           p_pay_minor: body.pay,
+          p_pay_max_minor: payMax,
         }),
       );
     }
@@ -127,6 +151,7 @@ export async function handleGigActionRequest(request: Request) {
     return response({ error: { code: "INVALID_REQUEST" } }, 400);
   } catch (error) {
     const code = errorCode(error);
+    if (code === "INTERNAL_ERROR") console.error("Gig Work request failed:", error);
     return response({ error: { code } }, statusByCode[code] ?? 500);
   }
 }
