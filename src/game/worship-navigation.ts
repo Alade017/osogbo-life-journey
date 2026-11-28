@@ -14,7 +14,7 @@ export function worshipNavigation(layout: WorshipLayout) {
     ...layout.columns.map(([x, z]) => ({ x, z, radius: COLUMN_RADIUS })),
     ...layout.congregation.map(([x, z]) => ({ x, z, radius: CONGREGANT_RADIUS })),
     ...(layout.faith === "church"
-      ? layout.rows.flatMap((row) => row.xs.map((x) => ({ x, z: row.z, width: 2.2, depth: 0.9 })))
+      ? layout.rows.flatMap((row) => row.xs.map((x) => ({ x, z: row.z, width: 3.6, depth: 0.7 })))
       : []),
     { x: layout.focal.x, z: layout.focal.z + 0.25, width: layout.faith === "church" ? 3.4 : 2.6, depth: 1.1 },
   ];
