@@ -46,6 +46,28 @@ export function venueNavigation(
   const route = (from: WalkPoint, to: WalkPoint) =>
     findGridWalkPath(from, to, canWalk);
 
+  function nearest(point: WalkPoint): WalkPoint | null {
+    if (!point.every(Number.isFinite)) return null;
+    const snapped: WalkPoint = [Math.round(point[0] * 2) / 2, Math.round(point[1] * 2) / 2];
+    if (canWalk(snapped)) return snapped;
+
+    for (let radius = 0.5; radius <= 3; radius += 0.5) {
+      for (let dx = -radius; dx <= radius; dx += 0.5) {
+        for (const dz of [-radius, radius]) {
+          const candidate: WalkPoint = [snapped[0] + dx, snapped[1] + dz];
+          if (canWalk(candidate)) return candidate;
+        }
+      }
+      for (let dz = -radius + 0.5; dz < radius; dz += 0.5) {
+        for (const dx of [-radius, radius]) {
+          const candidate: WalkPoint = [snapped[0] + dx, snapped[1] + dz];
+          if (canWalk(candidate)) return candidate;
+        }
+      }
+    }
+    return null;
+  }
+
   function approach(from: WalkPoint, fixture: VenueFixture) {
     const footprint = FIXTURE_FOOTPRINTS[fixture.kind];
     const [x, z] = fixture.position;
@@ -65,5 +87,5 @@ export function venueNavigation(
     return best;
   }
 
-  return { canWalk, route, approach };
+  return { canWalk, route, nearest, approach };
 }
