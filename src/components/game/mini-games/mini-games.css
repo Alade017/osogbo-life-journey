@@ -646,15 +646,15 @@
 }
 
 /* Whot: hand */
+/* Every card stays on screen: the hand wraps onto more rows instead of scrolling sideways. */
 .mg-hand {
   display: flex;
-  gap: 6px;
+  flex-wrap: wrap;
+  gap: 10px 6px;
   width: 100%;
-  overflow-x: auto;
   padding: 16px 6px 10px;
   box-sizing: border-box;
-  scroll-snap-type: x proximity;
-  justify-content: safe center;
+  justify-content: center;
 }
 .mg-hand-card {
   flex-shrink: 0;
