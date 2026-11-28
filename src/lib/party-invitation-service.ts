@@ -18,6 +18,17 @@ const item = z
     phase: z.enum(["scheduled", "live", "ended", "cancelled"]),
     isGuest: z.boolean(),
     canRespond: z.boolean(),
+    // Added by the party events change. Optional so that older rows and clients still parse.
+    eventType: z
+      .enum([
+        "owambe_party",
+        "naming_ceremony",
+        "traditional_wedding",
+        "chieftaincy_coronation",
+        "osun_festival",
+      ])
+      .optional(),
+    asoEbiColour: z.string().nullable().optional(),
   })
   .strict()
   .refine(

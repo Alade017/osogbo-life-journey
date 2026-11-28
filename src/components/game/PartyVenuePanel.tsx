@@ -21,10 +21,10 @@ export function PartyVenuePanel({ locationId }: { locationId: string }) {
         </p>
         <Link
           to="/party"
-          search={{ tab: "clubs" }}
+          search={{ tab: "events" }}
           className="min-h-11 rounded-full bg-primary px-4 py-3 text-center font-semibold text-primary-foreground"
         >
-          Go to the club
+          Open party events
         </Link>
       </section>
     );

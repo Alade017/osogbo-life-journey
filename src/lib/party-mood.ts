@@ -60,3 +60,27 @@ export function validEventStart(startsAt: Date, now: Date): string | null {
   }
   return null;
 }
+
+// Local date-time text for <input type="datetime-local">.
+export function localInputValue(date: Date): string {
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+// Quick start choices that fall inside the 24-hour window.
+export function quickStartOptions(now: Date): Array<{ id: string; label: string; start: Date }> {
+  const inHour = new Date(now.getTime() + 60 * 60_000);
+  const tonight = new Date(now);
+  tonight.setHours(20, 0, 0, 0);
+  const tomorrow = new Date(now);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  tomorrow.setHours(19, 0, 0, 0);
+  return [
+    { id: "hour", label: "In 1 hour", start: inHour },
+    { id: "tonight", label: "Tonight 20:00", start: tonight },
+    { id: "tomorrow", label: "Tomorrow 19:00", start: tomorrow },
+  ].filter((option) => validEventStart(option.start, now) === null);
+}
+
+// Default closing time: three hours after the start.
+export const DEFAULT_EVENT_HOURS = 3;
