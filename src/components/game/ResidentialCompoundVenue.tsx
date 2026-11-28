@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { q } from "@/lib/game";
 import { normalizeEquippedItems } from "@/lib/equipment-service";
@@ -15,6 +15,8 @@ import {
   residentialHomePresentation,
   type CompoundFeatureId,
 } from "@/game/residential-compound";
+import { residentialCompoundNavigation, RESIDENTIAL_COMPOUND_SPAWN } from "@/game/residential-compound-navigation";
+import { useHouseMovement } from "@/hooks/use-house-movement";
 import { VenueSceneBoundary } from "./VenueSceneBoundary";
 import { WorldLoadingIndicator } from "./WorldLoadingIndicator";
 
@@ -42,6 +44,42 @@ export function ResidentialCompoundVenue({
   );
   const features = compoundFeatures(home?.sharedFacilities ?? false);
   const [selected, setSelected] = useState<CompoundFeatureId>("courtyard");
+  const [movementMessage, setMovementMessage] = useState("Tap the courtyard to walk, or choose a facility.");
+  const walker = useHouseMovement(home?.id ?? "residential-compound", [RESIDENTIAL_COMPOUND_SPAWN[0], 0.06, RESIDENTIAL_COMPOUND_SPAWN[1]]);
+  const navigation = useMemo(() => residentialCompoundNavigation(), []);
+  const movementRequest = useRef(0);
+  const walkTo = useCallback((point: readonly [number, number]) => {
+    const target = navigation.nearest([point[0], point[1]]);
+    const current: [number, number] = [walker.positionRef.current[0], walker.positionRef.current[2]];
+    const path = target ? navigation.route(current, target) : null;
+    const ticket = ++movementRequest.current;
+    walker.cancel();
+    if (!path) {
+      setMovementMessage("That part of the compound is blocked. Choose another point.");
+      return;
+    }
+    setMovementMessage("Walking through the courtyard…");
+    void walker.walk(path.map(([x, z]) => [x, 0.06, z] as [number, number, number])).then((arrived) => {
+      if (ticket === movementRequest.current) setMovementMessage(arrived ? "You reached that spot." : "Movement stopped.");
+    });
+  }, [navigation, walker]);
+  const handleFeatureSelect = useCallback((id: CompoundFeatureId) => {
+    setSelected(id);
+    const path = navigation.approach(
+      [walker.positionRef.current[0], walker.positionRef.current[2]],
+      id,
+    );
+    const ticket = ++movementRequest.current;
+    walker.cancel();
+    if (!path) {
+      setMovementMessage("There is no clear approach to that facility.");
+      return;
+    }
+    setMovementMessage("Walking to the selected facility…");
+    void walker.walk(path.map(([x, z]) => [x, 0.06, z] as [number, number, number])).then((arrived) => {
+      if (ticket === movementRequest.current) setMovementMessage(arrived ? "You reached the selected facility." : "Movement stopped.");
+    });
+  }, [navigation, walker]);
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const heading = useId();
   const unavailable = useCallback(() => setStatus("fallback"), []);
@@ -95,16 +133,16 @@ export function ResidentialCompoundVenue({
                 zoom={1}
               />
               <WorldLighting size={RESIDENTIAL_COMPOUND.width} />
-              <ResidentialCompoundScene home={home} selected={feature.id} onSelect={setSelected} />
+              <ResidentialCompoundScene home={home} selected={feature.id} onSelect={handleFeatureSelect} onWalk={walkTo} />
               {character && (
                 <WorldCharacter
                   name={character.name}
                   gender={character.gender}
                   appearance={playerAppearance}
                   equipment={playerEquipment}
-                  position={[0, 0.06, 4.4]}
-                  facing="north"
-                  animation="idle"
+                  position={walker.position}
+                  facing={walker.facing}
+                  animation={walker.walking ? "walk" : "idle"}
                 />
               )}
               <WorldSceneReady onReady={ready} />
@@ -144,6 +182,9 @@ export function ResidentialCompoundVenue({
         </details>
         <p aria-live="polite" className="text-sm">
           {feature.detail}
+        </p>
+        <p aria-live="polite" role="status" className="text-xs text-muted-foreground">
+          {movementMessage}
         </p>
         {canEnter ? (
           <button
