@@ -92,15 +92,17 @@ export function VenueEnvironment({
   }, [actions, open, shuttered, invalidate]);
 
   return (
-    <group ref={root}>
-      <primitive object={holder.group} />
-      <mesh
-        position={[0, 0.035, 0]}
-        onClick={(event: ThreeEvent<MouseEvent>) => {
+    <group
+      ref={root}
+      onClick={(event: ThreeEvent<MouseEvent>) => {
+        if (event.delta <= 5) {
           event.stopPropagation();
-          if (event.delta <= 5) onWalk(environmentModelToStage([event.point.x, event.point.z], scaleX, scaleZ));
-        }}
-      >
+          onWalk(environmentModelToStage([event.point.x, event.point.z], scaleX, scaleZ));
+        }
+      }}
+    >
+      <primitive object={holder.group} />
+      <mesh position={[0, 0.035, 0]}>
         <planeGeometry args={[holder.half.x * 2, holder.half.z * 2]} />
         <meshBasicMaterial transparent opacity={0} depthWrite={false} />
       </mesh>
