@@ -62,6 +62,7 @@ export function RetailInteriorScene({
   fixtures,
   selected,
   onSelect,
+  onWalk,
   floorColor,
   wallColor,
   accentColor,
@@ -69,6 +70,7 @@ export function RetailInteriorScene({
   fixtures: readonly VenueFixture[];
   selected: string;
   onSelect: (id: string) => void;
+  onWalk: (point: [number, number]) => void;
   floorColor: string;
   wallColor: string;
   accentColor: string;
@@ -76,6 +78,17 @@ export function RetailInteriorScene({
   return (
     <group name="mall-gallery-and-supermarket">
       <Block at={[0, -0.1, 0]} size={[16, 0.2, 14]} tone="tileLight" color={floorColor} />
+      <mesh
+        position={[0, 0.012, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        onPointerDown={(event) => {
+          event.stopPropagation();
+          if (event.button === 0 && event.delta <= 5) onWalk([event.point.x, event.point.z]);
+        }}
+      >
+        <planeGeometry args={[15.6, 13.6]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
       <Block at={[0, 1.8, -7]} size={[16, 3.6, 0.18]} color={wallColor} />
       <Block at={[-8, 1.8, 0]} size={[0.18, 3.6, 14]} color={wallColor} />
       <Block at={[8, 0.25, 0]} size={[0.18, 0.5, 14]} color={wallColor} />
