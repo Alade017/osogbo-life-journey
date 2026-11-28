@@ -61,7 +61,7 @@ describe("Olaiya street", () => {
 
   it("is one of the exported layouts", () => {
     expect(LAYOUT_AREAS.map((area) => area.slug)).toContain(CITY_CENTRE_AREA.slug);
-    const committed = readFileSync(join("scripts/blender/layouts/city-centre.json"), "utf8");
+    const committed = readFileSync(join("scripts/blender/layouts/city-centre.json"), "utf8").replace(/\r\n/g, "\n");
     expect(committed).toBe(`${JSON.stringify(layoutJson(CITY_CENTRE_AREA), null, 2)}\n`);
   });
 
