@@ -73,12 +73,14 @@ export function residentialCompoundNavigation() {
     const feature = COMPOUND_FEATURES.find((item) => item.id === featureId);
     if (!feature) return null;
     const [x, z] = [feature.x, feature.z];
-    const candidates: WalkPoint[] = [
-      [x, z + 1.6 + APPROACH_GAP],
-      [x, z - 1.6 - APPROACH_GAP],
-      [x - 1.8 - APPROACH_GAP, z],
-      [x + 1.8 + APPROACH_GAP, z],
-    ];
+    const candidates: WalkPoint[] = featureId === "home-entry"
+      ? [[0, -2.2], [-1.8, -2.2], [1.8, -2.2]]
+      : [
+          [x, z + 1.6 + APPROACH_GAP],
+          [x, z - 1.6 - APPROACH_GAP],
+          [x - 1.8 - APPROACH_GAP, z],
+          [x + 1.8 + APPROACH_GAP, z],
+        ];
     let best: WalkPoint[] | null = null;
     for (const candidate of candidates) {
       if (!canWalk(candidate)) continue;
