@@ -786,7 +786,7 @@ function BasicLocationVenueScene({
               </div>
             </div>
             <div className="space-y-2">
-              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare") && (
+              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food") && (
                 <p className="text-xs text-muted-foreground" role="status">
                   {movementMessage}
                 </p>
