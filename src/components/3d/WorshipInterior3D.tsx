@@ -264,6 +264,9 @@ export function WorshipInterior3D({
         appearance={playerAppearance}
         gender={playerGender}
         equipment={playerEquipment}
+        position={playerPosition}
+        facing={playerFacing}
+        walking={playerWalking}
       />
     </>
   );
