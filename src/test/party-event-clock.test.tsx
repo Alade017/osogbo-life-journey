@@ -19,6 +19,7 @@ vi.mock("@/lib/game", () => ({
   },
 }));
 vi.mock("@/lib/party-service", () => ({
+  PARTY_EVENT_TYPES: [{ id: "owambe_party", label: "Owambe party" }],
   getActiveClubVisit: async () => null,
   getDanceCooldown: async () => null,
   getPartyMood: async () => ({ score: 50 }),
@@ -34,6 +35,8 @@ vi.mock("@/lib/party-service", () => ({
       starts_at: "2026-10-26T12:01:00Z",
       ends_at: "2026-10-26T12:02:00Z",
       status: "scheduled",
+      event_type: "owambe_party",
+      aso_ebi_colour: "Emerald green & gold",
       requirements: [],
     },
   ],

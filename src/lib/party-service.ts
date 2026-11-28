@@ -49,6 +49,15 @@ export type PartyRequirement = {
   fulfilled_count: number;
 };
 
+export const PARTY_EVENT_TYPES = [
+  { id: "owambe_party", label: "Owambe party" },
+  { id: "naming_ceremony", label: "Naming ceremony" },
+  { id: "traditional_wedding", label: "Traditional wedding" },
+  { id: "chieftaincy_coronation", label: "Chieftaincy & coronation" },
+  { id: "osun_festival", label: "Osun festival" },
+] as const;
+export type PartyEventType = (typeof PARTY_EVENT_TYPES)[number]["id"];
+
 export type PartyEvent = {
   id: string;
   host_character_id: string;
@@ -57,6 +66,8 @@ export type PartyEvent = {
   starts_at: string;
   ends_at: string;
   status: string;
+  event_type: PartyEventType;
+  aso_ebi_colour: string | null;
 };
 
 export type HostRequirementInput = {
@@ -218,6 +229,9 @@ export const partyRpc = {
     startsAt: string;
     requirements: HostRequirementInput[];
     requestId: string;
+    eventType: PartyEventType;
+    asoEbiColour: string | null;
+    endsAt: string;
   }) =>
     unwrap(
       await db.rpc("host_party_event", {
@@ -226,6 +240,9 @@ export const partyRpc = {
         p_starts_at: args.startsAt,
         p_requirements: args.requirements,
         p_request_id: args.requestId,
+        p_event_type: args.eventType,
+        p_aso_ebi_colour: args.asoEbiColour,
+        p_ends_at: args.endsAt,
       }),
     ),
   respondToEvent: async (args: { requirementId: string; requestId: string }) =>

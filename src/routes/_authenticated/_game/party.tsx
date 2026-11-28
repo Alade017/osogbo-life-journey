@@ -14,7 +14,9 @@ import {
   listPartyVenues,
   newPartyRequestId,
   partyRpc,
+  PARTY_EVENT_TYPES,
   type HostRequirementInput,
+  type PartyEventType,
 } from "@/lib/party-service";
 import {
   eventWindow,
@@ -268,6 +270,20 @@ function EventsTab({
                   : `Starts ${new Date(event.starts_at).toLocaleString([], { weekday: "short", hour: "2-digit", minute: "2-digit" })}`}
               </span>
             </div>
+            <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+              <span className="font-semibold uppercase tracking-wide text-[#8A4B1F]">
+                {PARTY_EVENT_TYPES.find((t) => t.id === event.event_type)?.label ?? "Party"}
+              </span>
+              {event.aso_ebi_colour && (
+                <span className="flex items-center gap-1.5">
+                  <span
+                    aria-hidden="true"
+                    className="h-3.5 w-3.5 rounded-full border border-border bg-[#2F6B4F]"
+                  />
+                  Aso Ebi: {event.aso_ebi_colour}
+                </span>
+              )}
+            </p>
             {event.host_character_id === characterId && (
               <HostPartyInvitations accountId={accountId} eventId={event.id} />
             )}
@@ -317,7 +333,10 @@ function HostForm({
       "",
   );
   const [title, setTitle] = useState("");
+  const [eventType, setEventType] = useState<PartyEventType>("owambe_party");
+  const [asoEbiColour, setAsoEbiColour] = useState("");
   const [startsAt, setStartsAt] = useState("");
+  const [endsAt, setEndsAt] = useState("");
   const [requirements, setRequirements] = useState<HostRequirementInput[]>([
     { kind: "guest", item_or_role: "friends", quantity: 2 },
   ]);
@@ -329,12 +348,24 @@ function HostForm({
       toast.error(problem);
       return;
     }
+    const end = new Date(endsAt);
+    if (
+      Number.isNaN(end.getTime()) ||
+      end <= start ||
+      end.getTime() > start.getTime() + 8 * 3600_000
+    ) {
+      toast.error("The closing time must be after the start and at most 8 hours later.");
+      return;
+    }
     host.mutate({
       locationId,
       title,
       startsAt: start.toISOString(),
       requirements,
       requestId: newPartyRequestId(),
+      eventType,
+      asoEbiColour: asoEbiColour.trim() || null,
+      endsAt: end.toISOString(),
     });
   };
 
@@ -364,6 +395,44 @@ function HostForm({
           onChange={(e) => setTitle(e.target.value)}
         />
       </label>
+      <fieldset className="grid gap-2 text-sm">
+        <legend className="mb-1 font-semibold">Event type</legend>
+        <div className="grid grid-cols-2 gap-2">
+          {PARTY_EVENT_TYPES.map((type) => (
+            <label
+              key={type.id}
+              className={`flex min-h-12 cursor-pointer items-center gap-2 rounded-xl border px-3 ${
+                eventType === type.id
+                  ? "border-2 border-[#1B2A4A] bg-card font-bold"
+                  : "border-border bg-card"
+              }`}
+            >
+              <input
+                type="radio"
+                name="party-event-type"
+                value={type.id}
+                checked={eventType === type.id}
+                onChange={() => setEventType(type.id)}
+                className="accent-[#1B2A4A]"
+              />
+              {type.label}
+            </label>
+          ))}
+        </div>
+      </fieldset>
+      <label className="grid gap-1 text-sm">
+        <span className="font-semibold">Aso Ebi colour</span>
+        <span className="text-xs text-muted-foreground">
+          One cloth in one colour, the same for every guest.
+        </span>
+        <input
+          className="min-h-11 rounded-lg border border-border bg-card px-3"
+          value={asoEbiColour}
+          maxLength={40}
+          placeholder="e.g. Emerald green & gold"
+          onChange={(e) => setAsoEbiColour(e.target.value)}
+        />
+      </label>
       <label className="grid gap-1 text-sm">
         Start (within 24 hours)
         <input
@@ -371,6 +440,15 @@ function HostForm({
           className="min-h-11 rounded-lg border border-border bg-card px-3"
           value={startsAt}
           onChange={(e) => setStartsAt(e.target.value)}
+        />
+      </label>
+      <label className="grid gap-1 text-sm">
+        Closes (up to 8 hours after the start)
+        <input
+          type="datetime-local"
+          className="min-h-11 rounded-lg border border-border bg-card px-3"
+          value={endsAt}
+          onChange={(e) => setEndsAt(e.target.value)}
         />
       </label>
       <p className="text-sm font-semibold">Requirements</p>
@@ -404,7 +482,14 @@ function HostForm({
       <button
         type="submit"
         className="min-h-11 rounded-full bg-primary px-4 font-semibold text-primary-foreground disabled:opacity-50"
-        disabled={host.isPending || !title || !startsAt || requirements.length === 0}
+        disabled={
+          host.isPending ||
+          !title ||
+          !startsAt ||
+          !endsAt ||
+          !asoEbiColour.trim() ||
+          requirements.length === 0
+        }
       >
         Schedule event
       </button>

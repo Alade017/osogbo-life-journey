@@ -1,3 +1,4 @@
+import { PARTY_EVENT_TYPES } from "@/lib/party-service";
 import { useEffect, useRef, useState } from "react";
 import {
   useInfiniteQuery,
@@ -284,17 +285,36 @@ export function PartyInvitations({ accountId, eventId }: { accountId: string; ev
         {rows.map((row) => (
           <li
             key={row.id}
-            className="grid min-w-0 gap-2 rounded-xl border border-border p-3"
+            className="grid min-w-0 gap-3 rounded-2xl border border-[#C9BBA0] bg-[#FBF7EF] p-4"
             style={{ overflowWrap: "anywhere" }}
           >
-            <h3 className="font-semibold">{row.title}</h3>
-            <p className="text-sm">
-              {eventId ? `Player: ${row.recipientName}` : `Host: ${row.hostName}`}
+            <p className="text-xs font-bold uppercase tracking-widest text-[#8A4B1F]">
+              {row.isGuest
+                ? "Confirmed guest"
+                : row.status === "pending"
+                  ? "You are invited"
+                  : row.status}
             </p>
-            <p className="text-xs">
-              {row.venue} · {eventTime(row.startsAt)} (Lagos)
-            </p>
-            <p className="text-sm">
+            {(row.eventType || row.asoEbiColour) && (
+              <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted-foreground">
+                {row.eventType && (
+                  <span className="font-semibold uppercase tracking-wide text-[#8A4B1F]">
+                    {PARTY_EVENT_TYPES.find((type) => type.id === row.eventType)?.label}
+                  </span>
+                )}
+                {row.asoEbiColour && <span>Wear: {row.asoEbiColour}</span>}
+              </p>
+            )}
+            <h3 className="font-display text-xl font-semibold text-[#1B2A4A]">{row.title}</h3>
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div className="rounded-xl bg-[#F4EBDD] p-2.5 font-semibold">
+                {eventId ? `Player: ${row.recipientName}` : `Host: ${row.hostName}`}
+              </div>
+              <div className="rounded-xl bg-[#F4EBDD] p-2.5">
+                {eventTime(row.startsAt)} (Lagos) · {row.venue}
+              </div>
+            </div>
+            <p className="text-sm font-semibold">
               {row.isGuest ? "Confirmed guest" : row.status} · {row.phase}
             </p>
             {row.status === "pending" && !row.canRespond && !eventId && (
@@ -303,10 +323,10 @@ export function PartyInvitations({ accountId, eventId }: { accountId: string; ev
               </p>
             )}
             {!eventId && row.canRespond && (
-              <div className="flex flex-wrap gap-2">
+              <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  className={button}
+                  className="min-h-12 rounded-xl bg-[#8A4B1F] font-bold text-[#FBF7EF] disabled:opacity-50"
                   disabled={!online || action.isPending || !!request.current}
                   onClick={() =>
                     submit({
@@ -321,7 +341,7 @@ export function PartyInvitations({ accountId, eventId }: { accountId: string; ev
                 </button>
                 <button
                   type="button"
-                  className={button}
+                  className="min-h-12 rounded-xl border border-[#1B2A4A] bg-transparent font-bold text-[#1B2A4A] disabled:opacity-50"
                   disabled={!online || action.isPending || !!request.current}
                   onClick={() =>
                     submit({
