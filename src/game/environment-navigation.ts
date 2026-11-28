@@ -16,6 +16,22 @@ const FOOTPRINTS: Record<VenueFixture["kind"], { width: number; depth: number }>
   seat: { width: 1.8, depth: 0.75 },
 };
 
+export function environmentStageToModel(
+  point: WalkPoint,
+  scaleX: number,
+  scaleZ: number,
+): [number, number] {
+  return [point[0] * scaleX, point[1] * scaleZ];
+}
+
+export function environmentModelToStage(
+  point: WalkPoint,
+  scaleX: number,
+  scaleZ: number,
+): [number, number] {
+  return [point[0] / scaleX, point[1] / scaleZ];
+}
+
 /** Collision-aware walking for GLB environments. Coordinates match the 9×7 authored fixture stage. */
 export function environmentNavigation(fixtures: readonly VenueFixture[]) {
   const obstacles = fixtures.map((fixture) => ({
