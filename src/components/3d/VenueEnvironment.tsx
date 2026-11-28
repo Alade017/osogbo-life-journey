@@ -24,6 +24,8 @@ export function VenueEnvironment({
   activeId,
   accentColor,
   onSelect,
+  onWalk,
+  onTransform,
 }: {
   url: string;
   /** Undefined for a model without a shutter. */
@@ -32,6 +34,8 @@ export function VenueEnvironment({
   activeId: string;
   accentColor: string;
   onSelect: (id: string) => void;
+  onWalk: (point: [number, number]) => void;
+  onTransform: (scaleX: number, scaleZ: number) => void;
 }) {
   const gltf = useGLTF(url);
   const { invalidate } = useThree();
@@ -49,6 +53,13 @@ export function VenueEnvironment({
     group.position.set(-centre.x, -placed.min.y, -centre.z);
     return { group, half: { x: size.x / 2, z: size.z / 2 } };
   }, [gltf]);
+
+  const scaleX = holder.half.x / (STAGE_FOOTPRINT.x / 2);
+  const scaleZ = holder.half.z / (STAGE_FOOTPRINT.z / 2);
+
+  useEffect(() => {
+    onTransform(scaleX, scaleZ);
+  }, [onTransform, scaleX, scaleZ]);
 
   const { actions } = useAnimations(gltf.animations, root);
   const shuttered = open !== undefined;
@@ -82,6 +93,16 @@ export function VenueEnvironment({
   return (
     <group ref={root}>
       <primitive object={holder.group} />
+      <mesh
+        position={[0, 0.035, 0]}
+        onClick={(event: ThreeEvent<MouseEvent>) => {
+          event.stopPropagation();
+          if (event.delta <= 5) onWalk([event.point.x / scaleX, event.point.z / scaleZ]);
+        }}
+      >
+        <planeGeometry args={[holder.half.x * 2, holder.half.z * 2]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
       {fixtures.map((fixture) => {
         // Features are laid out for the full stage; scale them into the model's own footprint.
         const x = fixture.position[0] * (holder.half.x / (STAGE_FOOTPRINT.x / 2));
