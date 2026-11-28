@@ -664,7 +664,7 @@ function BasicLocationVenueScene({
               <p className="min-h-12 rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
                 {selected?.detail}
               </p>
-              {selectedAction && ((sceneKind !== "generic" && sceneKind !== "market") || arrivedFixture === selectedFixture) ? (
+              {selectedAction && ((sceneKind !== "generic" && sceneKind !== "market" && sceneKind !== "bank") || arrivedFixture === selectedFixture) ? (
                 <a
                   href={selectedAction.href}
                   className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
