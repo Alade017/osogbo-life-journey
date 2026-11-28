@@ -1,8 +1,10 @@
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
+import { ScreenCaptureBridge } from "@/components/3d/ScreenCaptureBridge";
 import { useRenderQuality } from "@/hooks/use-render-quality";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -46,7 +48,14 @@ import {
   type WorldInstance,
 } from "@/components/3d/WorldScene";
 import { WORLD_SCALE } from "@/components/3d/world-theme";
-import { packagePoint } from "@/game/house-navigation";
+import {
+  packagePoint,
+  roomObstacles,
+  type RoomObstacle,
+  type RoomPoint,
+} from "@/game/house-navigation";
+import { COURIER_WALK_SPEED, courierRoute, useCourierWalk } from "./courier-walk";
+import "./house-package-card.css";
 import { createHouseStairModel } from "./house-stair-model";
 import { disposeStudioInterior } from "./studio-interior";
 import { BlueprintInterior, StudioRug } from "./StudioInterior";
@@ -1632,51 +1641,19 @@ function RoomCharacter({
 const COURIER_DOOR_INSET = 0.2;
 const COURIER_EXIT_DISTANCE = 2.5;
 
-/** Walks the courier out of the room after the player has collected the package. */
-function DepartingCourier({
-  startX,
-  startZ,
-  exitX,
-  exitZ,
-  onGone,
-}: {
-  startX: number;
-  startZ: number;
-  exitX: number;
-  exitZ: number;
-  onGone: () => void;
-}) {
-  const [position, setPosition] = useState<[number, number, number]>([startX, 0.06, startZ]);
+/** Walks the courier along a route out of the room after the player has collected the package. */
+function DepartingCourier({ route, onGone }: { route: RoomPoint[]; onGone: () => void }) {
   const goneRef = useRef(onGone);
   goneRef.current = onGone;
-
-  useEffect(() => {
-    const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const duration = reduced ? 0 : 2400;
-    const startedAt = performance.now();
-    let frame = 0;
-    const step = (now: number) => {
-      const progress = duration === 0 ? 1 : Math.min(1, (now - startedAt) / duration);
-      setPosition([
-        startX + (exitX - startX) * progress,
-        0.06,
-        startZ + (exitZ - startZ) * progress,
-      ]);
-      if (progress < 1) frame = window.requestAnimationFrame(step);
-      else goneRef.current();
-    };
-    frame = window.requestAnimationFrame(step);
-    return () => window.cancelAnimationFrame(frame);
-  }, [startX, startZ, exitX, exitZ]);
-
+  const walk = useCourierWalk(route, COURIER_WALK_SPEED, () => goneRef.current());
   return (
     <WorldCharacter
       name="Food courier"
       gender="male"
       appearance={COURIER_LOOK}
-      position={position}
+      position={walk.point}
       animation="walk"
-      facing="north"
+      facing={walk.heading}
     />
   );
 }
@@ -1689,14 +1666,16 @@ function FoodCourier({
   width,
   depth,
   index,
-  onCollect,
+  obstacles,
+  onOpen,
 }: {
   delivery: FoodDelivery;
   houseTypeId: string;
   width: number;
   depth: number;
   index: number;
-  onCollect?: ((id: string) => void) | undefined;
+  obstacles: RoomObstacle[];
+  onOpen?: ((id: string) => void) | undefined;
 }) {
   const overlayPortal = useContext(RoomOverlayContext);
   const doorX = houseRearDoorCenter(houseTypeId, width);
@@ -1707,30 +1686,15 @@ function FoodCourier({
   const knocking = delivery.deliveryState === "awaiting_response";
   const approaching = delivery.deliveryState === "approaching";
   const waiting = delivery.deliveryState === "package_waiting";
-  const [position, setPosition] = useState<[number, number, number]>(
-    approaching ? [doorX, 0.06, doorZ] : [standX, 0.06, standZ],
+  // Walking in from the door around furniture while carrying the package; standing still otherwise.
+  const route = useMemo<RoomPoint[]>(
+    () =>
+      approaching
+        ? courierRoute([doorX, 0.06, doorZ], [standX, 0.06, standZ], width, depth, obstacles)
+        : [[standX, 0.06, standZ]],
+    [approaching, doorX, doorZ, standX, standZ, width, depth, obstacles],
   );
-
-  useEffect(() => {
-    if (!approaching) {
-      setPosition([standX, 0.06, standZ]);
-      return;
-    }
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setPosition([standX, 0.06, standZ]);
-      return;
-    }
-    const startedAt = performance.now();
-    let frame = 0;
-    const animate = (now: number) => {
-      const progress = Math.min(1, (now - startedAt) / 1800);
-      setPosition([doorX + (standX - doorX) * progress, 0.06, doorZ + (standZ - doorZ) * progress]);
-      if (progress < 1) frame = window.requestAnimationFrame(animate);
-    };
-    setPosition([doorX, 0.06, doorZ]);
-    frame = window.requestAnimationFrame(animate);
-    return () => window.cancelAnimationFrame(frame);
-  }, [approaching, doorX, doorZ, standX, standZ]);
+  const walk = useCourierWalk(route);
 
   // Behind the door: only the knock is shown. No face, no body, no package.
   if (knocking) {
@@ -1747,36 +1711,32 @@ function FoodCourier({
     );
   }
 
+  const carrying = approaching && !walk.done;
   return (
     <>
       <WorldCharacter
         name="Food courier"
         gender="male"
-        position={position}
+        position={walk.point}
         appearance={COURIER_LOOK}
-        animation={waiting ? "interact" : approaching && inside ? "walk" : "idle"}
-        facing="south"
-        held={
-          <>
-            <FoodPackage
-              delivery={delivery}
-              position={[0, 0, 0]}
-              onCollect={waiting ? onCollect : undefined}
-            />
-            {waiting && onCollect && (
-              <Html
-                portal={overlayPortal}
-                zIndexRange={[8, 0]}
-                center
-                position={[0, 0.45, 0]}
-                style={{ pointerEvents: "none" }}
-              >
-                <span className="house-food-package-label">Tap package to collect</span>
-              </Html>
-            )}
-          </>
-        }
+        animation={carrying ? "walk" : "idle"}
+        facing={walk.heading}
+        {...(carrying ? { held: <FoodPackage delivery={delivery} position={[0, 0, 0]} /> } : {})}
       />
+      {waiting && (
+        <FoodPackage delivery={delivery} position={[standX + 0.45, 0.06, standZ]} onOpen={onOpen} />
+      )}
+      {waiting && onOpen && (
+        <Html
+          portal={overlayPortal}
+          zIndexRange={[8, 0]}
+          center
+          position={[standX + 0.45, 0.5, standZ]}
+          style={{ pointerEvents: "none" }}
+        >
+          <span className="house-food-package-label">Tap to open</span>
+        </Html>
+      )}
     </>
   );
 }
@@ -1863,12 +1823,12 @@ function NonFoodParcel() {
 }
 
 function FoodPackage({
-  onCollect,
+  onOpen,
   delivery,
   position,
 }: {
   delivery: FoodDelivery;
-  onCollect?: ((id: string) => void) | undefined;
+  onOpen?: ((id: string) => void) | undefined;
   position: [number, number, number];
 }) {
   const food = isFoodDelivery(delivery.items);
@@ -1877,11 +1837,50 @@ function FoodPackage({
       position={position}
       onClick={(event) => {
         event.stopPropagation();
-        if (event.delta <= 4) onCollect?.(delivery.id);
+        if (event.delta <= 4) onOpen?.(delivery.id);
       }}
     >
       {food ? <FoodNylon colour={vendorColour(delivery.vendorName)} /> : <NonFoodParcel />}
     </group>
+  );
+}
+
+/** The delivery card opened from a package: contents, and the Collect action. */
+function PackageCard({
+  delivery,
+  onCollect,
+  onClose,
+}: {
+  delivery: FoodDelivery;
+  onCollect: () => void;
+  onClose: () => void;
+}) {
+  return (
+    <section
+      className="house-package-card"
+      role="dialog"
+      aria-label={`Delivery from ${delivery.vendorName}`}
+    >
+      <header>
+        <strong>{delivery.vendorName}</strong>
+        <span>{delivery.deliveryChoice === "inside" ? "Brought inside" : "Left at your door"}</span>
+      </header>
+      <ul>
+        {delivery.items.map((item) => (
+          <li key={item.name}>
+            {item.quantity} × {item.name}
+          </li>
+        ))}
+      </ul>
+      <footer>
+        <button type="button" onClick={onClose}>
+          Not now
+        </button>
+        <button type="button" className="is-primary" onClick={onCollect}>
+          Collect
+        </button>
+      </footer>
+    </section>
   );
 }
 
@@ -2182,6 +2181,16 @@ export function HouseRoom3D({
     setDragPreview(null);
   }, [editMode, inputBlocked, moveEnabled]);
   const [departing, setDeparting] = useState<WaitingCourier[]>([]);
+  const [openPackageId, setOpenPackageId] = useState<string | null>(null);
+  const openPackage = useCallback((id: string) => setOpenPackageId(id), []);
+  const openDelivery =
+    foodDeliveries.find(
+      (delivery) => delivery.id === openPackageId && delivery.deliveryState === "package_waiting",
+    ) ?? null;
+  const courierObstacles = useMemo(
+    () => roomObstacles(houseTypeId, width, depth, placements, slots, activeFloor),
+    [houseTypeId, width, depth, placements, slots, activeFloor],
+  );
   const waitingCouriers = useMemo<WaitingCourier[]>(
     () =>
       foodDeliveries
@@ -2207,11 +2216,12 @@ export function HouseRoom3D({
         onSceneError={() => onSceneAvailability?.(false)}
         style={{ touchAction: "none" }}
         frameloop="demand"
-        dpr={[1, quality.maxDpr]}
+        dpr={[1, Math.min(1.25, quality.maxDpr)]}
         shadows="percentage"
         camera={sceneCamera}
         gl={{ antialias: false, powerPreference: "low-power" }}
       >
+        <ScreenCaptureBridge />
         <RoomOverlayContext.Provider value={overlayHost}>
           <FirstRoomFrame notify={onSceneAvailability} />
           <FurniturePaletteContext.Provider
@@ -2344,7 +2354,8 @@ export function HouseRoom3D({
                   width={width}
                   depth={depth}
                   index={0}
-                  onCollect={!inputBlocked && !editMode ? onCollectPackage : undefined}
+                  obstacles={courierObstacles}
+                  onOpen={!inputBlocked && !editMode ? openPackage : undefined}
                 />
               ))}
             {foodDeliveries
@@ -2358,19 +2369,29 @@ export function HouseRoom3D({
                   width={width}
                   depth={depth}
                   index={index}
-                  onCollect={!inputBlocked && !editMode ? onCollectPackage : undefined}
+                  obstacles={courierObstacles}
+                  onOpen={!inputBlocked && !editMode ? openPackage : undefined}
                 />
               ))}
             {departing.map(({ delivery, index }) => {
               const inside = delivery.deliveryChoice === "inside";
+              const [standX, , standZ] = packagePoint(index, width, depth, houseTypeId, inside);
               const doorX = houseRearDoorCenter(houseTypeId, width);
+              const doorZ = -depth / 2 + COURIER_DOOR_INSET;
+              const route: RoomPoint[] = [
+                ...courierRoute(
+                  [standX, 0.06, standZ],
+                  [doorX, 0.06, doorZ],
+                  width,
+                  depth,
+                  courierObstacles,
+                ),
+                [doorX, 0.06, -depth / 2 - COURIER_EXIT_DISTANCE],
+              ];
               return (
                 <DepartingCourier
                   key={`leaving-${delivery.id}`}
-                  startX={packagePoint(index, width, depth, houseTypeId, inside)[0]}
-                  startZ={packagePoint(index, width, depth, houseTypeId, inside)[2]}
-                  exitX={doorX}
-                  exitZ={-depth / 2 - COURIER_EXIT_DISTANCE}
+                  route={route}
                   onGone={() =>
                     setDeparting((current) => current.filter((c) => c.delivery.id !== delivery.id))
                   }
@@ -2478,6 +2499,16 @@ export function HouseRoom3D({
           </FurniturePaletteContext.Provider>
         </RoomOverlayContext.Provider>
       </WorldCanvas>
+      {openDelivery && (
+        <PackageCard
+          delivery={openDelivery}
+          onCollect={() => {
+            onCollectPackage?.(openDelivery.id);
+            setOpenPackageId(null);
+          }}
+          onClose={() => setOpenPackageId(null)}
+        />
+      )}
       <div
         ref={overlayHost}
         style={{ position: "absolute", inset: 0, pointerEvents: "none", zIndex: 2 }}

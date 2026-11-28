@@ -230,6 +230,11 @@
   flex: 0 0 auto;
   white-space: nowrap;
 }
+.gig-applicant-actions > .nesta-button {
+  min-width: 76px;
+  padding: 0 18px;
+  border-radius: 14px;
+}
 @media (max-width: 420px) {
   .gig-applicant {
     grid-template-columns: minmax(0, 1fr);
@@ -237,4 +242,10 @@
   .gig-applicant-actions {
     justify-content: flex-start;
   }
+}
+
+.gig-pay-range {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }

@@ -1,4 +1,5 @@
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
+import { ScreenCaptureBridge } from "@/components/3d/ScreenCaptureBridge";
 import { InteractionMarker } from "@/components/3d/InteractionMarker";
 import { NpcBody } from "@/components/3d/NpcBody";
 import { useRenderQuality } from "@/hooks/use-render-quality";
@@ -803,7 +804,7 @@ export function R3FNeighborhoodSurface({
           orthographic={Boolean(overview)}
           shadows="percentage"
           frameloop="demand"
-          dpr={[1, quality.maxDpr]}
+          dpr={[1, Math.min(1.25, quality.maxDpr)]}
           gl={{
             antialias: false,
             powerPreference: "low-power",
@@ -811,6 +812,7 @@ export function R3FNeighborhoodSurface({
             toneMappingExposure: 1.05,
           }}
         >
+          <ScreenCaptureBridge />
           {overview ? (
             overview.camera
           ) : (

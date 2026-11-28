@@ -124,4 +124,37 @@ describe("active session simulation", () => {
     expect(server.command).toHaveBeenCalledTimes(beforeServerRefresh + 1);
     expect(server.command).toHaveBeenLastCalledWith(expect.objectContaining({ command: "open" }));
   });
+  it("gives up on a stalled sync and shows why, so the next tick can retry", async () => {
+    vi.useFakeTimers();
+    server.command.mockImplementation(() => new Promise(() => {}));
+    const character = {
+      id: "player1",
+      user_id: "account-one",
+      name: "Ade",
+      level: 1,
+      xp: 0,
+      energy: 70,
+      hunger: 20,
+      happiness: 70,
+      social: 60,
+    } as Character;
+    const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function ErrorProbe() {
+      const { syncError, ready } = useGameTime();
+      return <output aria-label="Sync">{ready ? "ready" : (syncError ?? "waiting")}</output>;
+    }
+    await act(async () => {
+      render(
+        <QueryClientProvider client={qc}>
+          <GameTimeProvider character={character} gameTime={INITIAL_GAME_TIME}>
+            <ErrorProbe />
+          </GameTimeProvider>
+        </QueryClientProvider>,
+      );
+    });
+    await act(async () => {
+      vi.advanceTimersByTime(15_000);
+    });
+    expect(screen.getByLabelText("Sync").textContent).toContain("took too long");
+  });
 });

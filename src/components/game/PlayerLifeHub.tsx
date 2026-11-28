@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { CharacterWardrobePanel } from "@/components/game/CharacterWardrobePanel";
 import { useQuery } from "@tanstack/react-query";
 import {
-  BriefcaseBusiness, CheckCircle2, Heart, Settings2, Sparkles, Target, UserRound, Users, X, Zap,
+  Backpack, BriefcaseBusiness, CheckCircle2, Heart, Sparkles, Target, UserRound, Users, X, Zap,
 } from "lucide-react";
 import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import { useGameTime } from "@/components/game/GameTimeProvider";
@@ -9,20 +10,22 @@ import { useMissions } from "@/hooks/use-missions";
 import { q } from "@/lib/game";
 import { normalizeAvatarAppearance, type Appearance } from "@/game/avatar-appearance";
 import type { PlayerState } from "@/lib/player-state";
-import { SettingsPage } from "@/routes/_authenticated/_game/settings";
 import { NEED_NAMES, NEED_RULES, statusForNeed } from "@/lib/life-simulation";
 import "@/components/game/player-life-hub.css";
 
-type HubTab = "profile" | "needs" | "goals" | "skills" | "people" | "career" | "settings";
+type HubTab = "profile" | "inventory" | "needs" | "goals" | "skills" | "people" | "career";
 const TABS: Array<{ id: HubTab; label: string; icon: typeof UserRound }> = [
   { id: "profile", label: "Profile", icon: UserRound },
+  { id: "inventory", label: "Inventory", icon: Backpack },
   { id: "needs", label: "Needs", icon: Zap },
   { id: "goals", label: "Goals", icon: Target },
   { id: "skills", label: "Skills", icon: Sparkles },
   { id: "people", label: "People", icon: Users },
   { id: "career", label: "Career", icon: BriefcaseBusiness },
-  { id: "settings", label: "Settings", icon: Settings2 },
 ];
+const GameInventoryPanel = lazy(() =>
+  import("@/components/game/GameInventoryPanel").then((module) => ({ default: module.GameInventoryPanel })),
+);
 const NEED_ICONS: Record<(typeof NEED_NAMES)[number], string> = {
   hunger: "🍲", energy: "⚡", hygiene: "🫧", bladder: "🚻", fun: "🎮", social: "💬",
 };
@@ -34,7 +37,7 @@ function numberValue(value: unknown) {
 }
 
 export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }: {
-  player: PlayerState; open: boolean; initialTab?: "profile" | "settings"; onClose: () => void;
+  player: PlayerState; open: boolean; initialTab?: "profile"; onClose: () => void;
 }) {
   const [tab, setTab] = useState<HubTab>(initialTab);
   const [expanded, setExpanded] = useState(false);
@@ -198,6 +201,13 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
               <article><span>Location</span><strong>{readable(player.location?.name, "Location unavailable")}</strong></article>
             </div>
             <p className="player-hub-note">Your equipped appearance is shared with your in-world character.</p>
+            <CharacterWardrobePanel />
+          </div>}
+
+          {tab === "inventory" && <div className="player-hub-inventory">
+            <Suspense fallback={<p className="player-hub-muted">Loading your inventory…</p>}>
+              <GameInventoryPanel />
+            </Suspense>
           </div>}
 
           {tab === "needs" && <div className="player-hub-list">
@@ -244,7 +254,6 @@ export function PlayerLifeHub({ player, open, initialTab = "profile", onClose }:
             }) : <p className="player-hub-empty">You have not built any recorded relationships yet. Meet people around Osogbo to get started.</p>}
           </div>}
 
-          {tab === "settings" && <div className="player-hub-settings"><SettingsPage embedded /></div>}
 
           {tab === "career" && <div className="player-hub-list">
             <div className="player-hub-section-intro"><h3>Career & work</h3><p>Your current occupation and saved employment records.</p></div>

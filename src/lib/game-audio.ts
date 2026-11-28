@@ -18,6 +18,16 @@ type AudioGraph = {
 };
 
 const STORAGE_KEY = "osogbo-world-audio-v1";
+const MUTE_TAB_KEY = "osogbo-world-mute-tab-v1";
+let muteOnTabSwitch = true;
+export function readMuteOnTabSwitch(): boolean {
+  if (typeof window === "undefined") return true;
+  try { return localStorage.getItem(MUTE_TAB_KEY) !== "false"; } catch { return true; }
+}
+export function setMuteOnTabSwitch(enabled: boolean) {
+  muteOnTabSwitch = enabled;
+  try { localStorage.setItem(MUTE_TAB_KEY, String(enabled)); } catch { /* Session preference only. */ }
+}
 const DEFAULT_LEVELS: Required<AudioLevels> = {
   master: 0.75,
   music: 0.4,
@@ -49,9 +59,11 @@ export function primeGameAudioForLogin() {
 }
 export function startGameAudioSession() {
   if (typeof document === "undefined" || !playerId) return;
+  muteOnTabSwitch = readMuteOnTabSwitch();
   sessionCleanup?.();
   let resumeOnReturn = false;
   const hide = () => {
+    if (!muteOnTabSwitch) return;
     resumeOnReturn = resumeOnReturn || automaticAudioAllowed;
     void disableGameAudio();
   };
@@ -481,6 +493,9 @@ function applyLevels(current: AudioGraph, levels: AudioLevels) {
 function createAudioGraph(levels: AudioLevels): AudioGraph | null {
   const AudioContextType = window.AudioContext;
   if (!AudioContextType) return null;
+  // Browsers refuse to start an AudioContext created before any user gesture. Wait for one; the
+  // gesture listeners call enableGameAudio again.
+  if (navigator.userActivation && !navigator.userActivation.hasBeenActive) return null;
   const context = new AudioContextType();
   const master = context.createGain();
   const ambience = context.createGain();

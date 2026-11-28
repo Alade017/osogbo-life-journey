@@ -1,0 +1,54 @@
+/* Delivery card opened from a waiting package. Sits over the room, above the bottom controls. */
+.house-package-card {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--game-dock-height, 64px) + env(safe-area-inset-bottom) + 96px);
+  z-index: 40;
+  display: grid;
+  width: min(300px, calc(100% - 32px));
+  gap: 10px;
+  padding: 14px;
+  transform: translateX(-50%);
+  border-radius: 16px;
+  color: #1d2a44;
+  background: #fffdf7;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 25%);
+}
+.house-package-card header {
+  display: grid;
+  gap: 2px;
+}
+.house-package-card header strong {
+  font-size: 0.95rem;
+}
+.house-package-card header span {
+  color: #5c6b84;
+  font-size: 0.75rem;
+}
+.house-package-card ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.82rem;
+}
+.house-package-card footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+.house-package-card footer button {
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #c9d3e3;
+  border-radius: 999px;
+  color: #1d2a44;
+  background: white;
+  font-weight: 700;
+}
+.house-package-card footer button.is-primary {
+  border-color: transparent;
+  color: white;
+  background: #164fb5;
+}

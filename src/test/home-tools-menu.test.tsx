@@ -1,13 +1,8 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, expect, it, vi } from "vitest";
+import { expect, it } from "vitest";
 import { HomeToolsMenu } from "@/components/game/housing/HomeToolsMenu";
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
-it("opens Settings in the existing player hub without navigating away", () => {
-  const dispatch = vi.spyOn(window, "dispatchEvent");
+it("keeps home tools available without exposing a Settings action", () => {
   render(
     <HomeToolsMenu>
       <button type="button">Shop</button>
@@ -16,12 +11,10 @@ it("opens Settings in the existing player hub without navigating away", () => {
     </HomeToolsMenu>,
   );
 
-  fireEvent.click(screen.getByRole("button", { name: /Settings/ }));
-
-  const event = dispatch.mock.calls
-    .map(([value]) => value)
-    .find((value) => value.type === "osogbo-open-player-hub") as CustomEvent<{ tab: string }> | undefined;
-  expect(event?.detail).toEqual({ tab: "settings" });
+  const summary = screen.getByTitle("Home tools");
+  fireEvent.click(summary);
+  expect(summary.closest("details")).toHaveAttribute("open");
+  expect(screen.queryByRole("button", { name: /Settings/ })).not.toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Shop" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Lights" })).toBeInTheDocument();
   expect(screen.getByRole("button", { name: "Rearrange" })).toBeInTheDocument();

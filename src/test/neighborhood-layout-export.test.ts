@@ -10,7 +10,7 @@ describe("neighbourhood layouts exported for Blender", () => {
   it.each(LAYOUT_AREAS.map((area) => [area.slug, area] as const))(
     "%s JSON matches the TypeScript layout",
     (_slug, area) => {
-      const committed = readFileSync(join("scripts/blender/layouts", layoutFileName(area)), "utf8");
+      const committed = readFileSync(join("scripts/blender/layouts", layoutFileName(area)), "utf8").replace(/\r\n/g, "\n");
       expect(committed).toBe(`${JSON.stringify(layoutJson(area), null, 2)}\n`);
     },
   );

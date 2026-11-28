@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useState, type FormEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
   Check,
@@ -24,13 +24,13 @@ import type { Database } from "@/integrations/supabase/types";
 import { q, rpc } from "@/lib/game";
 import { parseAppTileStyle, type AppTileStyle } from "@/lib/app-tile-style";
 import { pageMeta } from "@/lib/seo";
-import { CharacterPreview } from "@/components/3d/CharacterPreview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Slider } from "@/components/ui/slider";
-import { ProfilePage } from "./profile";
+import { Textarea } from "@/components/ui/textarea";
+import { SUPPORT_CATEGORIES, submitSupportFeedback, type SupportCategory } from "@/lib/support-service";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -47,8 +47,9 @@ import {
   enableGameAudio,
   readGameAudioLevels,
   setGameAudioLevels,
+  readMuteOnTabSwitch,
+  setMuteOnTabSwitch,
 } from "@/lib/game-audio";
-import type { Appearance } from "@/game/avatar-appearance";
 import "@/components/game/settings-hub.css";
 
 export const Route = createFileRoute("/_authenticated/_game/settings")({
@@ -101,16 +102,14 @@ function useSavedFlash() {
   return { saved, flash };
 }
 
-export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) {
+export function SettingsPage() {
   const fieldId = useId();
   const qc = useQueryClient();
   const { data: profile, isPending, isError, error, isFetching, refetch } = useQuery(q.profile());
-  const { data: character } = useQuery(q.character());
   const homeVisit = useQuery(q.homeVisitPolicy());
   const { saved, flash } = useSavedFlash();
 
   const [nameDraft, setNameDraft] = useState("");
-  const [settingsTab, setSettingsTab] = useState<"display" | "sound" | "privacy" | "account">("display");
 
   const { data: summaryData } = useQuery(q.accountSummary());
   const summary = summaryData as
@@ -198,49 +197,17 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
     : isUsernameAccount
       ? "Username sign-in"
       : account.email || "Account";
-  const appearance = (character?.appearance ?? {}) as unknown as Appearance;
 
   return (
     <div className="sx-page" data-reduced={profile.reduced_motion ? "true" : "false"}>
-      {!embedded && <header className="sx-hero">
-        <div className="sx-hero-avatar" aria-hidden="true">
-          <CharacterPreview
-            appearance={appearance}
-            gender={character?.gender ?? "nonbinary"}
-            equipment={[]}
-            label={`${profile.display_name || "Your character"}, head portrait`}
-            framing="head"
-          />
-        </div>
-        <div className="sx-hero-copy">
-          <p className="sx-eyebrow">OSOGBO LIFE · GAME SETTINGS</p>
-          <h1>{profile.display_name || "Your character"}</h1>
-          <span className={`sx-badge${account.isGuest ? " is-guest" : ""}`}>
-            <ShieldCheck aria-hidden="true" /> {accountLabel}
-          </span>
-        </div>
-      </header>}
+      <div className="sx-page-heading">
+        <p>OSOGBO LIFE · PLAYER PREFERENCES</p>
+        <h1>Settings</h1>
+        <span>Fine-tune your world, display and account.</span>
+      </div>
 
-      <nav className="sx-tabs" aria-label="Settings categories">
-        {([
-          ["display", "Display"],
-          ["sound", "Sound & play"],
-          ["privacy", "Privacy"],
-          ["account", "Account"],
-        ] as const).map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            className="sx-tab"
-            aria-pressed={settingsTab === value}
-            onClick={() => setSettingsTab(value)}
-          >
-            {label}
-          </button>
-        ))}
-      </nav>
 
-      {settingsTab === "display" && <>
+      <>
       <Section
         id="sx-name"
         icon={UserRound}
@@ -283,9 +250,9 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
         </form>
       </Section>
 
-      </>}
+      </>
 
-      {settingsTab === "sound" && <>
+      <>
       <Section
         id="sx-sound"
         icon={Volume2}
@@ -296,9 +263,9 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
         <AudioControls profile={profile} onSave={(patch) => savePreferences.mutate(patch)} />
       </Section>
 
-      </>}
+      </>
 
-      {settingsTab === "display" && <>
+      <>
       <Section
         id="sx-tiles"
         icon={LayoutGrid}
@@ -370,9 +337,9 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
         </div>
       </Section>
 
-      </>}
+      </>
 
-      {settingsTab === "privacy" && <>
+      <>
       <Section
         id="sx-privacy"
         icon={Eye}
@@ -409,9 +376,9 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
         </ul>
       </Section>
 
-      </>}
+      </>
 
-      {settingsTab === "account" && <>
+      <>
       <AccountSection
         fieldId={fieldId}
         email={account.email}
@@ -421,8 +388,9 @@ export function SettingsPage({ embedded = false }: { embedded?: boolean } = {}) 
         onChanged={() => void qc.invalidateQueries({ queryKey: q.accountSummary().queryKey })}
       />
 
+      <SupportSection />
       <SessionSection isGuest={account.isGuest} />
-      </>}
+      </>
     </div>
   );
 }
@@ -478,6 +446,7 @@ function SavedPill({ show }: { show: boolean }) {
 
 function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: Patch) => void }) {
   const [levels, setLevels] = useState(() => readGameAudioLevels());
+  const [muteOnTabSwitch, setMuteOnTabSwitchState] = useState(() => readMuteOnTabSwitch());
   const [blocked, setBlocked] = useState(false);
 
   // Volume is stored in this browser. The on/off state comes from the account.
@@ -530,8 +499,38 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
     if (!next.music && !next.effects && !next.environment) await disableGameAudio();
   }
 
+  async function applyMasterVolume(volume: number) {
+    const next = { ...levels, master: volume };
+    setGameAudioLevels(next);
+    setLevels(next);
+  }
+
+  function updateMuteOnTabSwitch(enabled: boolean) {
+    setMuteOnTabSwitch(enabled);
+    setMuteOnTabSwitchState(enabled);
+  }
+
   return (
     <>
+      <div className="sx-channel is-on">
+        <div className="sx-channel-head">
+          <span className="sx-channel-title"><Volume2 aria-hidden="true" /><strong>Master volume</strong></span>
+          <output className="sx-volume-value">{Math.round(levels.master * 100)}%</output>
+        </div>
+        <p className="sx-row-hint">Overall volume for every game audio channel.</p>
+        <div className="sx-volume">
+          <Slider className="sx-slider" aria-label="Master volume" min={0} max={100} step={1}
+            value={[Math.round(levels.master * 100)]}
+            onValueChange={([value]) => void applyMasterVolume((value ?? 0) / 100)} />
+        </div>
+      </div>
+      <div className="sx-row">
+        <div className="sx-row-copy">
+          <span className="sx-row-title">Mute on tab switch</span>
+          <p className="sx-row-hint">Automatically mute game audio when this browser tab is hidden.</p>
+        </div>
+        <Switch checked={muteOnTabSwitch} onCheckedChange={updateMuteOnTabSwitch} aria-label="Mute on tab switch" />
+      </div>
       {(Object.keys(CHANNELS) as Channel[]).map((channel) => {
         const cfg = CHANNELS[channel];
         const on = profile[cfg.flag];
@@ -573,7 +572,7 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
         <div className="sx-channel-head">
           <span className="sx-channel-title">
             <Waves aria-hidden="true" />
-            <strong>Ambient texture</strong>
+            <strong>Ambient world noise</strong>
           </span>
           <output className="sx-volume-value">
             {Math.round((levels.environment ?? 0) * 100)}%
@@ -586,7 +585,7 @@ function AudioControls({ profile, onSave }: { profile: Profile; onSave: (patch: 
         <div className="sx-volume">
           <Slider
             className="sx-slider"
-            aria-label="Ambient texture volume"
+            aria-label="Ambient world noise volume"
             min={0}
             max={100}
             step={1}
@@ -755,6 +754,73 @@ function AccountSection({
           {error}
         </p>
       )}
+    </Section>
+  );
+}
+
+function SupportSection() {
+  const [kind, setKind] = useState<"suggestion" | "complaint">("complaint");
+  const [category, setCategory] = useState<SupportCategory>("bug");
+  const [subject, setSubject] = useState("");
+  const [message, setMessage] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (subject.trim().length < 3 || message.trim().length < 10) {
+      toast.error("Add a subject and at least 10 characters of detail.");
+      return;
+    }
+    setBusy(true);
+    try {
+      await submitSupportFeedback({ kind, category, subject: subject.trim(), message: message.trim() });
+      setSubject("");
+      setMessage("");
+      toast.success("Your feedback was sent to the OSOGBO LIFE team.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Feedback could not be sent.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Section
+      id="sx-support"
+      icon={ShieldCheck}
+      title="About & support"
+      description="Send a bug report or suggest a life event or improvement."
+    >
+      <div className="sx-status">
+        <span className="sx-status-icon" aria-hidden="true"><ShieldCheck /></span>
+        <div>
+          <strong>OSOGBO LIFE</strong>
+          <small>Player feedback goes through the game's support system.</small>
+        </div>
+      </div>
+      <form className="sx-field" onSubmit={(event) => void submit(event)}>
+        <Label htmlFor="sx-feedback-kind">Feedback type</Label>
+        <select id="sx-feedback-kind" className="sx-input" value={kind}
+          onChange={(event) => setKind(event.target.value as "suggestion" | "complaint")}>
+          <option value="complaint">Report a bug</option>
+          <option value="suggestion">Suggest an improvement</option>
+        </select>
+        <Label htmlFor="sx-feedback-category">Category</Label>
+        <select id="sx-feedback-category" className="sx-input" value={category}
+          onChange={(event) => setCategory(event.target.value as SupportCategory)}>
+          {SUPPORT_CATEGORIES.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
+        </select>
+        <Label htmlFor="sx-feedback-subject">Subject</Label>
+        <Input id="sx-feedback-subject" className="sx-input" minLength={3} maxLength={120}
+          value={subject} onChange={(event) => setSubject(event.target.value)} />
+        <Label htmlFor="sx-feedback-message">Details</Label>
+        <Textarea id="sx-feedback-message" className="sx-input" minLength={10} maxLength={1000}
+          rows={4} value={message} onChange={(event) => setMessage(event.target.value)}
+          placeholder="Describe what happened or what you would like to see…" />
+        <Button type="submit" className="sx-btn-primary" disabled={busy}>
+          {busy ? "Sending…" : "Send feedback"}
+        </Button>
+      </form>
     </Section>
   );
 }

@@ -28,7 +28,7 @@ vi.mock("@tanstack/react-query", () => ({
 }));
 vi.mock("@/lib/game", () => ({
   q: { character: () => ({ queryKey: ["character"] }) },
-  formatNaira: (minor: number) => `₦${(minor / 100).toLocaleString("en-NG")}`,
+  formatNaira: (amount: number) => `₦${amount.toLocaleString("en-NG")}`,
 }));
 vi.mock("@/lib/gig-work-client", () => ({
   getGigBoard: vi.fn(),
@@ -58,7 +58,7 @@ describe("Gig Work", () => {
         title: "Fix fence",
         description: "Repair the back fence",
         pay: 500000,
-        expiresAt: "2026-11-26T10:00:00Z",
+        expiresAt: "2099-01-01T00:00:00Z",
         posterName: "Ade",
         applied: false,
       },
@@ -81,7 +81,7 @@ describe("Gig Work", () => {
         description: "Paint the gate blue",
         pay: 300000,
         status: "open",
-        expiresAt: "2026-11-26T10:00:00Z",
+        expiresAt: "2099-01-01T00:00:00Z",
         workerId: null,
         workerName: null,
         applicants: [
@@ -107,7 +107,7 @@ describe("Gig Work", () => {
         description: "Paint the gate blue",
         pay: 300000,
         status: "open",
-        expiresAt: "2026-11-26T10:00:00Z",
+        expiresAt: "2099-01-01T00:00:00Z",
         workerId: null,
         workerName: null,
         applicants: [
@@ -123,5 +123,81 @@ describe("Gig Work", () => {
     fireEvent.click(screen.getByRole("button", { name: "Message" }));
     window.removeEventListener(OPEN_MESSAGES_EVENT, listener);
     expect(seen).toEqual([{ playerId: "33333333-3333-4333-8333-333333333333" }]);
+  });
+});
+
+describe("expired postings", () => {
+  beforeEach(() => {
+    board.open = [];
+    board.mine = [];
+    board.jobs = [];
+  });
+
+  it("shows a passed posting as expired with no pick or cancel actions", () => {
+    board.mine = [
+      {
+        id: "44444444-4444-4444-8444-444444444444",
+        title: "Old gate",
+        description: "Paint it",
+        pay: 300000,
+        status: "open",
+        expiresAt: "2020-01-01T00:00:00Z",
+        workerId: null,
+        workerName: null,
+        applicants: [
+          { characterId: "55555555-5555-4555-8555-555555555555", name: "Ade", offer: null },
+        ],
+      },
+    ];
+    render(<GigWorkApp />);
+    fireEvent.click(screen.getByRole("button", { name: "My posts" }));
+    expect(screen.getAllByText(/expired/i).length).toBeGreaterThan(0);
+    expect(screen.queryByRole("button", { name: "Pick" })).toBeNull();
+  });
+});
+
+describe("pay range", () => {
+  beforeEach(() => {
+    act.mockClear();
+    board.open = [];
+    board.mine = [];
+    board.jobs = [];
+  });
+
+  it("posts a minimum and maximum pay", () => {
+    render(<GigWorkApp />);
+    fireEvent.change(screen.getByLabelText("Title"), { target: { value: "Sweep yard" } });
+    fireEvent.change(screen.getByLabelText("Description"), {
+      target: { value: "Sweep the front yard" },
+    });
+    fireEvent.change(screen.getByLabelText("Minimum pay (₦)"), { target: { value: "3000" } });
+    fireEvent.change(screen.getByLabelText("Maximum pay (₦)"), { target: { value: "8000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Post job" }));
+    expect(act).toHaveBeenCalledWith({
+      action: "post",
+      title: "Sweep yard",
+      description: "Sweep the front yard",
+      pay: 3000,
+      payMax: 8000,
+    });
+  });
+
+  it("does not send an offer outside the posted range", () => {
+    board.open = [
+      {
+        id: "66666666-6666-4666-8666-666666666666",
+        title: "Fix fence",
+        description: "Repair the back fence",
+        pay: 3000,
+        payMax: 8000,
+        expiresAt: "2099-01-01T00:00:00Z",
+        posterName: "Ade",
+        applied: false,
+      },
+    ];
+    render(<GigWorkApp />);
+    fireEvent.change(screen.getByLabelText(/Your offer/), { target: { value: "9000" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply" }));
+    expect(act).not.toHaveBeenCalledWith(expect.objectContaining({ action: "apply" }));
   });
 });

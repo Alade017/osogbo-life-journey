@@ -1,17 +1,15 @@
 import { Link } from "@tanstack/react-router";
-import { Backpack, Briefcase, House, Map } from "lucide-react";
+import { Briefcase, House, Map } from "lucide-react";
 import type { MouseEvent, ReactNode } from "react";
 
 export function GameMobileNav({
   hidden = false,
   onNavigate,
-  onInventoryOpen,
   onHudOpen,
   children,
 }: {
   hidden?: boolean;
   onNavigate: () => void;
-  onInventoryOpen: () => void;
   onHudOpen?: (hud: "jobs" | "map") => void;
   children?: ReactNode;
 }) {
@@ -70,18 +68,7 @@ export function GameMobileNav({
         <Briefcase className="h-4.75 w-4.75" />
         <span>Career</span>
       </Link>
-      <button
-        type="button"
-        className="gbb-link"
-        data-core-action="true"
-        onClick={onInventoryOpen}
-        aria-label="Open inventory"
-        title="Inventory"
-      >
-        <Backpack className="h-4.75 w-4.75" aria-hidden="true" />
-        <span>Inventory</span>
-      </button>
-      {children}
+{children}
     </nav>
   );
 }

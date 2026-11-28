@@ -9,6 +9,10 @@ vi.mock("@/components/3d/CharacterPreview", () => ({
   CharacterPreview: ({ label }: { label: string }) => <div role="img" aria-label={label} />,
 }));
 
+vi.mock("@/components/game/CharacterWardrobePanel", () => ({
+  CharacterWardrobePanel: () => <div aria-label="Character wardrobe" role="region" />,
+}));
+
 const character = {
   id: "character-1",
   user_id: "user-1",
@@ -97,7 +101,7 @@ describe("profile page", () => {
     expect(screen.getByText(/Designer/)).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "Badges" })).toBeInTheDocument();
     expect(screen.getByText("0 / 6 earned")).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /Wardrobe/i })).toBeInTheDocument();
+    expect(screen.getByRole("region", { name: /Character wardrobe/i })).toBeInTheDocument();
     expect(screen.getByRole("img", { name: /level/i })).toBeInTheDocument();
   });
 });

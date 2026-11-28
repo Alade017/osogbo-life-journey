@@ -4,7 +4,10 @@ export type GigOpen = {
   id: string;
   title: string;
   description: string;
+  /** Lowest pay the poster will give. */
   pay: number;
+  /** Highest pay the poster will give. Equal to pay for a fixed price. */
+  payMax: number;
   expiresAt: string;
   posterName: string;
   applied: boolean;
@@ -15,6 +18,9 @@ export type GigMine = {
   title: string;
   description: string;
   pay: number;
+  payMax: number;
+  /** The amount agreed when a worker was picked; null until then. */
+  agreedPay: number | null;
   status: "open" | "accepted" | "completed" | "expired" | "cancelled";
   expiresAt: string;
   workerId: string | null;
@@ -49,7 +55,7 @@ export async function getGigBoard(): Promise<GigBoard> {
 }
 
 export type GigAction =
-  | { action: "post"; title: string; description: string; pay: number }
+  | { action: "post"; title: string; description: string; pay: number; payMax?: number }
   | { action: "apply"; gigId: string; offer?: number | null }
   | { action: "accept"; gigId: string; applicantId: string }
   | { action: "confirm" | "cancel"; gigId: string };

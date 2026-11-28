@@ -1,18 +1,16 @@
 /**
- * LudoEngine: the complete 2 to 4 seat Ludo rules as a pure, deterministic state machine.
+ * LudoEngine: the Naija ludo rules for 2 to 4 seats, as a pure, deterministic state machine.
  *
  * Each seat is one colour with four tokens. Progress per token is:
  *   -1        in the yard (leaves only on a six, onto the colour's start tile)
  *   0..50     on the shared 52-tile track, counted from the colour's own start tile
- *   51..56    the colour's home column
- *   57        finished (reached exactly)
+ *   51..55    the colour's home lane
+ *   56        finished (reached exactly)
  *
- * A turn rolls two dice. Each die is played on one token, in either order. Only a double six (6-6)
- * earns a bonus roll, once the turn's dice are used up. Three double sixes in a row forfeit the turn on
- * the third roll. A token can pass over or land on a tile holding two tokens of another colour only if
- * it is not a blockade (traditional rules: an opponent's blockade stops both). A capture gives the
- * capturing player the option to bring one of their own yard tokens out to its start tile without a six,
- * instead of moving a token already on the board. That option lapses once a die is played.
+ * A turn rolls two dice. Each die is played on one token, in either order. A double six (6-6) earns
+ * a bonus roll once the turn's dice are used up; a single six does not. A capture sends the victim's
+ * token back to its yard and gives nothing back to the capturer. Blockades do not exist: any token can
+ * pass or land on any tile. Safe tiles (the start tiles and the star tiles) cannot be captured on.
  *
  * Every action returns either `{ ok: true, game, events }` or `{ ok: false, error }` and never mutates
  * the input. No randomness, clocks or I/O: the server supplies dice values and timers.
@@ -43,7 +41,6 @@ export const TURN_TIMEOUT_MS = 20_000;
 export const SEAT_HOLD_MS = 60_000;
 const MAX_SEATS = 4;
 const MIN_SEATS = 2;
-const TRIPLE_DOUBLE_SIX = 3;
 const SIX = 6;
 
 export type Seat = { colour: Colour; playerId: string };
@@ -63,24 +60,18 @@ export type LudoGame = {
   readonly used: readonly [boolean, boolean];
   /** The bonus earned this roll, if any. A double six gives the seat another roll once the dice are spent. */
   readonly bonus: Bonus | null;
-  /** Consecutive double sixes this turn, for the three-double-sixes forfeit. */
-  readonly consecutiveDoubleSixes: number;
-  /** A capture offered a free yard deploy (no six, no die spent). It lapses once a die is played. */
-  readonly freeDeploy: boolean;
   readonly winnerId: string | null;
 };
 
 export type LudoEvent =
   | { type: "ROLLED"; playerId: string; values: DiceValues }
   | { type: "NO_LEGAL_MOVES"; playerId: string }
-  | { type: "TRIPLE_DOUBLE_SIX_FORFEIT"; playerId: string }
   | {
       type: "MOVED";
       playerId: string;
       colour: Colour;
       token: number;
-      /** The die played, or null for a free yard deploy that uses no die. */
-      die: 0 | 1 | null;
+      die: 0 | 1;
       from: number;
       to: number;
     }
@@ -92,7 +83,6 @@ export type LudoEvent =
       victimColour: Colour;
       victimToken: number;
     }
-  | { type: "FREE_DEPLOY_OFFERED"; playerId: string }
   | { type: "BONUS_ROLL"; playerId: string; reason: Bonus }
   | { type: "TURN_PASSED"; playerId: string; nextPlayerId: string }
   | { type: "GAME_OVER"; winnerId: string };
@@ -101,8 +91,8 @@ export type LudoErrorCode = "INVALID_TURN" | "INVALID_PHASE" | "ILLEGAL_MOVE" | 
 export type LudoResult =
   { ok: true; game: LudoGame; events: LudoEvent[] } | { ok: false; error: LudoErrorCode };
 
-/** A legal move. `die` is null for a free yard deploy, which spends no die. */
-export type LegalMove = { colour: Colour; token: number; to: number; die: 0 | 1 | null };
+/** A legal move: one token moved by one of the two dice. */
+export type LegalMove = { colour: Colour; token: number; to: number; die: 0 | 1 };
 
 function fail(error: LudoErrorCode): { ok: false; error: LudoErrorCode } {
   return { ok: false, error };
@@ -124,8 +114,6 @@ export function createLudoGame(seats: readonly Seat[]): LudoGame {
     dice: null,
     used: [false, false],
     bonus: null,
-    consecutiveDoubleSixes: 0,
-    freeDeploy: false,
     winnerId: null,
   };
 }
@@ -156,53 +144,21 @@ function targetStep(step: number, dice: number): number | null {
   return next <= FINISH_STEP ? next : null;
 }
 
-/** A tile holding two or more tokens of one other colour is a blockade: it cannot be landed on or passed. */
-function isBlockedByStack(game: LudoGame, mover: Colour, tile: number): boolean {
-  return COLOURS.some((colour) => {
-    if (colour === mover) return false;
-    const onTile = game.pieces[colour].filter(
-      (step) => step >= 0 && step <= LAST_TRACK_STEP && absoluteTile(colour, step) === tile,
-    ).length;
-    return onTile >= 2;
-  });
-}
-
-/**
- * True when a token moving from `from` to `to` lands on or passes over a blockade of another colour.
- * A yard deploy (from = YARD_STEP) lands on the start tile, so it is checked there too.
- */
-function pathBlocked(game: LudoGame, mover: Colour, from: number, to: number): boolean {
-  const last = Math.min(to, LAST_TRACK_STEP);
-  for (let step = Math.max(from + 1, 0); step <= last; step += 1) {
-    if (isBlockedByStack(game, mover, absoluteTile(mover, step))) return true;
-  }
-  return false;
-}
-
-/** Every move the current player could make: their unused dice, plus a free yard deploy when offered. */
+/** Every move the current player could make with their unused dice. */
 export function getLegalMoves(game: LudoGame, playerId: string): LegalMove[] {
-  if (game.phase === "GAME_OVER" || playerId !== currentPlayerId(game)) return [];
+  if (game.phase === "GAME_OVER" || game.dice === null || playerId !== currentPlayerId(game)) {
+    return [];
+  }
   const colours = coloursOf(game, playerId);
   const moves: LegalMove[] = [];
-  if (game.dice !== null) {
-    for (const die of [0, 1] as const) {
-      if (game.used[die]) continue;
-      const value = game.dice[die];
-      for (const colour of colours) {
-        game.pieces[colour].forEach((step, token) => {
-          const to = targetStep(step, value);
-          if (to === null) return;
-          if (pathBlocked(game, colour, step, to)) return;
-          moves.push({ colour, token, to, die });
-        });
-      }
-    }
-  }
-  if (game.freeDeploy) {
+  for (const die of [0, 1] as const) {
+    if (game.used[die]) continue;
+    const value = game.dice[die];
     for (const colour of colours) {
       game.pieces[colour].forEach((step, token) => {
-        if (step !== YARD_STEP || pathBlocked(game, colour, YARD_STEP, 0)) return;
-        moves.push({ colour, token, to: 0, die: null });
+        const to = targetStep(step, value);
+        if (to === null) return;
+        moves.push({ colour, token, to, die });
       });
     }
   }
@@ -220,8 +176,6 @@ function nextTurn(game: LudoGame): LudoGame {
     dice: null,
     used: [false, false],
     bonus: null,
-    consecutiveDoubleSixes: 0,
-    freeDeploy: false,
   };
 }
 
@@ -233,7 +187,6 @@ function bonusRoll(game: LudoGame): LudoGame {
     dice: null,
     used: [false, false],
     bonus: null,
-    freeDeploy: false,
   };
 }
 
@@ -241,7 +194,7 @@ function withResult(game: LudoGame, events: LudoEvent[]): LudoResult {
   return { ok: true, game, events };
 }
 
-/** Ends the roll once no unused die can move: a bonus rolls the seat again, otherwise the turn passes. */
+/** Ends the roll once no unused die can move: a double six rolls the seat again, otherwise the turn passes. */
 function settleRoll(game: LudoGame, playerId: string, events: LudoEvent[]): LudoResult {
   if (game.bonus !== null) {
     events.push({ type: "BONUS_ROLL", playerId, reason: game.bonus });
@@ -252,7 +205,7 @@ function settleRoll(game: LudoGame, playerId: string, events: LudoEvent[]): Ludo
   return withResult(passed, events);
 }
 
-/** Rolls both dice for the current player. Three double sixes in a row forfeit the turn. */
+/** Rolls both dice for the current player. */
 export function rollDice(game: LudoGame, playerId: string, values: DiceValues): LudoResult {
   if (game.phase !== "WAITING_FOR_ROLL") return fail("INVALID_PHASE");
   if (playerId !== currentPlayerId(game)) return fail("INVALID_TURN");
@@ -261,24 +214,12 @@ export function rollDice(game: LudoGame, playerId: string, values: DiceValues): 
   }
 
   const doubleSix = values[0] === SIX && values[1] === SIX;
-  const streak = doubleSix ? game.consecutiveDoubleSixes + 1 : 0;
   const rolled: LudoEvent = { type: "ROLLED", playerId, values };
-  if (streak === TRIPLE_DOUBLE_SIX) {
-    const passed = nextTurn({ ...game, dice: values });
-    return withResult(passed, [
-      rolled,
-      { type: "TRIPLE_DOUBLE_SIX_FORFEIT", playerId },
-      { type: "TURN_PASSED", playerId, nextPlayerId: currentPlayerId(passed) },
-    ]);
-  }
-
   const rolledGame: LudoGame = {
     ...game,
     dice: values,
     used: [false, false],
     bonus: doubleSix ? "DOUBLE_SIX" : null,
-    consecutiveDoubleSixes: streak,
-    freeDeploy: false,
   };
   if (getLegalMoves(rolledGame, playerId).length === 0) {
     return withResult({ ...rolledGame, phase: "NO_LEGAL_MOVES" }, [
@@ -289,7 +230,7 @@ export function rollDice(game: LudoGame, playerId: string, values: DiceValues): 
   return withResult({ ...rolledGame, phase: "WAITING_FOR_MOVE" }, [rolled]);
 }
 
-/** Called after NO_LEGAL_MOVES_DELAY_MS: a bonus rolls again, otherwise the turn passes. */
+/** Called after NO_LEGAL_MOVES_DELAY_MS: a double six rolls again, otherwise the turn passes. */
 export function completeNoLegalMoves(game: LudoGame, playerId: string): LudoResult {
   if (game.phase !== "NO_LEGAL_MOVES") return fail("INVALID_PHASE");
   if (playerId !== currentPlayerId(game)) return fail("INVALID_TURN");
@@ -297,15 +238,15 @@ export function completeNoLegalMoves(game: LudoGame, playerId: string): LudoResu
 }
 
 /**
- * Moves one token with one of the two dice (die 0 or 1), or with the free yard deploy (die null).
- * Without `die`, the first legal move for that token is used.
+ * Moves one token with one of the two dice (die 0 or 1). Without `die`, the first legal move for
+ * that token is used.
  */
 export function moveToken(
   game: LudoGame,
   playerId: string,
   colour: Colour,
   token: number,
-  die?: 0 | 1 | null,
+  die?: 0 | 1,
 ): LudoResult {
   if (game.phase !== "WAITING_FOR_MOVE") return fail("INVALID_PHASE");
   if (playerId !== currentPlayerId(game)) return fail("INVALID_TURN");
@@ -324,13 +265,11 @@ export function moveToken(
   };
   pieces[colour][token] = move.to;
   const used: [boolean, boolean] = [...game.used];
-  if (move.die !== null) used[move.die] = true;
+  used[move.die] = true;
   const events: LudoEvent[] = [
     { type: "MOVED", playerId, colour, token, die: move.die, from, to: move.to },
   ];
 
-  let bonus = game.bonus;
-  let captured = false;
   if (move.to <= LAST_TRACK_STEP) {
     const tile = absoluteTile(colour, move.to);
     if (!isSafeTile(tile)) {
@@ -339,7 +278,6 @@ export function moveToken(
         pieces[victim].forEach((step, victimToken) => {
           if (step >= 0 && step <= LAST_TRACK_STEP && absoluteTile(victim, step) === tile) {
             pieces[victim][victimToken] = YARD_STEP;
-            captured = true;
             events.push({
               type: "CAPTURED",
               playerId,
@@ -353,11 +291,8 @@ export function moveToken(
       }
     }
   }
-  // A capture offers a free deploy; any die played (or the deploy itself) ends that offer.
-  const freeDeploy = captured && move.die !== null;
-  if (captured && freeDeploy) events.push({ type: "FREE_DEPLOY_OFFERED", playerId });
 
-  const updated: LudoGame = { ...game, pieces, used, bonus, freeDeploy };
+  const updated: LudoGame = { ...game, pieces, used };
   if (
     coloursOf(updated, playerId).every((item) => pieces[item].every((step) => step === FINISH_STEP))
   ) {
@@ -369,16 +304,6 @@ export function moveToken(
     return withResult({ ...updated, phase: "WAITING_FOR_MOVE" }, events);
   }
   return settleRoll(updated, playerId, events);
-}
-
-/** The player turns down a free yard deploy after a capture. If no die can be played, the roll ends. */
-export function declineFreeDeploy(game: LudoGame, playerId: string): LudoResult {
-  if (game.phase !== "WAITING_FOR_MOVE") return fail("INVALID_PHASE");
-  if (playerId !== currentPlayerId(game)) return fail("INVALID_TURN");
-  if (!game.freeDeploy) return fail("ILLEGAL_MOVE");
-  const updated: LudoGame = { ...game, freeDeploy: false };
-  if (getLegalMoves(updated, playerId).length > 0) return withResult(updated, []);
-  return settleRoll(updated, playerId, []);
 }
 
 /**

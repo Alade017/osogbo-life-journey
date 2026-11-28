@@ -46,11 +46,14 @@ vi.mock("@/lib/game", () => ({
     myJobs: () => ({ queryKey: ["myJobs"] }),
   },
 }));
+vi.mock("@/components/game/CharacterWardrobePanel", () => ({
+  CharacterWardrobePanel: () => <div data-testid="character-wardrobe">Character wardrobe editor</div>,
+}));
+vi.mock("@/components/game/GameInventoryPanel", () => ({
+  GameInventoryPanel: () => <div data-testid="inventory-panel">Saved inventory content</div>,
+}));
 vi.mock("@/components/3d/CharacterPreview", () => ({
   CharacterPreview: () => <div data-testid="character-preview" />,
-}));
-vi.mock("@/routes/_authenticated/_game/settings", () => ({
-  SettingsPage: () => <div>Embedded settings content</div>,
 }));
 
 import { PlayerLifeHub } from "@/components/game/PlayerLifeHub";
@@ -89,12 +92,11 @@ it("renders saved mission, skill, relationship, and current employment records",
   expect(screen.getByText("Career level 3")).toBeInTheDocument();
 });
 
-it("opens directly on Settings without rendering the Profile panel", () => {
-  render(<PlayerLifeHub player={player} open initialTab="settings" onClose={vi.fn()} />);
-
-  expect(screen.getByRole("button", { name: "Settings" })).toHaveAttribute("aria-pressed", "true");
-  expect(screen.getByText("Embedded settings content")).toBeInTheDocument();
-  expect(screen.queryByText("Your equipped appearance is shared with your in-world character.")).not.toBeInTheDocument();
+it("does not expose Settings inside the player hub", () => {
+  render(<PlayerLifeHub player={player} open onClose={vi.fn()} />);
+  expect(screen.queryByRole("button", { name: "Settings" })).not.toBeInTheDocument();
+  expect(screen.getByText("Your equipped appearance is shared with your in-world character.")).toBeInTheDocument();
+  expect(screen.getByTestId("character-wardrobe")).toBeInTheDocument();
 });
 
 it("does not let the synthetic click after a downward drag undo sheet collapse", () => {
@@ -121,10 +123,17 @@ it("moves keyboard focus into the hub and keeps Tab navigation inside it", () =>
 
   const close = screen.getByRole("button", { name: "Close player hub" });
   const handle = screen.getByRole("button", { name: "Expand player hub" });
-  const lastTab = screen.getByRole("button", { name: "Settings" });
+  const lastTab = screen.getByRole("button", { name: "Career" });
   expect(document.activeElement).toBe(close);
 
   lastTab.focus();
   fireEvent.keyDown(lastTab, { key: "Tab" });
   expect(document.activeElement).toBe(handle);
+});
+
+it("opens Inventory as a tab inside the player hub", async () => {
+  render(<PlayerLifeHub player={player} open initialTab="profile" onClose={vi.fn()} />);
+  fireEvent.click(screen.getByRole("button", { name: "Inventory" }));
+  expect(await screen.findByTestId("inventory-panel")).toHaveTextContent("Saved inventory content");
+  expect(screen.getByRole("dialog", { name: "Player life hub" })).toBeInTheDocument();
 });
