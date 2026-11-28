@@ -34,7 +34,7 @@ export function civicServiceNavigation(fixtures: readonly VenueFixture[]) {
     const verticalPartition =
       Math.abs(x - 0.8) <= 0.06 + PLAYER_CLEARANCE &&
       z >= -5.5 - PLAYER_CLEARANCE &&
-      z <= -2.95 + PLAYER_CLEARANCE;
+      z <= -2.7 + PLAYER_CLEARANCE;
     const horizontalPartition =
       Math.abs(z + 2.2) <= 0.06 + PLAYER_CLEARANCE &&
       x >= 0.85 - PLAYER_CLEARANCE &&
