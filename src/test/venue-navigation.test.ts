@@ -18,6 +18,14 @@ describe("generic venue fixture navigation", () => {
     expect(path!.at(-1)).not.toEqual(fixture.position);
   });
 
+  it("snaps floor taps near fixtures and walls to a walkable point", () => {
+    const target = navigation.nearest([-2, -1]);
+    expect(target).not.toBeNull();
+    expect(navigation.canWalk(target!)).toBe(true);
+    expect(navigation.nearest([Number.NaN, 0])).toBeNull();
+    expect(navigation.nearest([100, 100])).toBeNull();
+  });
+
   it("does not route through fixture footprints or outside the venue shell", () => {
     expect(navigation.canWalk([-2, -1])).toBe(false);
     expect(navigation.canWalk([0, 4])).toBe(false);
