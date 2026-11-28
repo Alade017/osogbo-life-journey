@@ -56,6 +56,23 @@ it("reads bounded inbox/host pages without a caller account parameter", async ()
   await listPartyInvitations(user, event);
   expect(rpc).toHaveBeenLastCalledWith("get_party_invitations", { p_event_id: event, p_limit: 20 });
 });
+it("accepts the event type and Aso Ebi colour returned by the database", async () => {
+  rpc.mockResolvedValueOnce({
+    data: {
+      serverTime: stamp,
+      items: [{ ...row, eventType: "osun_festival", asoEbiColour: "Emerald & gold" }],
+      nextCursor: null,
+    },
+  });
+  const page = await listPartyInvitations(user);
+  expect(page.items[0]!.eventType).toBe("osun_festival");
+  expect(page.items[0]!.asoEbiColour).toBe("Emerald & gold");
+});
+
+it("still accepts rows from before the event type and colour existed", async () => {
+  expect((await listPartyInvitations(user)).items[0]!.eventType).toBeUndefined();
+});
+
 it("rejects malformed cursors before calling the database", async () => {
   await expect(listPartyInvitations(user, event, "bad")).rejects.toThrow("Invalid invitation page");
   expect(rpc).not.toHaveBeenCalled();
