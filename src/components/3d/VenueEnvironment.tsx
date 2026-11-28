@@ -5,6 +5,7 @@ import { useAnimations, useGLTF } from "@react-three/drei";
 import { Box3, Group, LoopOnce, Vector3 } from "three";
 import type { VenueFixture } from "@/lib/location-venue-designs";
 import { startAnimationInvalidation } from "@/lib/animation-invalidation";
+import { environmentModelToStage, environmentStageToModel } from "@/game/environment-navigation";
 
 /** The venue stage's walkable footprint, in metres. Models are scaled down to fit it, never up past 1.25×. */
 const STAGE_FOOTPRINT = { x: 9, z: 7 };
@@ -97,7 +98,7 @@ export function VenueEnvironment({
         position={[0, 0.035, 0]}
         onClick={(event: ThreeEvent<MouseEvent>) => {
           event.stopPropagation();
-          if (event.delta <= 5) onWalk([event.point.x / scaleX, event.point.z / scaleZ]);
+          if (event.delta <= 5) onWalk(environmentModelToStage([event.point.x, event.point.z], scaleX, scaleZ));
         }}
       >
         <planeGeometry args={[holder.half.x * 2, holder.half.z * 2]} />
@@ -105,8 +106,7 @@ export function VenueEnvironment({
       </mesh>
       {fixtures.map((fixture) => {
         // Features are laid out for the full stage; scale them into the model's own footprint.
-        const x = fixture.position[0] * (holder.half.x / (STAGE_FOOTPRINT.x / 2));
-        const z = fixture.position[1] * (holder.half.z / (STAGE_FOOTPRINT.z / 2));
+        const [x, z] = environmentStageToModel(fixture.position, scaleX, scaleZ);
         const active = fixture.id === activeId;
         return (
           <group key={fixture.id}>
