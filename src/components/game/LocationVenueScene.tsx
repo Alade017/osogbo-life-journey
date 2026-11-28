@@ -70,6 +70,8 @@ import {
 } from "@/lib/venue-furniture-lifecycle";
 import { VenueFurnitureStatus } from "./VenueFurnitureStatus";
 import { getVenueSceneIdentity } from "@/lib/venue-scene-identity";
+import { useHouseMovement } from "@/hooks/use-house-movement";
+import { venueNavigation } from "@/game/venue-navigation";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
 
@@ -212,6 +214,15 @@ function BasicLocationVenueScene({
       ),
     [bankLayout, venue.sceneBounds, venue.sceneSize, venue.fixtures],
   );
+  const venueWidth =
+    bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11;
+  const venueDepth =
+    bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8;
+  const walker = useHouseMovement(slug, playerSpawn);
+  const navigation = useMemo(
+    () => venueNavigation(venue.fixtures, venueWidth, venueDepth),
+    [venue.fixtures, venueWidth, venueDepth],
+  );
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
   const shutterOpen = venue.environment?.trading
@@ -219,6 +230,9 @@ function BasicLocationVenueScene({
     : undefined;
   const [preferredMode, setPreferredMode] = useState<TravelMode | null>(null);
   const [selectedFixture, setSelectedFixture] = useState(venue.fixtures[0]?.id ?? "");
+  const [arrivedFixture, setArrivedFixture] = useState<string | null>(null);
+  const [movementMessage, setMovementMessage] = useState("Choose a feature to approach it.");
+  const movementRequest = useRef(0);
   const [sceneStatus, setSceneStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const [slowLoading, setSlowLoading] = useState(false);
   const [furnitureRegistry, setFurnitureRegistry] = useState<FurnitureRegistry>(() => new Map());
@@ -250,6 +264,30 @@ function BasicLocationVenueScene({
   }, []);
   const selected =
     venue.fixtures.find((fixture) => fixture.id === selectedFixture) ?? venue.fixtures[0];
+  const handleFixtureSelect = useCallback(
+    (fixtureId: string) => {
+      setSelectedFixture(fixtureId);
+      if (sceneKind !== "generic") return;
+      const fixture = venue.fixtures.find((item) => item.id === fixtureId);
+      if (!fixture) return;
+      const ticket = ++movementRequest.current;
+      walker.cancel();
+      setArrivedFixture(null);
+      const [x, , z] = walker.positionRef.current;
+      const path = navigation.approach([x, z], fixture);
+      if (!path) {
+        setMovementMessage("That feature is blocked. Try another approach.");
+        return;
+      }
+      setMovementMessage(`Walking to ${fixture.label}…`);
+      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz])).then((arrived) => {
+        if (ticket !== movementRequest.current) return;
+        setArrivedFixture(arrived ? fixtureId : null);
+        setMovementMessage(arrived ? `You reached ${fixture.label}.` : "Movement stopped.");
+      });
+    },
+    [sceneKind, venue.fixtures, walker, navigation],
+  );
   const selectedAction =
     sceneKind === "bank" && venue.bankInterior
       ? { label: "Open bank services", href: `/bank/${slug}` }
@@ -331,7 +369,7 @@ function BasicLocationVenueScene({
                     variant={venue.civicService}
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
                     floorColor={venue.floorColor}
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
@@ -436,9 +474,9 @@ function BasicLocationVenueScene({
                     gender={character.gender}
                     appearance={playerAppearance}
                     equipment={playerEquipment}
-                    position={playerSpawn}
-                    facing="north"
-                    animation="idle"
+                    position={sceneKind === "generic" ? walker.position : playerSpawn}
+                    facing={sceneKind === "generic" ? walker.facing : "north"}
+                    animation={sceneKind === "generic" && walker.walking ? "walk" : "idle"}
                   />
                 )}
                 <WorldSceneReady onReady={handleSceneReady} />
@@ -573,7 +611,7 @@ function BasicLocationVenueScene({
                     key={fixture.id}
                     type="button"
                     aria-pressed={fixture.id === selectedFixture}
-                    onClick={() => setSelectedFixture(fixture.id)}
+                    onClick={() => handleFixtureSelect(fixture.id)}
                     className="rounded-lg border border-edge bg-card px-3 py-2 text-sm font-semibold hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                     style={
                       fixture.id === selectedFixture
@@ -590,10 +628,15 @@ function BasicLocationVenueScene({
               </div>
             </div>
             <div className="space-y-2">
+              {sceneKind === "generic" && (
+                <p className="text-xs text-muted-foreground" role="status">
+                  {movementMessage}
+                </p>
+              )}
               <p className="min-h-12 rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
                 {selected?.detail}
               </p>
-              {selectedAction ? (
+              {selectedAction && (sceneKind !== "generic" || arrivedFixture === selectedFixture) ? (
                 <a
                   href={selectedAction.href}
                   className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
