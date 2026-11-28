@@ -39,8 +39,10 @@ export function BankInteriorScene({
         onWalk={(point) => onWalk([point[0], point[2]])}
         onSelect={(id) => {
           const target = world.fixtures.find((item) => item.id === id);
-          const fixture = fixtures.find(
-            (item) => item.kind === (target?.action === "seat" ? "seat" : "counter"),
+          const fixture = fixtures.find((item) =>
+            target?.id === "ticket"
+              ? item.id.includes("info") || item.id.includes("kiosk")
+              : item.kind === (target?.action === "seat" ? "seat" : "counter"),
           );
           if (fixture && (target?.action === "seat" || target?.action === "teller"))
             onSelect(fixture.id);
