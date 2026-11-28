@@ -250,6 +250,16 @@ function BasicLocationVenueScene({
   }, []);
   const selected =
     venue.fixtures.find((fixture) => fixture.id === selectedFixture) ?? venue.fixtures[0];
+  const selectedAction =
+    sceneKind === "bank" && venue.bankInterior
+      ? { label: "Open bank services", href: `/bank/${slug}` }
+      : sceneKind === "market" || sceneKind === "retail"
+        ? { label: "Browse available goods", href: "/market" }
+        : sceneKind === "workplace"
+          ? { label: "View jobs and shifts", href: "/jobs" }
+          : sceneKind === "campus"
+            ? { label: "Explore courses", href: "/education" }
+            : null;
 
   useEffect(() => {
     setSelectedFixture((current) =>
@@ -579,9 +589,30 @@ function BasicLocationVenueScene({
                 ))}
               </div>
             </div>
-            <p className="min-h-12 rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
-              {selected?.detail}
-            </p>
+            <div className="space-y-2">
+              <p className="min-h-12 rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
+                {selected?.detail}
+              </p>
+              {selectedAction ? (
+                <Link
+                  to={selectedAction.href}
+                  className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  {selectedAction.label}
+                </Link>
+              ) : sceneKind === "transport" ? (
+                <a
+                  href={transportMapHref(preferredMode)}
+                  className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  Choose destination and transport
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Information only — no direct action is configured for this feature yet.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </details>
