@@ -15,7 +15,7 @@ describe("retail gallery navigation", () => {
   const navigation = retailNavigation(fixtures);
 
   it.each(fixtures)("finds a collision-free approach to $label", (fixture) => {
-    const path = navigation.approach([0, 5.5], fixture);
+    const path = navigation.approach([0, 6.15], fixture);
     expect(path).not.toBeNull();
     expect(path!.every(navigation.canWalk)).toBe(true);
     expect(path!.at(-1)).not.toEqual(fixture.position);
@@ -32,6 +32,8 @@ describe("retail gallery navigation", () => {
     expect(navigation.canWalk([0, -7])).toBe(false);
     expect(navigation.canWalk([-8, 0])).toBe(false);
     expect(navigation.canWalk([8, 0])).toBe(false);
+    expect(navigation.canWalk([2.4, 5.5])).toBe(false);
+    expect(navigation.canWalk([5.6, 5.5])).toBe(false);
   });
 
   it("resolves a floor tap on a fixture to a nearby walkable point", () => {
