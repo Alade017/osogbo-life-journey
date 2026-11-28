@@ -152,13 +152,11 @@ function Rows({ layout }: { layout: WorshipLayout }) {
 
 /** The visitor. While praying they settle down and lean forward; the pose eases in and out. */
 function Visitor({
-  layout,
   praying,
   appearance,
   gender,
   equipment,
 }: {
-  layout: WorshipLayout;
   praying: boolean;
   appearance: Appearance;
   gender: string;
@@ -243,7 +241,6 @@ export function WorshipInterior3D({
         );
       })}
       <Visitor
-        layout={layout}
         praying={praying}
         appearance={playerAppearance}
         gender={playerGender}
