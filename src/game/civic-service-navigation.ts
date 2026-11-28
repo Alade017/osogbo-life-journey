@@ -1,7 +1,7 @@
 import type { VenueFixture } from "@/lib/location-venue-designs";
 import { findGridWalkPath, type WalkPoint } from "./grid-walk-path";
 
-const BOUNDS = { halfWidth: 7, halfDepth: 5.5 } as const;
+const BOUNDS = { halfWidth: 6.92, halfDepth: 5.42 } as const;
 const PLAYER_CLEARANCE = 0.28;
 const APPROACH_GAP = 0.48;
 const FOOTPRINTS: Record<VenueFixture["kind"], { width: number; depth: number }> = {
@@ -19,11 +19,17 @@ export const CIVIC_SERVICE_SPAWN: WalkPoint = [0, 3.8];
 
 /** Mirrors the civic scene shell and keeps the staff-only office behind its L-shaped partition. */
 export function civicServiceNavigation(fixtures: readonly VenueFixture[]) {
-  const obstacles = fixtures.map((fixture) => ({
-    x: fixture.position[0],
-    z: fixture.position[1],
-    ...FOOTPRINTS[fixture.kind],
-  }));
+  const obstacles = [
+    ...fixtures.map((fixture) => ({
+      x: fixture.position[0],
+      z: fixture.position[1],
+      ...FOOTPRINTS[fixture.kind],
+    })),
+    // Entrance threshold and the two planters are rendered into the civic shell.
+    { x: 0, z: 5.1, width: 2.4, depth: 0.65 },
+    { x: -6.1, z: 4.4, width: 0.9, depth: 0.9 },
+    { x: 6.1, z: 4.4, width: 0.9, depth: 0.9 },
+  ];
 
   const canWalk = ([x, z]: WalkPoint) => {
     if (
