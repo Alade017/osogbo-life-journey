@@ -280,7 +280,7 @@ function BasicLocationVenueScene({
         return;
       }
       setMovementMessage(`Walking to ${fixture.label}…`);
-      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz])).then((arrived) => {
+      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
         if (ticket !== movementRequest.current) return;
         setArrivedFixture(arrived ? fixtureId : null);
         setMovementMessage(arrived ? `You reached ${fixture.label}.` : "Movement stopped.");
