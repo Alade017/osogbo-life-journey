@@ -2,6 +2,7 @@ import { WorldCamera } from "@/components/3d/WorldScene";
 import { useEffect, useRef, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { toast } from "sonner";
 import {
   OsunMallStreet3D,
@@ -50,6 +51,8 @@ export function OsunMallStreet({
   const [riderOpen, setRiderOpen] = useState(false);
   const [destination, setDestination] = useState("");
   const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery(q.equipment());
+  const playerEquipment = normalizeEquippedItems(equipment);
   const { data: wallet } = useQuery(q.wallet());
 
   const fareQuery = useQuery({
@@ -190,6 +193,7 @@ export function OsunMallStreet({
           <OsunMallStreet3D
             sim={sim}
             playerAppearance={playerAppearance}
+            playerEquipment={playerEquipment}
             playerGender={character?.gender ?? "nonbinary"}
             onWalk={onWalk}
             onEnterMall={onEnterMall}
