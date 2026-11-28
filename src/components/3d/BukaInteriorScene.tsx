@@ -15,13 +15,18 @@ function CookingPot() {
   </group>;
 }
 /** Decorative kitchen equipment never claims menu stock, cooking progress or food availability. */
-export function BukaInteriorScene({ variant = "buka", fixtures, selected, onSelect, floorColor, wallColor, accentColor }: {
+export function BukaInteriorScene({ variant = "buka", fixtures, selected, onSelect, onWalk, floorColor, wallColor, accentColor }: {
   variant?: FoodVenueVariant;
   fixtures: readonly VenueFixture[]; selected: string; onSelect: (id: string) => void;
   floorColor: string; wallColor: string; accentColor: string;
+  onWalk: (point: readonly [number, number]) => void;
 }) {
   const layout = FOOD_VENUE_LAYOUTS[variant];
   return <group name="buka-canteen-interior">
+    <mesh position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]} onClick={(event) => { event.stopPropagation(); if (event.delta <= 5) onWalk([event.point.x, event.point.z]); }}>
+      <planeGeometry args={[layout.width, layout.depth]} />
+      <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+    </mesh>
     <Block at={[0, -0.1, 0]} size={[layout.width, 0.2, layout.depth]} tone="tileLight" color={floorColor} />
     <Block at={[0, 1.6, -layout.depth / 2]} size={[layout.width, 3.2, 0.16]} color={wallColor} />
     <Block at={[-layout.width / 2, 1.6, 0]} size={[0.16, 3.2, layout.depth]} color={wallColor} />

@@ -135,7 +135,7 @@ vi.mock("@/routes/_authenticated/_game/market", () => ({
   MarketPage: () => <div>Market offers</div>,
 }));
 vi.mock("@/components/game/PlayerMovementControls", () => ({
-  PlayerMovementControls: () => <div>Movement controls</div>,
+  PlayerMovementControls: () => <div data-testid="movement-controls">Movement controls</div>,
 }));
 vi.mock("@/components/game/R3FNeighborhoodSurface", () => ({
   R3FNeighborhoodSurface: (props: {
@@ -307,6 +307,7 @@ it("loads Oja-Oba's confirmed room and correct origin without fetching or exposi
   state.location = "market";
   show();
   await screen.findByText(/Tap the ground.*walk/);
+  await screen.findByTestId("movement-controls");
   await screen.findByText("R3F neighbourhood");
   expect(state.join).toHaveBeenCalledWith("market");
   expect(screen.getByRole("heading", { name: "Oja-Oba Market neighbourhood" })).toBeInTheDocument();

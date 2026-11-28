@@ -2,6 +2,7 @@ import { useEffect, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
+import type { AvatarEquipment } from "@/components/game/Avatar";
 import { shopperLook } from "@/game/mall-appearance";
 import type { WorshipLayout } from "@/game/worship-layouts";
 import { WorldCharacter } from "./WorldCharacter";
@@ -151,47 +152,48 @@ function Rows({ layout }: { layout: WorshipLayout }) {
 
 /** The visitor. While praying they settle down and lean forward; the pose eases in and out. */
 function Visitor({
-  layout,
   praying,
   appearance,
   gender,
+  equipment,
+  position,
+  facing,
+  walking,
 }: {
-  layout: WorshipLayout;
   praying: boolean;
   appearance: Appearance;
   gender: string;
+  equipment: readonly AvatarEquipment[];
+  position: readonly [number, number, number];
+  facing: "north" | "south" | "east" | "west";
+  walking: boolean;
 }) {
   const { invalidate } = useThree();
   const group = useRef<Group>(null);
   const pose = useRef(0);
-  const [px, pz] = layout.prayerSpot;
-  const [sx, sz] = layout.spawn;
 
   useEffect(() => {
     invalidate();
-  }, [praying, sx, sz, px, pz, invalidate]);
+  }, [praying, position, invalidate]);
 
   useFrame((_, delta) => {
     const target = praying ? 1 : 0;
     if (pose.current === target) return;
-
     pose.current = nextPrayerPose(pose.current, target, delta);
-
-    const x = sx + (px - sx) * pose.current;
-    const z = sz + (pz - sz) * pose.current;
-    group.current?.position.set(x, -0.12 * pose.current, z);
+    group.current?.position.set(position[0], position[1] - 0.12 * pose.current, position[2]);
     if (group.current) group.current.rotation.x = 0.35 * pose.current;
-
     invalidate();
   });
+
   return (
-    <group ref={group} position={[sx, 0, sz]}>
+    <group ref={group} position={[position[0], position[1], position[2]]}>
       <WorldCharacter
         name="You"
         gender={gender}
         appearance={appearance}
-        facing="north"
-        animation="idle"
+        equipment={equipment}
+        facing={facing}
+        animation={walking ? "walk" : "idle"}
         position={[0, 0, 0]}
       />
     </group>
@@ -203,16 +205,37 @@ export function WorshipInterior3D({
   praying,
   playerAppearance,
   playerGender,
+  playerEquipment,
+  playerPosition,
+  playerFacing,
+  playerWalking,
+  onWalk,
 }: {
   layout: WorshipLayout;
   praying: boolean;
   playerAppearance: Appearance;
   playerGender: string;
+  playerEquipment: readonly AvatarEquipment[];
+  playerPosition: readonly [number, number, number];
+  playerFacing: "north" | "south" | "east" | "west";
+  playerWalking: boolean;
+  onWalk: (point: readonly [number, number]) => void;
 }) {
   return (
     <>
       <WorldLighting size={Math.max(layout.hall.width, layout.hall.depth)} />
       <Shell layout={layout} />
+      <mesh
+        position={[0, 0.025, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (event.delta <= 5 && !praying) onWalk([event.point.x, event.point.z]);
+        }}
+      >
+        <planeGeometry args={[layout.hall.width, layout.hall.depth]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
       <Focal layout={layout} />
       <Rows layout={layout} />
       {layout.columns.map(([x, z]) => (
@@ -237,10 +260,13 @@ export function WorshipInterior3D({
         );
       })}
       <Visitor
-        layout={layout}
         praying={praying}
         appearance={playerAppearance}
         gender={playerGender}
+        equipment={playerEquipment}
+        position={playerPosition}
+        facing={playerFacing}
+        walking={playerWalking}
       />
     </>
   );

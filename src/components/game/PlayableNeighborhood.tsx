@@ -9,6 +9,7 @@ import {
   useState,
 } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
+import { PlayerMovementControls } from "@/components/game/PlayerMovementControls";
 import { HomeLink } from "@/components/game/HomeLink";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
@@ -452,6 +453,7 @@ export function PlayableNeighborhood() {
   const autoWalkRouteRef = useRef<{ route: WorldPoint[]; index: number } | null>(null);
   const zoneModalOpen = zoneState.activeZoneId !== null || zoneState.activeNpcId !== null;
   const anyModalOpen = activePanel !== null || zoneModalOpen || compoundOpen;
+
   const player = players.find((candidate) => candidate.sessionId === sessionId);
   const playerRef = useRef(player);
   playerRef.current = player;
@@ -1847,6 +1849,24 @@ export function PlayableNeighborhood() {
                 </DialogContent>
               </Dialog>
               <div className="neighborhood-controls-row">
+                {connectionState === "connected" && (
+                  <PlayerMovementControls
+                    keyboardEnabled={false}
+                    onDirectionChange={(next) => {
+                      if (next.size > 0) {
+                        autoWalkRouteRef.current = null;
+                        groundTargetRef.current = null;
+                        setGroundTarget(null);
+                        setPendingTargetId(null);
+                        dispatchZone(setPendingZoneId(null));
+                        setHomeBound(false);
+                        setHasWalked(true);
+                      }
+                      setDirections(next);
+                    }}
+                    onFollowChange={(enabled) => scene?.setFollow(enabled)}
+                  />
+                )}
                 {district?.personalHome && (
                   <button
                     type="button"

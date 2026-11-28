@@ -1,4 +1,10 @@
 import { useRenderQuality } from "@/hooks/use-render-quality";
+import { useQuery } from "@tanstack/react-query";
+import { q } from "@/lib/game";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
+import { parseSavedAppearance } from "@/game/character-animation";
+import type { Appearance } from "@/game/avatar-appearance";
+import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { WORLD_RENDER_QUALITY } from "@/components/3d/render-quality";
 import { Link } from "@tanstack/react-router";
 import { BANK_INTERIORS } from "@/game/bank-interiors";
@@ -64,8 +70,44 @@ import {
 } from "@/lib/venue-furniture-lifecycle";
 import { VenueFurnitureStatus } from "./VenueFurnitureStatus";
 import { getVenueSceneIdentity } from "@/lib/venue-scene-identity";
+import { useHouseMovement } from "@/hooks/use-house-movement";
+import { venueNavigation } from "@/game/venue-navigation";
+import { marketNavigation } from "@/game/market-navigation";
+import { createEmbeddedBankNavigation } from "@/game/embedded-bank-navigation";
+import { workplaceNavigation, workplaceSpawn } from "@/game/workplace-navigation";
+import { civicServiceNavigation, CIVIC_SERVICE_SPAWN } from "@/game/civic-service-navigation";
+import { transitParkNavigation, TRANSIT_PARK_SPAWN } from "@/game/transit-park-navigation";
+import { foodVenueNavigation } from "@/game/food-venue-navigation";
+import { retailNavigation } from "@/game/retail-navigation";
+import { environmentNavigation, environmentStageToModel } from "@/game/environment-navigation";
 
 const SCENE_START_TIMEOUT_MS = 5_000;
+
+function getVenuePlayerSpawn(
+  width: number,
+  depth: number,
+  fixtures: readonly VenueFixture[],
+): [number, number, number] {
+  const xLimit = Math.max(0.8, width / 2 - 0.85);
+  const zLimit = Math.max(0.8, depth / 2 - 0.85);
+  const candidates: Array<[number, number]> = [];
+  for (const z of [zLimit, zLimit - 0.9, zLimit - 1.8, 0.4, -0.4]) {
+    for (const x of [0, -0.9, 0.9, -1.8, 1.8]) {
+      if (Math.abs(x) <= xLimit) candidates.push([x, Math.max(-zLimit, z)]);
+    }
+  }
+  const clearance = (point: [number, number]) =>
+    fixtures.reduce((nearest, fixture) => {
+      const dx = point[0] - fixture.position[0];
+      const dz = point[1] - fixture.position[1];
+      return Math.min(nearest, Math.hypot(dx, dz));
+    }, Number.POSITIVE_INFINITY);
+  const preferred = candidates.find((point) => clearance(point) >= 1.35);
+  const selected = preferred ?? candidates.reduce((best, point) =>
+    clearance(point) > clearance(best) ? point : best,
+  );
+  return [selected[0], 0.06, selected[1]];
+}
 
 const FixtureModel = memo(function FixtureModel({
   fixture,
@@ -154,12 +196,94 @@ function BasicLocationVenueScene({
   immersive?: boolean;
 }) {
   const quality = WORLD_RENDER_QUALITY[useRenderQuality()];
+  const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery(q.equipment());
+  const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
+  const rawAppearance = character?.appearance;
+  const playerAppearance = useMemo(
+    () =>
+      rawAppearance && typeof rawAppearance === "object" && !Array.isArray(rawAppearance)
+        ? (rawAppearance as Appearance)
+        : parseSavedAppearance(rawAppearance),
+    [rawAppearance],
+  );
   const venue = useMemo(
     () => design ?? getLocationVenueDesign(slug, locationName),
     [design, slug, locationName],
   );
   const sceneKind = resolveVenueScene(slug, venue);
   const bankLayout = venue.bankInterior ? BANK_INTERIORS[venue.bankInterior] : null;
+  const venueWidth =
+    bankLayout?.width ?? venue.sceneBounds?.width ?? venue.sceneSize?.width ?? 11;
+  const venueDepth =
+    bankLayout?.depth ?? venue.sceneBounds?.depth ?? venue.sceneSize?.depth ?? 8;
+  const bankNavigation = useMemo(
+    () => (venue.bankInterior ? createEmbeddedBankNavigation(venue.bankInterior) : null),
+    [venue.bankInterior],
+  );
+  const civicNavigation = useMemo(
+    () => (sceneKind === "civic" ? civicServiceNavigation(venue.fixtures) : null),
+    [sceneKind, venue.fixtures],
+  );
+  const transitNavigation = useMemo(
+    () => (sceneKind === "transport" ? transitParkNavigation(venue.fixtures) : null),
+    [sceneKind, venue.fixtures],
+  );
+  const foodNavigation = useMemo(
+    () => sceneKind === "food" && venue.foodInterior
+      ? foodVenueNavigation(venue.foodInterior, venue.fixtures)
+      : null,
+    [sceneKind, venue.foodInterior, venue.fixtures],
+  );
+  const retailNav = useMemo(
+    () => sceneKind === "retail" ? retailNavigation(venue.fixtures) : null,
+    [sceneKind, venue.fixtures],
+  );
+  const environmentNav = useMemo(
+    () => sceneKind === "environment" ? environmentNavigation(venue.fixtures) : null,
+    [sceneKind, venue.fixtures],
+  );
+  const playerSpawn = useMemo(
+    () =>
+      sceneKind === "food" && foodNavigation
+        ? foodNavigation.spawn
+        : sceneKind === "environment" && environmentNav
+          ? [environmentNav.spawn[0], 0.06, environmentNav.spawn[1]] as [number, number, number]
+          : sceneKind === "market"
+        ? ([0, 0.06, 3.25] as [number, number, number])
+        : sceneKind === "bank" && venue.bankInterior
+          ? bankNavigation?.spawn ?? getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures)
+          : sceneKind === "workplace"
+            ? ([workplaceSpawn[0], 0.06, workplaceSpawn[1]] as [number, number, number])
+            : sceneKind === "civic"
+              ? ([CIVIC_SERVICE_SPAWN[0], 0.06, CIVIC_SERVICE_SPAWN[1]] as [number, number, number])
+              : sceneKind === "transport"
+                ? ([TRANSIT_PARK_SPAWN[0], 0.06, TRANSIT_PARK_SPAWN[1]] as [number, number, number])
+                : getVenuePlayerSpawn(venueWidth, venueDepth, venue.fixtures),
+    [sceneKind, bankNavigation, environmentNav, venueWidth, venueDepth, venue.fixtures],
+  );
+  const walker = useHouseMovement(slug, playerSpawn);
+  const navigation = useMemo(
+    () =>
+      sceneKind === "food" && foodNavigation
+        ? foodNavigation
+        : sceneKind === "retail" && retailNav
+          ? retailNav
+          : sceneKind === "environment" && environmentNav
+            ? environmentNav
+            : sceneKind === "market"
+        ? marketNavigation(venue.fixtures)
+        : sceneKind === "bank" && venue.bankInterior
+          ? bankNavigation!
+          : sceneKind === "workplace"
+            ? workplaceNavigation(venue.fixtures)
+            : sceneKind === "civic"
+              ? civicNavigation!
+              : sceneKind === "transport"
+                ? transitNavigation!
+                : venueNavigation(venue.fixtures, venueWidth, venueDepth),
+    [sceneKind, bankNavigation, civicNavigation, transitNavigation, foodNavigation, retailNav, environmentNav, venue.fixtures, venueWidth, venueDepth],
+  );
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
   const shutterOpen = venue.environment?.trading
@@ -167,9 +291,18 @@ function BasicLocationVenueScene({
     : undefined;
   const [preferredMode, setPreferredMode] = useState<TravelMode | null>(null);
   const [selectedFixture, setSelectedFixture] = useState(venue.fixtures[0]?.id ?? "");
+  const [arrivedFixture, setArrivedFixture] = useState<string | null>(null);
+  const [movementMessage, setMovementMessage] = useState("Choose a feature to approach it.");
+  const movementRequest = useRef(0);
   const [sceneStatus, setSceneStatus] = useState<"loading" | "ready" | "fallback">("loading");
   const [slowLoading, setSlowLoading] = useState(false);
   const [furnitureRegistry, setFurnitureRegistry] = useState<FurnitureRegistry>(() => new Map());
+  const [environmentScale, setEnvironmentScale] = useState<[number, number]>([1, 1]);
+  const handleEnvironmentTransform = useCallback((scaleX: number, scaleZ: number) => {
+    setEnvironmentScale((current) =>
+      current[0] === scaleX && current[1] === scaleZ ? current : [scaleX, scaleZ],
+    );
+  }, []);
 
   const furnitureReadiness = useMemo(() => {
     if (sceneKind !== "generic" || sceneStatus !== "ready") return null;
@@ -198,6 +331,51 @@ function BasicLocationVenueScene({
   }, []);
   const selected =
     venue.fixtures.find((fixture) => fixture.id === selectedFixture) ?? venue.fixtures[0];
+  const handleFixtureSelect = useCallback(
+    (fixtureId: string) => {
+      setSelectedFixture(fixtureId);
+      if (
+        sceneKind !== "generic" &&
+        sceneKind !== "market" &&
+        sceneKind !== "bank" &&
+        sceneKind !== "workplace" &&
+        sceneKind !== "civic" &&
+        sceneKind !== "transport" &&
+        sceneKind !== "healthcare" &&
+        sceneKind !== "food" &&
+        sceneKind !== "retail" &&
+        sceneKind !== "environment"
+      ) return;
+      const fixture = venue.fixtures.find((item) => item.id === fixtureId);
+      if (!fixture) return;
+      const ticket = ++movementRequest.current;
+      walker.cancel();
+      setArrivedFixture(null);
+      const [x, , z] = walker.positionRef.current;
+      const path = navigation.approach([x, z], fixture);
+      if (!path) {
+        setMovementMessage("That feature is blocked. Try another approach.");
+        return;
+      }
+      setMovementMessage(`Walking to ${fixture.label}…`);
+      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+        if (ticket !== movementRequest.current) return;
+        setArrivedFixture(arrived ? fixtureId : null);
+        setMovementMessage(arrived ? `You reached ${fixture.label}.` : "Movement stopped.");
+      });
+    },
+    [sceneKind, venue.fixtures, walker, navigation],
+  );
+  const selectedAction =
+    sceneKind === "bank" && venue.bankInterior
+      ? { label: "Open bank services", href: `/bank/${slug}` }
+      : sceneKind === "market" || sceneKind === "retail"
+        ? { label: "Browse available goods", href: "/market" }
+        : sceneKind === "workplace"
+          ? { label: "View jobs and shifts", href: "/jobs" }
+          : sceneKind === "campus"
+            ? { label: "Explore courses", href: "/education" }
+            : null;
 
   useEffect(() => {
     setSelectedFixture((current) =>
@@ -269,7 +447,24 @@ function BasicLocationVenueScene({
                     variant={venue.civicService}
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const [x, , z] = walker.positionRef.current;
+                      const target = civicNavigation?.nearest(point);
+                      const path = target ? civicNavigation?.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a public area.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
                     floorColor={venue.floorColor}
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
@@ -279,7 +474,24 @@ function BasicLocationVenueScene({
                     variant={venue.bankInterior}
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const [x, , z] = walker.positionRef.current;
+                      const target = bankNavigation?.navigation.nearest(point);
+                      const path = target ? bankNavigation?.navigation.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose another point.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
                     floorColor={venue.floorColor}
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
@@ -288,26 +500,79 @@ function BasicLocationVenueScene({
                   <TransitParkScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
                     onSelectMode={setPreferredMode}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const target = transitNavigation?.nearest(point);
+                      const [x, , z] = walker.positionRef.current;
+                      const path = target ? transitNavigation?.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a passenger area.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
                   />
                 ) : sceneKind === "healthcare" ? (
                   <HealthcareScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const path = navigation.route(
+                        [walker.positionRef.current[0], walker.positionRef.current[2]],
+                        point,
+                      );
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a clear point.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached that spot." : "Movement stopped.");
+                      });
+                    }}
                   />
                 ) : sceneKind === "market" ? (
                   <MarketTradingHall
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
                   />
                 ) : sceneKind === "workplace" ? (
                   <WorkplaceScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const path = navigation.route(
+                        [walker.positionRef.current[0], walker.positionRef.current[2]],
+                        point,
+                      );
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose another point.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached that spot." : "Movement stopped.");
+                      });
+                    }}
                     floorColor={venue.floorColor}
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
@@ -316,7 +581,24 @@ function BasicLocationVenueScene({
                   <RetailInteriorScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const target = retailNav?.nearest(point);
+                      const [x, , z] = walker.positionRef.current;
+                      const path = target ? retailNav?.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a clear gallery aisle.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
                     floorColor={venue.floorColor}
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
@@ -326,7 +608,24 @@ function BasicLocationVenueScene({
                     variant={venue.foodInterior}
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const target = foodNavigation?.nearest(point);
+                      const [x, , z] = walker.positionRef.current;
+                      const path = target ? foodNavigation?.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a clear dining aisle.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
                     floorColor={venue.floorColor}
                     wallColor={venue.wallColor}
                     accentColor={venue.accentColor}
@@ -338,7 +637,25 @@ function BasicLocationVenueScene({
                     fixtures={venue.fixtures}
                     activeId={selectedFixture}
                     accentColor={venue.accentColor}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const target = environmentNav?.nearest(point);
+                      const [x, , z] = walker.positionRef.current;
+                      const path = target ? environmentNav?.route([x, z], target) : null;
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a clear path.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached the selected point." : "Movement stopped.");
+                      });
+                    }}
+                    onTransform={handleEnvironmentTransform}
                   />
                 ) : (
                   <>
@@ -367,6 +684,26 @@ function BasicLocationVenueScene({
                       />
                     ))}
                   </>
+                )}
+                {character && (
+                  <WorldCharacter
+                    name={character.name}
+                    gender={character.gender}
+                    appearance={playerAppearance}
+                    equipment={playerEquipment}
+                    position={sceneKind === "environment"
+                      ? (() => {
+                          const [x, z] = environmentStageToModel(
+                            [walker.position[0], walker.position[2]],
+                            environmentScale[0],
+                            environmentScale[1],
+                          );
+                          return [x, walker.position[1], z] as [number, number, number];
+                        })()
+                      : sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" ? walker.position : playerSpawn}
+                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment" ? walker.facing : "north"}
+                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment") && walker.walking ? "walk" : "idle"}
+                  />
                 )}
                 <WorldSceneReady onReady={handleSceneReady} />
               </Suspense>
@@ -500,7 +837,7 @@ function BasicLocationVenueScene({
                     key={fixture.id}
                     type="button"
                     aria-pressed={fixture.id === selectedFixture}
-                    onClick={() => setSelectedFixture(fixture.id)}
+                    onClick={() => handleFixtureSelect(fixture.id)}
                     className="rounded-lg border border-edge bg-card px-3 py-2 text-sm font-semibold hover:bg-muted focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                     style={
                       fixture.id === selectedFixture
@@ -516,9 +853,35 @@ function BasicLocationVenueScene({
                 ))}
               </div>
             </div>
-            <p className="min-h-12 rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
-              {selected?.detail}
-            </p>
+            <div className="space-y-2">
+              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" || sceneKind === "food" || sceneKind === "retail" || sceneKind === "environment") && (
+                <p className="text-xs text-muted-foreground" role="status">
+                  {movementMessage}
+                </p>
+              )}
+              <p className="min-h-12 rounded-lg bg-muted/50 p-3 text-sm" aria-live="polite">
+                {selected?.detail}
+              </p>
+              {selectedAction && ((sceneKind !== "generic" && sceneKind !== "market" && sceneKind !== "bank" && sceneKind !== "workplace" && sceneKind !== "retail") || arrivedFixture === selectedFixture) ? (
+                <a
+                  href={selectedAction.href}
+                  className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  {selectedAction.label}
+                </a>
+              ) : sceneKind === "transport" ? (
+                <a
+                  href={transportMapHref(preferredMode)}
+                  className="inline-flex min-h-11 items-center rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+                >
+                  Choose destination and transport
+                </a>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Information only — no direct action is configured for this feature yet.
+                </p>
+              )}
+            </div>
           </div>
         </div>
       </details>

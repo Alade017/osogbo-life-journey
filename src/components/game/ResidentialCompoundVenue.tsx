@@ -1,4 +1,10 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { q } from "@/lib/game";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
+import { parseSavedAppearance } from "@/game/character-animation";
+import type { Appearance } from "@/game/avatar-appearance";
+import { WorldCharacter } from "@/components/3d/WorldCharacter";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
@@ -23,6 +29,17 @@ export function ResidentialCompoundVenue({
   enteringHome?: boolean;
 }) {
   const home = useMemo(() => residentialHomePresentation(homeTypeId), [homeTypeId]);
+  const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery(q.equipment());
+  const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
+  const rawAppearance = character?.appearance;
+  const playerAppearance = useMemo(
+    () =>
+      rawAppearance && typeof rawAppearance === "object" && !Array.isArray(rawAppearance)
+        ? (rawAppearance as Appearance)
+        : parseSavedAppearance(rawAppearance),
+    [rawAppearance],
+  );
   const features = compoundFeatures(home?.sharedFacilities ?? false);
   const [selected, setSelected] = useState<CompoundFeatureId>("courtyard");
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
@@ -79,6 +96,17 @@ export function ResidentialCompoundVenue({
               />
               <WorldLighting size={RESIDENTIAL_COMPOUND.width} />
               <ResidentialCompoundScene home={home} selected={feature.id} onSelect={setSelected} />
+              {character && (
+                <WorldCharacter
+                  name={character.name}
+                  gender={character.gender}
+                  appearance={playerAppearance}
+                  equipment={playerEquipment}
+                  position={[0, 0.06, 4.4]}
+                  facing="north"
+                  animation="idle"
+                />
+              )}
               <WorldSceneReady onReady={ready} />
             </WorldCanvas>
           </VenueSceneBoundary>

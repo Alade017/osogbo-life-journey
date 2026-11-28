@@ -1,10 +1,15 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { q } from "@/lib/game";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
+import { parseSavedAppearance } from "@/game/character-animation";
+import { WorldCharacter } from "@/components/3d/WorldCharacter";
+import type { Appearance } from "@/game/avatar-appearance";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
 import { TierOneClinicScene } from "@/components/3d/TierOneClinicScene";
 import { VenueVisitor } from "@/components/3d/VenueVisitor";
-import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
-import { WORLD_PALETTE } from "@/components/3d/world-theme";
+import { WORLD_PALETTE, WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { useClinicWalkthrough } from "@/hooks/use-clinic-walkthrough";
 import { CLINIC_ROOMS } from "@/game/tier-one-clinic";
 import { CLINIC_ROOM_APPROACH, CLINIC_SPAWN } from "@/game/clinic-navigation";
@@ -24,6 +29,17 @@ export function ClinicVenue({
   immersive?: boolean | undefined;
 }) {
   const walk = useClinicWalkthrough(slug);
+  const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery(q.equipment());
+  const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
+  const rawAppearance = character?.appearance;
+  const appearance = useMemo(
+    () =>
+      rawAppearance && typeof rawAppearance === "object" && !Array.isArray(rawAppearance)
+        ? (rawAppearance as Appearance)
+        : parseSavedAppearance(rawAppearance),
+    [rawAppearance],
+  );
   const venue = getLocationVenueDesign(slug, locationName);
   const heading = useId();
   const [exterior, setExterior] = useState(false);
@@ -124,11 +140,15 @@ export function ClinicVenue({
                 selected={fixture}
                 onSelect={setFixture}
               />
-              {!exterior && (
-                <VenueVisitor
-                  position={walk.position}
+              {!exterior && character && (
+                <WorldCharacter
+                  name={character.name}
+                  gender={character.gender}
+                  appearance={appearance}
+                  equipment={playerEquipment}
+                  position={[walk.position[0], 0.06, walk.position[1]]}
                   facing={walk.facing}
-                  walking={walk.walking}
+                  animation={walk.walking ? "walk" : "idle"}
                 />
               )}
               {!exterior && staff && (

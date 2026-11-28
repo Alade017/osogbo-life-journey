@@ -51,13 +51,26 @@ function HealthcareContents({
   fixtures,
   selected,
   onSelect,
+  onWalk,
 }: {
   fixtures: readonly VenueFixture[];
   selected: string;
   onSelect: (id: string) => void;
+  onWalk: (point: readonly [number, number]) => void;
 }) {
   return (
     <group name="healthcare-reception">
+      <mesh
+        position={[0, 0.015, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (event.delta <= 5) onWalk([event.point.x, event.point.z]);
+        }}
+      >
+        <planeGeometry args={[11, 8]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
       <mesh position={[0, -0.1, 0]} receiveShadow>
         <SharedSceneBoxGeometry size={[11, 0.2, 8]} />
         <WorldMaterial tone="tileLight" color={WORLD_PALETTE.tileLight} />

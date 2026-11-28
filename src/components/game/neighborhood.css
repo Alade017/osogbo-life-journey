@@ -969,3 +969,10 @@ body:has(.neighborhood-page) {
   margin-right: 12px;
   font-weight: 700;
 }
+
+
+
+
+@media (pointer: fine) {
+  .neighborhood-controls-row .player-movement-controls { display: none; }
+}

@@ -1,9 +1,14 @@
-import { useCallback, useEffect, useId, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { q } from "@/lib/game";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
+import { parseSavedAppearance } from "@/game/character-animation";
+import { WorldCharacter } from "@/components/3d/WorldCharacter";
+import type { Appearance } from "@/game/avatar-appearance";
 import { Link } from "@tanstack/react-router";
 import { WorldCanvas } from "@/components/3d/WorldCanvas";
 import { WorldSceneReady } from "@/components/3d/WorldSceneReady";
 import { SchoolCampusScene } from "@/components/3d/SchoolCampusScene";
-import { VenueVisitor } from "@/components/3d/VenueVisitor";
 import { WorldCamera, WorldLighting } from "@/components/3d/WorldScene";
 import { CAMPUS_AREAS, campusArea } from "@/game/school-campus";
 import { useCampusWalkthrough } from "@/hooks/use-campus-walkthrough";
@@ -21,6 +26,17 @@ export function SchoolCampusVenue({
   immersive?: boolean | undefined;
 }) {
   const walk = useCampusWalkthrough(slug);
+  const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery(q.equipment());
+  const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
+  const rawAppearance = character?.appearance;
+  const appearance = useMemo(
+    () =>
+      rawAppearance && typeof rawAppearance === "object" && !Array.isArray(rawAppearance)
+        ? (rawAppearance as Appearance)
+        : parseSavedAppearance(rawAppearance),
+    [rawAppearance],
+  );
   const area = campusArea(walk.area);
   const heading = useId();
   const [status, setStatus] = useState<"loading" | "ready" | "fallback">("loading");
@@ -108,7 +124,17 @@ export function SchoolCampusVenue({
                   void walk.walkTo(point);
                 }}
               />
-              <VenueVisitor position={walk.position} facing={walk.facing} walking={walk.walking} />
+              {character && (
+                <WorldCharacter
+                  name={character.name}
+                  gender={character.gender}
+                  appearance={appearance}
+                  equipment={playerEquipment}
+                  position={walk.position}
+                  facing={walk.facing}
+                  animation={walk.walking ? "walk" : "idle"}
+                />
+              )}
               <WorldSceneReady onReady={ready} />
             </WorldCanvas>
           </VenueSceneBoundary>

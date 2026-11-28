@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { useFrame, type ThreeEvent } from "@react-three/fiber";
 import type { Group } from "three";
 import type { Appearance } from "@/game/avatar-appearance";
+import type { AvatarEquipment } from "@/components/game/Avatar";
 import type { WalkPoint } from "@/game/grid-walk-path";
 import { shopperLook } from "@/game/mall-appearance";
 import { createWalker, stepWalker, type MallWalker } from "@/game/mall-movement";
@@ -133,10 +134,12 @@ function StreetPlayer({
   sim,
   appearance,
   gender,
+  equipment,
 }: {
   sim: { current: StreetSim };
   appearance: Appearance;
   gender: string;
+  equipment: readonly AvatarEquipment[];
 }) {
   const group = useRef<Group>(null);
   const [pose, setPose] = useState({ moving: false, facing: "south" });
@@ -176,6 +179,7 @@ function StreetPlayer({
         name="You"
         gender={gender}
         appearance={appearance}
+        equipment={equipment}
         facing={pose.facing}
         animation={pose.moving ? "walk" : "idle"}
         position={[0, 0, 0]}
@@ -189,6 +193,7 @@ export function OsunMallStreet3D({
   sim,
   playerAppearance,
   playerGender,
+  playerEquipment,
   onWalk,
   onEnterMall,
   onRider,
@@ -197,6 +202,7 @@ export function OsunMallStreet3D({
   sim: { current: StreetSim };
   playerAppearance: Appearance;
   playerGender: string;
+  playerEquipment: readonly AvatarEquipment[];
   onWalk: (point: WalkPoint) => void;
   onEnterMall: () => void;
   /** Where the rider should come to, when a ride has been found; null to wait at the stand. */
@@ -249,7 +255,7 @@ export function OsunMallStreet3D({
         );
       })}
 
-      <StreetPlayer sim={sim} appearance={playerAppearance} gender={playerGender} />
+      <StreetPlayer sim={sim} appearance={playerAppearance} gender={playerGender} equipment={playerEquipment} />
     </>
   );
 }

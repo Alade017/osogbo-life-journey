@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -7,7 +7,10 @@ import { WorshipInterior3D } from "@/components/3d/WorshipInterior3D";
 import { Button } from "@/components/ui/button";
 import type { Appearance } from "@/game/avatar-appearance";
 import { gameTimeFromCharacter } from "@/lib/game-time";
+import { normalizeEquippedItems } from "@/lib/equipment-service";
 import { getWorshipLayout } from "@/game/worship-layouts";
+import { worshipNavigation } from "@/game/worship-navigation";
+import { useHouseMovement } from "@/hooks/use-house-movement";
 import {
   isPrayerDue,
   prayerWindowLabel,
@@ -28,14 +31,19 @@ type Phase = "idle" | "praying" | "sending";
  */
 export function WorshipVenue({ slug, locationName }: { slug: string; locationName: string }) {
   const layout = getWorshipLayout(slug);
+  const navigation = useMemo(() => layout ? worshipNavigation(layout) : null, [layout]);
+  const movement = useHouseMovement(slug, [layout?.spawn[0] ?? 0, 0.06, layout?.spawn[1] ?? 0]);
   const prayers = prayersFor(slug);
   const client = useQueryClient();
   const { data: character } = useQuery(q.character());
+  const { data: equipment } = useQuery(q.equipment());
+  const playerEquipment = useMemo(() => normalizeEquippedItems(equipment), [equipment]);
   const liveClock = useOptionalGameTime();
   const [phase, setPhase] = useState<Phase>("idle");
   const [activePrayer, setActivePrayer] = useState<WorshipPrayer | null>(null);
   const [secondsLeft, setSecondsLeft] = useState(PRAYER_SECONDS);
   const [message, setMessage] = useState<string | null>(null);
+  const [prayerStarting, setPrayerStarting] = useState(false);
 
   // The live game clock when it is on screen; otherwise the clock saved on the character.
   const now =
@@ -94,10 +102,43 @@ export function WorshipVenue({ slug, locationName }: { slug: string; locationNam
   const praying = phase !== "idle";
   const playerAppearance = (character?.appearance as Appearance | undefined) ?? {};
 
-  const startPrayer = (prayer: WorshipPrayer) => {
-    setMessage(null);
-    setActivePrayer(prayer);
-    setPhase("praying");
+  const walkTo = (point: readonly [number, number]) => {
+    if (!navigation || phase !== "idle" || prayerStarting) return;
+    movement.cancel();
+    const from = movement.positionRef.current;
+    const target = navigation.nearest(point);
+    const path = target ? navigation.route([from[0], from[2]], target) : null;
+    if (!path) {
+      setMessage("That area is blocked. Choose an open aisle or floor space.");
+      return;
+    }
+    setMessage("Walking through the hall…");
+    void movement.walk(path.map(([x, z]) => [x, 0.06, z] as [number, number, number])).then((arrived) => {
+      if (arrived) setMessage("You reached the selected spot.");
+    });
+  };
+
+  const startPrayer = async (prayer: WorshipPrayer) => {
+    if (!navigation?.prayerTarget || prayerStarting) return;
+    setPrayerStarting(true);
+    setMessage("Moving to the prayer area…");
+    movement.cancel();
+    const from = movement.positionRef.current;
+    const path = navigation.route([from[0], from[2]], navigation.prayerTarget);
+    if (!path) {
+      setMessage("The prayer area is currently inaccessible. Choose another spot.");
+      setPrayerStarting(false);
+      return;
+    }
+    const arrived = await movement.walk(path.map(([x, z]) => [x, 0.06, z] as [number, number, number]));
+    if (arrived) {
+      setMessage(null);
+      setActivePrayer(prayer);
+      setPhase("praying");
+    } else {
+      setMessage("Movement stopped. Try starting the prayer again.");
+    }
+    setPrayerStarting(false);
   };
 
   return (
@@ -119,12 +160,20 @@ export function WorshipVenue({ slug, locationName }: { slug: string; locationNam
             praying={praying}
             playerAppearance={playerAppearance}
             playerGender={character?.gender ?? "nonbinary"}
+            playerEquipment={playerEquipment}
+            playerPosition={movement.position}
+            playerFacing={movement.facing}
+            playerWalking={movement.walking}
+            onWalk={walkTo}
           />
         </Canvas>
         <div className="pointer-events-none absolute left-3 top-3 rounded-md bg-background/90 px-3 py-1 text-xs font-semibold">
           {locationName}
         </div>
         <div className="absolute bottom-3 right-3 flex max-w-[60%] flex-col items-end gap-2">
+          {movement.walking && (
+            <p className="pointer-events-none rounded-md bg-background/90 px-3 py-1 text-sm">Walking…</p>
+          )}
           {message && (
             <p
               role="status"
@@ -157,7 +206,7 @@ export function WorshipVenue({ slug, locationName }: { slug: string; locationNam
                   </span>
                   <Button
                     variant="plain"
-                    disabled={!due || praying}
+                    disabled={!due || praying || prayerStarting || movement.walking}
                     onClick={() => startPrayer(prayer)}
                   >
                     {label}

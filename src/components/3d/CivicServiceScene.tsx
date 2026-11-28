@@ -75,6 +75,7 @@ export function CivicServiceScene({
   fixtures,
   selected,
   onSelect,
+  onWalk,
   floorColor,
   wallColor,
   accentColor,
@@ -83,6 +84,7 @@ export function CivicServiceScene({
   fixtures: readonly VenueFixture[];
   selected: string;
   onSelect: (id: string) => void;
+  onWalk: (point: [number, number]) => void;
   floorColor: string;
   wallColor: string;
   accentColor: string;
@@ -90,7 +92,17 @@ export function CivicServiceScene({
   const police = variant === "police";
   return (
     <group name={police ? "community-police-interior" : "civic-service-interior"}>
-      <Block at={[0, -0.1, 0]} size={[14, 0.2, 11]} tone="tileLight" color={floorColor} />
+      <mesh
+        position={[0, -0.1, 0]}
+        receiveShadow
+        onClick={(event) => {
+          event.stopPropagation();
+          if (event.delta <= 5) onWalk([event.point.x, event.point.z]);
+        }}
+      >
+        <boxGeometry args={[14, 0.2, 11]} />
+        <WorldMaterial tone="tileLight" color={floorColor} />
+      </mesh>
       <Block at={[0, 1.6, -5.5]} size={[14, 3.2, 0.16]} color={wallColor} />
       <Block at={[-7, 1.6, 0]} size={[0.16, 3.2, 11]} color={wallColor} />
       <Block at={[7, 0.25, 0]} size={[0.16, 0.5, 11]} color={wallColor} />

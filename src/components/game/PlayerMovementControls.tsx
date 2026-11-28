@@ -21,10 +21,12 @@ export function PlayerMovementControls({
   onDirectionChange,
   onFollowChange,
   initialFollowing = false,
+  keyboardEnabled = true,
 }: {
   onDirectionChange: (directions: ReadonlySet<MovementDirection>) => void;
   onFollowChange: (enabled: boolean) => void;
   initialFollowing?: boolean;
+  keyboardEnabled?: boolean;
 }) {
   const held = useRef(new Set<MovementDirection>());
   const [following, setFollowing] = useState(initialFollowing);
@@ -38,6 +40,7 @@ export function PlayerMovementControls({
   );
 
   useEffect(() => {
+    if (!keyboardEnabled) return;
     const down = (event: KeyboardEvent) => {
       const direction = KEYS[event.key];
       const target = event.target;
@@ -70,7 +73,7 @@ export function PlayerMovementControls({
       window.removeEventListener("blur", clear);
       clear();
     };
-  }, [onDirectionChange, update]);
+  }, [keyboardEnabled, onDirectionChange, update]);
 
   const buttons: { direction: MovementDirection; label: string; Icon: typeof ArrowUp }[] = [
     { direction: "north", label: "Move north", Icon: ArrowUp },

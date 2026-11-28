@@ -47,15 +47,24 @@ export function TransitParkScene({
   selected,
   onSelect,
   onSelectMode,
+  onWalk,
 }: {
   onSelectMode?: (mode: TravelMode) => void;
   fixtures?: readonly VenueFixture[];
   selected?: string;
   onSelect?: (id: string) => void;
+  onWalk?: (point: [number, number]) => void;
 }) {
   return (
     <group name="transit-park-concourse">
-      <mesh position={[0, -0.1, 0]} receiveShadow>
+      <mesh
+        position={[0, -0.1, 0]}
+        receiveShadow
+        onClick={(event) => {
+          event.stopPropagation();
+          if (event.delta <= 5) onWalk?.([event.point.x, event.point.z]);
+        }}
+      >
         <boxGeometry args={[11, 0.2, 8]} />
         <WorldMaterial tone="concrete" />
       </mesh>
