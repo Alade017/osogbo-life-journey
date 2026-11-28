@@ -95,16 +95,29 @@ export function ResidentialCompoundScene({
   home,
   selected,
   onSelect,
+  onWalk,
 }: {
   home: ReturnType<typeof residentialHomePresentation>;
   selected: CompoundFeatureId;
   onSelect: (id: CompoundFeatureId) => void;
+  onWalk: (point: [number, number]) => void;
 }) {
   const layout = RESIDENTIAL_COMPOUND,
     features = compoundFeatures(home?.sharedFacilities ?? false);
   return (
     <group name="residential-compound-courtyard">
       <Block at={[0, -0.1, 0]} size={[layout.width, 0.2, layout.depth]} tone="ground" />
+      <mesh
+        position={[0, 0.012, 0]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        onClick={(event) => {
+          event.stopPropagation();
+          if (event.delta <= 5) onWalk([event.point.x, event.point.z]);
+        }}
+      >
+        <planeGeometry args={[layout.width, layout.depth]} />
+        <meshBasicMaterial transparent opacity={0} depthWrite={false} />
+      </mesh>
       <Block at={[0, 0.025, 3]} size={[1.8, 0.05, 13]} tone="path" />
       <Block at={[0, 0.02, 0]} size={[11, 0.04, 4.2]} tone="sidewalk" />
       <Block at={[0, 0.7, -9.8]} size={[20, 1.4, 0.15]} />
