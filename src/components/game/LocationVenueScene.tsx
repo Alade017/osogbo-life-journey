@@ -246,7 +246,7 @@ function BasicLocationVenueScene({
             : sceneKind === "civic"
               ? civicNavigation!
               : venueNavigation(venue.fixtures, venueWidth, venueDepth),
-    [sceneKind, bankNavigation, venue.fixtures, venueWidth, venueDepth],
+    [sceneKind, bankNavigation, civicNavigation, venue.fixtures, venueWidth, venueDepth],
   );
   const gameTime = useOptionalGameTime();
   // Shops with trading hours show their shutter open or closed for the current game hour.
