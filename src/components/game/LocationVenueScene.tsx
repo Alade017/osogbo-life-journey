@@ -307,7 +307,8 @@ function BasicLocationVenueScene({
         sceneKind !== "bank" &&
         sceneKind !== "workplace" &&
         sceneKind !== "civic" &&
-        sceneKind !== "transport"
+        sceneKind !== "transport" &&
+        sceneKind !== "healthcare"
       ) return;
       const fixture = venue.fixtures.find((item) => item.id === fixtureId);
       if (!fixture) return;
@@ -487,7 +488,25 @@ function BasicLocationVenueScene({
                   <HealthcareScene
                     fixtures={venue.fixtures}
                     selected={selectedFixture}
-                    onSelect={setSelectedFixture}
+                    onSelect={handleFixtureSelect}
+                    onWalk={(point) => {
+                      const ticket = ++movementRequest.current;
+                      walker.cancel();
+                      setArrivedFixture(null);
+                      const path = navigation.route(
+                        [walker.positionRef.current[0], walker.positionRef.current[2]],
+                        point,
+                      );
+                      if (!path) {
+                        setMovementMessage("That area is blocked. Choose a clear point.");
+                        return;
+                      }
+                      setMovementMessage("Walking to selected point…");
+                      void walker.walk(path.map(([px, pz]) => [px, 0.06, pz] as [number, number, number])).then((arrived) => {
+                        if (ticket !== movementRequest.current) return;
+                        setMovementMessage(arrived ? "You reached that spot." : "Movement stopped.");
+                      });
+                    }}
                   />
                 ) : sceneKind === "market" ? (
                   <MarketTradingHall
@@ -584,9 +603,9 @@ function BasicLocationVenueScene({
                     gender={character.gender}
                     appearance={playerAppearance}
                     equipment={playerEquipment}
-                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" ? walker.position : playerSpawn}
-                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" ? walker.facing : "north"}
-                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport") && walker.walking ? "walk" : "idle"}
+                    position={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" ? walker.position : playerSpawn}
+                    facing={sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare" ? walker.facing : "north"}
+                    animation={(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare") && walker.walking ? "walk" : "idle"}
                   />
                 )}
                 <WorldSceneReady onReady={handleSceneReady} />
@@ -738,7 +757,7 @@ function BasicLocationVenueScene({
               </div>
             </div>
             <div className="space-y-2">
-              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport") && (
+              {(sceneKind === "generic" || sceneKind === "market" || sceneKind === "bank" || sceneKind === "workplace" || sceneKind === "civic" || sceneKind === "transport" || sceneKind === "healthcare") && (
                 <p className="text-xs text-muted-foreground" role="status">
                   {movementMessage}
                 </p>
