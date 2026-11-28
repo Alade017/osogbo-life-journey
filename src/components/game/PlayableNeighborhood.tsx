@@ -1840,7 +1840,7 @@ export function PlayableNeighborhood() {
                         ? {
                             onEnterHome: () => {
                               setCompoundOpen(false);
-                              activateHome();
+                              enterHome.mutate();
                             },
                           }
                         : {})}
